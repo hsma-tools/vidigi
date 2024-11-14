@@ -29,19 +29,18 @@ class g:
     trauma_treat_var: float
         Variance of the trauma cubicle treatment distribution (Lognormal)
 
-        manual_arrival_rate: float
+        arrival_rate: float
         Set the mean of the exponential distribution that is used to sample the
         inter-arrival time of patients
 
     '''
-    random_number_set=42
-    n_streams = 20
+    random_number_set = 42
 
-    n_cubicles=2
-    trauma_treat_mean=30
-    trauma_treat_var=5
+    n_cubicles = 4
+    trauma_treat_mean = 40
+    trauma_treat_var = 5
 
-    manual_arrival_rate=2
+    arrival_rate = 5
     sim_duration = 600
     number_of_runs = 100
 
@@ -105,9 +104,11 @@ class Model:
         # the model
         self.mean_q_time_cubicle = 0
 
-        self.patient_inter_arrival_dist = Exponential(mean = g.manual_arrival_rate, random_seed = self.run_number*2)
-        self.treat_dist = Lognormal(mean = g.trauma_treat_var, stdev=g.trauma_treat_var,
-                                                 random_seed = self.run_number*4)
+        self.patient_inter_arrival_dist = Exponential(mean = g.arrival_rate,
+                                                      random_seed = self.run_number*g.random_number_set)
+        self.treat_dist = Lognormal(mean = g.trauma_treat_mean,
+                                    stdev = g.trauma_treat_var,
+                                    random_seed = self.run_number*g.random_number_set)
 
     def init_resources(self):
         '''
