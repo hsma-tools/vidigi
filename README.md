@@ -2,6 +2,16 @@
 
 ---
 
+Welcome to vidigi - a package for visualising real or simulated pathways.
+
+Primarily developed for healthcare simulation and intended to allow easy integration with tools like Streamlit so users can see the impact of changes to simulation parameters in real-time, vidigi
+
+vidigi is the Esperanto for 'to show'
+
+(or it's the backronym 'Visual Interactive Dynamics and Integrated Graphical Insights' - whichever floats your boat)
+
+https://github.com/hsma-programme/Teaching_DES_Concepts_Streamlit/assets/29951987/1adc36a0-7bc0-4808-8d71-2d253a855b31
+
 ## Introduction
 
 Visual display of the outputs of discrete event simulations in simpy have been identified as one of the limitations of simpy, potentially hindering adoption of FOSS simulation in comparison to commercial modelling offerings or GUI FOSS alternatives such as JaamSim.
@@ -10,9 +20,11 @@ Visual display of the outputs of discrete event simulations in simpy have been i
 > -  Monks T and Harper A. Improving the usability of open health service delivery simulation models using Python and web apps [version 2; peer review: 3 approved]. NIHR Open Res 2023, 3:48 (https://doi.org/10.3310/nihropenres.13467.2)
 
 
-This package allows visually appealing, flexible visualisations of discrete event simulations to be created from simpy models, such as the example below:
+This package allows visually appealing, flexible visualisations of the movement of entities through some kind of pathway.
 
-https://github.com/hsma-programme/Teaching_DES_Concepts_Streamlit/assets/29951987/1adc36a0-7bc0-4808-8d71-2d253a855b31
+It is primarily tested with discrete event simulations to be created from simpy models, such as the examples below.
+
+
 
 ---
 
@@ -58,6 +70,9 @@ To allow the use of resources to be visualised correctly - with entities staying
 
 By default, this is not possible with Simpy resources. They have no ID attribute or similar.
 
+<details>
+  <summary>Click here for behind-the-scenes details on this</summary>
+
 The easiest workaround which drops fairly painlessly into existing models is to use a simpy store with a custom resource class.
 
 The custom resource is setup as follows:
@@ -88,6 +103,25 @@ for i in range(number_of_beds):
             capacity=1,
             id_attribute=i+1)
         )
+```
+
+</details>
+
+`vidigi.utils` provides a helper function for setting up simpy resources in teh required manner.
+
+For a given resource that would have been created like this:
+
+```{python}
+nurses = simpy.Resource(simpy_environment, capacity=number_of_nurses)
+```
+
+You would use
+
+```{python}
+from vidigi.utils import populate_store
+nurses = simpy.Store(simpy_environment)
+
+populate_store(num_resources=number_of_nurses, simpy_store=nurses, simpy_environment=simpy_environment)
 ```
 
 Instead of requesting a resource in the standard way, you instead use the .get() method.
@@ -140,7 +174,7 @@ event_log.append(
   )
 ```
 
-The list of dictionaries can then be converted to a panadas dataframe using
+The list of dictionaries can then be converted to a pandas dataframe using
 ```{python}
 pd.DataFrame(event_log)
 ```
@@ -154,7 +188,7 @@ As a minimum, you will require the use of 'arrival_departure' events and one of
 - 'resource_use'/'resource_use_end'
 - OR 'queue'
 
-You can also use both 'resource_use' and 'queue' within the same model very effectively (see `ex_1_simplest_case`, `ex_2_branching_and_optional_paths`, and `ex_3_theatres_beds`).
+You can also use both 'resource_use' and 'queue' within the same model very effectively (see `ex_1_simplest_case` and `ex_2_branching_and_optional_paths`).
 
 ##### arrival_departure
 
@@ -186,7 +220,7 @@ Forgetting to include a departure step for all types of patients can lead to slo
 
 Queues are key steps in the model.
 
-`ex_4_community` and `ex_5_community_follow_up` are examples of models without a step where a simpy resource is used, instead using a booking calendar that determines the time that will elapse between stages for entities.
+It is possible to solely use queues and never make use of a simpy resource.
 
 By tracking each important step in the process as a 'queue' step, the movement of patients can be accurately tracked.
 
@@ -268,7 +302,9 @@ triage.put(triage_resource)
 ```
 When providing your event position details, it then just requires you to include an identifier for the resource.
 
-NOTE: At present this requires you to be using an object to manage your resources. This requirement is planned to be removed in a future version of the work, allowing more flexibility.
+NOTE: At present this requires you to be using an class to manage your resource counts (if following HSMA simpy structure, this will be your g class).
+
+This requirement is planned to be removed in a future version of the work, allowing more flexibility.
 
 ```{python}
 {'event': 'TRAUMA_stabilisation_begins',
@@ -315,17 +351,16 @@ The columns required are
 
 ### Creating the animation
 There are two main ways to create the animation:
+
 - using the one-step function `animate_activity_log()` (see pages/1_Simple_ED_interactive, pages/2_Simple_ED_Forced_Overcrowding or pages/3_Complex_ED_Interactive for examples of this)
-- using the functions `reshape_for_animations()`, `generate_animation_df()` and `generate_animation()` separately, passing the output of each to the next step (see pages/4_HEP_Orthopaedic_Surgery, pages/5_Community_Booking_Model, or pages/6_Community_Booking_Model_Multistep for examples of this and to get an idea of the extra customisation you can introduce with this approach)
+- using the functions `reshape_for_animations()`, `generate_animation_df()` and `generate_animation()` separately, passing the output of each to the next step. This allows you to apply significant extra customisations; examples demonstrating this will be added soon.
 
 # Acknowledgements
 
 Thanks are due to
 
-- [Dr Daniel Chalk]() for the
-- [Professor Tom Monks]() for his extensive materials and teaching on the use of simpy in healthcare and his [material on converting code into packages]()
-- [Professor Martin Pitt]() for his tireless work on sharing the importance of visualisation
-
+- [Dr Daniel Chalk](https://github.com/hsma-chief-elf) for support and simpy training on the HSMA programme
+- [Professor Tom Monks](https://github.com/TomMonks) for his extensive materials and teaching on the use of simpy in healthcare and his [material on converting code into packages](https://www.pythonhealthdatascience.com/content/03_mgt/03_mgt_front_page.html)
 
 # Models used as examples
 
