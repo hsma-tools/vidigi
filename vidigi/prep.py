@@ -8,6 +8,48 @@ def reshape_for_animations(event_log,
                            limit_duration=10*60*24,
                            step_snapshot_max=50,
                            debug_mode=False):
+    """
+    Reshape event log data for animation purposes.
+
+    This function processes an event log to create a series of snapshots at regular time intervals,
+    suitable for creating animations of patient flow through a system.
+
+    Parameters
+    ----------
+    event_log : DataFrame
+        The input event log containing patient events and timestamps.
+    every_x_time_units : int, optional
+        The time interval between snapshots in minutes (default is 10).
+    limit_duration : int, optional
+        The maximum duration to consider in minutes (default is 10 days).
+    step_snapshot_max : int, optional
+        The maximum number of patients to include in each snapshot for each event (default is 50).
+    debug_mode : bool, optional
+        If True, print debug information during processing (default is False).
+
+    Returns
+    -------
+    DataFrame
+        A reshaped DataFrame containing snapshots of patient positions at regular time intervals,
+        sorted by minute and event.
+
+    Notes
+    -----
+    - The function creates snapshots of patient positions at specified time intervals.
+    - It handles patients who are present in the system at each snapshot time.
+    - Patients are ranked within each event based on their arrival order.
+    - A maximum number of patients per event can be set to limit the number of patients who will be
+      displayed on screen within any one event type at a time.
+    - An 'exit' event is added for each patient at the end of their journey.
+    - The function uses memory management techniques (del and gc.collect()) to handle large datasets.
+
+    TODO
+    ----
+    - Add behavior for when limit_duration is None.
+    - Consider adding 'first step' and 'last step' parameters.
+    - Implement pathway order and precedence columns.
+    - Fix the automatic exit at the end of the simulation run for all patients.
+    """
     patient_dfs = []
 
     pivoted_log = event_log.pivot_table(values="time",
@@ -139,31 +181,46 @@ def generate_animation_df(
         gap_between_rows=30,
         debug_mode=False
 ):
-    """_summary_
+    """
+    Generate a DataFrame for animation purposes by adding position information to patient data.
 
-    Args:
-        full_patient_df (pd.Dataframe):
-            output of reshape_for_animation()
+    This function takes patient event data and adds positional information for visualization,
+    handling both queuing and resource use events.
 
-        event_position_dicts (pd.Dataframe):
-            dataframe with three cols - event, x and y
-            Can be more easily created by passing a list of dicts to pd.DataFrame
-            list of dictionaries with one dicitionary per event type
-            containing keys 'event', 'x' and 'y'
-            This will determine the intial position of any entries in the animated log
-            (think of it as the bottom right hand corner of any group of entities at each stage)
+    Parameters
+    ----------
+    full_patient_df : pd.DataFrame
+        Output of reshape_for_animation(), containing patient event data.
+    event_position_df : pd.DataFrame
+        DataFrame with columns 'event', 'x', and 'y', specifying initial positions for each event type.
+    wrap_queues_at : int, optional
+        Number of entities in a queue before wrapping to a new row (default is 20).
+    step_snapshot_max : int, optional
+        Maximum number of patients to show in each snapshot (default is 50).
+    gap_between_entities : int, optional
+        Horizontal spacing between entities in pixels (default is 10).
+    gap_between_resources : int, optional
+        Horizontal spacing between resources in pixels (default is 10).
+    gap_between_rows : int, optional
+        Vertical spacing between rows in pixels (default is 30).
+    debug_mode : bool, optional
+        If True, print debug information during processing (default is False).
 
-        scenario:
-            Pass in an object that specifies the number of resources at different steps
+    Returns
+    -------
+    pd.DataFrame
+        A DataFrame with added columns for x and y positions, and icons for each patient.
 
-        rep (int, optional): Defaults to 1.
-            The replication of any model to include. Can only display one rep at a time, so will take
-            the first rep if not otherwise specified.
+    Notes
+    -----
+    - The function handles both queuing and resource use events differently.
+    - It assigns unique icons to patients for visualization.
+    - Queues can be wrapped to multiple rows if they exceed a specified length.
+    - The function adds a visual indicator for additional patients when exceeding the snapshot limit.
 
-        plotly_height (int, optional): Defaults to 900.
-
-    Returns:
-       Plotly fig object
+    TODO
+    ----
+    - Write a test to ensure that no patient ID appears in multiple places at a single minute.
     """
 
     # Filter to only a single replication

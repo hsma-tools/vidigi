@@ -27,6 +27,75 @@ def generate_animation(
         frame_transition_duration=600, #milliseconds
         debug_mode=False
 ):
+    """
+    Generate an animated visualization of patient flow through a system.
+
+    This function creates an interactive Plotly animation based on patient data and event positions.
+
+    Parameters
+    ----------
+    full_patient_df_plus_pos : pd.DataFrame
+        DataFrame containing patient data with position information.
+        This will be the output of passing an event log through the reshape_for_animations()
+        and generate_animation_df() functions
+    event_position_df : pd.DataFrame
+        DataFrame specifying the positions of different events.
+    scenario : object, optional
+        Object containing attributes for resource counts at different steps.
+    plotly_height : int, optional
+        Height of the Plotly figure in pixels (default is 900).
+    plotly_width : int, optional
+        Width of the Plotly figure in pixels (default is None).
+    include_play_button : bool, optional
+        Whether to include a play button in the animation (default is True).
+    add_background_image : str, optional
+        Path to a background image file to add to the animation (default is None).
+    display_stage_labels : bool, optional
+        Whether to display labels for each stage (default is True).
+    icon_and_text_size : int, optional
+        Size of icons and text in the animation (default is 24).
+    override_x_max : int, optional
+        Override the maximum x-coordinate (default is None).
+    override_y_max : int, optional
+        Override the maximum y-coordinate (default is None).
+    time_display_units : str, optional
+        Units for displaying time. Options are 'dhm' (days, hours, minutes), 'd' (days), or None (default).
+    start_date : str, optional
+        Start date for the animation in 'YYYY-MM-DD' format. Only used when time_display_units is 'd' (default is None).
+    resource_opacity : float, optional
+        Opacity of resource icons (default is 0.8).
+    custom_resource_icon : str, optional
+        Custom icon to use for resources (default is None).
+    gap_between_resources : int, optional
+        Spacing between resources in pixels (default is 10).
+    setup_mode : bool, optional
+        Whether to run in setup mode, showing grid and tick marks (default is False).
+    frame_duration : int, optional
+        Duration of each frame in milliseconds (default is 400).
+    frame_transition_duration : int, optional
+        Duration of transition between frames in milliseconds (default is 600).
+    debug_mode : bool, optional
+        Whether to run in debug mode with additional output (default is False).
+
+    Returns
+    -------
+    plotly.graph_objs._figure.Figure
+        An animated Plotly figure object representing the patient flow.
+
+    Notes
+    -----
+    - The function uses Plotly Express to create an animated scatter plot.
+    - Time can be displayed as actual dates or as model time units.
+    - The animation supports customization of icon sizes, resource representation, and animation speed.
+    - A background image can be added to provide context for the patient flow.
+
+    Examples
+    --------
+    >>> animation = generate_animation(patient_df, event_positions, scenario,
+    ...                                time_display_units='dhm',
+    ...                                add_background_image='path/to/image.png')
+    >>> animation.show()
+    """
     if override_x_max is not None:
         x_max = override_x_max
     else:
@@ -253,7 +322,85 @@ def animate_activity_log(
         frame_transition_duration=600, #milliseconds
         debug_mode=False
         ):
+    """
+    Generate an animated visualization of patient flow through a system.
 
+    This function processes event log data, adds positional information, and creates
+    an interactive Plotly animation representing patient movement through various stages.
+
+    Parameters
+    ----------
+    event_log : pd.DataFrame
+        The log of events to be animated, containing patient activities.
+    event_position_df : pd.DataFrame
+        DataFrame specifying the positions of different events, with columns 'event', 'x', and 'y'.
+    scenario : object
+        An object containing attributes for resource counts at different steps.
+    every_x_time_units : int, optional
+        Time interval between animation frames in minutes (default is 10).
+    wrap_queues_at : int, optional
+        Maximum number of entities to display in a queue before wrapping to a new row (default is 20).
+    step_snapshot_max : int, optional
+        Maximum number of patients to show in each snapshot per event (default is 50).
+    limit_duration : int, optional
+        Maximum duration to animate in minutes (default is 10 days or 14400 minutes).
+    plotly_height : int, optional
+        Height of the Plotly figure in pixels (default is 900).
+    plotly_width : int, optional
+        Width of the Plotly figure in pixels (default is None, which auto-adjusts).
+    include_play_button : bool, optional
+        Whether to include a play button in the animation (default is True).
+    add_background_image : str, optional
+        Path to a background image file to add to the animation (default is None).
+    display_stage_labels : bool, optional
+        Whether to display labels for each stage (default is True).
+    icon_and_text_size : int, optional
+        Size of icons and text in the animation (default is 24).
+    gap_between_entities : int, optional
+        Horizontal spacing between entities in pixels (default is 10).
+    gap_between_rows : int, optional
+        Vertical spacing between rows in pixels (default is 30).
+    gap_between_resources : int, optional
+        Horizontal spacing between resources in pixels (default is 10).
+    resource_opacity : float, optional
+        Opacity of resource icons (default is 0.8).
+    custom_resource_icon : str, optional
+        Custom icon to use for resources (default is None).
+    override_x_max : int, optional
+        Override the maximum x-coordinate of the plot (default is None).
+    override_y_max : int, optional
+        Override the maximum y-coordinate of the plot (default is None).
+    time_display_units : str, optional
+        Units for displaying time. Options are 'dhm' (days, hours, minutes), 'd' (days), or None (default).
+    setup_mode : bool, optional
+        If True, display grid and tick marks for initial setup (default is False).
+    frame_duration : int, optional
+        Duration of each frame in milliseconds (default is 400).
+    frame_transition_duration : int, optional
+        Duration of transition between frames in milliseconds (default is 600).
+    debug_mode : bool, optional
+        If True, print debug information during processing (default is False).
+
+    Returns
+    -------
+    plotly.graph_objs._figure.Figure
+        An animated Plotly figure object representing the patient flow.
+
+    Notes
+    -----
+    - This function uses helper functions: reshape_for_animations, generate_animation_df, and generate_animation.
+    - The animation supports customization of icon sizes, resource representation, and animation speed.
+    - Time can be displayed as actual dates or as model time units.
+    - A background image can be added to provide context for the patient flow.
+    - The function handles both queuing and resource use events.
+
+    Examples
+    --------
+    >>> animation = animate_activity_log(event_log, event_positions, scenario,
+    ...                                  time_display_units='dhm',
+    ...                                  add_background_image='path/to/image.png')
+    >>> animation.show()
+    """
     if debug_mode:
         start_time_function = time.perf_counter()
         print(f'Animation function called at {time.strftime("%H:%M:%S", time.localtime())}')
