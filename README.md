@@ -8,7 +8,7 @@ Welcome to vidigi - a package for visualising real or simulated pathways.
 
 Primarily developed for healthcare simulation and intended to allow easy integration with tools like Streamlit so users can see the impact of changes to simulation parameters in real-time, vidigi
 
-vidigi is the Esperanto for 'to show'
+vidigi is the Esperanto for 'to show' U+1F3F3+FE0F+200D+1F7E9+200D+2B50+200D+1F7E9
 
 (or it's the backronym 'Visual Interactive Dynamics and Integrated Graphical Insights' - whichever floats your boat)
 

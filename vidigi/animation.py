@@ -298,7 +298,7 @@ def generate_animation(
 def animate_activity_log(
         event_log,
         event_position_df,
-        scenario,
+        scenario=None,
         every_x_time_units=10,
         wrap_queues_at=20,
         step_snapshot_max=50,
@@ -320,7 +320,8 @@ def animate_activity_log(
         setup_mode=False,
         frame_duration=400, #milliseconds
         frame_transition_duration=600, #milliseconds
-        debug_mode=False
+        debug_mode=False,
+        custom_entity_icon_list=None
         ):
     """
     Generate an animated visualization of patient flow through a system.
@@ -380,6 +381,8 @@ def animate_activity_log(
         Duration of transition between frames in milliseconds (default is 600).
     debug_mode : bool, optional
         If True, print debug information during processing (default is False).
+    custom_entity_icon_list: list, optional
+        If given, overrides the default list of emojis used to represent entities
 
     Returns
     -------
@@ -424,7 +427,8 @@ def animate_activity_log(
                                 gap_between_entities=gap_between_entities,
                                 gap_between_resources=gap_between_resources,
                                 gap_between_rows=gap_between_rows,
-                                debug_mode=debug_mode
+                                debug_mode=debug_mode,
+                                custom_entity_icon_list=custom_entity_icon_list
                         )
 
     animation = generate_animation(
