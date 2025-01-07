@@ -1,21 +1,28 @@
 website:
   sidebar:
-  - contents:
-    - reference/index.qmd
+  - collapse-level: 2
+    contents:
+    - href: reference/introduction.qmd
+      text: Introduction
     - contents:
-      - reference/animation.animate_activity_log.qmd
-      section: All-In-One Animation Functions
-    - contents:
-      - reference/prep.reshape_for_animations.qmd
-      - reference/prep.generate_animation_df.qmd
-      - reference/animation.generate_animation.qmd
-      section: Step-By-Step Functions
-    - contents:
-      - reference/utils.populate_store.qmd
-      - reference/utils.CustomResource.qmd
-      section: Simpy Utility Functions and Classes
-    - contents:
-      - reference/utils.event_log_from_ciw_recs.qmd
-      section: ciw Utility Functions
+      - reference/index.qmd
+      - contents:
+        - reference/animation.animate_activity_log.qmd
+        section: All-In-One Animation Functions
+      - contents:
+        - reference/prep.reshape_for_animations.qmd
+        - reference/prep.generate_animation_df.qmd
+        - reference/animation.generate_animation.qmd
+        section: Step-By-Step Functions
+      - contents:
+        - reference/utils.populate_store.qmd
+        - reference/utils.CustomResource.qmd
+        section: Simpy Utility Functions and Classes
+      - contents:
+        - reference/utils.event_log_from_ciw_recs.qmd
+        section: ciw Utility Functions
+      section: Reference
     id: reference
+    search: true
+    style: docked
   - id: dummy-sidebar

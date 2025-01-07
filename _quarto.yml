@@ -1,17 +1,27 @@
 project:
   type: website
+  output-dir: ../docs
 
 # tell quarto to read the generated sidebar
 metadata-files:
   - _sidebar.yml
 
 quartodoc:
-  out_index: ../docs/index.html
   # the name used to import the package you want to create reference docs for
   package: vidigi
 
   # write sidebar data to this file
-  sidebar: _sidebar.yml
+  sidebar:
+    file: "_sidebar.yml"
+    style: docked
+    search: true
+    collapse-level: 2
+    contents:
+      - text: "Introduction"
+        href: reference/introduction.qmd
+      - section: "Reference"
+        contents:
+          - "{{ contents }}"
 
   sections:
     - title: All-In-One Animation Functions
