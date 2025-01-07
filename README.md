@@ -363,6 +363,7 @@ Thanks are due to
 
 - [Dr Daniel Chalk](https://github.com/hsma-chief-elf) for support and simpy training on the HSMA programme
 - [Professor Tom Monks](https://github.com/TomMonks) for his extensive materials and teaching on the use of simpy in healthcare and his [material on converting code into packages](https://www.pythonhealthdatascience.com/content/03_mgt/03_mgt_front_page.html)
+- [Helena Robinson](https://github.com/helenajr) for testing and bugfinding
 
 # Models used as examples
 
