@@ -2,9 +2,16 @@ website:
   sidebar:
   - collapse-level: 2
     contents:
+    - file: reference/index.qmd
+      text: Reference
     - href: reference/introduction.qmd
       text: Introduction
     - contents:
+      - examples/example_1_simplest_case/ex_1_simplest_case.ipynb
+      - examples/example_2_branching_multistep/ex_2_branching_multistep_case.ipynb
+      section: Examples
+    - contents:
+      - function_reference.qmd
       - reference/index.qmd
       - contents:
         - reference/animation.animate_activity_log.qmd
@@ -22,10 +29,6 @@ website:
         - reference/utils.event_log_from_ciw_recs.qmd
         section: ciw Utility Functions
       section: Reference
-    - contents:
-      - examples/example_1_simplest_case/ex_1_simplest_case.ipynb
-      - examples/example_2_branching_multistep/ex_2_branching_multistep_case.ipynb
-      section: Examples
     id: reference
     search: true
     style: docked

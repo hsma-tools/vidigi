@@ -7,6 +7,7 @@ metadata-files:
   - _sidebar.yml
 
 quartodoc:
+  out_index: _api_index.qmd
   # the name used to import the package you want to create reference docs for
   package: vidigi
 
@@ -17,15 +18,18 @@ quartodoc:
     search: true
     collapse-level: 2
     contents:
+      - file: reference/index.qmd
+        text: Reference
       - text: "Introduction"
         href: reference/introduction.qmd
-      - section: "Reference"
-        contents:
-          - "{{ contents }}"
       - section: "Examples"
         contents:
         - examples/example_1_simplest_case/ex_1_simplest_case.ipynb
         - examples/example_2_branching_multistep/ex_2_branching_multistep_case.ipynb
+      - section: "Reference"
+        contents:
+          - function_reference.qmd
+          - "{{ contents }}"
 
   sections:
     - title: All-In-One Animation Functions

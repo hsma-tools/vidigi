@@ -1,7 +1,12 @@
 # utils.populate_store { #vidigi.utils.populate_store }
 
 ```python
-utils.populate_store(num_resources, simpy_store, sim_env)
+utils.populate_store(
+    num_resources,
+    simpy_store,
+    sim_env,
+    priority_resource=False,
+)
 ```
 
 Populate a SimPy Store with CustomResource objects.
@@ -11,11 +16,12 @@ Each CustomResource is initialized with a capacity of 1 and a unique ID attribut
 
 ## Parameters {.doc-section .doc-section-parameters}
 
-| Name          | Type              | Description                                                          | Default    |
-|---------------|-------------------|----------------------------------------------------------------------|------------|
-| num_resources | int               | The number of CustomResource objects to create and add to the store. | _required_ |
-| simpy_store   | simpy.Store       | The SimPy Store object to populate with resources.                   | _required_ |
-| sim_env       | simpy.Environment | The SimPy environment in which the resources and store exist.        | _required_ |
+| Name              | Type              | Description                                                                                        | Default    |
+|-------------------|-------------------|----------------------------------------------------------------------------------------------------|------------|
+| num_resources     | int               | The number of CustomResource objects to create and add to the store.                               | _required_ |
+| simpy_store       | simpy.Store       | The SimPy Store object to populate with resources.                                                 | _required_ |
+| sim_env           | simpy.Environment | The SimPy environment in which the resources and store exist.                                      | _required_ |
+| priority_resource |                   | Whether to populate the resource with PriorityResources (True) or standard Simpy resources (False) | `False`    |
 
 ## Returns {.doc-section .doc-section-returns}
 

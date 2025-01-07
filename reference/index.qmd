@@ -1,36 +1,16 @@
-# Function reference {.doc .doc-index}
+# vidigi (Visual Interactive Dynamics and Integrated Graphical Insights)
 
-## All-In-One Animation Functions
+[<img src="https://img.shields.io/pypi/v/vidigi?label=pypi%20package">](https://pypi.org/project/vidigi/)
 
+---
 
+Welcome to vidigi - a package for visualising real or simulated pathways.
 
-| | |
-| --- | --- |
-| [animation.animate_activity_log](animation.animate_activity_log.qmd#vidigi.animation.animate_activity_log) | Generate an animated visualization of patient flow through a system. |
+Primarily developed for healthcare simulation and intended to allow easy integration with tools like Streamlit so users can see the impact of changes to simulation parameters in real-time, vidigi
 
-## Step-By-Step Functions
-
-
-
-| | |
-| --- | --- |
-| [prep.reshape_for_animations](prep.reshape_for_animations.qmd#vidigi.prep.reshape_for_animations) | Reshape event log data for animation purposes. |
-| [prep.generate_animation_df](prep.generate_animation_df.qmd#vidigi.prep.generate_animation_df) | Generate a DataFrame for animation purposes by adding position information to patient data. |
-| [animation.generate_animation](animation.generate_animation.qmd#vidigi.animation.generate_animation) | Generate an animated visualization of patient flow through a system. |
-
-## Simpy Utility Functions and Classes
+vidigi is the [Esperanto](https://en.wikipedia.org/wiki/Esperanto) ![](Flag_of_Esperanto.svg.png){height=30px} for 'to show'
 
 
+(or it's the backronym 'Visual Interactive Dynamics and Integrated Graphical Insights' - whichever floats your boat)
 
-| | |
-| --- | --- |
-| [utils.populate_store](utils.populate_store.qmd#vidigi.utils.populate_store) | Populate a SimPy Store with CustomResource objects. |
-| [utils.CustomResource](utils.CustomResource.qmd#vidigi.utils.CustomResource) | A custom resource class that extends simpy.Resource with an additional ID attribute. |
-
-## ciw Utility Functions
-
-
-
-| | |
-| --- | --- |
-| [utils.event_log_from_ciw_recs](utils.event_log_from_ciw_recs.qmd#vidigi.utils.event_log_from_ciw_recs) | Given the ciw recs object, return a dataframe in the format expected by the vidigi |
+{{< video videos/vidigi.mp4 >}}
