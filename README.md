@@ -123,7 +123,7 @@ You would use
 from vidigi.utils import populate_store
 nurses = simpy.Store(simpy_environment)
 
-populate_store(num_resources=number_of_nurses, simpy_store=nurses, simpy_environment=simpy_environment)
+populate_store(num_resources=number_of_nurses, simpy_store=nurses, sim_env=simpy_environment)
 ```
 
 Instead of requesting a resource in the standard way, you instead use the .get() method.
