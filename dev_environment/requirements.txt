@@ -13,3 +13,4 @@ pytest==8.3.2
 plotly==5.12.0
 simpy==4.0.2
 sim-tools==0.6.1
+quartodoc==0.9.1
