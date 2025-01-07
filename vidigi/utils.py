@@ -22,13 +22,6 @@ class CustomResource(simpy.Resource):
     id_attribute : any
         An identifier for the resource, which can be used for custom tracking or logic.
 
-    Methods
-    -------
-    request(*args, **kwargs)
-        Request the resource. Can be overridden to include custom logic for ID assignment.
-    release(*args, **kwargs)
-        Release the resource. Can be overridden to include custom logic for ID handling.
-
     Notes
     -----
     This class inherits from simpy.Resource and overrides the request and release methods
@@ -37,15 +30,17 @@ class CustomResource(simpy.Resource):
 
     Examples
     --------
-    >>> env = simpy.Environment()
-    >>> custom_resource = CustomResource(env, capacity=1, id_attribute="Resource_1")
-    >>> def process(env, resource):
-    ...     with resource.request() as req:
-    ...         yield req
-    ...         print(f"Using resource with ID: {resource.id_attribute}")
-    ...         yield env.timeout(1)
-    >>> env.process(process(env, custom_resource))
-    >>> env.run()
+    ```
+    env = simpy.Environment()
+    custom_resource = CustomResource(env, capacity=1, id_attribute="Resource_1")
+    def process(env, resource):
+        with resource.request() as req:
+            yield req
+            print(f"Using resource with ID: {resource.id_attribute}")
+            yield env.timeout(1)
+    env.process(process(env, custom_resource))
+    env.run()
+    ```
     Using resource with ID: Resource_1
     """
     def __init__(self, env, capacity, id_attribute=None):
