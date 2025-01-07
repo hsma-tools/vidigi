@@ -1,0 +1,77 @@
+# animation.generate_animation { #vidigi.animation.generate_animation }
+
+```python
+animation.generate_animation(
+    full_patient_df_plus_pos,
+    event_position_df,
+    scenario=None,
+    plotly_height=900,
+    plotly_width=None,
+    include_play_button=True,
+    add_background_image=None,
+    display_stage_labels=True,
+    icon_and_text_size=24,
+    override_x_max=None,
+    override_y_max=None,
+    time_display_units=None,
+    start_date=None,
+    resource_opacity=0.8,
+    custom_resource_icon=None,
+    gap_between_resources=10,
+    setup_mode=False,
+    frame_duration=400,
+    frame_transition_duration=600,
+    debug_mode=False,
+)
+```
+
+Generate an animated visualization of patient flow through a system.
+
+This function creates an interactive Plotly animation based on patient data and event positions.
+
+## Parameters {.doc-section .doc-section-parameters}
+
+| Name                      | Type         | Description                                                                                                                                                                             | Default    |
+|---------------------------|--------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------|
+| full_patient_df_plus_pos  | pd.DataFrame | DataFrame containing patient data with position information. This will be the output of passing an event log through the reshape_for_animations() and generate_animation_df() functions | _required_ |
+| event_position_df         | pd.DataFrame | DataFrame specifying the positions of different events.                                                                                                                                 | _required_ |
+| scenario                  | object       | Object containing attributes for resource counts at different steps.                                                                                                                    | `None`     |
+| plotly_height             | int          | Height of the Plotly figure in pixels (default is 900).                                                                                                                                 | `900`      |
+| plotly_width              | int          | Width of the Plotly figure in pixels (default is None).                                                                                                                                 | `None`     |
+| include_play_button       | bool         | Whether to include a play button in the animation (default is True).                                                                                                                    | `True`     |
+| add_background_image      | str          | Path to a background image file to add to the animation (default is None).                                                                                                              | `None`     |
+| display_stage_labels      | bool         | Whether to display labels for each stage (default is True).                                                                                                                             | `True`     |
+| icon_and_text_size        | int          | Size of icons and text in the animation (default is 24).                                                                                                                                | `24`       |
+| override_x_max            | int          | Override the maximum x-coordinate (default is None).                                                                                                                                    | `None`     |
+| override_y_max            | int          | Override the maximum y-coordinate (default is None).                                                                                                                                    | `None`     |
+| time_display_units        | str          | Units for displaying time. Options are 'dhm' (days, hours, minutes), 'd' (days), or None (default).                                                                                     | `None`     |
+| start_date                | str          | Start date for the animation in 'YYYY-MM-DD' format. Only used when time_display_units is 'd' (default is None).                                                                        | `None`     |
+| resource_opacity          | float        | Opacity of resource icons (default is 0.8).                                                                                                                                             | `0.8`      |
+| custom_resource_icon      | str          | Custom icon to use for resources (default is None).                                                                                                                                     | `None`     |
+| gap_between_resources     | int          | Spacing between resources in pixels (default is 10).                                                                                                                                    | `10`       |
+| setup_mode                | bool         | Whether to run in setup mode, showing grid and tick marks (default is False).                                                                                                           | `False`    |
+| frame_duration            | int          | Duration of each frame in milliseconds (default is 400).                                                                                                                                | `400`      |
+| frame_transition_duration | int          | Duration of transition between frames in milliseconds (default is 600).                                                                                                                 | `600`      |
+| debug_mode                | bool         | Whether to run in debug mode with additional output (default is False).                                                                                                                 | `False`    |
+
+## Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                             | Description                                                     |
+|--------|----------------------------------|-----------------------------------------------------------------|
+|        | plotly.graph_objs._figure.Figure | An animated Plotly figure object representing the patient flow. |
+
+## Notes {.doc-section .doc-section-notes}
+
+- The function uses Plotly Express to create an animated scatter plot.
+- Time can be displayed as actual dates or as model time units.
+- The animation supports customization of icon sizes, resource representation, and animation speed.
+- A background image can be added to provide context for the patient flow.
+
+## Examples {.doc-section .doc-section-examples}
+
+```python
+>>> animation = generate_animation(patient_df, event_positions, scenario,
+...                                time_display_units='dhm',
+...                                add_background_image='path/to/image.png')
+>>> animation.show()
+```

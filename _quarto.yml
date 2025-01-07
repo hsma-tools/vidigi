@@ -1,0 +1,37 @@
+project:
+  type: website
+
+# tell quarto to read the generated sidebar
+metadata-files:
+  - _sidebar.yml
+
+quartodoc:
+  out_index: ../docs/index.html
+  # the name used to import the package you want to create reference docs for
+  package: vidigi
+
+  # write sidebar data to this file
+  sidebar: _sidebar.yml
+
+  sections:
+    - title: All-In-One Animation Functions
+      desc: ""
+      contents:
+        - animation.animate_activity_log
+    - title: Step-By-Step Functions
+      desc: ""
+      contents:
+        # the functions being documented in the package.
+        # you can refer to anything: class methods, modules, etc..
+        - prep.reshape_for_animations
+        - prep.generate_animation_df
+        - animation.generate_animation
+    - title: Simpy Utility Functions and Classes
+      desc: ""
+      contents:
+        - utils.populate_store
+        - utils.CustomResource
+    - title: ciw Utility Functions
+      desc: ""
+      contents:
+        - utils.event_log_from_ciw_recs

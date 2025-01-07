@@ -1,0 +1,42 @@
+# utils.populate_store { #vidigi.utils.populate_store }
+
+```python
+utils.populate_store(num_resources, simpy_store, sim_env)
+```
+
+Populate a SimPy Store with CustomResource objects.
+
+This function creates a specified number of CustomResource objects and adds them to a SimPy Store.
+Each CustomResource is initialized with a capacity of 1 and a unique ID attribute.
+
+## Parameters {.doc-section .doc-section-parameters}
+
+| Name          | Type              | Description                                                          | Default    |
+|---------------|-------------------|----------------------------------------------------------------------|------------|
+| num_resources | int               | The number of CustomResource objects to create and add to the store. | _required_ |
+| simpy_store   | simpy.Store       | The SimPy Store object to populate with resources.                   | _required_ |
+| sim_env       | simpy.Environment | The SimPy environment in which the resources and store exist.        | _required_ |
+
+## Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description   |
+|--------|--------|---------------|
+|        | None   |               |
+
+## Notes {.doc-section .doc-section-notes}
+
+- Each CustomResource is created with a capacity of 1.
+- The ID attribute of each CustomResource is set to its index in the creation loop plus one,
+  ensuring unique IDs starting from 1.
+- This function is typically used to initialize a pool of resources at the start of a simulation.
+
+## Examples {.doc-section .doc-section-examples}
+
+```python
+>>> import simpy
+>>> env = simpy.Environment()
+>>> resource_store = simpy.Store(env)
+>>> populate_store(5, resource_store, env)
+>>> len(resource_store.items)  # The store now contains 5 CustomResource objects
+5
+```

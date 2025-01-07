@@ -1,13 +1,19 @@
-# Current mechanism
+---
+execute:
+  eval: false
+---
+
+
+ Current mechanism
 
 In short, the final plot is an animated plotly scatterplot.
 
-In theory, there's nothing to stop it using an alternative mode of action (e.g. svg), but one benefit of plotly is that it nicely deals with the intermediate paths of patients. It is also available in both Python and R with minimal changes and has extensive compatability with other tools - e.g. Streamlit, Dash. 
+In theory, there's nothing to stop it using an alternative mode of action (e.g. svg), but one benefit of plotly is that it nicely deals with the intermediate paths of patients. It is also available in both Python and R with minimal changes and has extensive compatability with other tools - e.g. Streamlit, Dash.
 
 
 There are a couple of key steps to setting up the visualisation
 1. Adding logging steps to the model
-2. Swapping the use of resources for simpy stores *containing* resources 
+2. Swapping the use of resources for simpy stores *containing* resources
 3. Creating an object that stores resources - a 'scenario' object - which then informs the number of resources displayed
 4. Iterating through the logs to make a minute-by-minute picture of the position of every patient (or any desired interval)
 5. Using Plotly to display these logs
@@ -26,7 +32,7 @@ Simple improvements required include applying consistency to naming (e.g. arriva
 
 At present, five to six things are recorded per log. 'Pathway' could potentially be removed.
 
-This whole structure could be rewritten to be significantly less verbose. It is written like this at present because of the ease of transforming this structure of dictionary to a dataframe and the flexibility of the structure, but exploring alternatives like key:value pairs of event:time could be explored. 
+This whole structure could be rewritten to be significantly less verbose. It is written like this at present because of the ease of transforming this structure of dictionary to a dataframe and the flexibility of the structure, but exploring alternatives like key:value pairs of event:time could be explored.
 
 
 Currenly, the key logs take the following format
@@ -41,7 +47,7 @@ self.full_event_log.append({
     'time': self.env.now
 })
 ```
-Queueing: 
+Queueing:
 ```
 self.full_event_log.append({
     'patient': self.identifier,
@@ -74,7 +80,7 @@ self.full_event_log.append({
     'time': self.env.now,
     'resource_id': treatment_resource.id_attribute
 })
-```        
+```
 
 Departure:
 ```
@@ -87,15 +93,15 @@ self.full_event_log.append({
 })
 ```
 
-## 2. Swapping the use of resources for simpy stores *containing* resources 
+## 2. Swapping the use of resources for simpy stores *containing* resources
 When a resource is in use, we need to be able to show a single entity consistently hogging the same resource throughout the full time they are using it.
 
-Simpy resources do not inherently have any ID attribute. 
-After exploring options like monkey patching the resource class, a better alternative seemed to be using a simpy store - which does have an ID - instead of a straight resource. 
+Simpy resources do not inherently have any ID attribute.
+After exploring options like monkey patching the resource class, a better alternative seemed to be using a simpy store - which does have an ID - instead of a straight resource.
 
-Without this ID attribute, the default logic used to move entities through the steps results in them visually behaving like a queue, which makes it hard to understand how long someone has been using a resource for and is visually confusing.  
+Without this ID attribute, the default logic used to move entities through the steps results in them visually behaving like a queue, which makes it hard to understand how long someone has been using a resource for and is visually confusing.
 
-Fortunately the code changes required are minimal. We initialise the store, then use a loop to create as many resources within that store as required. 
+Fortunately the code changes required are minimal. We initialise the store, then use a loop to create as many resources within that store as required.
 
 ```
 def init_resources(self):
@@ -106,7 +112,7 @@ def init_resources(self):
     Resource list:
         1. Nurses/treatment bays (same thing in this model)
 
-    '''   
+    '''
     self.args.treatment = simpy.Store(self.env)
 
     for i in range(self.args.n_cubicles_1):
@@ -129,18 +135,18 @@ When the timeout has elapsed, we then use the following code.
 
 ```
 # Resource is no longer in use, so put it back in
-self.args.treatment.put(treatment_resource) 
+self.args.treatment.put(treatment_resource)
 ```
 
-This has additional benefits of making it easier to monitor the use of individual resources. 
+This has additional benefits of making it easier to monitor the use of individual resources.
 
-One thing that has been noticed is that the resources seem to be cycled through in order. For example, if you have 4 resources and all are available, but the last resource to be in use was resource 2, resource 3 will be seized the next time someone requires a resource. This may not be entirely realistic, and code to 'shake up' the resources after use may be worth exploring. 
+One thing that has been noticed is that the resources seem to be cycled through in order. For example, if you have 4 resources and all are available, but the last resource to be in use was resource 2, resource 3 will be seized the next time someone requires a resource. This may not be entirely realistic, and code to 'shake up' the resources after use may be worth exploring.
 
 ## 3. Creating an object that stores resources - a 'scenario' object - which then informs the number of resources displayed
-At present this part of the code expects a scenario object. 
-This could be changed to 
+At present this part of the code expects a scenario object.
+This could be changed to
 - expect a dictionary instead
-- work with either a scenario or dictionary object (maybe if the route of expanding TM's approach to simpy modelling into an opinionated framework) 
+- work with either a scenario or dictionary object (maybe if the route of expanding TM's approach to simpy modelling into an opinionated framework)
 
 If going with the first option, the scenario class used in TM's work routinely could be expanded to include a method to export the required data to a dictionary format.
 
@@ -183,9 +189,9 @@ The function animate_activity_log currently takes 3 mandatory parameters:
 The graph is a plotly scatterplot.
 The initial animated plot is created using plotly express, with additional static layers added afterwards.
 
-Each individual is a scatter point. The actual points are fully transparent, and what we see is a text label - the emoji. 
+Each individual is a scatter point. The actual points are fully transparent, and what we see is a text label - the emoji.
 
-A list of any length of emojis is required. This will then be joined with a distinct patient table to provide a list of patients. 
+A list of any length of emojis is required. This will then be joined with a distinct patient table to provide a list of patients.
 
 
 # Examples required
@@ -214,7 +220,7 @@ A list of any length of emojis is required. This will then be joined with a dist
 - There's a bug in the wrapping code that results in queues building out in a diagonal manner (shifted 1 to the left) from the 3rd row onwards (2nd row counts to 11 instead of 10, and then subsequent rows correctly include 10 but start too far over)
 
 ## Required enhancements
-- At present, the queue of users will continue to grow indefinitely until it leaves the boundary. 
+- At present, the queue of users will continue to grow indefinitely until it leaves the boundary.
 
 ## Friction points
 - Setting up the background image can be a fiddly process
@@ -227,7 +233,7 @@ A list of any length of emojis is required. This will then be joined with a dist
 
 ## Concerns
 
-- Currently, logging can cope with ~5 minute snapshots for 5 days of logs in a system that has ~10-60 people in the system at any given point in time. 
+- Currently, logging can cope with ~5 minute snapshots for 5 days of logs in a system that has ~10-60 people in the system at any given point in time.
 This results in a self-contained plot of ~20mb when exported (for comparison, a self-contained line chart with some additional rectangles is <20kb).
     - 5 days was chosen as a good limit for the streamlit teaching app as it offered a good balance between speed and minimized the risk of crashing across different choices of parameters.
         - If significantly too few resources are provided at a given step, the size of the animation dataframe quickly gets out of hand (as people aren't getting through the system so the number of people in the system at each snapshot is very large)
@@ -235,7 +241,7 @@ This results in a self-contained plot of ~20mb when exported (for comparison, a 
 
 # Discussion with Tom
 
-1. 
+1.
 
 - VIS (visual interactive simulation)
 
@@ -250,21 +256,15 @@ Sell it as being able to look at the simulation log visually
 
 
 2.  LLM???? Future
-Getting prompts to be generated 
+Getting prompts to be generated
 
 
 
 "Towards visualiation"
 
-Need 
+Need
 
 Journal of simulation
 
 
 Alison + Tom, + Dan + me
-
-
-
-
-
-

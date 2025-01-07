@@ -1,0 +1,86 @@
+# utils.CustomResource { #vidigi.utils.CustomResource }
+
+```python
+utils.CustomResource(self, env, capacity, id_attribute=None)
+```
+
+A custom resource class that extends simpy.Resource with an additional ID attribute.
+
+This class allows for more detailed tracking and management of resources in a simulation
+by adding an ID attribute to each resource instance.
+
+## Parameters {.doc-section .doc-section-parameters}
+
+| Name         | Type              | Description                                                                 | Default    |
+|--------------|-------------------|-----------------------------------------------------------------------------|------------|
+| env          | simpy.Environment | The SimPy environment in which this resource exists.                        | _required_ |
+| capacity     | int               | The capacity of the resource (how many units can be in use simultaneously). | _required_ |
+| id_attribute | any               | An identifier for the resource (default is None).                           | `None`     |
+
+## Attributes {.doc-section .doc-section-attributes}
+
+| Name         | Type   | Description                                                                     |
+|--------------|--------|---------------------------------------------------------------------------------|
+| id_attribute | any    | An identifier for the resource, which can be used for custom tracking or logic. |
+
+## Notes {.doc-section .doc-section-notes}
+
+This class inherits from simpy.Resource and overrides the request and release methods
+to allow for custom handling of the id_attribute. The actual implementation of ID
+assignment or reset logic should be added by the user as needed.
+
+## Examples {.doc-section .doc-section-examples}
+
+```
+env = simpy.Environment()
+custom_resource = CustomResource(env, capacity=1, id_attribute="Resource_1")
+def process(env, resource):
+    with resource.request() as req:
+        yield req
+        print(f"Using resource with ID: {resource.id_attribute}")
+        yield env.timeout(1)
+env.process(process(env, custom_resource))
+env.run()
+```
+Using resource with ID: Resource_1
+
+## Methods
+
+| Name | Description |
+| --- | --- |
+| [release](#vidigi.utils.CustomResource.release) | Release the resource. |
+| [request](#vidigi.utils.CustomResource.request) | Request the resource. |
+
+### release { #vidigi.utils.CustomResource.release }
+
+```python
+utils.CustomResource.release(*args, **kwargs)
+```
+
+Release the resource.
+
+This method can be customized to handle the ID attribute when a release is made.
+Currently, it simply calls the parent class's release method.
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description   |
+|--------|--------|---------------|
+|        | None   |               |
+
+### request { #vidigi.utils.CustomResource.request }
+
+```python
+utils.CustomResource.request(*args, **kwargs)
+```
+
+Request the resource.
+
+This method can be customized to handle the ID attribute when a request is made.
+Currently, it simply calls the parent class's request method.
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                 | Description            |
+|--------|----------------------|------------------------|
+|        | simpy.events.Request | A SimPy request event. |

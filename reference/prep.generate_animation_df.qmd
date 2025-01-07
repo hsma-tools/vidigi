@@ -1,0 +1,50 @@
+# prep.generate_animation_df { #vidigi.prep.generate_animation_df }
+
+```python
+prep.generate_animation_df(
+    full_patient_df,
+    event_position_df,
+    wrap_queues_at=20,
+    step_snapshot_max=50,
+    gap_between_entities=10,
+    gap_between_resources=10,
+    gap_between_rows=30,
+    debug_mode=False,
+    custom_entity_icon_list=None,
+)
+```
+
+Generate a DataFrame for animation purposes by adding position information to patient data.
+
+This function takes patient event data and adds positional information for visualization,
+handling both queuing and resource use events.
+
+## Parameters {.doc-section .doc-section-parameters}
+
+| Name                  | Type         | Description                                                                                     | Default    |
+|-----------------------|--------------|-------------------------------------------------------------------------------------------------|------------|
+| full_patient_df       | pd.DataFrame | Output of reshape_for_animation(), containing patient event data.                               | _required_ |
+| event_position_df     | pd.DataFrame | DataFrame with columns 'event', 'x', and 'y', specifying initial positions for each event type. | _required_ |
+| wrap_queues_at        | int          | Number of entities in a queue before wrapping to a new row (default is 20).                     | `20`       |
+| step_snapshot_max     | int          | Maximum number of patients to show in each snapshot (default is 50).                            | `50`       |
+| gap_between_entities  | int          | Horizontal spacing between entities in pixels (default is 10).                                  | `10`       |
+| gap_between_resources | int          | Horizontal spacing between resources in pixels (default is 10).                                 | `10`       |
+| gap_between_rows      | int          | Vertical spacing between rows in pixels (default is 30).                                        | `30`       |
+| debug_mode            | bool         | If True, print debug information during processing (default is False).                          | `False`    |
+
+## Returns {.doc-section .doc-section-returns}
+
+| Name   | Type         | Description                                                                       |
+|--------|--------------|-----------------------------------------------------------------------------------|
+|        | pd.DataFrame | A DataFrame with added columns for x and y positions, and icons for each patient. |
+
+## Notes {.doc-section .doc-section-notes}
+
+- The function handles both queuing and resource use events differently.
+- It assigns unique icons to patients for visualization.
+- Queues can be wrapped to multiple rows if they exceed a specified length.
+- The function adds a visual indicator for additional patients when exceeding the snapshot limit.
+
+## TODO {.doc-section .doc-section-todo}
+
+- Write a test to ensure that no patient ID appears in multiple places at a single minute.

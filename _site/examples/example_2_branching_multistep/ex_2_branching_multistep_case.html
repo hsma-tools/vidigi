@@ -1,0 +1,3475 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.6.36">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>ex_2_branching_multistep_case</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script><script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-01c78b5cd655e4cd89133cf59d535862.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-523b4dc3dad50da7e5c9dee1e7f3f290.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" integrity="sha512-c3Nl8+7g4LMSTdrm621y7kf9v3SDPnhxLNhcjFJbKECVnmZHTdo+IRO05sNLTH/D3vA6u1X32ehoLC7WFVdheg==" crossorigin="anonymous"></script>
+
+<script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
+
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-search-results"></div>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    
+<!-- main -->
+<main class="content" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block"></header>
+
+
+
+
+<div id="cell-0" class="cell" data-execution_count="1">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> examples.example_2_branching_multistep.ex_2_model_classes <span class="im">import</span> Trial, g</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> vidigi.animation <span class="im">import</span> animate_activity_log</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-1" class="cell" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>my_trial <span class="op">=</span> Trial()</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>my_trial.run_trial()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           2      Shared                          arrival  arrival_departure   
+4           2  Non-Trauma               triage_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1283      111  Non-Trauma     MINORS_registration_complete   resource_use_end   
+1284      111  Non-Trauma   MINORS_examination_wait_begins              queue   
+1285      112  Non-Trauma       MINORS_registration_begins       resource_use   
+1286      113  Non-Trauma                  triage_complete   resource_use_end   
+1287      113  Non-Trauma  MINORS_registration_wait_begins              queue   
+
+            time  resource_id  run  
+0       3.285355          NaN    0  
+1       3.285355          NaN    0  
+2       3.285355          1.0    0  
+3       3.289691          NaN    0  
+4       3.289691          NaN    0  
+...          ...          ...  ...  
+1283  597.887106          1.0    0  
+1284  597.887106          NaN    0  
+1285  597.887106          1.0    0  
+1286  598.855366          1.0    0  
+1287  598.855366          NaN    0  
+
+[1288 rows x 7 columns]
+      patient     pathway                        event         event_type   
+0           1      Shared                      arrival  arrival_departure  \
+1           1  Non-Trauma           triage_wait_begins              queue   
+2           1  Non-Trauma                triage_begins       resource_use   
+3           2      Shared                      arrival  arrival_departure   
+4           2  Non-Trauma           triage_wait_begins              queue   
+...       ...         ...                          ...                ...   
+1506       89  Non-Trauma  MINORS_examination_complete   resource_use_end   
+1507       89      Shared                       depart  arrival_departure   
+1508       90  Non-Trauma    MINORS_examination_begins       resource_use   
+1509      148      Shared                      arrival  arrival_departure   
+1510      148  Non-Trauma           triage_wait_begins              queue   
+
+            time  resource_id  run  
+0      37.593555          NaN    1  
+1      37.593555          NaN    1  
+2      37.593555          1.0    1  
+3      51.835879          NaN    1  
+4      51.835879          NaN    1  
+...          ...          ...  ...  
+1506  595.588997          1.0    1  
+1507  595.588997          NaN    1  
+1508  595.588997          1.0    1  
+1509  598.538184          NaN    1  
+1510  598.538184          NaN    1  
+
+[1511 rows x 7 columns]
+      patient     pathway                           event         event_type   
+0           1      Shared                         arrival  arrival_departure  \
+1           1  Non-Trauma              triage_wait_begins              queue   
+2           1  Non-Trauma                   triage_begins       resource_use   
+3           2      Shared                         arrival  arrival_departure   
+4           2      Trauma              triage_wait_begins              queue   
+...       ...         ...                             ...                ...   
+1397      111  Non-Trauma    MINORS_registration_complete   resource_use_end   
+1398      111  Non-Trauma  MINORS_examination_wait_begins              queue   
+1399      113  Non-Trauma      MINORS_registration_begins       resource_use   
+1400      134      Shared                         arrival  arrival_departure   
+1401      134  Non-Trauma              triage_wait_begins              queue   
+
+            time  resource_id  run  
+0     138.355852          NaN    2  
+1     138.355852          NaN    2  
+2     138.355852          1.0    2  
+3     141.867721          NaN    2  
+4     141.867721          NaN    2  
+...          ...          ...  ...  
+1397  598.982510          1.0    2  
+1398  598.982510          NaN    2  
+1399  598.982510          1.0    2  
+1400  599.800148          NaN    2  
+1401  599.800148          NaN    2  
+
+[1402 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1366      101  Non-Trauma   MINORS_examination_wait_begins              queue   
+1367      102  Non-Trauma       MINORS_registration_begins       resource_use   
+1368      100  Non-Trauma     MINORS_registration_complete   resource_use_end   
+1369      100  Non-Trauma   MINORS_examination_wait_begins              queue   
+1370      104  Non-Trauma       MINORS_registration_begins       resource_use   
+
+            time  resource_id  run  
+0       0.012724          NaN    3  
+1       0.012724          NaN    3  
+2       0.012724          1.0    3  
+3       0.052677          1.0    3  
+4       0.052677          NaN    3  
+...          ...          ...  ...  
+1366  598.193343          NaN    3  
+1367  598.193343          2.0    3  
+1368  599.664333          1.0    3  
+1369  599.664333          NaN    3  
+1370  599.664333          1.0    3  
+
+[1371 rows x 7 columns]
+      patient     pathway                            event   
+0           1      Shared                          arrival  \
+1           1  Non-Trauma               triage_wait_begins   
+2           1  Non-Trauma                    triage_begins   
+3           1  Non-Trauma                  triage_complete   
+4           1  Non-Trauma  MINORS_registration_wait_begins   
+...       ...         ...                              ...   
+1525       94  Non-Trauma      MINORS_examination_complete   
+1526       94  Non-Trauma               requires_treatment   
+1527       94  Non-Trauma     MINORS_treatment_wait_begins   
+1528       94  Non-Trauma          MINORS_treatment_begins   
+1529       96  Non-Trauma        MINORS_examination_begins   
+
+              event_type        time  resource_id  run  
+0      arrival_departure    4.061593          NaN    4  
+1                  queue    4.061593          NaN    4  
+2           resource_use    4.061593          1.0    4  
+3       resource_use_end   16.541295          1.0    4  
+4                  queue   16.541295          NaN    4  
+...                  ...         ...          ...  ...  
+1525    resource_use_end  597.467219          3.0    4  
+1526  attribute_assigned  597.467219          NaN    4  
+1527               queue  597.467219          NaN    4  
+1528        resource_use  597.467219          2.0    4  
+1529        resource_use  597.467219          3.0    4  
+
+[1530 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1330       89  Non-Trauma          MINORS_treatment_begins       resource_use   
+1331       91  Non-Trauma        MINORS_examination_begins       resource_use   
+1332      110  Non-Trauma     MINORS_registration_complete   resource_use_end   
+1333      110  Non-Trauma   MINORS_examination_wait_begins              queue   
+1334      113  Non-Trauma       MINORS_registration_begins       resource_use   
+
+            time  resource_id  run  
+0       8.972477          NaN    5  
+1       8.972477          NaN    5  
+2       8.972477          1.0    5  
+3      12.147139          1.0    5  
+4      12.147139          NaN    5  
+...          ...          ...  ...  
+1330  597.314429          3.0    5  
+1331  597.314429          3.0    5  
+1332  598.933879          1.0    5  
+1333  598.933879          NaN    5  
+1334  598.933879          1.0    5  
+
+[1335 rows x 7 columns]
+      patient     pathway                             event   
+0           1      Shared                           arrival  \
+1           1  Non-Trauma                triage_wait_begins   
+2           1  Non-Trauma                     triage_begins   
+3           1  Non-Trauma                   triage_complete   
+4           1  Non-Trauma   MINORS_registration_wait_begins   
+...       ...         ...                               ...   
+1409      122      Trauma                   triage_complete   
+1410      122      Trauma  TRAUMA_stabilisation_wait_begins   
+1411      123  Non-Trauma                     triage_begins   
+1412       88  Non-Trauma             MINORS_treatment_ends   
+1413       88      Shared                            depart   
+
+             event_type        time  resource_id  run  
+0     arrival_departure   11.058163          NaN    6  
+1                 queue   11.058163          NaN    6  
+2          resource_use   11.058163          1.0    6  
+3      resource_use_end   24.845458          1.0    6  
+4                 queue   24.845458          NaN    6  
+...                 ...         ...          ...  ...  
+1409   resource_use_end  598.831287          2.0    6  
+1410              queue  598.831287          NaN    6  
+1411       resource_use  598.831287          2.0    6  
+1412   resource_use_end  598.915336          1.0    6  
+1413  arrival_departure  598.915336          NaN    6  
+
+[1414 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1502      111  Non-Trauma   MINORS_examination_wait_begins              queue   
+1503      108  Non-Trauma       MINORS_registration_begins       resource_use   
+1504      140      Shared                          arrival  arrival_departure   
+1505      140  Non-Trauma               triage_wait_begins              queue   
+1506      140  Non-Trauma                    triage_begins       resource_use   
+
+            time  resource_id  run  
+0      28.031592          NaN    7  
+1      28.031592          NaN    7  
+2      28.031592          1.0    7  
+3      32.845041          1.0    7  
+4      32.845041          NaN    7  
+...          ...          ...  ...  
+1502  597.718120          NaN    7  
+1503  597.718120          2.0    7  
+1504  598.025395          NaN    7  
+1505  598.025395          NaN    7  
+1506  598.025395          2.0    7  
+
+[1507 rows x 7 columns]
+      patient     pathway                           event         event_type   
+0           1      Shared                         arrival  arrival_departure  \
+1           1      Trauma              triage_wait_begins              queue   
+2           1      Trauma                   triage_begins       resource_use   
+3           2      Shared                         arrival  arrival_departure   
+4           2  Non-Trauma              triage_wait_begins              queue   
+...       ...         ...                             ...                ...   
+1345       86  Non-Trauma         MINORS_treatment_begins       resource_use   
+1346       89  Non-Trauma       MINORS_examination_begins       resource_use   
+1347      105  Non-Trauma    MINORS_registration_complete   resource_use_end   
+1348      105  Non-Trauma  MINORS_examination_wait_begins              queue   
+1349      113  Non-Trauma      MINORS_registration_begins       resource_use   
+
+            time  resource_id  run  
+0       9.032859          NaN    8  
+1       9.032859          NaN    8  
+2       9.032859          1.0    8  
+3      18.396389          NaN    8  
+4      18.396389          NaN    8  
+...          ...          ...  ...  
+1345  599.405152          4.0    8  
+1346  599.405152          1.0    8  
+1347  599.595228          1.0    8  
+1348  599.595228          NaN    8  
+1349  599.595228          1.0    8  
+
+[1350 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1417       85  Non-Trauma          MINORS_treatment_begins       resource_use   
+1418       88  Non-Trauma        MINORS_examination_begins       resource_use   
+1419      115  Non-Trauma                  triage_complete   resource_use_end   
+1420      115  Non-Trauma  MINORS_registration_wait_begins              queue   
+1421      117  Non-Trauma                    triage_begins       resource_use   
+
+            time  resource_id  run  
+0       2.234975          NaN    9  
+1       2.234975          NaN    9  
+2       2.234975          1.0    9  
+3       5.668657          1.0    9  
+4       5.668657          NaN    9  
+...          ...          ...  ...  
+1417  598.677403          4.0    9  
+1418  598.677403          1.0    9  
+1419  598.992830          2.0    9  
+1420  598.992830          NaN    9  
+1421  598.992830          2.0    9  
+
+[1422 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1593       97      Shared                           depart  arrival_departure   
+1594       95  Non-Trauma        MINORS_examination_begins       resource_use   
+1595      149  Non-Trauma                  triage_complete   resource_use_end   
+1596      149  Non-Trauma  MINORS_registration_wait_begins              queue   
+1597      150  Non-Trauma                    triage_begins       resource_use   
+
+            time  resource_id  run  
+0      22.550975          NaN   10  
+1      22.550975          NaN   10  
+2      22.550975          1.0   10  
+3      47.380853          1.0   10  
+4      47.380853          NaN   10  
+...          ...          ...  ...  
+1593  598.559290          NaN   10  
+1594  598.559290          3.0   10  
+1595  598.608338          2.0   10  
+1596  598.608338          NaN   10  
+1597  598.608338          2.0   10  
+
+[1598 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1424      124      Trauma     TRAUMA_treatment_wait_begins              queue   
+1425      124      Trauma          TRAUMA_treatment_begins       resource_use   
+1426      129      Trauma      TRAUMA_stabilisation_begins       resource_use   
+1427      138      Shared                          arrival  arrival_departure   
+1428      138      Trauma               triage_wait_begins              queue   
+
+            time  resource_id  run  
+0      98.036856          NaN   11  
+1      98.036856          NaN   11  
+2      98.036856          1.0   11  
+3     105.875028          1.0   11  
+4     105.875028          NaN   11  
+...          ...          ...  ...  
+1424  597.388688          NaN   11  
+1425  597.388688          3.0   11  
+1426  597.388688          1.0   11  
+1427  597.788934          NaN   11  
+1428  597.788934          NaN   11  
+
+[1429 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           2      Shared                          arrival  arrival_departure   
+4           2  Non-Trauma               triage_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1414      131      Shared                          arrival  arrival_departure   
+1415      131  Non-Trauma               triage_wait_begins              queue   
+1416      131  Non-Trauma                    triage_begins       resource_use   
+1417      131  Non-Trauma                  triage_complete   resource_use_end   
+1418      131  Non-Trauma  MINORS_registration_wait_begins              queue   
+
+            time  resource_id  run  
+0       0.092544          NaN   12  
+1       0.092544          NaN   12  
+2       0.092544          1.0   12  
+3       0.165629          NaN   12  
+4       0.165629          NaN   12  
+...          ...          ...  ...  
+1414  593.397187          NaN   12  
+1415  593.397187          NaN   12  
+1416  593.397187          2.0   12  
+1417  596.577208          2.0   12  
+1418  596.577208          NaN   12  
+
+[1419 rows x 7 columns]
+      patient     pathway                             event   
+0           1      Shared                           arrival  \
+1           1  Non-Trauma                triage_wait_begins   
+2           1  Non-Trauma                     triage_begins   
+3           1  Non-Trauma                   triage_complete   
+4           1  Non-Trauma   MINORS_registration_wait_begins   
+...       ...         ...                               ...   
+1253      105      Trauma                   triage_complete   
+1254      105      Trauma  TRAUMA_stabilisation_wait_begins   
+1255      108  Non-Trauma                     triage_begins   
+1256      102  Non-Trauma      MINORS_registration_complete   
+1257      102  Non-Trauma    MINORS_examination_wait_begins   
+
+             event_type        time  resource_id  run  
+0     arrival_departure   27.996749          NaN   13  
+1                 queue   27.996749          NaN   13  
+2          resource_use   27.996749          1.0   13  
+3      resource_use_end   31.204595          1.0   13  
+4                 queue   31.204595          NaN   13  
+...                 ...         ...          ...  ...  
+1253   resource_use_end  599.110272          2.0   13  
+1254              queue  599.110272          NaN   13  
+1255       resource_use  599.110272          2.0   13  
+1256   resource_use_end  599.251704          1.0   13  
+1257              queue  599.251704          NaN   13  
+
+[1258 rows x 7 columns]
+      patient     pathway                             event   
+0           1      Shared                           arrival  \
+1           1      Trauma                triage_wait_begins   
+2           1      Trauma                     triage_begins   
+3           1      Trauma                   triage_complete   
+4           1      Trauma  TRAUMA_stabilisation_wait_begins   
+...       ...         ...                               ...   
+1318       82      Shared                            depart   
+1319       80  Non-Trauma         MINORS_examination_begins   
+1320      102  Non-Trauma      MINORS_registration_complete   
+1321      102  Non-Trauma    MINORS_examination_wait_begins   
+1322      101  Non-Trauma        MINORS_registration_begins   
+
+             event_type        time  resource_id  run  
+0     arrival_departure   71.594858          NaN   14  
+1                 queue   71.594858          NaN   14  
+2          resource_use   71.594858          1.0   14  
+3      resource_use_end   75.656331          1.0   14  
+4                 queue   75.656331          NaN   14  
+...                 ...         ...          ...  ...  
+1318  arrival_departure  599.556997          NaN   14  
+1319       resource_use  599.556997          2.0   14  
+1320   resource_use_end  599.821170          2.0   14  
+1321              queue  599.821170          NaN   14  
+1322       resource_use  599.821170          2.0   14  
+
+[1323 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1583      101  Non-Trauma      MINORS_examination_complete   resource_use_end   
+1584      101      Shared                           depart  arrival_departure   
+1585      100  Non-Trauma        MINORS_examination_begins       resource_use   
+1586       99  Non-Trauma            MINORS_treatment_ends   resource_use_end   
+1587       99      Shared                           depart  arrival_departure   
+
+            time  resource_id  run  
+0       1.401154          NaN   15  
+1       1.401154          NaN   15  
+2       1.401154          1.0   15  
+3       5.352484          1.0   15  
+4       5.352484          NaN   15  
+...          ...          ...  ...  
+1583  597.539265          2.0   15  
+1584  597.539265          NaN   15  
+1585  597.539265          2.0   15  
+1586  598.011292          4.0   15  
+1587  598.011292          NaN   15  
+
+[1588 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1464      129  Non-Trauma  MINORS_registration_wait_begins              queue   
+1465      130  Non-Trauma                    triage_begins       resource_use   
+1466       83      Trauma    TRAUMA_stabilisation_complete   resource_use_end   
+1467       83      Trauma     TRAUMA_treatment_wait_begins              queue   
+1468       83      Trauma          TRAUMA_treatment_begins       resource_use   
+
+            time  resource_id  run  
+0      74.896776          NaN   16  
+1      74.896776          NaN   16  
+2      74.896776          1.0   16  
+3      81.383060          1.0   16  
+4      81.383060          NaN   16  
+...          ...          ...  ...  
+1464  599.441172          NaN   16  
+1465  599.441172          1.0   16  
+1466  599.534484          2.0   16  
+1467  599.534484          NaN   16  
+1468  599.534484          3.0   16  
+
+[1469 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1625      101  Non-Trauma     MINORS_treatment_wait_begins              queue   
+1626      101  Non-Trauma          MINORS_treatment_begins       resource_use   
+1627      105  Non-Trauma        MINORS_examination_begins       resource_use   
+1628      157      Shared                          arrival  arrival_departure   
+1629      157  Non-Trauma               triage_wait_begins              queue   
+
+            time  resource_id  run  
+0      29.782349          NaN   17  
+1      29.782349          NaN   17  
+2      29.782349          1.0   17  
+3      35.658523          1.0   17  
+4      35.658523          NaN   17  
+...          ...          ...  ...  
+1625  598.085568          NaN   17  
+1626  598.085568          1.0   17  
+1627  598.085568          2.0   17  
+1628  598.963369          NaN   17  
+1629  598.963369          NaN   17  
+
+[1630 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1523      137  Non-Trauma                  triage_complete   resource_use_end   
+1524      137  Non-Trauma  MINORS_registration_wait_begins              queue   
+1525      142      Shared                          arrival  arrival_departure   
+1526      142  Non-Trauma               triage_wait_begins              queue   
+1527      142  Non-Trauma                    triage_begins       resource_use   
+
+            time  resource_id  run  
+0      37.905775          NaN   18  
+1      37.905775          NaN   18  
+2      37.905775          1.0   18  
+3      38.638488          1.0   18  
+4      38.638488          NaN   18  
+...          ...          ...  ...  
+1523  599.228304          1.0   18  
+1524  599.228304          NaN   18  
+1525  599.249645          NaN   18  
+1526  599.249645          NaN   18  
+1527  599.249645          1.0   18  
+
+[1528 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1172       71      Shared                           depart  arrival_departure   
+1173       74  Non-Trauma        MINORS_examination_begins       resource_use   
+1174       88  Non-Trauma     MINORS_registration_complete   resource_use_end   
+1175       88  Non-Trauma   MINORS_examination_wait_begins              queue   
+1176       91  Non-Trauma       MINORS_registration_begins       resource_use   
+
+            time  resource_id  run  
+0      16.205951          NaN   19  
+1      16.205951          NaN   19  
+2      16.205951          1.0   19  
+3      18.562272          1.0   19  
+4      18.562272          NaN   19  
+...          ...          ...  ...  
+1172  598.666824          NaN   19  
+1173  598.666824          2.0   19  
+1174  599.923400          1.0   19  
+1175  599.923400          NaN   19  
+1176  599.923400          1.0   19  
+
+[1177 rows x 7 columns]
+      patient     pathway                             event   
+0           1      Shared                           arrival  \
+1           1      Trauma                triage_wait_begins   
+2           1      Trauma                     triage_begins   
+3           1      Trauma                   triage_complete   
+4           1      Trauma  TRAUMA_stabilisation_wait_begins   
+...       ...         ...                               ...   
+1547      152      Shared                           arrival   
+1548      152  Non-Trauma                triage_wait_begins   
+1549      124  Non-Trauma      MINORS_registration_complete   
+1550      124  Non-Trauma    MINORS_examination_wait_begins   
+1551      126  Non-Trauma        MINORS_registration_begins   
+
+             event_type        time  resource_id  run  
+0     arrival_departure   15.556482          NaN   20  
+1                 queue   15.556482          NaN   20  
+2          resource_use   15.556482          1.0   20  
+3      resource_use_end   22.230424          1.0   20  
+4                 queue   22.230424          NaN   20  
+...                 ...         ...          ...  ...  
+1547  arrival_departure  598.256558          NaN   20  
+1548              queue  598.256558          NaN   20  
+1549   resource_use_end  599.019994          2.0   20  
+1550              queue  599.019994          NaN   20  
+1551       resource_use  599.019994          2.0   20  
+
+[1552 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1469      136  Non-Trauma                  triage_complete   resource_use_end   
+1470      136  Non-Trauma  MINORS_registration_wait_begins              queue   
+1471      137      Trauma                    triage_begins       resource_use   
+1472      145      Shared                          arrival  arrival_departure   
+1473      145  Non-Trauma               triage_wait_begins              queue   
+
+            time  resource_id  run  
+0       4.527322          NaN   21  
+1       4.527322          NaN   21  
+2       4.527322          1.0   21  
+3      17.637047          1.0   21  
+4      17.637047          NaN   21  
+...          ...          ...  ...  
+1469  598.718956          2.0   21  
+1470  598.718956          NaN   21  
+1471  598.718956          2.0   21  
+1472  599.407446          NaN   21  
+1473  599.407446          NaN   21  
+
+[1474 rows x 7 columns]
+      patient     pathway                             event   
+0           1      Shared                           arrival  \
+1           1      Trauma                triage_wait_begins   
+2           1      Trauma                     triage_begins   
+3           1      Trauma                   triage_complete   
+4           1      Trauma  TRAUMA_stabilisation_wait_begins   
+...       ...         ...                               ...   
+1498      118  Non-Trauma      MINORS_registration_complete   
+1499      118  Non-Trauma    MINORS_examination_wait_begins   
+1500      119  Non-Trauma        MINORS_registration_begins   
+1501       94  Non-Trauma             MINORS_treatment_ends   
+1502       94      Shared                            depart   
+
+             event_type        time  resource_id  run  
+0     arrival_departure    4.844220          NaN   22  
+1                 queue    4.844220          NaN   22  
+2          resource_use    4.844220          1.0   22  
+3      resource_use_end   11.133885          1.0   22  
+4                 queue   11.133885          NaN   22  
+...                 ...         ...          ...  ...  
+1498   resource_use_end  599.307287          2.0   22  
+1499              queue  599.307287          NaN   22  
+1500       resource_use  599.307287          2.0   22  
+1501   resource_use_end  599.747973          4.0   22  
+1502  arrival_departure  599.747973          NaN   22  
+
+[1503 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1419       85  Non-Trauma     MINORS_treatment_wait_begins              queue   
+1420       85  Non-Trauma          MINORS_treatment_begins       resource_use   
+1421       89  Non-Trauma        MINORS_examination_begins       resource_use   
+1422       83  Non-Trauma            MINORS_treatment_ends   resource_use_end   
+1423       83      Shared                           depart  arrival_departure   
+
+            time  resource_id  run  
+0      25.285369          NaN   23  
+1      25.285369          NaN   23  
+2      25.285369          1.0   23  
+3      28.821679          1.0   23  
+4      28.821679          NaN   23  
+...          ...          ...  ...  
+1419  596.888034          NaN   23  
+1420  596.888034          3.0   23  
+1421  596.888034          2.0   23  
+1422  597.189129          1.0   23  
+1423  597.189129          NaN   23  
+
+[1424 rows x 7 columns]
+      patient     pathway                            event   
+0           1      Shared                          arrival  \
+1           1  Non-Trauma               triage_wait_begins   
+2           1  Non-Trauma                    triage_begins   
+3           1  Non-Trauma                  triage_complete   
+4           1  Non-Trauma  MINORS_registration_wait_begins   
+...       ...         ...                              ...   
+1729      103  Non-Trauma      MINORS_examination_complete   
+1730      103  Non-Trauma               requires_treatment   
+1731      103  Non-Trauma     MINORS_treatment_wait_begins   
+1732      103  Non-Trauma          MINORS_treatment_begins   
+1733      109  Non-Trauma        MINORS_examination_begins   
+
+              event_type        time  resource_id  run  
+0      arrival_departure   10.967822          NaN   24  
+1                  queue   10.967822          NaN   24  
+2           resource_use   10.967822          1.0   24  
+3       resource_use_end   13.248372          1.0   24  
+4                  queue   13.248372          NaN   24  
+...                  ...         ...          ...  ...  
+1729    resource_use_end  599.879709          2.0   24  
+1730  attribute_assigned  599.879709          NaN   24  
+1731               queue  599.879709          NaN   24  
+1732        resource_use  599.879709          4.0   24  
+1733        resource_use  599.879709          2.0   24  
+
+[1734 rows x 7 columns]
+      patient     pathway                            event   
+0           1      Shared                          arrival  \
+1           1  Non-Trauma               triage_wait_begins   
+2           1  Non-Trauma                    triage_begins   
+3           1  Non-Trauma                  triage_complete   
+4           1  Non-Trauma  MINORS_registration_wait_begins   
+...       ...         ...                              ...   
+1441       90  Non-Trauma      MINORS_examination_complete   
+1442       90  Non-Trauma               requires_treatment   
+1443       90  Non-Trauma     MINORS_treatment_wait_begins   
+1444       90  Non-Trauma          MINORS_treatment_begins   
+1445       96  Non-Trauma        MINORS_examination_begins   
+
+              event_type        time  resource_id  run  
+0      arrival_departure   32.344491          NaN   25  
+1                  queue   32.344491          NaN   25  
+2           resource_use   32.344491          1.0   25  
+3       resource_use_end   36.095204          1.0   25  
+4                  queue   36.095204          NaN   25  
+...                  ...         ...          ...  ...  
+1441    resource_use_end  599.236864          3.0   25  
+1442  attribute_assigned  599.236864          NaN   25  
+1443               queue  599.236864          NaN   25  
+1444        resource_use  599.236864          3.0   25  
+1445        resource_use  599.236864          3.0   25  
+
+[1446 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1474      126  Non-Trauma  MINORS_registration_wait_begins              queue   
+1475      132  Non-Trauma                    triage_begins       resource_use   
+1476      114  Non-Trauma     MINORS_registration_complete   resource_use_end   
+1477      114  Non-Trauma   MINORS_examination_wait_begins              queue   
+1478      117  Non-Trauma       MINORS_registration_begins       resource_use   
+
+            time  resource_id  run  
+0       0.050481          NaN   26  
+1       0.050481          NaN   26  
+2       0.050481          1.0   26  
+3       0.208990          1.0   26  
+4       0.208990          NaN   26  
+...          ...          ...  ...  
+1474  599.441490          NaN   26  
+1475  599.441490          1.0   26  
+1476  599.544510          2.0   26  
+1477  599.544510          NaN   26  
+1478  599.544510          2.0   26  
+
+[1479 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1494      115  Non-Trauma       MINORS_registration_begins       resource_use   
+1495      136      Shared                          arrival  arrival_departure   
+1496      136  Non-Trauma               triage_wait_begins              queue   
+1497      137      Shared                          arrival  arrival_departure   
+1498      137  Non-Trauma               triage_wait_begins              queue   
+
+            time  resource_id  run  
+0       1.459532          NaN   27  
+1       1.459532          NaN   27  
+2       1.459532          1.0   27  
+3       4.671901          1.0   27  
+4       4.671901          NaN   27  
+...          ...          ...  ...  
+1494  596.937307          1.0   27  
+1495  596.973783          NaN   27  
+1496  596.973783          NaN   27  
+1497  598.117497          NaN   27  
+1498  598.117497          NaN   27  
+
+[1499 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           2      Shared                          arrival  arrival_departure   
+4           2  Non-Trauma               triage_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1763      167  Non-Trauma  MINORS_registration_wait_begins              queue   
+1764      168  Non-Trauma                    triage_begins       resource_use   
+1765      126  Non-Trauma     MINORS_registration_complete   resource_use_end   
+1766      126  Non-Trauma   MINORS_examination_wait_begins              queue   
+1767      128  Non-Trauma       MINORS_registration_begins       resource_use   
+
+            time  resource_id  run  
+0       5.351954          NaN   28  
+1       5.351954          NaN   28  
+2       5.351954          1.0   28  
+3       5.393553          NaN   28  
+4       5.393553          NaN   28  
+...          ...          ...  ...  
+1763  598.465742          NaN   28  
+1764  598.465742          1.0   28  
+1765  599.164440          1.0   28  
+1766  599.164440          NaN   28  
+1767  599.164440          1.0   28  
+
+[1768 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1463      135  Non-Trauma                    triage_begins       resource_use   
+1464      146      Shared                          arrival  arrival_departure   
+1465      146  Non-Trauma               triage_wait_begins              queue   
+1466       80  Non-Trauma            MINORS_treatment_ends   resource_use_end   
+1467       80      Shared                           depart  arrival_departure   
+
+            time  resource_id  run  
+0      27.269922          NaN   29  
+1      27.269922          NaN   29  
+2      27.269922          1.0   29  
+3      45.414875          1.0   29  
+4      45.414875          NaN   29  
+...          ...          ...  ...  
+1463  595.932509          2.0   29  
+1464  597.041665          NaN   29  
+1465  597.041665          NaN   29  
+1466  599.598031          1.0   29  
+1467  599.598031          NaN   29  
+
+[1468 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1685      126  Non-Trauma     MINORS_registration_complete   resource_use_end   
+1686      126  Non-Trauma   MINORS_examination_wait_begins              queue   
+1687      127  Non-Trauma       MINORS_registration_begins       resource_use   
+1688       91  Non-Trauma            MINORS_treatment_ends   resource_use_end   
+1689       91      Shared                           depart  arrival_departure   
+
+            time  resource_id  run  
+0      68.011848          NaN   30  
+1      68.011848          NaN   30  
+2      68.011848          1.0   30  
+3      70.349355          1.0   30  
+4      70.349355          NaN   30  
+...          ...          ...  ...  
+1685  598.104908          1.0   30  
+1686  598.104908          NaN   30  
+1687  598.104908          1.0   30  
+1688  599.394993          4.0   30  
+1689  599.394993          NaN   30  
+
+[1690 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1492      144  Non-Trauma                    triage_begins       resource_use   
+1493      143  Non-Trauma                  triage_complete   resource_use_end   
+1494      143  Non-Trauma  MINORS_registration_wait_begins              queue   
+1495       90  Non-Trauma            MINORS_treatment_ends   resource_use_end   
+1496       90      Shared                           depart  arrival_departure   
+
+            time  resource_id  run  
+0      19.356408          NaN   31  
+1      19.356408          NaN   31  
+2      19.356408          1.0   31  
+3      37.330980          1.0   31  
+4      37.330980          NaN   31  
+...          ...          ...  ...  
+1492  598.096610          1.0   31  
+1493  598.299009          2.0   31  
+1494  598.299009          NaN   31  
+1495  599.363696          4.0   31  
+1496  599.363696          NaN   31  
+
+[1497 rows x 7 columns]
+      patient     pathway                            event   
+0           1      Shared                          arrival  \
+1           1  Non-Trauma               triage_wait_begins   
+2           1  Non-Trauma                    triage_begins   
+3           1  Non-Trauma                  triage_complete   
+4           1  Non-Trauma  MINORS_registration_wait_begins   
+...       ...         ...                              ...   
+1679       91  Non-Trauma      MINORS_examination_complete   
+1680       91  Non-Trauma               requires_treatment   
+1681       91  Non-Trauma     MINORS_treatment_wait_begins   
+1682       91  Non-Trauma          MINORS_treatment_begins   
+1683       95  Non-Trauma        MINORS_examination_begins   
+
+              event_type        time  resource_id  run  
+0      arrival_departure    1.528735          NaN   32  
+1                  queue    1.528735          NaN   32  
+2           resource_use    1.528735          1.0   32  
+3       resource_use_end    6.145463          1.0   32  
+4                  queue    6.145463          NaN   32  
+...                  ...         ...          ...  ...  
+1679    resource_use_end  599.497392          3.0   32  
+1680  attribute_assigned  599.497392          NaN   32  
+1681               queue  599.497392          NaN   32  
+1682        resource_use  599.497392          1.0   32  
+1683        resource_use  599.497392          3.0   32  
+
+[1684 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1551       23      Trauma        TRAUMA_treatment_complete   resource_use_end   
+1552       23      Shared                           depart  arrival_departure   
+1553      112  Non-Trauma     MINORS_registration_complete   resource_use_end   
+1554      112  Non-Trauma   MINORS_examination_wait_begins              queue   
+1555      114  Non-Trauma       MINORS_registration_begins       resource_use   
+
+            time  resource_id  run  
+0      37.008858          NaN   33  
+1      37.008858          NaN   33  
+2      37.008858          1.0   33  
+3      40.584616          1.0   33  
+4      40.584616          NaN   33  
+...          ...          ...  ...  
+1551  598.890213          2.0   33  
+1552  598.890213          NaN   33  
+1553  599.371005          1.0   33  
+1554  599.371005          NaN   33  
+1555  599.371005          1.0   33  
+
+[1556 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           2      Shared                          arrival  arrival_departure   
+4           2  Non-Trauma               triage_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1525      136  Non-Trauma                  triage_complete   resource_use_end   
+1526      136  Non-Trauma  MINORS_registration_wait_begins              queue   
+1527      120  Non-Trauma     MINORS_registration_complete   resource_use_end   
+1528      120  Non-Trauma   MINORS_examination_wait_begins              queue   
+1529      116  Non-Trauma       MINORS_registration_begins       resource_use   
+
+            time  resource_id  run  
+0      15.279310          NaN   34  
+1      15.279310          NaN   34  
+2      15.279310          1.0   34  
+3      17.323585          NaN   34  
+4      17.323585          NaN   34  
+...          ...          ...  ...  
+1525  597.739082          1.0   34  
+1526  597.739082          NaN   34  
+1527  599.980409          2.0   34  
+1528  599.980409          NaN   34  
+1529  599.980409          2.0   34  
+
+[1530 rows x 7 columns]
+      patient     pathway                           event         event_type   
+0           1      Shared                         arrival  arrival_departure  \
+1           1  Non-Trauma              triage_wait_begins              queue   
+2           1  Non-Trauma                   triage_begins       resource_use   
+3           2      Shared                         arrival  arrival_departure   
+4           2  Non-Trauma              triage_wait_begins              queue   
+...       ...         ...                             ...                ...   
+1416       90  Non-Trauma         MINORS_treatment_begins       resource_use   
+1417       95  Non-Trauma       MINORS_examination_begins       resource_use   
+1418      115  Non-Trauma    MINORS_registration_complete   resource_use_end   
+1419      115  Non-Trauma  MINORS_examination_wait_begins              queue   
+1420      117  Non-Trauma      MINORS_registration_begins       resource_use   
+
+            time  resource_id  run  
+0       5.757307          NaN   35  
+1       5.757307          NaN   35  
+2       5.757307          1.0   35  
+3       6.647766          NaN   35  
+4       6.647766          NaN   35  
+...          ...          ...  ...  
+1416  598.682412          4.0   35  
+1417  598.682412          2.0   35  
+1418  598.836462          2.0   35  
+1419  598.836462          NaN   35  
+1420  598.836462          2.0   35  
+
+[1421 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1345      121  Non-Trauma  MINORS_registration_wait_begins              queue   
+1346      122  Non-Trauma                    triage_begins       resource_use   
+1347      122  Non-Trauma                  triage_complete   resource_use_end   
+1348      122  Non-Trauma  MINORS_registration_wait_begins              queue   
+1349      123  Non-Trauma                    triage_begins       resource_use   
+
+            time  resource_id  run  
+0      54.736787          NaN   36  
+1      54.736787          NaN   36  
+2      54.736787          1.0   36  
+3      56.436743          1.0   36  
+4      56.436743          NaN   36  
+...          ...          ...  ...  
+1345  597.794694          NaN   36  
+1346  597.794694          2.0   36  
+1347  599.592823          2.0   36  
+1348  599.592823          NaN   36  
+1349  599.592823          2.0   36  
+
+[1350 rows x 7 columns]
+      patient     pathway                             event   
+0           1      Shared                           arrival  \
+1           1      Trauma                triage_wait_begins   
+2           1      Trauma                     triage_begins   
+3           1      Trauma                   triage_complete   
+4           1      Trauma  TRAUMA_stabilisation_wait_begins   
+...       ...         ...                               ...   
+1582      111  Non-Trauma      MINORS_registration_complete   
+1583      111  Non-Trauma    MINORS_examination_wait_begins   
+1584      115  Non-Trauma        MINORS_registration_begins   
+1585      158      Shared                           arrival   
+1586      158      Trauma                triage_wait_begins   
+
+             event_type        time  resource_id  run  
+0     arrival_departure   10.648822          NaN   37  
+1                 queue   10.648822          NaN   37  
+2          resource_use   10.648822          1.0   37  
+3      resource_use_end   15.255714          1.0   37  
+4                 queue   15.255714          NaN   37  
+...                 ...         ...          ...  ...  
+1582   resource_use_end  597.840106          2.0   37  
+1583              queue  597.840106          NaN   37  
+1584       resource_use  597.840106          2.0   37  
+1585  arrival_departure  598.064568          NaN   37  
+1586              queue  598.064568          NaN   37  
+
+[1587 rows x 7 columns]
+      patient     pathway                             event   
+0           1      Shared                           arrival  \
+1           1      Trauma                triage_wait_begins   
+2           1      Trauma                     triage_begins   
+3           1      Trauma                   triage_complete   
+4           1      Trauma  TRAUMA_stabilisation_wait_begins   
+...       ...         ...                               ...   
+1438      106  Non-Trauma    MINORS_examination_wait_begins   
+1439      108  Non-Trauma        MINORS_registration_begins   
+1440      136  Non-Trauma                   triage_complete   
+1441      136  Non-Trauma   MINORS_registration_wait_begins   
+1442      137  Non-Trauma                     triage_begins   
+
+             event_type        time  resource_id  run  
+0     arrival_departure   45.448744          NaN   38  
+1                 queue   45.448744          NaN   38  
+2          resource_use   45.448744          1.0   38  
+3      resource_use_end   59.103675          1.0   38  
+4                 queue   59.103675          NaN   38  
+...                 ...         ...          ...  ...  
+1438              queue  598.769745          NaN   38  
+1439       resource_use  598.769745          2.0   38  
+1440   resource_use_end  599.992656          1.0   38  
+1441              queue  599.992656          NaN   38  
+1442       resource_use  599.992656          1.0   38  
+
+[1443 rows x 7 columns]
+      patient     pathway                             event   
+0           1      Shared                           arrival  \
+1           1      Trauma                triage_wait_begins   
+2           1      Trauma                     triage_begins   
+3           1      Trauma                   triage_complete   
+4           1      Trauma  TRAUMA_stabilisation_wait_begins   
+...       ...         ...                               ...   
+1339       77  Non-Trauma             MINORS_treatment_ends   
+1340       77      Shared                            depart   
+1341       98  Non-Trauma      MINORS_registration_complete   
+1342       98  Non-Trauma    MINORS_examination_wait_begins   
+1343      103  Non-Trauma        MINORS_registration_begins   
+
+             event_type        time  resource_id  run  
+0     arrival_departure   11.588390          NaN   39  
+1                 queue   11.588390          NaN   39  
+2          resource_use   11.588390          1.0   39  
+3      resource_use_end   30.017963          1.0   39  
+4                 queue   30.017963          NaN   39  
+...                 ...         ...          ...  ...  
+1339   resource_use_end  597.403038          3.0   39  
+1340  arrival_departure  597.403038          NaN   39  
+1341   resource_use_end  598.064918          2.0   39  
+1342              queue  598.064918          NaN   39  
+1343       resource_use  598.064918          2.0   39  
+
+[1344 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1721      159  Non-Trauma  MINORS_registration_wait_begins              queue   
+1722      161  Non-Trauma                    triage_begins       resource_use   
+1723      102  Non-Trauma      MINORS_examination_complete   resource_use_end   
+1724      102      Shared                           depart  arrival_departure   
+1725      105  Non-Trauma        MINORS_examination_begins       resource_use   
+
+            time  resource_id  run  
+0       0.136845          NaN   40  
+1       0.136845          NaN   40  
+2       0.136845          1.0   40  
+3       0.566537          1.0   40  
+4       0.566537          NaN   40  
+...          ...          ...  ...  
+1721  598.534134          NaN   40  
+1722  598.534134          1.0   40  
+1723  599.183553          3.0   40  
+1724  599.183553          NaN   40  
+1725  599.183553          3.0   40  
+
+[1726 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1676      123  Non-Trauma     MINORS_registration_complete   resource_use_end   
+1677      123  Non-Trauma   MINORS_examination_wait_begins              queue   
+1678      126  Non-Trauma       MINORS_registration_begins       resource_use   
+1679      100  Non-Trauma            MINORS_treatment_ends   resource_use_end   
+1680      100      Shared                           depart  arrival_departure   
+
+            time  resource_id  run  
+0       8.357454          NaN   41  
+1       8.357454          NaN   41  
+2       8.357454          1.0   41  
+3      14.307021          1.0   41  
+4      14.307021          NaN   41  
+...          ...          ...  ...  
+1676  597.342680          2.0   41  
+1677  597.342680          NaN   41  
+1678  597.342680          2.0   41  
+1679  597.633031          2.0   41  
+1680  597.633031          NaN   41  
+
+[1681 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1593      151      Shared                          arrival  arrival_departure   
+1594      151  Non-Trauma               triage_wait_begins              queue   
+1595      151  Non-Trauma                    triage_begins       resource_use   
+1596      151  Non-Trauma                  triage_complete   resource_use_end   
+1597      151  Non-Trauma  MINORS_registration_wait_begins              queue   
+
+            time  resource_id  run  
+0      20.682409          NaN   42  
+1      20.682409          NaN   42  
+2      20.682409          1.0   42  
+3      21.996614          1.0   42  
+4      21.996614          NaN   42  
+...          ...          ...  ...  
+1593  594.042792          NaN   42  
+1594  594.042792          NaN   42  
+1595  594.042792          2.0   42  
+1596  594.384383          2.0   42  
+1597  594.384383          NaN   42  
+
+[1598 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1380      139      Shared                          arrival  arrival_departure   
+1381      139  Non-Trauma               triage_wait_begins              queue   
+1382      120  Non-Trauma                  triage_complete   resource_use_end   
+1383      120  Non-Trauma  MINORS_registration_wait_begins              queue   
+1384      121  Non-Trauma                    triage_begins       resource_use   
+
+            time  resource_id  run  
+0      21.430828          NaN   43  
+1      21.430828          NaN   43  
+2      21.430828          1.0   43  
+3      25.090380          1.0   43  
+4      25.090380          NaN   43  
+...          ...          ...  ...  
+1380  598.904571          NaN   43  
+1381  598.904571          NaN   43  
+1382  599.664933          1.0   43  
+1383  599.664933          NaN   43  
+1384  599.664933          1.0   43  
+
+[1385 rows x 7 columns]
+      patient     pathway                            event   
+0           1      Shared                          arrival  \
+1           1  Non-Trauma               triage_wait_begins   
+2           1  Non-Trauma                    triage_begins   
+3           1  Non-Trauma                  triage_complete   
+4           1  Non-Trauma  MINORS_registration_wait_begins   
+...       ...         ...                              ...   
+1479       90  Non-Trauma      MINORS_examination_complete   
+1480       90  Non-Trauma               requires_treatment   
+1481       90  Non-Trauma     MINORS_treatment_wait_begins   
+1482       90  Non-Trauma          MINORS_treatment_begins   
+1483       93  Non-Trauma        MINORS_examination_begins   
+
+              event_type        time  resource_id  run  
+0      arrival_departure    0.102144          NaN   44  
+1                  queue    0.102144          NaN   44  
+2           resource_use    0.102144          1.0   44  
+3       resource_use_end    0.422876          1.0   44  
+4                  queue    0.422876          NaN   44  
+...                  ...         ...          ...  ...  
+1479    resource_use_end  599.307979          2.0   44  
+1480  attribute_assigned  599.307979          NaN   44  
+1481               queue  599.307979          NaN   44  
+1482        resource_use  599.307979          2.0   44  
+1483        resource_use  599.307979          2.0   44  
+
+[1484 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1475      123  Non-Trauma  MINORS_registration_wait_begins              queue   
+1476      128  Non-Trauma                    triage_begins       resource_use   
+1477      128  Non-Trauma                  triage_complete   resource_use_end   
+1478      128  Non-Trauma  MINORS_registration_wait_begins              queue   
+1479      129  Non-Trauma                    triage_begins       resource_use   
+
+            time  resource_id  run  
+0       0.801411          NaN   45  
+1       0.801411          NaN   45  
+2       0.801411          1.0   45  
+3       3.102159          1.0   45  
+4       3.102159          NaN   45  
+...          ...          ...  ...  
+1475  597.841252          NaN   45  
+1476  597.841252          1.0   45  
+1477  598.351996          1.0   45  
+1478  598.351996          NaN   45  
+1479  598.351996          1.0   45  
+
+[1480 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1597      144  Non-Trauma                    triage_begins       resource_use   
+1598      156      Shared                          arrival  arrival_departure   
+1599      156  Non-Trauma               triage_wait_begins              queue   
+1600       14      Trauma        TRAUMA_treatment_complete   resource_use_end   
+1601       14      Shared                           depart  arrival_departure   
+
+            time  resource_id  run  
+0      22.532833          NaN   46  
+1      22.532833          NaN   46  
+2      22.532833          1.0   46  
+3      24.586252          1.0   46  
+4      24.586252          NaN   46  
+...          ...          ...  ...  
+1597  597.560925          1.0   46  
+1598  598.100369          NaN   46  
+1599  598.100369          NaN   46  
+1600  598.524772          4.0   46  
+1601  598.524772          NaN   46  
+
+[1602 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1447       84  Non-Trauma      MINORS_examination_complete   resource_use_end   
+1448       84      Shared                           depart  arrival_departure   
+1449       85  Non-Trauma        MINORS_examination_begins       resource_use   
+1450      151      Shared                          arrival  arrival_departure   
+1451      151  Non-Trauma               triage_wait_begins              queue   
+
+            time  resource_id  run  
+0      13.177197          NaN   47  
+1      13.177197          NaN   47  
+2      13.177197          1.0   47  
+3      22.927266          1.0   47  
+4      22.927266          NaN   47  
+...          ...          ...  ...  
+1447  599.763411          1.0   47  
+1448  599.763411          NaN   47  
+1449  599.763411          1.0   47  
+1450  599.910274          NaN   47  
+1451  599.910274          NaN   47  
+
+[1452 rows x 7 columns]
+      patient     pathway                             event   
+0           1      Shared                           arrival  \
+1           1      Trauma                triage_wait_begins   
+2           1      Trauma                     triage_begins   
+3           1      Trauma                   triage_complete   
+4           1      Trauma  TRAUMA_stabilisation_wait_begins   
+...       ...         ...                               ...   
+1511      135  Non-Trauma   MINORS_registration_wait_begins   
+1512      136  Non-Trauma                     triage_begins   
+1513      112  Non-Trauma      MINORS_registration_complete   
+1514      112  Non-Trauma    MINORS_examination_wait_begins   
+1515      114  Non-Trauma        MINORS_registration_begins   
+
+             event_type        time  resource_id  run  
+0     arrival_departure   21.203987          NaN   48  
+1                 queue   21.203987          NaN   48  
+2          resource_use   21.203987          1.0   48  
+3      resource_use_end   26.281003          1.0   48  
+4                 queue   26.281003          NaN   48  
+...                 ...         ...          ...  ...  
+1511              queue  597.643095          NaN   48  
+1512       resource_use  597.643095          2.0   48  
+1513   resource_use_end  599.732785          2.0   48  
+1514              queue  599.732785          NaN   48  
+1515       resource_use  599.732785          2.0   48  
+
+[1516 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1309       77  Non-Trauma     MINORS_treatment_wait_begins              queue   
+1310       77  Non-Trauma          MINORS_treatment_begins       resource_use   
+1311       81  Non-Trauma        MINORS_examination_begins       resource_use   
+1312       73  Non-Trauma            MINORS_treatment_ends   resource_use_end   
+1313       73      Shared                           depart  arrival_departure   
+
+            time  resource_id  run  
+0      53.193395          NaN   49  
+1      53.193395          NaN   49  
+2      53.193395          1.0   49  
+3      60.423464          1.0   49  
+4      60.423464          NaN   49  
+...          ...          ...  ...  
+1309  599.373811          NaN   49  
+1310  599.373811          1.0   49  
+1311  599.373811          1.0   49  
+1312  599.767026          3.0   49  
+1313  599.767026          NaN   49  
+
+[1314 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           2      Shared                          arrival  arrival_departure   
+4           2      Trauma               triage_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1564       97  Non-Trauma     MINORS_treatment_wait_begins              queue   
+1565       97  Non-Trauma          MINORS_treatment_begins       resource_use   
+1566       96  Non-Trauma        MINORS_examination_begins       resource_use   
+1567      133  Non-Trauma                  triage_complete   resource_use_end   
+1568      133  Non-Trauma  MINORS_registration_wait_begins              queue   
+
+            time  resource_id  run  
+0       7.241788          NaN   50  
+1       7.241788          NaN   50  
+2       7.241788          1.0   50  
+3      10.476435          NaN   50  
+4      10.476435          NaN   50  
+...          ...          ...  ...  
+1564  597.784545          NaN   50  
+1565  597.784545          3.0   50  
+1566  597.784545          1.0   50  
+1567  598.931467          2.0   50  
+1568  598.931467          NaN   50  
+
+[1569 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1291      117      Shared                          arrival  arrival_departure   
+1292      117  Non-Trauma               triage_wait_begins              queue   
+1293      111  Non-Trauma                  triage_complete   resource_use_end   
+1294      111  Non-Trauma  MINORS_registration_wait_begins              queue   
+1295      112  Non-Trauma                    triage_begins       resource_use   
+
+            time  resource_id  run  
+0       0.540375          NaN   51  
+1       0.540375          NaN   51  
+2       0.540375          1.0   51  
+3       2.237154          1.0   51  
+4       2.237154          NaN   51  
+...          ...          ...  ...  
+1291  598.141032          NaN   51  
+1292  598.141032          NaN   51  
+1293  599.917475          2.0   51  
+1294  599.917475          NaN   51  
+1295  599.917475          2.0   51  
+
+[1296 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1392      120  Non-Trauma  MINORS_registration_wait_begins              queue   
+1393      121  Non-Trauma                    triage_begins       resource_use   
+1394      113  Non-Trauma     MINORS_registration_complete   resource_use_end   
+1395      113  Non-Trauma   MINORS_examination_wait_begins              queue   
+1396      112  Non-Trauma       MINORS_registration_begins       resource_use   
+
+            time  resource_id  run  
+0      47.439587          NaN   52  
+1      47.439587          NaN   52  
+2      47.439587          1.0   52  
+3      53.171747          1.0   52  
+4      53.171747          NaN   52  
+...          ...          ...  ...  
+1392  597.961689          NaN   52  
+1393  597.961689          2.0   52  
+1394  599.954589          1.0   52  
+1395  599.954589          NaN   52  
+1396  599.954589          1.0   52  
+
+[1397 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1526      117      Trauma        TRAUMA_treatment_complete   resource_use_end   
+1527      117      Shared                           depart  arrival_departure   
+1528      115  Non-Trauma     MINORS_registration_complete   resource_use_end   
+1529      115  Non-Trauma   MINORS_examination_wait_begins              queue   
+1530      120  Non-Trauma       MINORS_registration_begins       resource_use   
+
+            time  resource_id  run  
+0      34.578755          NaN   53  
+1      34.578755          NaN   53  
+2      34.578755          1.0   53  
+3      47.027970          1.0   53  
+4      47.027970          NaN   53  
+...          ...          ...  ...  
+1526  599.129148          2.0   53  
+1527  599.129148          NaN   53  
+1528  599.353347          2.0   53  
+1529  599.353347          NaN   53  
+1530  599.353347          2.0   53  
+
+[1531 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           2      Shared                          arrival  arrival_departure   
+4           2  Non-Trauma               triage_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1543      120  Non-Trauma       MINORS_registration_begins       resource_use   
+1544      144  Non-Trauma                  triage_complete   resource_use_end   
+1545      144  Non-Trauma  MINORS_registration_wait_begins              queue   
+1546      143  Non-Trauma                  triage_complete   resource_use_end   
+1547      143  Non-Trauma  MINORS_registration_wait_begins              queue   
+
+            time  resource_id  run  
+0      31.440797          NaN   54  
+1      31.440797          NaN   54  
+2      31.440797          1.0   54  
+3      33.768854          NaN   54  
+4      33.768854          NaN   54  
+...          ...          ...  ...  
+1543  596.408913          1.0   54  
+1544  598.338055          1.0   54  
+1545  598.338055          NaN   54  
+1546  598.676904          2.0   54  
+1547  598.676904          NaN   54  
+
+[1548 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1484      112  Non-Trauma   MINORS_examination_wait_begins              queue   
+1485      113  Non-Trauma       MINORS_registration_begins       resource_use   
+1486      129  Non-Trauma                  triage_complete   resource_use_end   
+1487      129  Non-Trauma  MINORS_registration_wait_begins              queue   
+1488      132      Trauma                    triage_begins       resource_use   
+
+            time  resource_id  run  
+0       0.936765          NaN   55  
+1       0.936765          NaN   55  
+2       0.936765          1.0   55  
+3       3.418854          1.0   55  
+4       3.418854          NaN   55  
+...          ...          ...  ...  
+1484  598.850159          NaN   55  
+1485  598.850159          2.0   55  
+1486  599.130208          1.0   55  
+1487  599.130208          NaN   55  
+1488  599.130208          1.0   55  
+
+[1489 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1183       93  Non-Trauma   MINORS_examination_wait_begins              queue   
+1184       97  Non-Trauma       MINORS_registration_begins       resource_use   
+1185      105  Non-Trauma                  triage_complete   resource_use_end   
+1186      105  Non-Trauma  MINORS_registration_wait_begins              queue   
+1187      106  Non-Trauma                    triage_begins       resource_use   
+
+            time  resource_id  run  
+0     144.314956          NaN   56  
+1     144.314956          NaN   56  
+2     144.314956          1.0   56  
+3     150.830202          1.0   56  
+4     150.830202          NaN   56  
+...          ...          ...  ...  
+1183  598.659037          NaN   56  
+1184  598.659037          2.0   56  
+1185  599.593186          1.0   56  
+1186  599.593186          NaN   56  
+1187  599.593186          1.0   56  
+
+[1188 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1547       76      Shared                           depart  arrival_departure   
+1548       52      Trauma        TRAUMA_treatment_complete   resource_use_end   
+1549       52      Shared                           depart  arrival_departure   
+1550      145      Shared                          arrival  arrival_departure   
+1551      145  Non-Trauma               triage_wait_begins              queue   
+
+            time  resource_id  run  
+0      22.892342          NaN   57  
+1      22.892342          NaN   57  
+2      22.892342          1.0   57  
+3      27.830734          1.0   57  
+4      27.830734          NaN   57  
+...          ...          ...  ...  
+1547  599.354111          NaN   57  
+1548  599.655875          2.0   57  
+1549  599.655875          NaN   57  
+1550  599.750657          NaN   57  
+1551  599.750657          NaN   57  
+
+[1552 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1583      111  Non-Trauma   MINORS_examination_wait_begins              queue   
+1584      113  Non-Trauma       MINORS_registration_begins       resource_use   
+1585      131      Trauma    TRAUMA_stabilisation_complete   resource_use_end   
+1586      131      Trauma     TRAUMA_treatment_wait_begins              queue   
+1587      131      Trauma          TRAUMA_treatment_begins       resource_use   
+
+            time  resource_id  run  
+0      82.980737          NaN   58  
+1      82.980737          NaN   58  
+2      82.980737          1.0   58  
+3      84.495520          1.0   58  
+4      84.495520          NaN   58  
+...          ...          ...  ...  
+1583  598.362663          NaN   58  
+1584  598.362663          1.0   58  
+1585  598.780669          2.0   58  
+1586  598.780669          NaN   58  
+1587  598.780669          5.0   58  
+
+[1588 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1275      120      Shared                          arrival  arrival_departure   
+1276      120  Non-Trauma               triage_wait_begins              queue   
+1277       88  Non-Trauma      MINORS_examination_complete   resource_use_end   
+1278       88      Shared                           depart  arrival_departure   
+1279       91  Non-Trauma        MINORS_examination_begins       resource_use   
+
+            time  resource_id  run  
+0      31.265573          NaN   59  
+1      31.265573          NaN   59  
+2      31.265573          1.0   59  
+3      38.364419          1.0   59  
+4      38.364419          NaN   59  
+...          ...          ...  ...  
+1275  598.562251          NaN   59  
+1276  598.562251          NaN   59  
+1277  598.815150          1.0   59  
+1278  598.815150          NaN   59  
+1279  598.815150          1.0   59  
+
+[1280 rows x 7 columns]
+      patient     pathway                            event   
+0           1      Shared                          arrival  \
+1           1  Non-Trauma               triage_wait_begins   
+2           1  Non-Trauma                    triage_begins   
+3           1  Non-Trauma                  triage_complete   
+4           1  Non-Trauma  MINORS_registration_wait_begins   
+...       ...         ...                              ...   
+1363       82  Non-Trauma      MINORS_examination_complete   
+1364       82  Non-Trauma               requires_treatment   
+1365       82  Non-Trauma     MINORS_treatment_wait_begins   
+1366       82  Non-Trauma          MINORS_treatment_begins   
+1367       86  Non-Trauma        MINORS_examination_begins   
+
+              event_type        time  resource_id  run  
+0      arrival_departure    7.866318          NaN   60  
+1                  queue    7.866318          NaN   60  
+2           resource_use    7.866318          1.0   60  
+3       resource_use_end   16.895189          1.0   60  
+4                  queue   16.895189          NaN   60  
+...                  ...         ...          ...  ...  
+1363    resource_use_end  599.235960          2.0   60  
+1364  attribute_assigned  599.235960          NaN   60  
+1365               queue  599.235960          NaN   60  
+1366        resource_use  599.235960          3.0   60  
+1367        resource_use  599.235960          2.0   60  
+
+[1368 rows x 7 columns]
+      patient     pathway                        event         event_type   
+0           1      Shared                      arrival  arrival_departure  \
+1           1      Trauma           triage_wait_begins              queue   
+2           1      Trauma                triage_begins       resource_use   
+3           2      Shared                      arrival  arrival_departure   
+4           2  Non-Trauma           triage_wait_begins              queue   
+...       ...         ...                          ...                ...   
+1601       96  Non-Trauma  MINORS_examination_complete   resource_use_end   
+1602       96      Shared                       depart  arrival_departure   
+1603       99  Non-Trauma    MINORS_examination_begins       resource_use   
+1604       94  Non-Trauma        MINORS_treatment_ends   resource_use_end   
+1605       94      Shared                       depart  arrival_departure   
+
+            time  resource_id  run  
+0      46.042092          NaN   61  
+1      46.042092          NaN   61  
+2      46.042092          1.0   61  
+3      54.767581          NaN   61  
+4      54.767581          NaN   61  
+...          ...          ...  ...  
+1601  599.663277          1.0   61  
+1602  599.663277          NaN   61  
+1603  599.663277          1.0   61  
+1604  599.962873          3.0   61  
+1605  599.962873          NaN   61  
+
+[1606 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1419       90  Non-Trauma            MINORS_treatment_ends   resource_use_end   
+1420       90      Shared                           depart  arrival_departure   
+1421      113  Non-Trauma     MINORS_registration_complete   resource_use_end   
+1422      113  Non-Trauma   MINORS_examination_wait_begins              queue   
+1423      117  Non-Trauma       MINORS_registration_begins       resource_use   
+
+            time  resource_id  run  
+0      29.783735          NaN   62  
+1      29.783735          NaN   62  
+2      29.783735          1.0   62  
+3      36.454560          1.0   62  
+4      36.454560          NaN   62  
+...          ...          ...  ...  
+1419  598.811448          1.0   62  
+1420  598.811448          NaN   62  
+1421  599.509160          2.0   62  
+1422  599.509160          NaN   62  
+1423  599.509160          2.0   62  
+
+[1424 rows x 7 columns]
+      patient     pathway                             event   
+0           1      Shared                           arrival  \
+1           1      Trauma                triage_wait_begins   
+2           1      Trauma                     triage_begins   
+3           1      Trauma                   triage_complete   
+4           1      Trauma  TRAUMA_stabilisation_wait_begins   
+...       ...         ...                               ...   
+1588      147  Non-Trauma   MINORS_registration_wait_begins   
+1589      150  Non-Trauma                     triage_begins   
+1590      127  Non-Trauma      MINORS_registration_complete   
+1591      127  Non-Trauma    MINORS_examination_wait_begins   
+1592      129  Non-Trauma        MINORS_registration_begins   
+
+             event_type        time  resource_id  run  
+0     arrival_departure    1.017141          NaN   63  
+1                 queue    1.017141          NaN   63  
+2          resource_use    1.017141          1.0   63  
+3      resource_use_end    3.968204          1.0   63  
+4                 queue    3.968204          NaN   63  
+...                 ...         ...          ...  ...  
+1588              queue  597.378478          NaN   63  
+1589       resource_use  597.378478          1.0   63  
+1590   resource_use_end  599.219061          1.0   63  
+1591              queue  599.219061          NaN   63  
+1592       resource_use  599.219061          1.0   63  
+
+[1593 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1314      111  Non-Trauma  MINORS_registration_wait_begins              queue   
+1315      111  Non-Trauma       MINORS_registration_begins       resource_use   
+1316      113  Non-Trauma                    triage_begins       resource_use   
+1317       83  Non-Trauma            MINORS_treatment_ends   resource_use_end   
+1318       83      Shared                           depart  arrival_departure   
+
+            time  resource_id  run  
+0      21.874126          NaN   64  
+1      21.874126          NaN   64  
+2      21.874126          1.0   64  
+3      49.448572          1.0   64  
+4      49.448572          NaN   64  
+...          ...          ...  ...  
+1314  597.965313          NaN   64  
+1315  597.965313          2.0   64  
+1316  597.965313          2.0   64  
+1317  599.468477          1.0   64  
+1318  599.468477          NaN   64  
+
+[1319 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1      Trauma               triage_wait_begins              queue   
+2           1      Trauma                    triage_begins       resource_use   
+3           2      Shared                          arrival  arrival_departure   
+4           2  Non-Trauma               triage_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1358      121  Non-Trauma  MINORS_registration_wait_begins              queue   
+1359      122  Non-Trauma                    triage_begins       resource_use   
+1360      122  Non-Trauma                  triage_complete   resource_use_end   
+1361      122  Non-Trauma  MINORS_registration_wait_begins              queue   
+1362      123      Trauma                    triage_begins       resource_use   
+
+            time  resource_id  run  
+0      35.583357          NaN   65  
+1      35.583357          NaN   65  
+2      35.583357          1.0   65  
+3      36.339787          NaN   65  
+4      36.339787          NaN   65  
+...          ...          ...  ...  
+1358  598.709202          NaN   65  
+1359  598.709202          2.0   65  
+1360  598.920347          2.0   65  
+1361  598.920347          NaN   65  
+1362  598.920347          2.0   65  
+
+[1363 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1411      119      Shared                          arrival  arrival_departure   
+1412      119  Non-Trauma               triage_wait_begins              queue   
+1413      119  Non-Trauma                    triage_begins       resource_use   
+1414      120      Shared                          arrival  arrival_departure   
+1415      120  Non-Trauma               triage_wait_begins              queue   
+
+            time  resource_id  run  
+0      17.128247          NaN   66  
+1      17.128247          NaN   66  
+2      17.128247          1.0   66  
+3      19.321115          1.0   66  
+4      19.321115          NaN   66  
+...          ...          ...  ...  
+1411  599.176592          NaN   66  
+1412  599.176592          NaN   66  
+1413  599.176592          1.0   66  
+1414  599.402956          NaN   66  
+1415  599.402956          NaN   66  
+
+[1416 rows x 7 columns]
+      patient     pathway                            event   
+0           1      Shared                          arrival  \
+1           1  Non-Trauma               triage_wait_begins   
+2           1  Non-Trauma                    triage_begins   
+3           1  Non-Trauma                  triage_complete   
+4           1  Non-Trauma  MINORS_registration_wait_begins   
+...       ...         ...                              ...   
+1464       96  Non-Trauma      MINORS_examination_complete   
+1465       96  Non-Trauma               requires_treatment   
+1466       96  Non-Trauma     MINORS_treatment_wait_begins   
+1467       96  Non-Trauma          MINORS_treatment_begins   
+1468      100  Non-Trauma        MINORS_examination_begins   
+
+              event_type        time  resource_id  run  
+0      arrival_departure    0.573327          NaN   67  
+1                  queue    0.573327          NaN   67  
+2           resource_use    0.573327          1.0   67  
+3       resource_use_end    2.010812          1.0   67  
+4                  queue    2.010812          NaN   67  
+...                  ...         ...          ...  ...  
+1464    resource_use_end  598.289382          2.0   67  
+1465  attribute_assigned  598.289382          NaN   67  
+1466               queue  598.289382          NaN   67  
+1467        resource_use  598.289382          3.0   67  
+1468        resource_use  598.289382          2.0   67  
+
+[1469 rows x 7 columns]
+      patient     pathway                             event   
+0           1      Shared                           arrival  \
+1           1      Trauma                triage_wait_begins   
+2           1      Trauma                     triage_begins   
+3           1      Trauma                   triage_complete   
+4           1      Trauma  TRAUMA_stabilisation_wait_begins   
+...       ...         ...                               ...   
+1510      135  Non-Trauma                     triage_begins   
+1511      152      Shared                           arrival   
+1512      152      Trauma                triage_wait_begins   
+1513      153      Shared                           arrival   
+1514      153  Non-Trauma                triage_wait_begins   
+
+             event_type        time  resource_id  run  
+0     arrival_departure    7.761972          NaN   68  
+1                 queue    7.761972          NaN   68  
+2          resource_use    7.761972          1.0   68  
+3      resource_use_end   10.290632          1.0   68  
+4                 queue   10.290632          NaN   68  
+...                 ...         ...          ...  ...  
+1510       resource_use  599.457773          1.0   68  
+1511  arrival_departure  599.726732          NaN   68  
+1512              queue  599.726732          NaN   68  
+1513  arrival_departure  599.878030          NaN   68  
+1514              queue  599.878030          NaN   68  
+
+[1515 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           2      Shared                          arrival  arrival_departure   
+4           2  Non-Trauma               triage_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1448      135  Non-Trauma  MINORS_registration_wait_begins              queue   
+1449      136  Non-Trauma                    triage_begins       resource_use   
+1450      136  Non-Trauma                  triage_complete   resource_use_end   
+1451      136  Non-Trauma  MINORS_registration_wait_begins              queue   
+1452      137  Non-Trauma                    triage_begins       resource_use   
+
+            time  resource_id  run  
+0       4.567627          NaN   69  
+1       4.567627          NaN   69  
+2       4.567627          1.0   69  
+3       4.576983          NaN   69  
+4       4.576983          NaN   69  
+...          ...          ...  ...  
+1448  598.248663          NaN   69  
+1449  598.248663          2.0   69  
+1450  598.416769          2.0   69  
+1451  598.416769          NaN   69  
+1452  598.416769          2.0   69  
+
+[1453 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1571       96      Shared                           depart  arrival_departure   
+1572       99  Non-Trauma        MINORS_examination_begins       resource_use   
+1573      146  Non-Trauma                  triage_complete   resource_use_end   
+1574      146  Non-Trauma  MINORS_registration_wait_begins              queue   
+1575      147  Non-Trauma                    triage_begins       resource_use   
+
+            time  resource_id  run  
+0      35.144700          NaN   70  
+1      35.144700          NaN   70  
+2      35.144700          1.0   70  
+3      37.072674          1.0   70  
+4      37.072674          NaN   70  
+...          ...          ...  ...  
+1571  599.578478          NaN   70  
+1572  599.578478          2.0   70  
+1573  599.840925          2.0   70  
+1574  599.840925          NaN   70  
+1575  599.840925          2.0   70  
+
+[1576 rows x 7 columns]
+      patient     pathway                           event         event_type   
+0           1      Shared                         arrival  arrival_departure  \
+1           1  Non-Trauma              triage_wait_begins              queue   
+2           1  Non-Trauma                   triage_begins       resource_use   
+3           2      Shared                         arrival  arrival_departure   
+4           2  Non-Trauma              triage_wait_begins              queue   
+...       ...         ...                             ...                ...   
+1105       87  Non-Trauma  MINORS_examination_wait_begins              queue   
+1106       88  Non-Trauma    MINORS_registration_complete   resource_use_end   
+1107       88  Non-Trauma  MINORS_examination_wait_begins              queue   
+1108       76  Non-Trauma           MINORS_treatment_ends   resource_use_end   
+1109       76      Shared                          depart  arrival_departure   
+
+            time  resource_id  run  
+0       9.672802          NaN   71  
+1       9.672802          NaN   71  
+2       9.672802          1.0   71  
+3       9.713693          NaN   71  
+4       9.713693          NaN   71  
+...          ...          ...  ...  
+1105  596.634284          NaN   71  
+1106  597.155526          2.0   71  
+1107  597.155526          NaN   71  
+1108  599.643580          3.0   71  
+1109  599.643580          NaN   71  
+
+[1110 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1446      132      Shared                          arrival  arrival_departure   
+1447      132  Non-Trauma               triage_wait_begins              queue   
+1448      127  Non-Trauma                  triage_complete   resource_use_end   
+1449      127  Non-Trauma  MINORS_registration_wait_begins              queue   
+1450      128  Non-Trauma                    triage_begins       resource_use   
+
+            time  resource_id  run  
+0       9.379521          NaN   72  
+1       9.379521          NaN   72  
+2       9.379521          1.0   72  
+3      12.238603          1.0   72  
+4      12.238603          NaN   72  
+...          ...          ...  ...  
+1446  598.967311          NaN   72  
+1447  598.967311          NaN   72  
+1448  599.486350          2.0   72  
+1449  599.486350          NaN   72  
+1450  599.486350          2.0   72  
+
+[1451 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1444      128  Non-Trauma  MINORS_registration_wait_begins              queue   
+1445      130  Non-Trauma                    triage_begins       resource_use   
+1446       93  Non-Trauma      MINORS_examination_complete   resource_use_end   
+1447       93      Shared                           depart  arrival_departure   
+1448       98  Non-Trauma        MINORS_examination_begins       resource_use   
+
+            time  resource_id  run  
+0      26.304214          NaN   73  
+1      26.304214          NaN   73  
+2      26.304214          1.0   73  
+3      27.253004          1.0   73  
+4      27.253004          NaN   73  
+...          ...          ...  ...  
+1444  597.956410          NaN   73  
+1445  597.956410          1.0   73  
+1446  598.653588          1.0   73  
+1447  598.653588          NaN   73  
+1448  598.653588          1.0   73  
+
+[1449 rows x 7 columns]
+      patient     pathway                             event   
+0           1      Shared                           arrival  \
+1           1  Non-Trauma                triage_wait_begins   
+2           1  Non-Trauma                     triage_begins   
+3           2      Shared                           arrival   
+4           2  Non-Trauma                triage_wait_begins   
+...       ...         ...                               ...   
+1460      135  Non-Trauma   MINORS_registration_wait_begins   
+1461      137      Trauma                     triage_begins   
+1462      137      Trauma                   triage_complete   
+1463      137      Trauma  TRAUMA_stabilisation_wait_begins   
+1464      138      Trauma                     triage_begins   
+
+             event_type        time  resource_id  run  
+0     arrival_departure   14.507335          NaN   74  
+1                 queue   14.507335          NaN   74  
+2          resource_use   14.507335          1.0   74  
+3     arrival_departure   23.346447          NaN   74  
+4                 queue   23.346447          NaN   74  
+...                 ...         ...          ...  ...  
+1460              queue  596.606882          NaN   74  
+1461       resource_use  596.606882          1.0   74  
+1462   resource_use_end  598.224652          1.0   74  
+1463              queue  598.224652          NaN   74  
+1464       resource_use  598.224652          1.0   74  
+
+[1465 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1349       84  Non-Trauma     MINORS_treatment_wait_begins              queue   
+1350       84  Non-Trauma          MINORS_treatment_begins       resource_use   
+1351       86  Non-Trauma        MINORS_examination_begins       resource_use   
+1352       83  Non-Trauma            MINORS_treatment_ends   resource_use_end   
+1353       83      Shared                           depart  arrival_departure   
+
+            time  resource_id  run  
+0      13.433184          NaN   75  
+1      13.433184          NaN   75  
+2      13.433184          1.0   75  
+3      17.467820          1.0   75  
+4      17.467820          NaN   75  
+...          ...          ...  ...  
+1349  597.331868          NaN   75  
+1350  597.331868          3.0   75  
+1351  597.331868          2.0   75  
+1352  598.608501          1.0   75  
+1353  598.608501          NaN   75  
+
+[1354 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1502       64      Trauma          TRAUMA_treatment_begins       resource_use   
+1503      131  Non-Trauma                  triage_complete   resource_use_end   
+1504      131  Non-Trauma  MINORS_registration_wait_begins              queue   
+1505       94  Non-Trauma            MINORS_treatment_ends   resource_use_end   
+1506       94      Shared                           depart  arrival_departure   
+
+            time  resource_id  run  
+0       1.229466          NaN   76  
+1       1.229466          NaN   76  
+2       1.229466          1.0   76  
+3       2.163615          1.0   76  
+4       2.163615          NaN   76  
+...          ...          ...  ...  
+1502  597.741901          4.0   76  
+1503  599.060709          2.0   76  
+1504  599.060709          NaN   76  
+1505  599.322245          4.0   76  
+1506  599.322245          NaN   76  
+
+[1507 rows x 7 columns]
+      patient     pathway                         event          event_type   
+0           1      Shared                       arrival   arrival_departure  \
+1           1  Non-Trauma            triage_wait_begins               queue   
+2           1  Non-Trauma                 triage_begins        resource_use   
+3           2      Shared                       arrival   arrival_departure   
+4           2  Non-Trauma            triage_wait_begins               queue   
+...       ...         ...                           ...                 ...   
+1442       84  Non-Trauma   MINORS_examination_complete    resource_use_end   
+1443       84  Non-Trauma            requires_treatment  attribute_assigned   
+1444       84  Non-Trauma  MINORS_treatment_wait_begins               queue   
+1445       84  Non-Trauma       MINORS_treatment_begins        resource_use   
+1446       88  Non-Trauma     MINORS_examination_begins        resource_use   
+
+            time  resource_id  run  
+0       9.775607          NaN   77  
+1       9.775607          NaN   77  
+2       9.775607          1.0   77  
+3      11.015042          NaN   77  
+4      11.015042          NaN   77  
+...          ...          ...  ...  
+1442  598.982347          1.0   77  
+1443  598.982347          NaN   77  
+1444  598.982347          NaN   77  
+1445  598.982347          4.0   77  
+1446  598.982347          1.0   77  
+
+[1447 rows x 7 columns]
+      patient     pathway                           event         event_type   
+0           1      Shared                         arrival  arrival_departure  \
+1           1      Trauma              triage_wait_begins              queue   
+2           1      Trauma                   triage_begins       resource_use   
+3           2      Shared                         arrival  arrival_departure   
+4           2      Trauma              triage_wait_begins              queue   
+...       ...         ...                             ...                ...   
+1456      111  Non-Trauma    MINORS_registration_complete   resource_use_end   
+1457      111  Non-Trauma  MINORS_examination_wait_begins              queue   
+1458      116  Non-Trauma      MINORS_registration_begins       resource_use   
+1459       84  Non-Trauma           MINORS_treatment_ends   resource_use_end   
+1460       84      Shared                          depart  arrival_departure   
+
+            time  resource_id  run  
+0      49.343694          NaN   78  
+1      49.343694          NaN   78  
+2      49.343694          1.0   78  
+3      61.316572          NaN   78  
+4      61.316572          NaN   78  
+...          ...          ...  ...  
+1456  597.959481          1.0   78  
+1457  597.959481          NaN   78  
+1458  597.959481          1.0   78  
+1459  598.853994          3.0   78  
+1460  598.853994          NaN   78  
+
+[1461 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1317      106  Non-Trauma     MINORS_registration_complete   resource_use_end   
+1318      106  Non-Trauma   MINORS_examination_wait_begins              queue   
+1319      108  Non-Trauma       MINORS_registration_begins       resource_use   
+1320       80  Non-Trauma            MINORS_treatment_ends   resource_use_end   
+1321       80      Shared                           depart  arrival_departure   
+
+            time  resource_id  run  
+0      29.880214          NaN   79  
+1      29.880214          NaN   79  
+2      29.880214          1.0   79  
+3      32.428742          1.0   79  
+4      32.428742          NaN   79  
+...          ...          ...  ...  
+1317  598.428585          2.0   79  
+1318  598.428585          NaN   79  
+1319  598.428585          2.0   79  
+1320  598.628061          1.0   79  
+1321  598.628061          NaN   79  
+
+[1322 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1508      141  Non-Trauma               triage_wait_begins              queue   
+1509      141  Non-Trauma                    triage_begins       resource_use   
+1510       15      Trauma        TRAUMA_treatment_complete   resource_use_end   
+1511       15      Shared                           depart  arrival_departure   
+1512       61      Trauma          TRAUMA_treatment_begins       resource_use   
+
+            time  resource_id  run  
+0      49.021507          NaN   80  
+1      49.021507          NaN   80  
+2      49.021507          1.0   80  
+3      60.974950          1.0   80  
+4      60.974950          NaN   80  
+...          ...          ...  ...  
+1508  598.920517          NaN   80  
+1509  598.920517          2.0   80  
+1510  599.075721          2.0   80  
+1511  599.075721          NaN   80  
+1512  599.075721          2.0   80  
+
+[1513 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1      Trauma               triage_wait_begins              queue   
+2           1      Trauma                    triage_begins       resource_use   
+3           2      Shared                          arrival  arrival_departure   
+4           2  Non-Trauma               triage_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1376      120  Non-Trauma  MINORS_registration_wait_begins              queue   
+1377      121  Non-Trauma                    triage_begins       resource_use   
+1378      109  Non-Trauma     MINORS_registration_complete   resource_use_end   
+1379      109  Non-Trauma   MINORS_examination_wait_begins              queue   
+1380      111  Non-Trauma       MINORS_registration_begins       resource_use   
+
+            time  resource_id  run  
+0      11.184574          NaN   81  
+1      11.184574          NaN   81  
+2      11.184574          1.0   81  
+3      14.750716          NaN   81  
+4      14.750716          NaN   81  
+...          ...          ...  ...  
+1376  598.947512          NaN   81  
+1377  598.947512          2.0   81  
+1378  599.069416          1.0   81  
+1379  599.069416          NaN   81  
+1380  599.069416          1.0   81  
+
+[1381 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1346      104  Non-Trauma     MINORS_registration_complete   resource_use_end   
+1347      104  Non-Trauma   MINORS_examination_wait_begins              queue   
+1348      109  Non-Trauma       MINORS_registration_begins       resource_use   
+1349       78  Non-Trauma            MINORS_treatment_ends   resource_use_end   
+1350       78      Shared                           depart  arrival_departure   
+
+            time  resource_id  run  
+0       8.349555          NaN   82  
+1       8.349555          NaN   82  
+2       8.349555          1.0   82  
+3      12.246105          1.0   82  
+4      12.246105          NaN   82  
+...          ...          ...  ...  
+1346  597.519027          1.0   82  
+1347  597.519027          NaN   82  
+1348  597.519027          1.0   82  
+1349  599.867662          2.0   82  
+1350  599.867662          NaN   82  
+
+[1351 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1664      154  Non-Trauma  MINORS_registration_wait_begins              queue   
+1665      157  Non-Trauma                    triage_begins       resource_use   
+1666      124  Non-Trauma     MINORS_registration_complete   resource_use_end   
+1667      124  Non-Trauma   MINORS_examination_wait_begins              queue   
+1668      120  Non-Trauma       MINORS_registration_begins       resource_use   
+
+            time  resource_id  run  
+0       9.448234          NaN   83  
+1       9.448234          NaN   83  
+2       9.448234          1.0   83  
+3      11.731084          1.0   83  
+4      11.731084          NaN   83  
+...          ...          ...  ...  
+1664  599.161184          NaN   83  
+1665  599.161184          2.0   83  
+1666  599.340364          2.0   83  
+1667  599.340364          NaN   83  
+1668  599.340364          2.0   83  
+
+[1669 rows x 7 columns]
+      patient     pathway                             event   
+0           1      Shared                           arrival  \
+1           1      Trauma                triage_wait_begins   
+2           1      Trauma                     triage_begins   
+3           1      Trauma                   triage_complete   
+4           1      Trauma  TRAUMA_stabilisation_wait_begins   
+...       ...         ...                               ...   
+1306       83  Non-Trauma           MINORS_treatment_begins   
+1307       88  Non-Trauma         MINORS_examination_begins   
+1308      119      Shared                           arrival   
+1309      119  Non-Trauma                triage_wait_begins   
+1310      119  Non-Trauma                     triage_begins   
+
+             event_type        time  resource_id  run  
+0     arrival_departure    2.959544          NaN   84  
+1                 queue    2.959544          NaN   84  
+2          resource_use    2.959544          1.0   84  
+3      resource_use_end    9.978223          1.0   84  
+4                 queue    9.978223          NaN   84  
+...                 ...         ...          ...  ...  
+1306       resource_use  599.686026          1.0   84  
+1307       resource_use  599.686026          3.0   84  
+1308  arrival_departure  599.929956          NaN   84  
+1309              queue  599.929956          NaN   84  
+1310       resource_use  599.929956          1.0   84  
+
+[1311 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1505       84  Non-Trauma            MINORS_treatment_ends   resource_use_end   
+1506       84      Shared                           depart  arrival_departure   
+1507      108  Non-Trauma     MINORS_registration_complete   resource_use_end   
+1508      108  Non-Trauma   MINORS_examination_wait_begins              queue   
+1509      110  Non-Trauma       MINORS_registration_begins       resource_use   
+
+            time  resource_id  run  
+0       0.861085          NaN   85  
+1       0.861085          NaN   85  
+2       0.861085          1.0   85  
+3       2.564652          1.0   85  
+4       2.564652          NaN   85  
+...          ...          ...  ...  
+1505  598.304866          3.0   85  
+1506  598.304866          NaN   85  
+1507  598.421135          1.0   85  
+1508  598.421135          NaN   85  
+1509  598.421135          1.0   85  
+
+[1510 rows x 7 columns]
+      patient     pathway                             event   
+0           1      Shared                           arrival  \
+1           1      Trauma                triage_wait_begins   
+2           1      Trauma                     triage_begins   
+3           1      Trauma                   triage_complete   
+4           1      Trauma  TRAUMA_stabilisation_wait_begins   
+...       ...         ...                               ...   
+1430      127  Non-Trauma                   triage_complete   
+1431      127  Non-Trauma   MINORS_registration_wait_begins   
+1432      129  Non-Trauma                     triage_begins   
+1433       87  Non-Trauma             MINORS_treatment_ends   
+1434       87      Shared                            depart   
+
+             event_type        time  resource_id  run  
+0     arrival_departure    3.287677          NaN   86  
+1                 queue    3.287677          NaN   86  
+2          resource_use    3.287677          1.0   86  
+3      resource_use_end    8.379001          1.0   86  
+4                 queue    8.379001          NaN   86  
+...                 ...         ...          ...  ...  
+1430   resource_use_end  599.437077          1.0   86  
+1431              queue  599.437077          NaN   86  
+1432       resource_use  599.437077          1.0   86  
+1433   resource_use_end  599.482957          3.0   86  
+1434  arrival_departure  599.482957          NaN   86  
+
+[1435 rows x 7 columns]
+      patient     pathway                           event         event_type   
+0           1      Shared                         arrival  arrival_departure  \
+1           1      Trauma              triage_wait_begins              queue   
+2           1      Trauma                   triage_begins       resource_use   
+3           2      Shared                         arrival  arrival_departure   
+4           2  Non-Trauma              triage_wait_begins              queue   
+...       ...         ...                             ...                ...   
+1451      112  Non-Trauma  MINORS_examination_wait_begins              queue   
+1452      116  Non-Trauma      MINORS_registration_begins       resource_use   
+1453      129      Shared                         arrival  arrival_departure   
+1454      129  Non-Trauma              triage_wait_begins              queue   
+1455      129  Non-Trauma                   triage_begins       resource_use   
+
+            time  resource_id  run  
+0      96.684788          NaN   87  
+1      96.684788          NaN   87  
+2      96.684788          1.0   87  
+3      97.076402          NaN   87  
+4      97.076402          NaN   87  
+...          ...          ...  ...  
+1451  597.664201          NaN   87  
+1452  597.664201          1.0   87  
+1453  598.866341          NaN   87  
+1454  598.866341          NaN   87  
+1455  598.866341          1.0   87  
+
+[1456 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1441      110  Non-Trauma     MINORS_registration_complete   resource_use_end   
+1442      110  Non-Trauma   MINORS_examination_wait_begins              queue   
+1443      114  Non-Trauma       MINORS_registration_begins       resource_use   
+1444       91  Non-Trauma            MINORS_treatment_ends   resource_use_end   
+1445       91      Shared                           depart  arrival_departure   
+
+            time  resource_id  run  
+0      30.935458          NaN   88  
+1      30.935458          NaN   88  
+2      30.935458          1.0   88  
+3      36.954282          1.0   88  
+4      36.954282          NaN   88  
+...          ...          ...  ...  
+1441  599.844130          1.0   88  
+1442  599.844130          NaN   88  
+1443  599.844130          1.0   88  
+1444  599.930806          1.0   88  
+1445  599.930806          NaN   88  
+
+[1446 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1340       92  Non-Trauma     MINORS_treatment_wait_begins              queue   
+1341       92  Non-Trauma          MINORS_treatment_begins       resource_use   
+1342       95  Non-Trauma        MINORS_examination_begins       resource_use   
+1343       86  Non-Trauma            MINORS_treatment_ends   resource_use_end   
+1344       86      Shared                           depart  arrival_departure   
+
+            time  resource_id  run  
+0      16.485579          NaN   89  
+1      16.485579          NaN   89  
+2      16.485579          1.0   89  
+3      30.457174          1.0   89  
+4      30.457174          NaN   89  
+...          ...          ...  ...  
+1340  598.744751          NaN   89  
+1341  598.744751          1.0   89  
+1342  598.744751          1.0   89  
+1343  599.228616          2.0   89  
+1344  599.228616          NaN   89  
+
+[1345 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1392      113  Non-Trauma   MINORS_examination_wait_begins              queue   
+1393      116  Non-Trauma       MINORS_registration_begins       resource_use   
+1394      114  Non-Trauma     MINORS_registration_complete   resource_use_end   
+1395      114  Non-Trauma   MINORS_examination_wait_begins              queue   
+1396      117  Non-Trauma       MINORS_registration_begins       resource_use   
+
+            time  resource_id  run  
+0      93.623644          NaN   90  
+1      93.623644          NaN   90  
+2      93.623644          1.0   90  
+3      98.047846          1.0   90  
+4      98.047846          NaN   90  
+...          ...          ...  ...  
+1392  598.432976          NaN   90  
+1393  598.432976          2.0   90  
+1394  598.920574          1.0   90  
+1395  598.920574          NaN   90  
+1396  598.920574          1.0   90  
+
+[1397 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1485      131  Non-Trauma  MINORS_registration_wait_begins              queue   
+1486      132  Non-Trauma                    triage_begins       resource_use   
+1487      115  Non-Trauma     MINORS_registration_complete   resource_use_end   
+1488      115  Non-Trauma   MINORS_examination_wait_begins              queue   
+1489      117  Non-Trauma       MINORS_registration_begins       resource_use   
+
+            time  resource_id  run  
+0      27.754475          NaN   91  
+1      27.754475          NaN   91  
+2      27.754475          1.0   91  
+3      42.325479          1.0   91  
+4      42.325479          NaN   91  
+...          ...          ...  ...  
+1485  598.016585          NaN   91  
+1486  598.016585          2.0   91  
+1487  599.350443          2.0   91  
+1488  599.350443          NaN   91  
+1489  599.350443          2.0   91  
+
+[1490 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1369      112  Non-Trauma   MINORS_examination_wait_begins              queue   
+1370      107  Non-Trauma       MINORS_registration_begins       resource_use   
+1371       90  Non-Trauma      MINORS_examination_complete   resource_use_end   
+1372       90      Shared                           depart  arrival_departure   
+1373       93  Non-Trauma        MINORS_examination_begins       resource_use   
+
+            time  resource_id  run  
+0      41.459069          NaN   92  
+1      41.459069          NaN   92  
+2      41.459069          1.0   92  
+3      46.826028          1.0   92  
+4      46.826028          NaN   92  
+...          ...          ...  ...  
+1369  599.131194          NaN   92  
+1370  599.131194          1.0   92  
+1371  599.776147          2.0   92  
+1372  599.776147          NaN   92  
+1373  599.776147          2.0   92  
+
+[1374 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1675      123  Non-Trauma   MINORS_examination_wait_begins              queue   
+1676      124  Non-Trauma       MINORS_registration_begins       resource_use   
+1677      157  Non-Trauma                  triage_complete   resource_use_end   
+1678      157  Non-Trauma  MINORS_registration_wait_begins              queue   
+1679      158  Non-Trauma                    triage_begins       resource_use   
+
+            time  resource_id  run  
+0       8.259142          NaN   93  
+1       8.259142          NaN   93  
+2       8.259142          1.0   93  
+3      15.258419          1.0   93  
+4      15.258419          NaN   93  
+...          ...          ...  ...  
+1675  599.095505          NaN   93  
+1676  599.095505          1.0   93  
+1677  599.795655          2.0   93  
+1678  599.795655          NaN   93  
+1679  599.795655          2.0   93  
+
+[1680 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1401       91  Non-Trauma     MINORS_treatment_wait_begins              queue   
+1402       91  Non-Trauma          MINORS_treatment_begins       resource_use   
+1403       94  Non-Trauma        MINORS_examination_begins       resource_use   
+1404      144      Shared                          arrival  arrival_departure   
+1405      144  Non-Trauma               triage_wait_begins              queue   
+
+            time  resource_id  run  
+0       6.123196          NaN   94  
+1       6.123196          NaN   94  
+2       6.123196          1.0   94  
+3       9.206608          1.0   94  
+4       9.206608          NaN   94  
+...          ...          ...  ...  
+1401  598.600107          NaN   94  
+1402  598.600107          3.0   94  
+1403  598.600107          3.0   94  
+1404  598.872710          NaN   94  
+1405  598.872710          NaN   94  
+
+[1406 rows x 7 columns]
+      patient     pathway                             event   
+0           1      Shared                           arrival  \
+1           1      Trauma                triage_wait_begins   
+2           1      Trauma                     triage_begins   
+3           1      Trauma                   triage_complete   
+4           1      Trauma  TRAUMA_stabilisation_wait_begins   
+...       ...         ...                               ...   
+1604       98  Non-Trauma           MINORS_treatment_begins   
+1605      102  Non-Trauma         MINORS_examination_begins   
+1606      149      Shared                           arrival   
+1607      149  Non-Trauma                triage_wait_begins   
+1608      149  Non-Trauma                     triage_begins   
+
+             event_type        time  resource_id  run  
+0     arrival_departure   17.383184          NaN   95  
+1                 queue   17.383184          NaN   95  
+2          resource_use   17.383184          1.0   95  
+3      resource_use_end   18.263475          1.0   95  
+4                 queue   18.263475          NaN   95  
+...                 ...         ...          ...  ...  
+1604       resource_use  597.044746          4.0   95  
+1605       resource_use  597.044746          2.0   95  
+1606  arrival_departure  599.282267          NaN   95  
+1607              queue  599.282267          NaN   95  
+1608       resource_use  599.282267          2.0   95  
+
+[1609 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1657      119  Non-Trauma   MINORS_examination_wait_begins              queue   
+1658      120  Non-Trauma       MINORS_registration_begins       resource_use   
+1659       98  Non-Trauma      MINORS_examination_complete   resource_use_end   
+1660       98      Shared                           depart  arrival_departure   
+1661       95  Non-Trauma        MINORS_examination_begins       resource_use   
+
+            time  resource_id  run  
+0       5.406029          NaN   96  
+1       5.406029          NaN   96  
+2       5.406029          1.0   96  
+3       7.642322          1.0   96  
+4       7.642322          NaN   96  
+...          ...          ...  ...  
+1657  597.846157          NaN   96  
+1658  597.846157          1.0   96  
+1659  598.861617          2.0   96  
+1660  598.861617          NaN   96  
+1661  598.861617          2.0   96  
+
+[1662 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1123       97  Non-Trauma  MINORS_registration_wait_begins              queue   
+1124      100      Trauma                    triage_begins       resource_use   
+1125       61      Trauma    TRAUMA_stabilisation_complete   resource_use_end   
+1126       61      Trauma     TRAUMA_treatment_wait_begins              queue   
+1127       61      Trauma          TRAUMA_treatment_begins       resource_use   
+
+            time  resource_id  run  
+0      31.468069          NaN   97  
+1      31.468069          NaN   97  
+2      31.468069          1.0   97  
+3      37.374985          1.0   97  
+4      37.374985          NaN   97  
+...          ...          ...  ...  
+1123  596.958198          NaN   97  
+1124  596.958198          1.0   97  
+1125  598.759713          4.0   97  
+1126  598.759713          NaN   97  
+1127  598.759713          5.0   97  
+
+[1128 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1549      126  Non-Trauma     MINORS_registration_complete   resource_use_end   
+1550      126  Non-Trauma   MINORS_examination_wait_begins              queue   
+1551      128  Non-Trauma       MINORS_registration_begins       resource_use   
+1552      156      Shared                          arrival  arrival_departure   
+1553      156  Non-Trauma               triage_wait_begins              queue   
+
+            time  resource_id  run  
+0      16.527983          NaN   98  
+1      16.527983          NaN   98  
+2      16.527983          1.0   98  
+3      19.217743          1.0   98  
+4      19.217743          NaN   98  
+...          ...          ...  ...  
+1549  597.078854          1.0   98  
+1550  597.078854          NaN   98  
+1551  597.078854          1.0   98  
+1552  598.189490          NaN   98  
+1553  598.189490          NaN   98  
+
+[1554 rows x 7 columns]
+      patient     pathway                            event         event_type   
+0           1      Shared                          arrival  arrival_departure  \
+1           1  Non-Trauma               triage_wait_begins              queue   
+2           1  Non-Trauma                    triage_begins       resource_use   
+3           1  Non-Trauma                  triage_complete   resource_use_end   
+4           1  Non-Trauma  MINORS_registration_wait_begins              queue   
+...       ...         ...                              ...                ...   
+1525       91  Non-Trauma          MINORS_treatment_begins       resource_use   
+1526       92  Non-Trauma        MINORS_examination_begins       resource_use   
+1527      118  Non-Trauma     MINORS_registration_complete   resource_use_end   
+1528      118  Non-Trauma   MINORS_examination_wait_begins              queue   
+1529      121  Non-Trauma       MINORS_registration_begins       resource_use   
+
+            time  resource_id  run  
+0      50.171259          NaN   99  
+1      50.171259          NaN   99  
+2      50.171259          1.0   99  
+3      57.325707          1.0   99  
+4      57.325707          NaN   99  
+...          ...          ...  ...  
+1525  599.483217          3.0   99  
+1526  599.483217          3.0   99  
+1527  599.726011          2.0   99  
+1528  599.726011          NaN   99  
+1529  599.726011          2.0   99  
+
+[1530 rows x 7 columns]</code></pre>
+</div>
+</div>
+<div id="cell-2" class="cell" data-execution_count="3">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>my_trial.all_event_logs</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="3">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">patient</th>
+<th data-quarto-table-cell-role="th">pathway</th>
+<th data-quarto-table-cell-role="th">event</th>
+<th data-quarto-table-cell-role="th">event_type</th>
+<th data-quarto-table-cell-role="th">time</th>
+<th data-quarto-table-cell-role="th">resource_id</th>
+<th data-quarto-table-cell-role="th">run</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td>1</td>
+<td>Shared</td>
+<td>arrival</td>
+<td>arrival_departure</td>
+<td>3.285355</td>
+<td>NaN</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>1</td>
+<td>Non-Trauma</td>
+<td>triage_wait_begins</td>
+<td>queue</td>
+<td>3.285355</td>
+<td>NaN</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td>1</td>
+<td>Non-Trauma</td>
+<td>triage_begins</td>
+<td>resource_use</td>
+<td>3.285355</td>
+<td>1.0</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">3</td>
+<td>2</td>
+<td>Shared</td>
+<td>arrival</td>
+<td>arrival_departure</td>
+<td>3.289691</td>
+<td>NaN</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">4</td>
+<td>2</td>
+<td>Non-Trauma</td>
+<td>triage_wait_begins</td>
+<td>queue</td>
+<td>3.289691</td>
+<td>NaN</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">1525</td>
+<td>91</td>
+<td>Non-Trauma</td>
+<td>MINORS_treatment_begins</td>
+<td>resource_use</td>
+<td>599.483217</td>
+<td>3.0</td>
+<td>99</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1526</td>
+<td>92</td>
+<td>Non-Trauma</td>
+<td>MINORS_examination_begins</td>
+<td>resource_use</td>
+<td>599.483217</td>
+<td>3.0</td>
+<td>99</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">1527</td>
+<td>118</td>
+<td>Non-Trauma</td>
+<td>MINORS_registration_complete</td>
+<td>resource_use_end</td>
+<td>599.726011</td>
+<td>2.0</td>
+<td>99</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1528</td>
+<td>118</td>
+<td>Non-Trauma</td>
+<td>MINORS_examination_wait_begins</td>
+<td>queue</td>
+<td>599.726011</td>
+<td>NaN</td>
+<td>99</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">1529</td>
+<td>121</td>
+<td>Non-Trauma</td>
+<td>MINORS_registration_begins</td>
+<td>resource_use</td>
+<td>599.726011</td>
+<td>2.0</td>
+<td>99</td>
+</tr>
+</tbody>
+</table>
+
+<p>146589 rows × 7 columns</p>
+</div>
+</div>
+</div>
+<div id="cell-3" class="cell" data-execution_count="4">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>event_position_df <span class="op">=</span> pd.DataFrame([</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>                <span class="co"># {'event': 'arrival', 'x':  10, 'y': 250, 'label': "Arrival" },</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>                <span class="co"># Triage - minor and trauma</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>                {<span class="st">'event'</span>: <span class="st">'triage_wait_begins'</span>,</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>                 <span class="st">'x'</span>:  <span class="dv">160</span>, <span class="st">'y'</span>: <span class="dv">400</span>, <span class="st">'label'</span>: <span class="st">"Waiting for&lt;br&gt;Triage"</span>  },</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>                {<span class="st">'event'</span>: <span class="st">'triage_begins'</span>,</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>                 <span class="st">'x'</span>:  <span class="dv">160</span>, <span class="st">'y'</span>: <span class="dv">315</span>, <span class="st">'resource'</span>:<span class="st">'n_triage'</span>, <span class="st">'label'</span>: <span class="st">"Being Triaged"</span> },</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>                <span class="co"># Minors (non-trauma) pathway</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>                {<span class="st">'event'</span>: <span class="st">'MINORS_registration_wait_begins'</span>,</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>                 <span class="st">'x'</span>:  <span class="dv">300</span>, <span class="st">'y'</span>: <span class="dv">145</span>, <span class="st">'label'</span>: <span class="st">"Waiting for&lt;br&gt;Registration"</span>  },</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>                {<span class="st">'event'</span>: <span class="st">'MINORS_registration_begins'</span>,</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>                 <span class="st">'x'</span>:  <span class="dv">300</span>, <span class="st">'y'</span>: <span class="dv">85</span>, <span class="st">'resource'</span>:<span class="st">'n_reg'</span>, <span class="st">'label'</span>:<span class="st">'Being&lt;br&gt;Registered'</span>  },</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>                {<span class="st">'event'</span>: <span class="st">'MINORS_examination_wait_begins'</span>,</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>                 <span class="st">'x'</span>:  <span class="dv">465</span>, <span class="st">'y'</span>: <span class="dv">145</span>, <span class="st">'label'</span>: <span class="st">"Waiting for&lt;br&gt;Examination"</span>  },</span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>                {<span class="st">'event'</span>: <span class="st">'MINORS_examination_begins'</span>,</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>                 <span class="st">'x'</span>:  <span class="dv">465</span>, <span class="st">'y'</span>: <span class="dv">85</span>, <span class="st">'resource'</span>:<span class="st">'n_exam'</span>, <span class="st">'label'</span>: <span class="st">"Being&lt;br&gt;Examined"</span> },</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>                {<span class="st">'event'</span>: <span class="st">'MINORS_treatment_wait_begins'</span>,</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>                 <span class="st">'x'</span>:  <span class="dv">630</span>, <span class="st">'y'</span>: <span class="dv">145</span>, <span class="st">'label'</span>: <span class="st">"Waiting for&lt;br&gt;Treatment"</span>  },</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>                {<span class="st">'event'</span>: <span class="st">'MINORS_treatment_begins'</span>,</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>                 <span class="st">'x'</span>:  <span class="dv">630</span>, <span class="st">'y'</span>: <span class="dv">85</span>, <span class="st">'resource'</span>:<span class="st">'n_cubicles_non_trauma_treat'</span>, <span class="st">'label'</span>: <span class="st">"Being&lt;br&gt;Treated"</span> },</span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>                <span class="co"># Trauma pathway</span></span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>                {<span class="st">'event'</span>: <span class="st">'TRAUMA_stabilisation_wait_begins'</span>,</span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>                 <span class="st">'x'</span>: <span class="dv">300</span>, <span class="st">'y'</span>: <span class="dv">560</span>, <span class="st">'label'</span>: <span class="st">"Waiting for&lt;br&gt;Stabilisation"</span> },</span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>                {<span class="st">'event'</span>: <span class="st">'TRAUMA_stabilisation_begins'</span>,</span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>                 <span class="st">'x'</span>: <span class="dv">300</span>, <span class="st">'y'</span>: <span class="dv">500</span>, <span class="st">'resource'</span>:<span class="st">'n_trauma'</span>, <span class="st">'label'</span>: <span class="st">"Being&lt;br&gt;Stabilised"</span> },</span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a>                {<span class="st">'event'</span>: <span class="st">'TRAUMA_treatment_wait_begins'</span>,</span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a>                 <span class="st">'x'</span>: <span class="dv">630</span>, <span class="st">'y'</span>: <span class="dv">560</span>, <span class="st">'label'</span>: <span class="st">"Waiting for&lt;br&gt;Treatment"</span> },</span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a>                {<span class="st">'event'</span>: <span class="st">'TRAUMA_treatment_begins'</span>,</span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a>                 <span class="st">'x'</span>: <span class="dv">630</span>, <span class="st">'y'</span>: <span class="dv">500</span>, <span class="st">'resource'</span>:<span class="st">'n_cubicles_trauma_treat'</span>, <span class="st">'label'</span>: <span class="st">"Being&lt;br&gt;Treated"</span> },</span>
+<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a>                 {<span class="st">'event'</span>: <span class="st">'exit'</span>,</span>
+<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a>                 <span class="st">'x'</span>:  <span class="dv">670</span>, <span class="st">'y'</span>: <span class="dv">330</span>, <span class="st">'label'</span>: <span class="st">"Exit"</span>}</span>
+<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a>            ])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-4" class="cell" data-execution_count="5">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>animate_activity_log(</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>        event_log<span class="op">=</span>my_trial.all_event_logs[my_trial.all_event_logs[<span class="st">'run'</span>]<span class="op">==</span><span class="dv">1</span>],</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>        event_position_df<span class="op">=</span> event_position_df,</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>        scenario<span class="op">=</span>g(),</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>        debug_mode<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>        every_x_time_units<span class="op">=</span><span class="dv">5</span>,</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>        include_play_button<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>        gap_between_entities<span class="op">=</span><span class="dv">10</span>,</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>        gap_between_rows<span class="op">=</span><span class="dv">15</span>,</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>        plotly_height<span class="op">=</span><span class="dv">900</span>,</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>        plotly_width<span class="op">=</span><span class="dv">1600</span>,</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>        override_x_max<span class="op">=</span><span class="dv">700</span>,</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>        override_y_max<span class="op">=</span><span class="dv">675</span>,</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>        icon_and_text_size<span class="op">=</span><span class="dv">24</span>,</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>        wrap_queues_at<span class="op">=</span><span class="dv">10</span>,</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>        step_snapshot_max<span class="op">=</span><span class="dv">50</span>,</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>        limit_duration<span class="op">=</span>g.sim_duration,</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>        time_display_units<span class="op">=</span><span class="st">"dhm"</span>,</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>        display_stage_labels<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>        add_background_image<span class="op">=</span><span class="st">"Full Model Background Image - Horizontal Layout.drawio.png"</span>,</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>    )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Animation function called at 12:45:54
+Iteration through minute-by-minute logs complete 12:45:54
+Snapshot df concatenation complete at 12:45:54
+Reshaped animation dataframe finished construction at 12:45:54
+Placement dataframe finished construction at 12:45:54
+Output animation generation complete at 12:45:56
+Total Time Elapsed: 1.81 seconds</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<pre><code>Unable to display output for mime type(s): application/vnd.plotly.v1+json</code></pre>
+</div>
+</div>
+
+
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

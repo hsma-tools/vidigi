@@ -1,0 +1,3459 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.6.36">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>ex_1_simplest_case</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script><script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-01c78b5cd655e4cd89133cf59d535862.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-523b4dc3dad50da7e5c9dee1e7f3f290.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" integrity="sha512-c3Nl8+7g4LMSTdrm621y7kf9v3SDPnhxLNhcjFJbKECVnmZHTdo+IRO05sNLTH/D3vA6u1X32ehoLC7WFVdheg==" crossorigin="anonymous"></script>
+
+<script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
+
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-search-results"></div>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    
+<!-- main -->
+<main class="content" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block"></header>
+
+
+
+
+<div id="cell-0" class="cell" data-execution_count="11">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> examples.example_1_simplest_case.ex_1_model_classes <span class="im">import</span> Trial, g</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> vidigi.animation <span class="im">import</span> animate_activity_log</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-1" class="cell" data-execution_count="12">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>my_trial <span class="op">=</span> Trial()</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>my_trial.run_trial()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>4 nurses
+
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    3.399660   
+4          2  Simplest              queue  treatment_wait_begins    3.399660   
+..       ...       ...                ...                    ...         ...   
+374      102  Simplest  arrival_departure                arrival  593.367605   
+375      102  Simplest              queue  treatment_wait_begins  593.367605   
+376       57  Simplest   resource_use_end     treatment_complete  594.513220   
+377       57  Simplest  arrival_departure                 depart  594.513220   
+378       61  Simplest       resource_use       treatment_begins  594.513220   
+
+     resource_id  run  
+0            NaN    0  
+1            NaN    0  
+2            1.0    0  
+3            NaN    0  
+4            NaN    0  
+..           ...  ...  
+374          NaN    0  
+375          NaN    0  
+376          3.0    0  
+377          NaN    0  
+378          3.0    0  
+
+[379 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival   12.021043   
+4          2  Simplest              queue  treatment_wait_begins   12.021043   
+..       ...       ...                ...                    ...         ...   
+431       56  Simplest   resource_use_end     treatment_complete  596.143390   
+432       56  Simplest  arrival_departure                 depart  596.143390   
+433       60  Simplest       resource_use       treatment_begins  596.143390   
+434      132  Simplest  arrival_departure                arrival  596.500830   
+435      132  Simplest              queue  treatment_wait_begins  596.500830   
+
+     resource_id  run  
+0            NaN    1  
+1            NaN    1  
+2            1.0    1  
+3            NaN    1  
+4            NaN    1  
+..           ...  ...  
+431          1.0    1  
+432          NaN    1  
+433          1.0    1  
+434          NaN    1  
+435          NaN    1  
+
+[436 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    8.965271   
+4          2  Simplest              queue  treatment_wait_begins    8.965271   
+..       ...       ...                ...                    ...         ...   
+394      110  Simplest              queue  treatment_wait_begins  597.111076   
+395      111  Simplest  arrival_departure                arrival  597.250731   
+396      111  Simplest              queue  treatment_wait_begins  597.250731   
+397      112  Simplest  arrival_departure                arrival  598.301133   
+398      112  Simplest              queue  treatment_wait_begins  598.301133   
+
+     resource_id  run  
+0            NaN    2  
+1            NaN    2  
+2            1.0    2  
+3            NaN    2  
+4            NaN    2  
+..           ...  ...  
+394          NaN    2  
+395          NaN    2  
+396          NaN    2  
+397          NaN    2  
+398          NaN    2  
+
+[399 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    0.033294   
+4          2  Simplest              queue  treatment_wait_begins    0.033294   
+..       ...       ...                ...                    ...         ...   
+414      119  Simplest  arrival_departure                arrival  595.793875   
+415      119  Simplest              queue  treatment_wait_begins  595.793875   
+416       58  Simplest   resource_use_end     treatment_complete  596.838310   
+417       58  Simplest  arrival_departure                 depart  596.838310   
+418       63  Simplest       resource_use       treatment_begins  596.838310   
+
+     resource_id  run  
+0            NaN    3  
+1            NaN    3  
+2            1.0    3  
+3            NaN    3  
+4            NaN    3  
+..           ...  ...  
+414          NaN    3  
+415          NaN    3  
+416          4.0    3  
+417          NaN    3  
+418          4.0    3  
+
+[419 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival   10.399752   
+4          2  Simplest              queue  treatment_wait_begins   10.399752   
+..       ...       ...                ...                    ...         ...   
+416      120  Simplest  arrival_departure                arrival  590.510622   
+417      120  Simplest              queue  treatment_wait_begins  590.510622   
+418       59  Simplest   resource_use_end     treatment_complete  593.000804   
+419       59  Simplest  arrival_departure                 depart  593.000804   
+420       63  Simplest       resource_use       treatment_begins  593.000804   
+
+     resource_id  run  
+0            NaN    4  
+1            NaN    4  
+2            1.0    4  
+3            NaN    4  
+4            NaN    4  
+..           ...  ...  
+416          NaN    4  
+417          NaN    4  
+418          2.0    4  
+419          NaN    4  
+420          2.0    4  
+
+[421 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    2.645552   
+4          2  Simplest              queue  treatment_wait_begins    2.645552   
+..       ...       ...                ...                    ...         ...   
+394      110  Simplest              queue  treatment_wait_begins  591.966784   
+395      111  Simplest  arrival_departure                arrival  594.176228   
+396      111  Simplest              queue  treatment_wait_begins  594.176228   
+397      112  Simplest  arrival_departure                arrival  597.260047   
+398      112  Simplest              queue  treatment_wait_begins  597.260047   
+
+     resource_id  run  
+0            NaN    5  
+1            NaN    5  
+2            1.0    5  
+3            NaN    5  
+4            NaN    5  
+..           ...  ...  
+394          NaN    5  
+395          NaN    5  
+396          NaN    5  
+397          NaN    5  
+398          NaN    5  
+
+[399 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival   11.489413   
+4          2  Simplest              queue  treatment_wait_begins   11.489413   
+..       ...       ...                ...                    ...         ...   
+392      111  Simplest  arrival_departure                arrival  596.473016   
+393      111  Simplest              queue  treatment_wait_begins  596.473016   
+394       57  Simplest   resource_use_end     treatment_complete  598.157938   
+395       57  Simplest  arrival_departure                 depart  598.157938   
+396       61  Simplest       resource_use       treatment_begins  598.157938   
+
+     resource_id  run  
+0            NaN    6  
+1            NaN    6  
+2            1.0    6  
+3            NaN    6  
+4            NaN    6  
+..           ...  ...  
+392          NaN    6  
+393          NaN    6  
+394          3.0    6  
+395          NaN    6  
+396          3.0    6  
+
+[397 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    4.011208   
+4          2  Simplest              queue  treatment_wait_begins    4.011208   
+..       ...       ...                ...                    ...         ...   
+408      117  Simplest              queue  treatment_wait_begins  592.664445   
+409      118  Simplest  arrival_departure                arrival  592.779776   
+410      118  Simplest              queue  treatment_wait_begins  592.779776   
+411      119  Simplest  arrival_departure                arrival  597.939039   
+412      119  Simplest              queue  treatment_wait_begins  597.939039   
+
+     resource_id  run  
+0            NaN    7  
+1            NaN    7  
+2            1.0    7  
+3            NaN    7  
+4            NaN    7  
+..           ...  ...  
+408          NaN    7  
+409          NaN    7  
+410          NaN    7  
+411          NaN    7  
+412          NaN    7  
+
+[413 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival   17.040648   
+4          2  Simplest              queue  treatment_wait_begins   17.040648   
+..       ...       ...                ...                    ...         ...   
+393       57  Simplest  arrival_departure                 depart  594.279274   
+394       61  Simplest       resource_use       treatment_begins  594.279274   
+395       58  Simplest   resource_use_end     treatment_complete  599.058850   
+396       58  Simplest  arrival_departure                 depart  599.058850   
+397       62  Simplest       resource_use       treatment_begins  599.058850   
+
+     resource_id  run  
+0            NaN    8  
+1            NaN    8  
+2            1.0    8  
+3            NaN    8  
+4            NaN    8  
+..           ...  ...  
+393          NaN    8  
+394          2.0    8  
+395          1.0    8  
+396          NaN    8  
+397          1.0    8  
+
+[398 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    2.861402   
+4          2  Simplest              queue  treatment_wait_begins    2.861402   
+..       ...       ...                ...                    ...         ...   
+397       58  Simplest   resource_use_end     treatment_complete  589.226588   
+398       58  Simplest  arrival_departure                 depart  589.226588   
+399       62  Simplest       resource_use       treatment_begins  589.226588   
+400      112  Simplest  arrival_departure                arrival  598.744749   
+401      112  Simplest              queue  treatment_wait_begins  598.744749   
+
+     resource_id  run  
+0            NaN    9  
+1            NaN    9  
+2            1.0    9  
+3            NaN    9  
+4            NaN    9  
+..           ...  ...  
+397          4.0    9  
+398          NaN    9  
+399          4.0    9  
+400          NaN    9  
+401          NaN    9  
+
+[402 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival   20.691565   
+4          2  Simplest              queue  treatment_wait_begins   20.691565   
+..       ...       ...                ...                    ...         ...   
+433       58  Simplest       resource_use       treatment_begins  586.920698   
+434      135  Simplest  arrival_departure                arrival  588.234279   
+435      135  Simplest              queue  treatment_wait_begins  588.234279   
+436      136  Simplest  arrival_departure                arrival  588.474395   
+437      136  Simplest              queue  treatment_wait_begins  588.474395   
+
+     resource_id  run  
+0            NaN   10  
+1            NaN   10  
+2            1.0   10  
+3            NaN   10  
+4            NaN   10  
+..           ...  ...  
+433          2.0   10  
+434          NaN   10  
+435          NaN   10  
+436          NaN   10  
+437          NaN   10  
+
+[438 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    6.531809   
+4          2  Simplest              queue  treatment_wait_begins    6.531809   
+..       ...       ...                ...                    ...         ...   
+378       59  Simplest       resource_use       treatment_begins  574.615863   
+379      106  Simplest  arrival_departure                arrival  578.928729   
+380      106  Simplest              queue  treatment_wait_begins  578.928729   
+381      107  Simplest  arrival_departure                arrival  598.193770   
+382      107  Simplest              queue  treatment_wait_begins  598.193770   
+
+     resource_id  run  
+0            NaN   11  
+1            NaN   11  
+2            1.0   11  
+3            NaN   11  
+4            NaN   11  
+..           ...  ...  
+378          3.0   11  
+379          NaN   11  
+380          NaN   11  
+381          NaN   11  
+382          NaN   11  
+
+[383 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    0.242157   
+4          2  Simplest              queue  treatment_wait_begins    0.242157   
+..       ...       ...                ...                    ...         ...   
+405       58  Simplest   resource_use_end     treatment_complete  589.275593   
+406       58  Simplest  arrival_departure                 depart  589.275593   
+407       62  Simplest       resource_use       treatment_begins  589.275593   
+408      116  Simplest  arrival_departure                arrival  593.957975   
+409      116  Simplest              queue  treatment_wait_begins  593.957975   
+
+     resource_id  run  
+0            NaN   12  
+1            NaN   12  
+2            1.0   12  
+3            NaN   12  
+4            NaN   12  
+..           ...  ...  
+405          4.0   12  
+406          NaN   12  
+407          4.0   12  
+408          NaN   12  
+409          NaN   12  
+
+[410 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    2.673206   
+4          2  Simplest              queue  treatment_wait_begins    2.673206   
+..       ...       ...                ...                    ...         ...   
+393       57  Simplest  arrival_departure                 depart  588.173246   
+394       61  Simplest       resource_use       treatment_begins  588.173246   
+395       58  Simplest   resource_use_end     treatment_complete  598.738042   
+396       58  Simplest  arrival_departure                 depart  598.738042   
+397       62  Simplest       resource_use       treatment_begins  598.738042   
+
+     resource_id  run  
+0            NaN   13  
+1            NaN   13  
+2            1.0   13  
+3            NaN   13  
+4            NaN   13  
+..           ...  ...  
+393          NaN   13  
+394          1.0   13  
+395          4.0   13  
+396          NaN   13  
+397          4.0   13  
+
+[398 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    3.384561   
+4          2  Simplest              queue  treatment_wait_begins    3.384561   
+..       ...       ...                ...                    ...         ...   
+410       61  Simplest       resource_use       treatment_begins  592.415993   
+411      119  Simplest  arrival_departure                arrival  595.097918   
+412      119  Simplest              queue  treatment_wait_begins  595.097918   
+413      120  Simplest  arrival_departure                arrival  597.920346   
+414      120  Simplest              queue  treatment_wait_begins  597.920346   
+
+     resource_id  run  
+0            NaN   14  
+1            NaN   14  
+2            1.0   14  
+3            NaN   14  
+4            NaN   14  
+..           ...  ...  
+410          2.0   14  
+411          NaN   14  
+412          NaN   14  
+413          NaN   14  
+414          NaN   14  
+
+[415 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    3.292775   
+4          2  Simplest              queue  treatment_wait_begins    3.292775   
+..       ...       ...                ...                    ...         ...   
+435       57  Simplest  arrival_departure                 depart  588.583288   
+436       61  Simplest       resource_use       treatment_begins  588.583288   
+437       59  Simplest   resource_use_end     treatment_complete  598.017492   
+438       59  Simplest  arrival_departure                 depart  598.017492   
+439       62  Simplest       resource_use       treatment_begins  598.017492   
+
+     resource_id  run  
+0            NaN   15  
+1            NaN   15  
+2            1.0   15  
+3            NaN   15  
+4            NaN   15  
+..           ...  ...  
+435          NaN   15  
+436          4.0   15  
+437          1.0   15  
+438          NaN   15  
+439          1.0   15  
+
+[440 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    5.405237   
+4          2  Simplest              queue  treatment_wait_begins    5.405237   
+..       ...       ...                ...                    ...         ...   
+406      118  Simplest  arrival_departure                arrival  588.483673   
+407      118  Simplest              queue  treatment_wait_begins  588.483673   
+408       58  Simplest   resource_use_end     treatment_complete  592.850330   
+409       58  Simplest  arrival_departure                 depart  592.850330   
+410       61  Simplest       resource_use       treatment_begins  592.850330   
+
+     resource_id  run  
+0            NaN   16  
+1            NaN   16  
+2            1.0   16  
+3            NaN   16  
+4            NaN   16  
+..           ...  ...  
+406          NaN   16  
+407          NaN   16  
+408          1.0   16  
+409          NaN   16  
+410          1.0   16  
+
+[411 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    4.896811   
+4          2  Simplest              queue  treatment_wait_begins    4.896811   
+..       ...       ...                ...                    ...         ...   
+447      138  Simplest              queue  treatment_wait_begins  591.960978   
+448      139  Simplest  arrival_departure                arrival  592.940106   
+449      139  Simplest              queue  treatment_wait_begins  592.940106   
+450      140  Simplest  arrival_departure                arrival  599.948664   
+451      140  Simplest              queue  treatment_wait_begins  599.948664   
+
+     resource_id  run  
+0            NaN   17  
+1            NaN   17  
+2            1.0   17  
+3            NaN   17  
+4            NaN   17  
+..           ...  ...  
+447          NaN   17  
+448          NaN   17  
+449          NaN   17  
+450          NaN   17  
+451          NaN   17  
+
+[452 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    0.610594   
+4          2  Simplest              queue  treatment_wait_begins    0.610594   
+..       ...       ...                ...                    ...         ...   
+444      135  Simplest              queue  treatment_wait_begins  593.481534   
+445      136  Simplest  arrival_departure                arrival  595.362584   
+446      136  Simplest              queue  treatment_wait_begins  595.362584   
+447      137  Simplest  arrival_departure                arrival  599.631540   
+448      137  Simplest              queue  treatment_wait_begins  599.631540   
+
+     resource_id  run  
+0            NaN   18  
+1            NaN   18  
+2            1.0   18  
+3            NaN   18  
+4            NaN   18  
+..           ...  ...  
+444          NaN   18  
+445          NaN   18  
+446          NaN   18  
+447          NaN   18  
+448          NaN   18  
+
+[449 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    1.963601   
+4          2  Simplest              queue  treatment_wait_begins    1.963601   
+..       ...       ...                ...                    ...         ...   
+419      124  Simplest              queue  treatment_wait_begins  597.506955   
+420      125  Simplest  arrival_departure                arrival  598.183999   
+421      125  Simplest              queue  treatment_wait_begins  598.183999   
+422      126  Simplest  arrival_departure                arrival  598.800709   
+423      126  Simplest              queue  treatment_wait_begins  598.800709   
+
+     resource_id  run  
+0            NaN   19  
+1            NaN   19  
+2            1.0   19  
+3            NaN   19  
+4            NaN   19  
+..           ...  ...  
+419          NaN   19  
+420          NaN   19  
+421          NaN   19  
+422          NaN   19  
+423          NaN   19  
+
+[424 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    5.561618   
+4          2  Simplest              queue  treatment_wait_begins    5.561618   
+..       ...       ...                ...                    ...         ...   
+407      117  Simplest  arrival_departure                arrival  591.395603   
+408      117  Simplest              queue  treatment_wait_begins  591.395603   
+409       59  Simplest   resource_use_end     treatment_complete  599.181297   
+410       59  Simplest  arrival_departure                 depart  599.181297   
+411       62  Simplest       resource_use       treatment_begins  599.181297   
+
+     resource_id  run  
+0            NaN   20  
+1            NaN   20  
+2            1.0   20  
+3            NaN   20  
+4            NaN   20  
+..           ...  ...  
+407          NaN   20  
+408          NaN   20  
+409          3.0   20  
+410          NaN   20  
+411          3.0   20  
+
+[412 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival   10.924771   
+4          2  Simplest              queue  treatment_wait_begins   10.924771   
+..       ...       ...                ...                    ...         ...   
+397      113  Simplest              queue  treatment_wait_begins  591.094739   
+398      114  Simplest  arrival_departure                arrival  592.103339   
+399      114  Simplest              queue  treatment_wait_begins  592.103339   
+400      115  Simplest  arrival_departure                arrival  597.596071   
+401      115  Simplest              queue  treatment_wait_begins  597.596071   
+
+     resource_id  run  
+0            NaN   21  
+1            NaN   21  
+2            1.0   21  
+3            NaN   21  
+4            NaN   21  
+..           ...  ...  
+397          NaN   21  
+398          NaN   21  
+399          NaN   21  
+400          NaN   21  
+401          NaN   21  
+
+[402 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    5.241387   
+4          2  Simplest              queue  treatment_wait_begins    5.241387   
+..       ...       ...                ...                    ...         ...   
+431       57  Simplest  arrival_departure                 depart  590.200686   
+432       61  Simplest       resource_use       treatment_begins  590.200686   
+433       58  Simplest   resource_use_end     treatment_complete  599.078910   
+434       58  Simplest  arrival_departure                 depart  599.078910   
+435       62  Simplest       resource_use       treatment_begins  599.078910   
+
+     resource_id  run  
+0            NaN   22  
+1            NaN   22  
+2            1.0   22  
+3            NaN   22  
+4            NaN   22  
+..           ...  ...  
+431          NaN   22  
+432          1.0   22  
+433          2.0   22  
+434          NaN   22  
+435          2.0   22  
+
+[436 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    2.946925   
+4          2  Simplest              queue  treatment_wait_begins    2.946925   
+..       ...       ...                ...                    ...         ...   
+398       57  Simplest   resource_use_end     treatment_complete  589.664766   
+399       57  Simplest  arrival_departure                 depart  589.664766   
+400       61  Simplest       resource_use       treatment_begins  589.664766   
+401      114  Simplest  arrival_departure                arrival  599.953421   
+402      114  Simplest              queue  treatment_wait_begins  599.953421   
+
+     resource_id  run  
+0            NaN   23  
+1            NaN   23  
+2            1.0   23  
+3            NaN   23  
+4            NaN   23  
+..           ...  ...  
+398          3.0   23  
+399          NaN   23  
+400          3.0   23  
+401          NaN   23  
+402          NaN   23  
+
+[403 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    1.900459   
+4          2  Simplest              queue  treatment_wait_begins    1.900459   
+..       ...       ...                ...                    ...         ...   
+444       61  Simplest   resource_use_end     treatment_complete  594.357722   
+445       61  Simplest  arrival_departure                 depart  594.357722   
+446       65  Simplest       resource_use       treatment_begins  594.357722   
+447      131  Simplest  arrival_departure                arrival  599.651511   
+448      131  Simplest              queue  treatment_wait_begins  599.651511   
+
+     resource_id  run  
+0            NaN   24  
+1            NaN   24  
+2            1.0   24  
+3            NaN   24  
+4            NaN   24  
+..           ...  ...  
+444          1.0   24  
+445          NaN   24  
+446          1.0   24  
+447          NaN   24  
+448          NaN   24  
+
+[449 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    3.125594   
+4          2  Simplest              queue  treatment_wait_begins    3.125594   
+..       ...       ...                ...                    ...         ...   
+414      123  Simplest              queue  treatment_wait_begins  593.712678   
+415      124  Simplest  arrival_departure                arrival  595.129160   
+416      124  Simplest              queue  treatment_wait_begins  595.129160   
+417      125  Simplest  arrival_departure                arrival  595.847001   
+418      125  Simplest              queue  treatment_wait_begins  595.847001   
+
+     resource_id  run  
+0            NaN   25  
+1            NaN   25  
+2            1.0   25  
+3            NaN   25  
+4            NaN   25  
+..           ...  ...  
+414          NaN   25  
+415          NaN   25  
+416          NaN   25  
+417          NaN   25  
+418          NaN   25  
+
+[419 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    0.132091   
+4          2  Simplest              queue  treatment_wait_begins    0.132091   
+..       ...       ...                ...                    ...         ...   
+408       63  Simplest       resource_use       treatment_begins  596.808642   
+409      115  Simplest  arrival_departure                arrival  598.931863   
+410      115  Simplest              queue  treatment_wait_begins  598.931863   
+411      116  Simplest  arrival_departure                arrival  599.582890   
+412      116  Simplest              queue  treatment_wait_begins  599.582890   
+
+     resource_id  run  
+0            NaN   26  
+1            NaN   26  
+2            1.0   26  
+3            NaN   26  
+4            NaN   26  
+..           ...  ...  
+408          1.0   26  
+409          NaN   26  
+410          NaN   26  
+411          NaN   26  
+412          NaN   26  
+
+[413 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    2.676974   
+4          2  Simplest              queue  treatment_wait_begins    2.676974   
+..       ...       ...                ...                    ...         ...   
+430      127  Simplest  arrival_departure                arrival  594.853663   
+431      127  Simplest              queue  treatment_wait_begins  594.853663   
+432       58  Simplest   resource_use_end     treatment_complete  596.314306   
+433       58  Simplest  arrival_departure                 depart  596.314306   
+434       63  Simplest       resource_use       treatment_begins  596.314306   
+
+     resource_id  run  
+0            NaN   27  
+1            NaN   27  
+2            1.0   27  
+3            NaN   27  
+4            NaN   27  
+..           ...  ...  
+430          NaN   27  
+431          NaN   27  
+432          3.0   27  
+433          NaN   27  
+434          3.0   27  
+
+[435 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival   12.485368   
+4          2  Simplest              queue  treatment_wait_begins   12.485368   
+..       ...       ...                ...                    ...         ...   
+453       58  Simplest   resource_use_end     treatment_complete  594.805534   
+454       58  Simplest  arrival_departure                 depart  594.805534   
+455       62  Simplest       resource_use       treatment_begins  594.805534   
+456      140  Simplest  arrival_departure                arrival  597.275483   
+457      140  Simplest              queue  treatment_wait_begins  597.275483   
+
+     resource_id  run  
+0            NaN   28  
+1            NaN   28  
+2            1.0   28  
+3            NaN   28  
+4            NaN   28  
+..           ...  ...  
+453          3.0   28  
+454          NaN   28  
+455          3.0   28  
+456          NaN   28  
+457          NaN   28  
+
+[458 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival   15.120794   
+4          2  Simplest              queue  treatment_wait_begins   15.120794   
+..       ...       ...                ...                    ...         ...   
+420      126  Simplest              queue  treatment_wait_begins  588.254744   
+421      127  Simplest  arrival_departure                arrival  595.467088   
+422      127  Simplest              queue  treatment_wait_begins  595.467088   
+423      128  Simplest  arrival_departure                arrival  599.755990   
+424      128  Simplest              queue  treatment_wait_begins  599.755990   
+
+     resource_id  run  
+0            NaN   29  
+1            NaN   29  
+2            1.0   29  
+3            NaN   29  
+4            NaN   29  
+..           ...  ...  
+420          NaN   29  
+421          NaN   29  
+422          NaN   29  
+423          NaN   29  
+424          NaN   29  
+
+[425 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    1.947923   
+4          2  Simplest              queue  treatment_wait_begins    1.947923   
+..       ...       ...                ...                    ...         ...   
+437       58  Simplest   resource_use_end     treatment_complete  585.509214   
+438       58  Simplest  arrival_departure                 depart  585.509214   
+439       62  Simplest       resource_use       treatment_begins  585.509214   
+440      132  Simplest  arrival_departure                arrival  593.315996   
+441      132  Simplest              queue  treatment_wait_begins  593.315996   
+
+     resource_id  run  
+0            NaN   30  
+1            NaN   30  
+2            1.0   30  
+3            NaN   30  
+4            NaN   30  
+..           ...  ...  
+437          3.0   30  
+438          NaN   30  
+439          3.0   30  
+440          NaN   30  
+441          NaN   30  
+
+[442 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival   14.978809   
+4          2  Simplest              queue  treatment_wait_begins   14.978809   
+..       ...       ...                ...                    ...         ...   
+399      114  Simplest              queue  treatment_wait_begins  582.962197   
+400      115  Simplest  arrival_departure                arrival  590.686186   
+401      115  Simplest              queue  treatment_wait_begins  590.686186   
+402      116  Simplest  arrival_departure                arrival  598.622729   
+403      116  Simplest              queue  treatment_wait_begins  598.622729   
+
+     resource_id  run  
+0            NaN   31  
+1            NaN   31  
+2            1.0   31  
+3            NaN   31  
+4            NaN   31  
+..           ...  ...  
+399          NaN   31  
+400          NaN   31  
+401          NaN   31  
+402          NaN   31  
+403          NaN   31  
+
+[404 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    3.847273   
+4          2  Simplest              queue  treatment_wait_begins    3.847273   
+..       ...       ...                ...                    ...         ...   
+452       63  Simplest       resource_use       treatment_begins  598.059750   
+453      137  Simplest  arrival_departure                arrival  598.068365   
+454      137  Simplest              queue  treatment_wait_begins  598.068365   
+455      138  Simplest  arrival_departure                arrival  599.471493   
+456      138  Simplest              queue  treatment_wait_begins  599.471493   
+
+     resource_id  run  
+0            NaN   32  
+1            NaN   32  
+2            1.0   32  
+3            NaN   32  
+4            NaN   32  
+..           ...  ...  
+452          2.0   32  
+453          NaN   32  
+454          NaN   32  
+455          NaN   32  
+456          NaN   32  
+
+[457 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    2.979799   
+4          2  Simplest              queue  treatment_wait_begins    2.979799   
+..       ...       ...                ...                    ...         ...   
+420       56  Simplest   resource_use_end     treatment_complete  588.442078   
+421       56  Simplest  arrival_departure                 depart  588.442078   
+422       61  Simplest       resource_use       treatment_begins  588.442078   
+423      125  Simplest  arrival_departure                arrival  598.862419   
+424      125  Simplest              queue  treatment_wait_begins  598.862419   
+
+     resource_id  run  
+0            NaN   33  
+1            NaN   33  
+2            1.0   33  
+3            NaN   33  
+4            NaN   33  
+..           ...  ...  
+420          2.0   33  
+421          NaN   33  
+422          2.0   33  
+423          NaN   33  
+424          NaN   33  
+
+[425 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    6.406587   
+4          2  Simplest              queue  treatment_wait_begins    6.406587   
+..       ...       ...                ...                    ...         ...   
+432      131  Simplest  arrival_departure                arrival  594.078612   
+433      131  Simplest              queue  treatment_wait_begins  594.078612   
+434       57  Simplest   resource_use_end     treatment_complete  596.816200   
+435       57  Simplest  arrival_departure                 depart  596.816200   
+436       61  Simplest       resource_use       treatment_begins  596.816200   
+
+     resource_id  run  
+0            NaN   34  
+1            NaN   34  
+2            1.0   34  
+3            NaN   34  
+4            NaN   34  
+..           ...  ...  
+432          NaN   34  
+433          NaN   34  
+434          3.0   34  
+435          NaN   34  
+436          3.0   34  
+
+[437 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    4.054578   
+4          2  Simplest              queue  treatment_wait_begins    4.054578   
+..       ...       ...                ...                    ...         ...   
+422      126  Simplest  arrival_departure                arrival  593.136121   
+423      126  Simplest              queue  treatment_wait_begins  593.136121   
+424       57  Simplest   resource_use_end     treatment_complete  594.893210   
+425       57  Simplest  arrival_departure                 depart  594.893210   
+426       61  Simplest       resource_use       treatment_begins  594.893210   
+
+     resource_id  run  
+0            NaN   35  
+1            NaN   35  
+2            1.0   35  
+3            NaN   35  
+4            NaN   35  
+..           ...  ...  
+422          NaN   35  
+423          NaN   35  
+424          4.0   35  
+425          NaN   35  
+426          4.0   35  
+
+[427 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    1.416630   
+4          2  Simplest              queue  treatment_wait_begins    1.416630   
+..       ...       ...                ...                    ...         ...   
+408      114  Simplest              queue  treatment_wait_begins  591.418705   
+409      115  Simplest  arrival_departure                arrival  592.666469   
+410      115  Simplest              queue  treatment_wait_begins  592.666469   
+411      116  Simplest  arrival_departure                arrival  597.724245   
+412      116  Simplest              queue  treatment_wait_begins  597.724245   
+
+     resource_id  run  
+0            NaN   36  
+1            NaN   36  
+2            1.0   36  
+3            NaN   36  
+4            NaN   36  
+..           ...  ...  
+408          NaN   36  
+409          NaN   36  
+410          NaN   36  
+411          NaN   36  
+412          NaN   36  
+
+[413 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    3.839077   
+4          2  Simplest              queue  treatment_wait_begins    3.839077   
+..       ...       ...                ...                    ...         ...   
+419       57  Simplest  arrival_departure                 depart  595.046180   
+420       61  Simplest       resource_use       treatment_begins  595.046180   
+421       58  Simplest   resource_use_end     treatment_complete  596.426184   
+422       58  Simplest  arrival_departure                 depart  596.426184   
+423       62  Simplest       resource_use       treatment_begins  596.426184   
+
+     resource_id  run  
+0            NaN   37  
+1            NaN   37  
+2            1.0   37  
+3            NaN   37  
+4            NaN   37  
+..           ...  ...  
+419          NaN   37  
+420          3.0   37  
+421          4.0   37  
+422          NaN   37  
+423          4.0   37  
+
+[424 rows x 7 columns]
+     patient   pathway         event_type                  event       time   
+0          1  Simplest  arrival_departure                arrival    0.00000  \
+1          1  Simplest              queue  treatment_wait_begins    0.00000   
+2          1  Simplest       resource_use       treatment_begins    0.00000   
+3          2  Simplest  arrival_departure                arrival   11.37911   
+4          2  Simplest              queue  treatment_wait_begins   11.37911   
+..       ...       ...                ...                    ...        ...   
+414       55  Simplest   resource_use_end     treatment_complete  595.21601   
+415       55  Simplest  arrival_departure                 depart  595.21601   
+416       59  Simplest       resource_use       treatment_begins  595.21601   
+417      125  Simplest  arrival_departure                arrival  595.51344   
+418      125  Simplest              queue  treatment_wait_begins  595.51344   
+
+     resource_id  run  
+0            NaN   38  
+1            NaN   38  
+2            1.0   38  
+3            NaN   38  
+4            NaN   38  
+..           ...  ...  
+414          1.0   38  
+415          NaN   38  
+416          1.0   38  
+417          NaN   38  
+418          NaN   38  
+
+[419 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival   15.357978   
+4          2  Simplest              queue  treatment_wait_begins   15.357978   
+..       ...       ...                ...                    ...         ...   
+411       56  Simplest   resource_use_end     treatment_complete  591.136951   
+412       56  Simplest  arrival_departure                 depart  591.136951   
+413       60  Simplest       resource_use       treatment_begins  591.136951   
+414      122  Simplest  arrival_departure                arrival  595.504248   
+415      122  Simplest              queue  treatment_wait_begins  595.504248   
+
+     resource_id  run  
+0            NaN   39  
+1            NaN   39  
+2            1.0   39  
+3            NaN   39  
+4            NaN   39  
+..           ...  ...  
+411          4.0   39  
+412          NaN   39  
+413          4.0   39  
+414          NaN   39  
+415          NaN   39  
+
+[416 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    0.358077   
+4          2  Simplest              queue  treatment_wait_begins    0.358077   
+..       ...       ...                ...                    ...         ...   
+470      147  Simplest  arrival_departure                arrival  597.806040   
+471      147  Simplest              queue  treatment_wait_begins  597.806040   
+472       59  Simplest   resource_use_end     treatment_complete  598.490166   
+473       59  Simplest  arrival_departure                 depart  598.490166   
+474       63  Simplest       resource_use       treatment_begins  598.490166   
+
+     resource_id  run  
+0            NaN   40  
+1            NaN   40  
+2            1.0   40  
+3            NaN   40  
+4            NaN   40  
+..           ...  ...  
+470          NaN   40  
+471          NaN   40  
+472          3.0   40  
+473          NaN   40  
+474          3.0   40  
+
+[475 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    4.957973   
+4          2  Simplest              queue  treatment_wait_begins    4.957973   
+..       ...       ...                ...                    ...         ...   
+452       61  Simplest       resource_use       treatment_begins  586.622073   
+453      140  Simplest  arrival_departure                arrival  587.588875   
+454      140  Simplest              queue  treatment_wait_begins  587.588875   
+455      141  Simplest  arrival_departure                arrival  597.852349   
+456      141  Simplest              queue  treatment_wait_begins  597.852349   
+
+     resource_id  run  
+0            NaN   41  
+1            NaN   41  
+2            1.0   41  
+3            NaN   41  
+4            NaN   41  
+..           ...  ...  
+452          3.0   41  
+453          NaN   41  
+454          NaN   41  
+455          NaN   41  
+456          NaN   41  
+
+[457 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    1.095171   
+4          2  Simplest              queue  treatment_wait_begins    1.095171   
+..       ...       ...                ...                    ...         ...   
+465      144  Simplest              queue  treatment_wait_begins  594.262624   
+466      145  Simplest  arrival_departure                arrival  598.087466   
+467      145  Simplest              queue  treatment_wait_begins  598.087466   
+468      146  Simplest  arrival_departure                arrival  598.089769   
+469      146  Simplest              queue  treatment_wait_begins  598.089769   
+
+     resource_id  run  
+0            NaN   42  
+1            NaN   42  
+2            1.0   42  
+3            NaN   42  
+4            NaN   42  
+..           ...  ...  
+465          NaN   42  
+466          NaN   42  
+467          NaN   42  
+468          NaN   42  
+469          NaN   42  
+
+[470 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    3.049627   
+4          2  Simplest              queue  treatment_wait_begins    3.049627   
+..       ...       ...                ...                    ...         ...   
+403       58  Simplest   resource_use_end     treatment_complete  595.019412   
+404       58  Simplest  arrival_departure                 depart  595.019412   
+405       62  Simplest       resource_use       treatment_begins  595.019412   
+406      115  Simplest  arrival_departure                arrival  599.475748   
+407      115  Simplest              queue  treatment_wait_begins  599.475748   
+
+     resource_id  run  
+0            NaN   43  
+1            NaN   43  
+2            1.0   43  
+3            NaN   43  
+4            NaN   43  
+..           ...  ...  
+403          1.0   43  
+404          NaN   43  
+405          1.0   43  
+406          NaN   43  
+407          NaN   43  
+
+[408 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    0.267277   
+4          2  Simplest              queue  treatment_wait_begins    0.267277   
+..       ...       ...                ...                    ...         ...   
+429      128  Simplest  arrival_departure                arrival  592.605588   
+430      128  Simplest              queue  treatment_wait_begins  592.605588   
+431       58  Simplest   resource_use_end     treatment_complete  597.733689   
+432       58  Simplest  arrival_departure                 depart  597.733689   
+433       62  Simplest       resource_use       treatment_begins  597.733689   
+
+     resource_id  run  
+0            NaN   44  
+1            NaN   44  
+2            1.0   44  
+3            NaN   44  
+4            NaN   44  
+..           ...  ...  
+429          NaN   44  
+430          NaN   44  
+431          2.0   44  
+432          NaN   44  
+433          2.0   44  
+
+[434 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    1.917290   
+4          2  Simplest              queue  treatment_wait_begins    1.917290   
+..       ...       ...                ...                    ...         ...   
+401      114  Simplest  arrival_departure                arrival  587.864887   
+402      114  Simplest              queue  treatment_wait_begins  587.864887   
+403       58  Simplest   resource_use_end     treatment_complete  592.096053   
+404       58  Simplest  arrival_departure                 depart  592.096053   
+405       62  Simplest       resource_use       treatment_begins  592.096053   
+
+     resource_id  run  
+0            NaN   45  
+1            NaN   45  
+2            1.0   45  
+3            NaN   45  
+4            NaN   45  
+..           ...  ...  
+401          NaN   45  
+402          NaN   45  
+403          2.0   45  
+404          NaN   45  
+405          2.0   45  
+
+[406 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    1.711183   
+4          2  Simplest              queue  treatment_wait_begins    1.711183   
+..       ...       ...                ...                    ...         ...   
+399      114  Simplest              queue  treatment_wait_begins  597.166074   
+400      115  Simplest  arrival_departure                arrival  597.669128   
+401      115  Simplest              queue  treatment_wait_begins  597.669128   
+402      116  Simplest  arrival_departure                arrival  599.485480   
+403      116  Simplest              queue  treatment_wait_begins  599.485480   
+
+     resource_id  run  
+0            NaN   46  
+1            NaN   46  
+2            1.0   46  
+3            NaN   46  
+4            NaN   46  
+..           ...  ...  
+399          NaN   46  
+400          NaN   46  
+401          NaN   46  
+402          NaN   46  
+403          NaN   46  
+
+[404 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    8.125058   
+4          2  Simplest              queue  treatment_wait_begins    8.125058   
+..       ...       ...                ...                    ...         ...   
+399       55  Simplest  arrival_departure                 depart  585.862021   
+400       59  Simplest       resource_use       treatment_begins  585.862021   
+401       56  Simplest   resource_use_end     treatment_complete  590.649532   
+402       56  Simplest  arrival_departure                 depart  590.649532   
+403       60  Simplest       resource_use       treatment_begins  590.649532   
+
+     resource_id  run  
+0            NaN   47  
+1            NaN   47  
+2            1.0   47  
+3            NaN   47  
+4            NaN   47  
+..           ...  ...  
+399          NaN   47  
+400          3.0   47  
+401          2.0   47  
+402          NaN   47  
+403          2.0   47  
+
+[404 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    4.230846   
+4          2  Simplest              queue  treatment_wait_begins    4.230846   
+..       ...       ...                ...                    ...         ...   
+427      127  Simplest  arrival_departure                arrival  585.869016   
+428      127  Simplest              queue  treatment_wait_begins  585.869016   
+429       58  Simplest   resource_use_end     treatment_complete  587.102557   
+430       58  Simplest  arrival_departure                 depart  587.102557   
+431       62  Simplest       resource_use       treatment_begins  587.102557   
+
+     resource_id  run  
+0            NaN   48  
+1            NaN   48  
+2            1.0   48  
+3            NaN   48  
+4            NaN   48  
+..           ...  ...  
+427          NaN   48  
+428          NaN   48  
+429          1.0   48  
+430          NaN   48  
+431          1.0   48  
+
+[432 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    6.025057   
+4          2  Simplest              queue  treatment_wait_begins    6.025057   
+..       ...       ...                ...                    ...         ...   
+414       58  Simplest  arrival_departure                 depart  589.575356   
+415       62  Simplest       resource_use       treatment_begins  589.575356   
+416       59  Simplest   resource_use_end     treatment_complete  597.427967   
+417       59  Simplest  arrival_departure                 depart  597.427967   
+418       63  Simplest       resource_use       treatment_begins  597.427967   
+
+     resource_id  run  
+0            NaN   49  
+1            NaN   49  
+2            1.0   49  
+3            NaN   49  
+4            NaN   49  
+..           ...  ...  
+414          NaN   49  
+415          3.0   49  
+416          4.0   49  
+417          NaN   49  
+418          4.0   49  
+
+[419 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    5.222440   
+4          2  Simplest              queue  treatment_wait_begins    5.222440   
+..       ...       ...                ...                    ...         ...   
+452      141  Simplest  arrival_departure                arrival  592.805571   
+453      141  Simplest              queue  treatment_wait_begins  592.805571   
+454       58  Simplest   resource_use_end     treatment_complete  599.238588   
+455       58  Simplest  arrival_departure                 depart  599.238588   
+456       61  Simplest       resource_use       treatment_begins  599.238588   
+
+     resource_id  run  
+0            NaN   50  
+1            NaN   50  
+2            1.0   50  
+3            NaN   50  
+4            NaN   50  
+..           ...  ...  
+452          NaN   50  
+453          NaN   50  
+454          1.0   50  
+455          NaN   50  
+456          1.0   50  
+
+[457 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    1.413982   
+4          2  Simplest              queue  treatment_wait_begins    1.413982   
+..       ...       ...                ...                    ...         ...   
+376       61  Simplest       resource_use       treatment_begins  585.644272   
+377      102  Simplest  arrival_departure                arrival  590.097638   
+378      102  Simplest              queue  treatment_wait_begins  590.097638   
+379      103  Simplest  arrival_departure                arrival  595.643719   
+380      103  Simplest              queue  treatment_wait_begins  595.643719   
+
+     resource_id  run  
+0            NaN   51  
+1            NaN   51  
+2            1.0   51  
+3            NaN   51  
+4            NaN   51  
+..           ...  ...  
+376          4.0   51  
+377          NaN   51  
+378          NaN   51  
+379          NaN   51  
+380          NaN   51  
+
+[381 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    4.776800   
+4          2  Simplest              queue  treatment_wait_begins    4.776800   
+..       ...       ...                ...                    ...         ...   
+394       61  Simplest       resource_use       treatment_begins  589.630656   
+395      111  Simplest  arrival_departure                arrival  590.141620   
+396      111  Simplest              queue  treatment_wait_begins  590.141620   
+397      112  Simplest  arrival_departure                arrival  594.924827   
+398      112  Simplest              queue  treatment_wait_begins  594.924827   
+
+     resource_id  run  
+0            NaN   52  
+1            NaN   52  
+2            1.0   52  
+3            NaN   52  
+4            NaN   52  
+..           ...  ...  
+394          1.0   52  
+395          NaN   52  
+396          NaN   52  
+397          NaN   52  
+398          NaN   52  
+
+[399 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival   10.374346   
+4          2  Simplest              queue  treatment_wait_begins   10.374346   
+..       ...       ...                ...                    ...         ...   
+429       56  Simplest   resource_use_end     treatment_complete  596.817965   
+430       56  Simplest  arrival_departure                 depart  596.817965   
+431       60  Simplest       resource_use       treatment_begins  596.817965   
+432      131  Simplest  arrival_departure                arrival  596.913094   
+433      131  Simplest              queue  treatment_wait_begins  596.913094   
+
+     resource_id  run  
+0            NaN   53  
+1            NaN   53  
+2            1.0   53  
+3            NaN   53  
+4            NaN   53  
+..           ...  ...  
+429          2.0   53  
+430          NaN   53  
+431          2.0   53  
+432          NaN   53  
+433          NaN   53  
+
+[434 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    2.153333   
+4          2  Simplest              queue  treatment_wait_begins    2.153333   
+..       ...       ...                ...                    ...         ...   
+413      118  Simplest              queue  treatment_wait_begins  591.455199   
+414      119  Simplest  arrival_departure                arrival  591.460628   
+415      119  Simplest              queue  treatment_wait_begins  591.460628   
+416      120  Simplest  arrival_departure                arrival  594.889843   
+417      120  Simplest              queue  treatment_wait_begins  594.889843   
+
+     resource_id  run  
+0            NaN   54  
+1            NaN   54  
+2            1.0   54  
+3            NaN   54  
+4            NaN   54  
+..           ...  ...  
+413          NaN   54  
+414          NaN   54  
+415          NaN   54  
+416          NaN   54  
+417          NaN   54  
+
+[418 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    2.068407   
+4          2  Simplest              queue  treatment_wait_begins    2.068407   
+..       ...       ...                ...                    ...         ...   
+415       62  Simplest       resource_use       treatment_begins  593.522024   
+416      120  Simplest  arrival_departure                arrival  595.191128   
+417      120  Simplest              queue  treatment_wait_begins  595.191128   
+418      121  Simplest  arrival_departure                arrival  598.841347   
+419      121  Simplest              queue  treatment_wait_begins  598.841347   
+
+     resource_id  run  
+0            NaN   55  
+1            NaN   55  
+2            1.0   55  
+3            NaN   55  
+4            NaN   55  
+..           ...  ...  
+415          2.0   55  
+416          NaN   55  
+417          NaN   55  
+418          NaN   55  
+419          NaN   55  
+
+[420 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    5.429372   
+4          2  Simplest              queue  treatment_wait_begins    5.429372   
+..       ...       ...                ...                    ...         ...   
+361       97  Simplest  arrival_departure                arrival  591.456303   
+362       97  Simplest              queue  treatment_wait_begins  591.456303   
+363       56  Simplest   resource_use_end     treatment_complete  593.890392   
+364       56  Simplest  arrival_departure                 depart  593.890392   
+365       60  Simplest       resource_use       treatment_begins  593.890392   
+
+     resource_id  run  
+0            NaN   56  
+1            NaN   56  
+2            1.0   56  
+3            NaN   56  
+4            NaN   56  
+..           ...  ...  
+361          NaN   56  
+362          NaN   56  
+363          1.0   56  
+364          NaN   56  
+365          1.0   56  
+
+[366 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    4.115327   
+4          2  Simplest              queue  treatment_wait_begins    4.115327   
+..       ...       ...                ...                    ...         ...   
+426       59  Simplest  arrival_departure                 depart  596.056199   
+427       62  Simplest       resource_use       treatment_begins  596.056199   
+428       58  Simplest   resource_use_end     treatment_complete  596.482677   
+429       58  Simplest  arrival_departure                 depart  596.482677   
+430       63  Simplest       resource_use       treatment_begins  596.482677   
+
+     resource_id  run  
+0            NaN   57  
+1            NaN   57  
+2            1.0   57  
+3            NaN   57  
+4            NaN   57  
+..           ...  ...  
+426          NaN   57  
+427          4.0   57  
+428          1.0   57  
+429          NaN   57  
+430          1.0   57  
+
+[431 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    1.262319   
+4          2  Simplest              queue  treatment_wait_begins    1.262319   
+..       ...       ...                ...                    ...         ...   
+420      125  Simplest  arrival_departure                arrival  593.815748   
+421      125  Simplest              queue  treatment_wait_begins  593.815748   
+422       57  Simplest   resource_use_end     treatment_complete  598.369602   
+423       57  Simplest  arrival_departure                 depart  598.369602   
+424       61  Simplest       resource_use       treatment_begins  598.369602   
+
+     resource_id  run  
+0            NaN   58  
+1            NaN   58  
+2            1.0   58  
+3            NaN   58  
+4            NaN   58  
+..           ...  ...  
+420          NaN   58  
+421          NaN   58  
+422          3.0   58  
+423          NaN   58  
+424          3.0   58  
+
+[425 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    5.915705   
+4          2  Simplest              queue  treatment_wait_begins    5.915705   
+..       ...       ...                ...                    ...         ...   
+386      106  Simplest              queue  treatment_wait_begins  590.836880   
+387      107  Simplest  arrival_departure                arrival  594.035070   
+388      107  Simplest              queue  treatment_wait_begins  594.035070   
+389      108  Simplest  arrival_departure                arrival  595.548510   
+390      108  Simplest              queue  treatment_wait_begins  595.548510   
+
+     resource_id  run  
+0            NaN   59  
+1            NaN   59  
+2            1.0   59  
+3            NaN   59  
+4            NaN   59  
+..           ...  ...  
+386          NaN   59  
+387          NaN   59  
+388          NaN   59  
+389          NaN   59  
+390          NaN   59  
+
+[391 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    7.524060   
+4          2  Simplest              queue  treatment_wait_begins    7.524060   
+..       ...       ...                ...                    ...         ...   
+404       57  Simplest   resource_use_end     treatment_complete  587.243593   
+405       57  Simplest  arrival_departure                 depart  587.243593   
+406       61  Simplest       resource_use       treatment_begins  587.243593   
+407      117  Simplest  arrival_departure                arrival  594.166160   
+408      117  Simplest              queue  treatment_wait_begins  594.166160   
+
+     resource_id  run  
+0            NaN   60  
+1            NaN   60  
+2            1.0   60  
+3            NaN   60  
+4            NaN   60  
+..           ...  ...  
+404          3.0   60  
+405          NaN   60  
+406          3.0   60  
+407          NaN   60  
+408          NaN   60  
+
+[409 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival   12.575892   
+4          2  Simplest              queue  treatment_wait_begins   12.575892   
+..       ...       ...                ...                    ...         ...   
+419       58  Simplest   resource_use_end     treatment_complete  591.172648   
+420       58  Simplest  arrival_departure                 depart  591.172648   
+421       62  Simplest       resource_use       treatment_begins  591.172648   
+422      123  Simplest  arrival_departure                arrival  599.294530   
+423      123  Simplest              queue  treatment_wait_begins  599.294530   
+
+     resource_id  run  
+0            NaN   61  
+1            NaN   61  
+2            1.0   61  
+3            NaN   61  
+4            NaN   61  
+..           ...  ...  
+419          4.0   61  
+420          NaN   61  
+421          4.0   61  
+422          NaN   61  
+423          NaN   61  
+
+[424 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    5.559021   
+4          2  Simplest              queue  treatment_wait_begins    5.559021   
+..       ...       ...                ...                    ...         ...   
+423       62  Simplest       resource_use       treatment_begins  597.957303   
+424      124  Simplest  arrival_departure                arrival  598.393382   
+425      124  Simplest              queue  treatment_wait_begins  598.393382   
+426      125  Simplest  arrival_departure                arrival  599.681270   
+427      125  Simplest              queue  treatment_wait_begins  599.681270   
+
+     resource_id  run  
+0            NaN   62  
+1            NaN   62  
+2            1.0   62  
+3            NaN   62  
+4            NaN   62  
+..           ...  ...  
+423          2.0   62  
+424          NaN   62  
+425          NaN   62  
+426          NaN   62  
+427          NaN   62  
+
+[428 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    2.459220   
+4          2  Simplest              queue  treatment_wait_begins    2.459220   
+..       ...       ...                ...                    ...         ...   
+409      119  Simplest              queue  treatment_wait_begins  593.688445   
+410      120  Simplest  arrival_departure                arrival  596.143989   
+411      120  Simplest              queue  treatment_wait_begins  596.143989   
+412      121  Simplest  arrival_departure                arrival  598.943460   
+413      121  Simplest              queue  treatment_wait_begins  598.943460   
+
+     resource_id  run  
+0            NaN   63  
+1            NaN   63  
+2            1.0   63  
+3            NaN   63  
+4            NaN   63  
+..           ...  ...  
+409          NaN   63  
+410          NaN   63  
+411          NaN   63  
+412          NaN   63  
+413          NaN   63  
+
+[414 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival   22.978705   
+4          2  Simplest              queue  treatment_wait_begins   22.978705   
+..       ...       ...                ...                    ...         ...   
+413       56  Simplest   resource_use_end     treatment_complete  597.717535   
+414       56  Simplest  arrival_departure                 depart  597.717535   
+415       60  Simplest       resource_use       treatment_begins  597.717535   
+416      123  Simplest  arrival_departure                arrival  599.509163   
+417      123  Simplest              queue  treatment_wait_begins  599.509163   
+
+     resource_id  run  
+0            NaN   64  
+1            NaN   64  
+2            1.0   64  
+3            NaN   64  
+4            NaN   64  
+..           ...  ...  
+413          2.0   64  
+414          NaN   64  
+415          2.0   64  
+416          NaN   64  
+417          NaN   64  
+
+[418 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival   14.006737   
+4          2  Simplest              queue  treatment_wait_begins   14.006737   
+..       ...       ...                ...                    ...         ...   
+388       61  Simplest       resource_use       treatment_begins  594.343137   
+389      108  Simplest  arrival_departure                arrival  595.297488   
+390      108  Simplest              queue  treatment_wait_begins  595.297488   
+391      109  Simplest  arrival_departure                arrival  599.711631   
+392      109  Simplest              queue  treatment_wait_begins  599.711631   
+
+     resource_id  run  
+0            NaN   65  
+1            NaN   65  
+2            1.0   65  
+3            NaN   65  
+4            NaN   65  
+..           ...  ...  
+388          1.0   65  
+389          NaN   65  
+390          NaN   65  
+391          NaN   65  
+392          NaN   65  
+
+[393 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    1.827390   
+4          2  Simplest              queue  treatment_wait_begins    1.827390   
+..       ...       ...                ...                    ...         ...   
+434       61  Simplest       resource_use       treatment_begins  597.561065   
+435      131  Simplest  arrival_departure                arrival  598.324268   
+436      131  Simplest              queue  treatment_wait_begins  598.324268   
+437      132  Simplest  arrival_departure                arrival  598.664582   
+438      132  Simplest              queue  treatment_wait_begins  598.664582   
+
+     resource_id  run  
+0            NaN   66  
+1            NaN   66  
+2            1.0   66  
+3            NaN   66  
+4            NaN   66  
+..           ...  ...  
+434          3.0   66  
+435          NaN   66  
+436          NaN   66  
+437          NaN   66  
+438          NaN   66  
+
+[439 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    1.197904   
+4          2  Simplest              queue  treatment_wait_begins    1.197904   
+..       ...       ...                ...                    ...         ...   
+406       59  Simplest   resource_use_end     treatment_complete  586.109549   
+407       59  Simplest  arrival_departure                 depart  586.109549   
+408       63  Simplest       resource_use       treatment_begins  586.109549   
+409      115  Simplest  arrival_departure                arrival  597.952587   
+410      115  Simplest              queue  treatment_wait_begins  597.952587   
+
+     resource_id  run  
+0            NaN   67  
+1            NaN   67  
+2            1.0   67  
+3            NaN   67  
+4            NaN   67  
+..           ...  ...  
+406          4.0   67  
+407          NaN   67  
+408          4.0   67  
+409          NaN   67  
+410          NaN   67  
+
+[411 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    2.107217   
+4          2  Simplest              queue  treatment_wait_begins    2.107217   
+..       ...       ...                ...                    ...         ...   
+422      126  Simplest  arrival_departure                arrival  592.969053   
+423      126  Simplest              queue  treatment_wait_begins  592.969053   
+424       57  Simplest   resource_use_end     treatment_complete  593.101100   
+425       57  Simplest  arrival_departure                 depart  593.101100   
+426       61  Simplest       resource_use       treatment_begins  593.101100   
+
+     resource_id  run  
+0            NaN   68  
+1            NaN   68  
+2            1.0   68  
+3            NaN   68  
+4            NaN   68  
+..           ...  ...  
+422          NaN   68  
+423          NaN   68  
+424          2.0   68  
+425          NaN   68  
+426          2.0   68  
+
+[427 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    2.035091   
+4          2  Simplest              queue  treatment_wait_begins    2.035091   
+..       ...       ...                ...                    ...         ...   
+393       57  Simplest   resource_use_end     treatment_complete  590.433140   
+394       57  Simplest  arrival_departure                 depart  590.433140   
+395       62  Simplest       resource_use       treatment_begins  590.433140   
+396      110  Simplest  arrival_departure                arrival  590.837886   
+397      110  Simplest              queue  treatment_wait_begins  590.837886   
+
+     resource_id  run  
+0            NaN   69  
+1            NaN   69  
+2            1.0   69  
+3            NaN   69  
+4            NaN   69  
+..           ...  ...  
+393          3.0   69  
+394          NaN   69  
+395          3.0   69  
+396          NaN   69  
+397          NaN   69  
+
+[398 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    1.606645   
+4          2  Simplest              queue  treatment_wait_begins    1.606645   
+..       ...       ...                ...                    ...         ...   
+471       62  Simplest       resource_use       treatment_begins  598.068489   
+472      148  Simplest  arrival_departure                arrival  598.281041   
+473      148  Simplest              queue  treatment_wait_begins  598.281041   
+474      149  Simplest  arrival_departure                arrival  598.699997   
+475      149  Simplest              queue  treatment_wait_begins  598.699997   
+
+     resource_id  run  
+0            NaN   70  
+1            NaN   70  
+2            1.0   70  
+3            NaN   70  
+4            NaN   70  
+..           ...  ...  
+471          2.0   70  
+472          NaN   70  
+473          NaN   70  
+474          NaN   70  
+475          NaN   70  
+
+[476 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    1.939936   
+4          2  Simplest              queue  treatment_wait_begins    1.939936   
+..       ...       ...                ...                    ...         ...   
+362       57  Simplest   resource_use_end     treatment_complete  590.260928   
+363       57  Simplest  arrival_departure                 depart  590.260928   
+364       61  Simplest       resource_use       treatment_begins  590.260928   
+365       96  Simplest  arrival_departure                arrival  592.187596   
+366       96  Simplest              queue  treatment_wait_begins  592.187596   
+
+     resource_id  run  
+0            NaN   71  
+1            NaN   71  
+2            1.0   71  
+3            NaN   71  
+4            NaN   71  
+..           ...  ...  
+362          4.0   71  
+363          NaN   71  
+364          4.0   71  
+365          NaN   71  
+366          NaN   71  
+
+[367 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    2.382568   
+4          2  Simplest              queue  treatment_wait_begins    2.382568   
+..       ...       ...                ...                    ...         ...   
+395      111  Simplest  arrival_departure                arrival  596.210291   
+396      111  Simplest              queue  treatment_wait_begins  596.210291   
+397       58  Simplest   resource_use_end     treatment_complete  599.708447   
+398       58  Simplest  arrival_departure                 depart  599.708447   
+399       62  Simplest       resource_use       treatment_begins  599.708447   
+
+     resource_id  run  
+0            NaN   72  
+1            NaN   72  
+2            1.0   72  
+3            NaN   72  
+4            NaN   72  
+..           ...  ...  
+395          NaN   72  
+396          NaN   72  
+397          1.0   72  
+398          NaN   72  
+399          1.0   72  
+
+[400 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    0.790658   
+4          2  Simplest              queue  treatment_wait_begins    0.790658   
+..       ...       ...                ...                    ...         ...   
+406       55  Simplest   resource_use_end     treatment_complete  590.803533   
+407       55  Simplest  arrival_departure                 depart  590.803533   
+408       59  Simplest       resource_use       treatment_begins  590.803533   
+409      121  Simplest  arrival_departure                arrival  593.219180   
+410      121  Simplest              queue  treatment_wait_begins  593.219180   
+
+     resource_id  run  
+0            NaN   73  
+1            NaN   73  
+2            1.0   73  
+3            NaN   73  
+4            NaN   73  
+..           ...  ...  
+406          1.0   73  
+407          NaN   73  
+408          1.0   73  
+409          NaN   73  
+410          NaN   73  
+
+[411 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival   11.994156   
+4          2  Simplest              queue  treatment_wait_begins   11.994156   
+..       ...       ...                ...                    ...         ...   
+415      124  Simplest  arrival_departure                arrival  594.851977   
+416      124  Simplest              queue  treatment_wait_begins  594.851977   
+417       58  Simplest   resource_use_end     treatment_complete  598.313796   
+418       58  Simplest  arrival_departure                 depart  598.313796   
+419       60  Simplest       resource_use       treatment_begins  598.313796   
+
+     resource_id  run  
+0            NaN   74  
+1            NaN   74  
+2            1.0   74  
+3            NaN   74  
+4            NaN   74  
+..           ...  ...  
+415          NaN   74  
+416          NaN   74  
+417          4.0   74  
+418          NaN   74  
+419          4.0   74  
+
+[420 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    3.362197   
+4          2  Simplest              queue  treatment_wait_begins    3.362197   
+..       ...       ...                ...                    ...         ...   
+411      117  Simplest              queue  treatment_wait_begins  593.349158   
+412      118  Simplest  arrival_departure                arrival  598.241085   
+413      118  Simplest              queue  treatment_wait_begins  598.241085   
+414      119  Simplest  arrival_departure                arrival  598.418337   
+415      119  Simplest              queue  treatment_wait_begins  598.418337   
+
+     resource_id  run  
+0            NaN   75  
+1            NaN   75  
+2            1.0   75  
+3            NaN   75  
+4            NaN   75  
+..           ...  ...  
+411          NaN   75  
+412          NaN   75  
+413          NaN   75  
+414          NaN   75  
+415          NaN   75  
+
+[416 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    0.778457   
+4          2  Simplest              queue  treatment_wait_begins    0.778457   
+..       ...       ...                ...                    ...         ...   
+452      138  Simplest  arrival_departure                arrival  596.951088   
+453      138  Simplest              queue  treatment_wait_begins  596.951088   
+454       59  Simplest   resource_use_end     treatment_complete  598.562595   
+455       59  Simplest  arrival_departure                 depart  598.562595   
+456       63  Simplest       resource_use       treatment_begins  598.562595   
+
+     resource_id  run  
+0            NaN   76  
+1            NaN   76  
+2            1.0   76  
+3            NaN   76  
+4            NaN   76  
+..           ...  ...  
+452          NaN   76  
+453          NaN   76  
+454          2.0   76  
+455          NaN   76  
+456          2.0   76  
+
+[457 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    4.762761   
+4          2  Simplest              queue  treatment_wait_begins    4.762761   
+..       ...       ...                ...                    ...         ...   
+410      118  Simplest              queue  treatment_wait_begins  592.684755   
+411      119  Simplest  arrival_departure                arrival  593.928970   
+412      119  Simplest              queue  treatment_wait_begins  593.928970   
+413      120  Simplest  arrival_departure                arrival  598.408117   
+414      120  Simplest              queue  treatment_wait_begins  598.408117   
+
+     resource_id  run  
+0            NaN   77  
+1            NaN   77  
+2            1.0   77  
+3            NaN   77  
+4            NaN   77  
+..           ...  ...  
+410          NaN   77  
+411          NaN   77  
+412          NaN   77  
+413          NaN   77  
+414          NaN   77  
+
+[415 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival   17.303651   
+4          2  Simplest              queue  treatment_wait_begins   17.303651   
+..       ...       ...                ...                    ...         ...   
+421      125  Simplest              queue  treatment_wait_begins  585.584738   
+422      126  Simplest  arrival_departure                arrival  586.353521   
+423      126  Simplest              queue  treatment_wait_begins  586.353521   
+424      127  Simplest  arrival_departure                arrival  599.235315   
+425      127  Simplest              queue  treatment_wait_begins  599.235315   
+
+     resource_id  run  
+0            NaN   78  
+1            NaN   78  
+2            1.0   78  
+3            NaN   78  
+4            NaN   78  
+..           ...  ...  
+421          NaN   78  
+422          NaN   78  
+423          NaN   78  
+424          NaN   78  
+425          NaN   78  
+
+[426 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    2.123774   
+4          2  Simplest              queue  treatment_wait_begins    2.123774   
+..       ...       ...                ...                    ...         ...   
+401      114  Simplest  arrival_departure                arrival  591.323035   
+402      114  Simplest              queue  treatment_wait_begins  591.323035   
+403       58  Simplest   resource_use_end     treatment_complete  595.603741   
+404       58  Simplest  arrival_departure                 depart  595.603741   
+405       62  Simplest       resource_use       treatment_begins  595.603741   
+
+     resource_id  run  
+0            NaN   79  
+1            NaN   79  
+2            1.0   79  
+3            NaN   79  
+4            NaN   79  
+..           ...  ...  
+401          NaN   79  
+402          NaN   79  
+403          3.0   79  
+404          NaN   79  
+405          3.0   79  
+
+[406 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    9.961203   
+4          2  Simplest              queue  treatment_wait_begins    9.961203   
+..       ...       ...                ...                    ...         ...   
+421       57  Simplest  arrival_departure                 depart  593.633018   
+422       61  Simplest       resource_use       treatment_begins  593.633018   
+423       58  Simplest   resource_use_end     treatment_complete  595.585913   
+424       58  Simplest  arrival_departure                 depart  595.585913   
+425       62  Simplest       resource_use       treatment_begins  595.585913   
+
+     resource_id  run  
+0            NaN   80  
+1            NaN   80  
+2            1.0   80  
+3            NaN   80  
+4            NaN   80  
+..           ...  ...  
+421          NaN   80  
+422          4.0   80  
+423          1.0   80  
+424          NaN   80  
+425          1.0   80  
+
+[426 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    7.488183   
+4          2  Simplest              queue  treatment_wait_begins    7.488183   
+..       ...       ...                ...                    ...         ...   
+405       56  Simplest   resource_use_end     treatment_complete  588.468612   
+406       56  Simplest  arrival_departure                 depart  588.468612   
+407       60  Simplest       resource_use       treatment_begins  588.468612   
+408      119  Simplest  arrival_departure                arrival  598.417896   
+409      119  Simplest              queue  treatment_wait_begins  598.417896   
+
+     resource_id  run  
+0            NaN   81  
+1            NaN   81  
+2            1.0   81  
+3            NaN   81  
+4            NaN   81  
+..           ...  ...  
+405          4.0   81  
+406          NaN   81  
+407          4.0   81  
+408          NaN   81  
+409          NaN   81  
+
+[410 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    3.247125   
+4          2  Simplest              queue  treatment_wait_begins    3.247125   
+..       ...       ...                ...                    ...         ...   
+407       55  Simplest  arrival_departure                 depart  588.028230   
+408       59  Simplest       resource_use       treatment_begins  588.028230   
+409       56  Simplest   resource_use_end     treatment_complete  590.015428   
+410       56  Simplest  arrival_departure                 depart  590.015428   
+411       60  Simplest       resource_use       treatment_begins  590.015428   
+
+     resource_id  run  
+0            NaN   82  
+1            NaN   82  
+2            1.0   82  
+3            NaN   82  
+4            NaN   82  
+..           ...  ...  
+407          NaN   82  
+408          1.0   82  
+409          3.0   82  
+410          NaN   82  
+411          3.0   82  
+
+[412 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    1.902375   
+4          2  Simplest              queue  treatment_wait_begins    1.902375   
+..       ...       ...                ...                    ...         ...   
+421      125  Simplest              queue  treatment_wait_begins  592.265911   
+422      126  Simplest  arrival_departure                arrival  593.555059   
+423      126  Simplest              queue  treatment_wait_begins  593.555059   
+424      127  Simplest  arrival_departure                arrival  597.126998   
+425      127  Simplest              queue  treatment_wait_begins  597.126998   
+
+     resource_id  run  
+0            NaN   83  
+1            NaN   83  
+2            1.0   83  
+3            NaN   83  
+4            NaN   83  
+..           ...  ...  
+421          NaN   83  
+422          NaN   83  
+423          NaN   83  
+424          NaN   83  
+425          NaN   83  
+
+[426 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    5.848899   
+4          2  Simplest              queue  treatment_wait_begins    5.848899   
+..       ...       ...                ...                    ...         ...   
+379       60  Simplest       resource_use       treatment_begins  589.415434   
+380      105  Simplest  arrival_departure                arrival  593.831887   
+381      105  Simplest              queue  treatment_wait_begins  593.831887   
+382      106  Simplest  arrival_departure                arrival  598.931402   
+383      106  Simplest              queue  treatment_wait_begins  598.931402   
+
+     resource_id  run  
+0            NaN   84  
+1            NaN   84  
+2            1.0   84  
+3            NaN   84  
+4            NaN   84  
+..           ...  ...  
+379          4.0   84  
+380          NaN   84  
+381          NaN   84  
+382          NaN   84  
+383          NaN   84  
+
+[384 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    1.419640   
+4          2  Simplest              queue  treatment_wait_begins    1.419640   
+..       ...       ...                ...                    ...         ...   
+445       62  Simplest       resource_use       treatment_begins  589.555058   
+446      135  Simplest  arrival_departure                arrival  593.061629   
+447      135  Simplest              queue  treatment_wait_begins  593.061629   
+448      136  Simplest  arrival_departure                arrival  599.581766   
+449      136  Simplest              queue  treatment_wait_begins  599.581766   
+
+     resource_id  run  
+0            NaN   85  
+1            NaN   85  
+2            1.0   85  
+3            NaN   85  
+4            NaN   85  
+..           ...  ...  
+445          3.0   85  
+446          NaN   85  
+447          NaN   85  
+448          NaN   85  
+449          NaN   85  
+
+[450 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    4.242769   
+4          2  Simplest              queue  treatment_wait_begins    4.242769   
+..       ...       ...                ...                    ...         ...   
+401      117  Simplest  arrival_departure                arrival  597.624205   
+402      117  Simplest              queue  treatment_wait_begins  597.624205   
+403       56  Simplest   resource_use_end     treatment_complete  598.350887   
+404       56  Simplest  arrival_departure                 depart  598.350887   
+405       60  Simplest       resource_use       treatment_begins  598.350887   
+
+     resource_id  run  
+0            NaN   86  
+1            NaN   86  
+2            1.0   86  
+3            NaN   86  
+4            NaN   86  
+..           ...  ...  
+401          NaN   86  
+402          NaN   86  
+403          1.0   86  
+404          NaN   86  
+405          1.0   86  
+
+[406 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    1.038609   
+4          2  Simplest              queue  treatment_wait_begins    1.038609   
+..       ...       ...                ...                    ...         ...   
+436       63  Simplest       resource_use       treatment_begins  594.535141   
+437      129  Simplest  arrival_departure                arrival  595.165586   
+438      129  Simplest              queue  treatment_wait_begins  595.165586   
+439      130  Simplest  arrival_departure                arrival  597.719821   
+440      130  Simplest              queue  treatment_wait_begins  597.719821   
+
+     resource_id  run  
+0            NaN   87  
+1            NaN   87  
+2            1.0   87  
+3            NaN   87  
+4            NaN   87  
+..           ...  ...  
+436          1.0   87  
+437          NaN   87  
+438          NaN   87  
+439          NaN   87  
+440          NaN   87  
+
+[441 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    5.015686   
+4          2  Simplest              queue  treatment_wait_begins    5.015686   
+..       ...       ...                ...                    ...         ...   
+387      110  Simplest  arrival_departure                arrival  597.997477   
+388      110  Simplest              queue  treatment_wait_begins  597.997477   
+389       56  Simplest   resource_use_end     treatment_complete  598.767480   
+390       56  Simplest  arrival_departure                 depart  598.767480   
+391       60  Simplest       resource_use       treatment_begins  598.767480   
+
+     resource_id  run  
+0            NaN   88  
+1            NaN   88  
+2            1.0   88  
+3            NaN   88  
+4            NaN   88  
+..           ...  ...  
+387          NaN   88  
+388          NaN   88  
+389          3.0   88  
+390          NaN   88  
+391          3.0   88  
+
+[392 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival   11.642996   
+4          2  Simplest              queue  treatment_wait_begins   11.642996   
+..       ...       ...                ...                    ...         ...   
+377      100  Simplest              queue  treatment_wait_begins  593.119980   
+378      101  Simplest  arrival_departure                arrival  594.245176   
+379      101  Simplest              queue  treatment_wait_begins  594.245176   
+380      102  Simplest  arrival_departure                arrival  597.396516   
+381      102  Simplest              queue  treatment_wait_begins  597.396516   
+
+     resource_id  run  
+0            NaN   89  
+1            NaN   89  
+2            1.0   89  
+3            NaN   89  
+4            NaN   89  
+..           ...  ...  
+377          NaN   89  
+378          NaN   89  
+379          NaN   89  
+380          NaN   89  
+381          NaN   89  
+
+[382 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    3.686835   
+4          2  Simplest              queue  treatment_wait_begins    3.686835   
+..       ...       ...                ...                    ...         ...   
+425      126  Simplest  arrival_departure                arrival  595.754698   
+426      126  Simplest              queue  treatment_wait_begins  595.754698   
+427       58  Simplest   resource_use_end     treatment_complete  597.271763   
+428       58  Simplest  arrival_departure                 depart  597.271763   
+429       62  Simplest       resource_use       treatment_begins  597.271763   
+
+     resource_id  run  
+0            NaN   90  
+1            NaN   90  
+2            1.0   90  
+3            NaN   90  
+4            NaN   90  
+..           ...  ...  
+425          NaN   90  
+426          NaN   90  
+427          1.0   90  
+428          NaN   90  
+429          1.0   90  
+
+[430 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival   12.142504   
+4          2  Simplest              queue  treatment_wait_begins   12.142504   
+..       ...       ...                ...                    ...         ...   
+403       60  Simplest       resource_use       treatment_begins  586.490163   
+404      117  Simplest  arrival_departure                arrival  590.423882   
+405      117  Simplest              queue  treatment_wait_begins  590.423882   
+406      118  Simplest  arrival_departure                arrival  599.042427   
+407      118  Simplest              queue  treatment_wait_begins  599.042427   
+
+     resource_id  run  
+0            NaN   91  
+1            NaN   91  
+2            1.0   91  
+3            NaN   91  
+4            NaN   91  
+..           ...  ...  
+403          3.0   91  
+404          NaN   91  
+405          NaN   91  
+406          NaN   91  
+407          NaN   91  
+
+[408 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    4.472466   
+4          2  Simplest              queue  treatment_wait_begins    4.472466   
+..       ...       ...                ...                    ...         ...   
+409       56  Simplest   resource_use_end     treatment_complete  597.817316   
+410       56  Simplest  arrival_departure                 depart  597.817316   
+411       60  Simplest       resource_use       treatment_begins  597.817316   
+412      121  Simplest  arrival_departure                arrival  597.931792   
+413      121  Simplest              queue  treatment_wait_begins  597.931792   
+
+     resource_id  run  
+0            NaN   92  
+1            NaN   92  
+2            1.0   92  
+3            NaN   92  
+4            NaN   92  
+..           ...  ...  
+409          3.0   92  
+410          NaN   92  
+411          3.0   92  
+412          NaN   92  
+413          NaN   92  
+
+[414 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    5.832731   
+4          2  Simplest              queue  treatment_wait_begins    5.832731   
+..       ...       ...                ...                    ...         ...   
+417      120  Simplest              queue  treatment_wait_begins  588.556262   
+418      121  Simplest  arrival_departure                arrival  589.744989   
+419      121  Simplest              queue  treatment_wait_begins  589.744989   
+420      122  Simplest  arrival_departure                arrival  590.539666   
+421      122  Simplest              queue  treatment_wait_begins  590.539666   
+
+     resource_id  run  
+0            NaN   93  
+1            NaN   93  
+2            1.0   93  
+3            NaN   93  
+4            NaN   93  
+..           ...  ...  
+417          NaN   93  
+418          NaN   93  
+419          NaN   93  
+420          NaN   93  
+421          NaN   93  
+
+[422 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    2.569510   
+4          2  Simplest              queue  treatment_wait_begins    2.569510   
+..       ...       ...                ...                    ...         ...   
+393       56  Simplest   resource_use_end     treatment_complete  583.754308   
+394       56  Simplest  arrival_departure                 depart  583.754308   
+395       60  Simplest       resource_use       treatment_begins  583.754308   
+396      113  Simplest  arrival_departure                arrival  596.251370   
+397      113  Simplest              queue  treatment_wait_begins  596.251370   
+
+     resource_id  run  
+0            NaN   94  
+1            NaN   94  
+2            1.0   94  
+3            NaN   94  
+4            NaN   94  
+..           ...  ...  
+393          4.0   94  
+394          NaN   94  
+395          4.0   94  
+396          NaN   94  
+397          NaN   94  
+
+[398 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    0.733576   
+4          2  Simplest              queue  treatment_wait_begins    0.733576   
+..       ...       ...                ...                    ...         ...   
+472       63  Simplest       resource_use       treatment_begins  594.044440   
+473      147  Simplest  arrival_departure                arrival  595.450517   
+474      147  Simplest              queue  treatment_wait_begins  595.450517   
+475      148  Simplest  arrival_departure                arrival  596.228619   
+476      148  Simplest              queue  treatment_wait_begins  596.228619   
+
+     resource_id  run  
+0            NaN   95  
+1            NaN   95  
+2            1.0   95  
+3            NaN   95  
+4            NaN   95  
+..           ...  ...  
+472          3.0   95  
+473          NaN   95  
+474          NaN   95  
+475          NaN   95  
+476          NaN   95  
+
+[477 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    1.863578   
+4          2  Simplest              queue  treatment_wait_begins    1.863578   
+..       ...       ...                ...                    ...         ...   
+449       57  Simplest   resource_use_end     treatment_complete  591.464700   
+450       57  Simplest  arrival_departure                 depart  591.464700   
+451       62  Simplest       resource_use       treatment_begins  591.464700   
+452      138  Simplest  arrival_departure                arrival  599.978955   
+453      138  Simplest              queue  treatment_wait_begins  599.978955   
+
+     resource_id  run  
+0            NaN   96  
+1            NaN   96  
+2            1.0   96  
+3            NaN   96  
+4            NaN   96  
+..           ...  ...  
+449          2.0   96  
+450          NaN   96  
+451          2.0   96  
+452          NaN   96  
+453          NaN   96  
+
+[454 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    4.922430   
+4          2  Simplest              queue  treatment_wait_begins    4.922430   
+..       ...       ...                ...                    ...         ...   
+386       57  Simplest   resource_use_end     treatment_complete  595.296443   
+387       57  Simplest  arrival_departure                 depart  595.296443   
+388       61  Simplest       resource_use       treatment_begins  595.296443   
+389      108  Simplest  arrival_departure                arrival  599.723290   
+390      108  Simplest              queue  treatment_wait_begins  599.723290   
+
+     resource_id  run  
+0            NaN   97  
+1            NaN   97  
+2            1.0   97  
+3            NaN   97  
+4            NaN   97  
+..           ...  ...  
+386          1.0   97  
+387          NaN   97  
+388          1.0   97  
+389          NaN   97  
+390          NaN   97  
+
+[391 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    2.241466   
+4          2  Simplest              queue  treatment_wait_begins    2.241466   
+..       ...       ...                ...                    ...         ...   
+400       56  Simplest   resource_use_end     treatment_complete  592.097897   
+401       56  Simplest  arrival_departure                 depart  592.097897   
+402       61  Simplest       resource_use       treatment_begins  592.097897   
+403      115  Simplest  arrival_departure                arrival  598.296801   
+404      115  Simplest              queue  treatment_wait_begins  598.296801   
+
+     resource_id  run  
+0            NaN   98  
+1            NaN   98  
+2            1.0   98  
+3            NaN   98  
+4            NaN   98  
+..           ...  ...  
+400          3.0   98  
+401          NaN   98  
+402          3.0   98  
+403          NaN   98  
+404          NaN   98  
+
+[405 rows x 7 columns]
+     patient   pathway         event_type                  event        time   
+0          1  Simplest  arrival_departure                arrival    0.000000  \
+1          1  Simplest              queue  treatment_wait_begins    0.000000   
+2          1  Simplest       resource_use       treatment_begins    0.000000   
+3          2  Simplest  arrival_departure                arrival    5.962040   
+4          2  Simplest              queue  treatment_wait_begins    5.962040   
+..       ...       ...                ...                    ...         ...   
+420       61  Simplest       resource_use       treatment_begins  592.876207   
+421      124  Simplest  arrival_departure                arrival  597.639854   
+422      124  Simplest              queue  treatment_wait_begins  597.639854   
+423      125  Simplest  arrival_departure                arrival  597.944837   
+424      125  Simplest              queue  treatment_wait_begins  597.944837   
+
+     resource_id  run  
+0            NaN   99  
+1            NaN   99  
+2            1.0   99  
+3            NaN   99  
+4            NaN   99  
+..           ...  ...  
+420          3.0   99  
+421          NaN   99  
+422          NaN   99  
+423          NaN   99  
+424          NaN   99  
+
+[425 rows x 7 columns]</code></pre>
+</div>
+</div>
+<div id="cell-2" class="cell" data-execution_count="13">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>my_trial.all_event_logs</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="13">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">patient</th>
+<th data-quarto-table-cell-role="th">pathway</th>
+<th data-quarto-table-cell-role="th">event_type</th>
+<th data-quarto-table-cell-role="th">event</th>
+<th data-quarto-table-cell-role="th">time</th>
+<th data-quarto-table-cell-role="th">resource_id</th>
+<th data-quarto-table-cell-role="th">run</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td>1</td>
+<td>Simplest</td>
+<td>arrival_departure</td>
+<td>arrival</td>
+<td>0.000000</td>
+<td>NaN</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>1</td>
+<td>Simplest</td>
+<td>queue</td>
+<td>treatment_wait_begins</td>
+<td>0.000000</td>
+<td>NaN</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td>1</td>
+<td>Simplest</td>
+<td>resource_use</td>
+<td>treatment_begins</td>
+<td>0.000000</td>
+<td>1.0</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">3</td>
+<td>2</td>
+<td>Simplest</td>
+<td>arrival_departure</td>
+<td>arrival</td>
+<td>3.399660</td>
+<td>NaN</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">4</td>
+<td>2</td>
+<td>Simplest</td>
+<td>queue</td>
+<td>treatment_wait_begins</td>
+<td>3.399660</td>
+<td>NaN</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">420</td>
+<td>61</td>
+<td>Simplest</td>
+<td>resource_use</td>
+<td>treatment_begins</td>
+<td>592.876207</td>
+<td>3.0</td>
+<td>99</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">421</td>
+<td>124</td>
+<td>Simplest</td>
+<td>arrival_departure</td>
+<td>arrival</td>
+<td>597.639854</td>
+<td>NaN</td>
+<td>99</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">422</td>
+<td>124</td>
+<td>Simplest</td>
+<td>queue</td>
+<td>treatment_wait_begins</td>
+<td>597.639854</td>
+<td>NaN</td>
+<td>99</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">423</td>
+<td>125</td>
+<td>Simplest</td>
+<td>arrival_departure</td>
+<td>arrival</td>
+<td>597.944837</td>
+<td>NaN</td>
+<td>99</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">424</td>
+<td>125</td>
+<td>Simplest</td>
+<td>queue</td>
+<td>treatment_wait_begins</td>
+<td>597.944837</td>
+<td>NaN</td>
+<td>99</td>
+</tr>
+</tbody>
+</table>
+
+<p>41938 rows × 7 columns</p>
+</div>
+</div>
+</div>
+<div id="cell-3" class="cell" data-execution_count="14">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>event_position_df <span class="op">=</span> pd.DataFrame([</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>                    {<span class="st">'event'</span>: <span class="st">'arrival'</span>,</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>                     <span class="st">'x'</span>:  <span class="dv">50</span>, <span class="st">'y'</span>: <span class="dv">300</span>,</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>                     <span class="st">'label'</span>: <span class="st">"Arrival"</span> },</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>                    <span class="co"># Triage - minor and trauma</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>                    {<span class="st">'event'</span>: <span class="st">'treatment_wait_begins'</span>,</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>                     <span class="st">'x'</span>:  <span class="dv">205</span>, <span class="st">'y'</span>: <span class="dv">170</span>,</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>                     <span class="st">'label'</span>: <span class="st">"Waiting for Treatment"</span>},</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>                    {<span class="st">'event'</span>: <span class="st">'treatment_begins'</span>,</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>                     <span class="st">'x'</span>:  <span class="dv">205</span>, <span class="st">'y'</span>: <span class="dv">110</span>,</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>                     <span class="st">'resource'</span>:<span class="st">'n_cubicles'</span>,</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>                     <span class="st">'label'</span>: <span class="st">"Being Treated"</span>},</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>                    {<span class="st">'event'</span>: <span class="st">'exit'</span>,</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>                     <span class="st">'x'</span>:  <span class="dv">270</span>, <span class="st">'y'</span>: <span class="dv">70</span>,</span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>                     <span class="st">'label'</span>: <span class="st">"Exit"</span>}</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>                ])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-4" class="cell" data-execution_count="15">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>animate_activity_log(</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>        event_log<span class="op">=</span>my_trial.all_event_logs[my_trial.all_event_logs[<span class="st">'run'</span>]<span class="op">==</span><span class="dv">1</span>],</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>        event_position_df<span class="op">=</span> event_position_df,</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>        scenario<span class="op">=</span>g(),</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>        debug_mode<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>        every_x_time_units<span class="op">=</span><span class="dv">1</span>,</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>        include_play_button<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>        icon_and_text_size<span class="op">=</span><span class="dv">20</span>,</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>        gap_between_entities<span class="op">=</span><span class="dv">6</span>,</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>        gap_between_rows<span class="op">=</span><span class="dv">15</span>,</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>        plotly_height<span class="op">=</span><span class="dv">700</span>,</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>        frame_duration<span class="op">=</span><span class="dv">200</span>,</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>        plotly_width<span class="op">=</span><span class="dv">1200</span>,</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>        override_x_max<span class="op">=</span><span class="dv">300</span>,</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>        override_y_max<span class="op">=</span><span class="dv">500</span>,</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>        limit_duration<span class="op">=</span>g.sim_duration,</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>        wrap_queues_at<span class="op">=</span><span class="dv">25</span>,</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>        step_snapshot_max<span class="op">=</span><span class="dv">125</span>,</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>        time_display_units<span class="op">=</span><span class="st">"dhm"</span>,</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>        display_stage_labels<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>        add_background_image<span class="op">=</span><span class="st">"Simplest Model Background Image - Horizontal Layout.drawio.png"</span>,</span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>    )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Animation function called at 11:54:58
+Iteration through minute-by-minute logs complete 11:55:01
+Snapshot df concatenation complete at 11:55:01
+Reshaped animation dataframe finished construction at 11:55:01
+Placement dataframe finished construction at 11:55:01
+Output animation generation complete at 11:55:03
+Total Time Elapsed: 4.71 seconds</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<pre><code>Unable to display output for mime type(s): application/vnd.plotly.v1+json</code></pre>
+</div>
+</div>
+
+
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
