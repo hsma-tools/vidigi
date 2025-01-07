@@ -1,3 +1,5 @@
 *.pyc
 
 token.txt
+
+/.quarto/
