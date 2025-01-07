@@ -22,6 +22,10 @@ quartodoc:
       - section: "Reference"
         contents:
           - "{{ contents }}"
+      - section: "Examples"
+        contents:
+        - examples/example_1_simplest_case/ex_1_simplest_case.ipynb
+        - examples/example_2_branching_multistep/ex_2_branching_multistep_case.ipynb
 
   sections:
     - title: All-In-One Animation Functions
