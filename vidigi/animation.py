@@ -102,7 +102,7 @@ def generate_animation(
         x_max = event_position_df['x'].max()*1.25
 
     if override_y_max is not None:
-        y_max = override_x_max
+        y_max = override_y_max
     else:
         y_max = event_position_df['y'].max()*1.1
 
