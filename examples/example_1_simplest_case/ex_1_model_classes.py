@@ -298,7 +298,7 @@ class Trial:
                 my_model.mean_q_time_cubicle,
             ]
 
-            print(event_log)
+            # print(event_log)
 
             self.all_event_logs.append(event_log)
 
