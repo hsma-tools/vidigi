@@ -80,7 +80,72 @@ class CustomResource(simpy.Resource):
         # reset_id_logic(self.id_attribute)
         return super().release(*args, **kwargs)
 
-def populate_store(num_resources, simpy_store, sim_env):
+class CustomPriorityResource(simpy.PriorityResource):
+    """
+    A custom resource class that extends simpy.Resource with an additional ID attribute.
+
+    This class allows for more detailed tracking and management of resources in a simulation
+    by adding an ID attribute to each resource instance.
+
+    Parameters
+    ----------
+    env : simpy.Environment
+        The SimPy environment in which this resource exists.
+    capacity : int
+        The capacity of the resource (how many units can be in use simultaneously).
+    id_attribute : any, optional
+        An identifier for the resource (default is None).
+
+    Attributes
+    ----------
+    id_attribute : any
+        An identifier for the resource, which can be used for custom tracking or logic.
+
+    Notes
+    -----
+    This class inherits from simpy.PriorityResource and overrides the request and release methods
+    to allow for custom handling of the id_attribute. The actual implementation of ID
+    assignment or reset logic should be added by the user as needed.
+
+    """
+    def __init__(self, env, capacity, id_attribute=None):
+        super().__init__(env, capacity)
+        self.id_attribute = id_attribute
+
+    def request(self, *args, **kwargs):
+        """
+        Request the resource.
+
+        This method can be customized to handle the ID attribute when a request is made.
+        Currently, it simply calls the parent class's request method.
+
+        Returns
+        -------
+        simpy.events.Request
+            A SimPy request event.
+        """
+        # Add logic to handle the ID attribute when a request is made
+        # For example, you can assign an ID to the requester
+        # self.id_attribute = assign_id_logic()
+        return super().request(*args, **kwargs)
+
+    def release(self, *args, **kwargs):
+        """
+        Release the resource.
+
+        This method can be customized to handle the ID attribute when a release is made.
+        Currently, it simply calls the parent class's release method.
+
+        Returns
+        -------
+        None
+        """
+        # Add logic to handle the ID attribute when a release is made
+        # For example, you can reset the ID attribute
+        # reset_id_logic(self.id_attribute)
+        return super().release(*args, **kwargs)
+
+def populate_store(num_resources, simpy_store, sim_env, priority_resource=False):
     """
     Populate a SimPy Store with CustomResource objects.
 
@@ -95,6 +160,9 @@ def populate_store(num_resources, simpy_store, sim_env):
         The SimPy Store object to populate with resources.
     sim_env : simpy.Environment
         The SimPy environment in which the resources and store exist.
+    priority_resource: bool
+        Whether to populate the resource with PriorityResources (True)
+        or standard Simpy resources (False)
 
     Returns
     -------
@@ -117,12 +185,22 @@ def populate_store(num_resources, simpy_store, sim_env):
     5
     """
     for i in range(num_resources):
-        simpy_store.put(
-            CustomResource(
-                sim_env,
-                capacity=1,
-                id_attribute = i+1)
-            )
+
+        if priority_resource:
+            simpy_store.put(
+                CustomPriorityResource(
+                    sim_env,
+                    capacity=1,
+                    id_attribute = i+1)
+                )
+
+        else:
+            simpy_store.put(
+                CustomResource(
+                    sim_env,
+                    capacity=1,
+                    id_attribute = i+1)
+                )
 
 
 def event_log_from_ciw_recs(ciw_recs_obj, node_name_list):
