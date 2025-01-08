@@ -1,5 +1,6 @@
 import simpy
 import pandas as pd
+from simpy.core import BoundClass
 
 class CustomResource(simpy.Resource):
     """
@@ -80,72 +81,40 @@ class CustomResource(simpy.Resource):
         # reset_id_logic(self.id_attribute)
         return super().release(*args, **kwargs)
 
-class CustomPriorityResource(simpy.PriorityResource):
-    """
-    A custom resource class that extends simpy.Resource with an additional ID attribute.
+class PriorityGet(simpy.resources.base.Get):
+    # Credit to arabinelli
+    # https://stackoverflow.com/questions/58603000/how-do-i-make-a-priority-get-request-from-resource-store
+    def __init__(self, resource, priority=999, preempt=True):
+        self.priority = priority
+        """The priority of this request. A smaller number means higher
+        priority."""
 
-    This class allows for more detailed tracking and management of resources in a simulation
-    by adding an ID attribute to each resource instance.
+        self.preempt = preempt
+        """Indicates whether the request should preempt a resource user or not
+        (:class:`PriorityResource` ignores this flag)."""
 
-    Parameters
-    ----------
-    env : simpy.Environment
-        The SimPy environment in which this resource exists.
-    capacity : int
-        The capacity of the resource (how many units can be in use simultaneously).
-    id_attribute : any, optional
-        An identifier for the resource (default is None).
+        self.time = resource._env.now
+        """The time at which the request was made."""
 
-    Attributes
-    ----------
-    id_attribute : any
-        An identifier for the resource, which can be used for custom tracking or logic.
+        self.usage_since = None
+        """The time at which the request succeeded."""
 
-    Notes
-    -----
-    This class inherits from simpy.PriorityResource and overrides the request and release methods
-    to allow for custom handling of the id_attribute. The actual implementation of ID
-    assignment or reset logic should be added by the user as needed.
+        self.key = (self.priority, self.time, not self.preempt)
+        """Key for sorting events. Consists of the priority (lower value is
+        more important), the time at which the request was made (earlier
+        requests are more important) and finally the preemption flag (preempt
+        requests are more important)."""
 
-    """
-    def __init__(self, env, capacity, id_attribute=None):
-        super().__init__(env, capacity)
-        self.id_attribute = id_attribute
+        super().__init__(resource)
 
-    def request(self, *args, **kwargs):
-        """
-        Request the resource.
+class VidigiPriorityStore(simpy.resources.store.Store):
+    # Credit to arabinelli
+    # https://stackoverflow.com/questions/58603000/how-do-i-make-a-priority-get-request-from-resource-store
+    GetQueue = simpy.resources.resource.SortedQueue
 
-        This method can be customized to handle the ID attribute when a request is made.
-        Currently, it simply calls the parent class's request method.
+    get = BoundClass(PriorityGet)
 
-        Returns
-        -------
-        simpy.events.Request
-            A SimPy request event.
-        """
-        # Add logic to handle the ID attribute when a request is made
-        # For example, you can assign an ID to the requester
-        # self.id_attribute = assign_id_logic()
-        return super().request(*args, **kwargs)
-
-    def release(self, *args, **kwargs):
-        """
-        Release the resource.
-
-        This method can be customized to handle the ID attribute when a release is made.
-        Currently, it simply calls the parent class's release method.
-
-        Returns
-        -------
-        None
-        """
-        # Add logic to handle the ID attribute when a release is made
-        # For example, you can reset the ID attribute
-        # reset_id_logic(self.id_attribute)
-        return super().release(*args, **kwargs)
-
-def populate_store(num_resources, simpy_store, sim_env, priority_resource=False):
+def populate_store(num_resources, simpy_store, sim_env):
     """
     Populate a SimPy Store with CustomResource objects.
 
@@ -186,21 +155,12 @@ def populate_store(num_resources, simpy_store, sim_env, priority_resource=False)
     """
     for i in range(num_resources):
 
-        if priority_resource:
-            simpy_store.put(
-                CustomPriorityResource(
-                    sim_env,
-                    capacity=1,
-                    id_attribute = i+1)
-                )
-
-        else:
-            simpy_store.put(
-                CustomResource(
-                    sim_env,
-                    capacity=1,
-                    id_attribute = i+1)
-                )
+        simpy_store.put(
+            CustomResource(
+                sim_env,
+                capacity=1,
+                id_attribute = i+1)
+            )
 
 
 def event_log_from_ciw_recs(ciw_recs_obj, node_name_list):
