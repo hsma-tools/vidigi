@@ -17,13 +17,13 @@ suitable for creating animations of patient flow through a system.
 
 ## Parameters {.doc-section .doc-section-parameters}
 
-| Name               | Type      | Description                                                                                | Default        |
-|--------------------|-----------|--------------------------------------------------------------------------------------------|----------------|
-| event_log          | DataFrame | The input event log containing patient events and timestamps.                              | _required_     |
-| every_x_time_units | int       | The time interval between snapshots in minutes (default is 10).                            | `10`           |
-| limit_duration     | int       | The maximum duration to consider in minutes (default is 10 days).                          | `10 * 60 * 24` |
-| step_snapshot_max  | int       | The maximum number of patients to include in each snapshot for each event (default is 50). | `50`           |
-| debug_mode         | bool      | If True, print debug information during processing (default is False).                     | `False`        |
+| Name               | Type         | Description                                                                                | Default        |
+|--------------------|--------------|--------------------------------------------------------------------------------------------|----------------|
+| event_log          | pd.DataFrame | The input event log containing patient events and timestamps.                              | _required_     |
+| every_x_time_units | int          | The time interval between snapshots in minutes (default is 10).                            | `10`           |
+| limit_duration     | int          | The maximum duration to consider in minutes (default is 10 days).                          | `10 * 60 * 24` |
+| step_snapshot_max  | int          | The maximum number of patients to include in each snapshot for each event (default is 50). | `50`           |
+| debug_mode         | bool         | If True, print debug information during processing (default is False).                     | `False`        |
 
 ## Returns {.doc-section .doc-section-returns}
 

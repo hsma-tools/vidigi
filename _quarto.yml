@@ -26,6 +26,7 @@ quartodoc:
         contents:
         - examples/example_1_simplest_case/ex_1_simplest_case.ipynb
         - examples/example_2_branching_multistep/ex_2_branching_multistep_case.ipynb
+        - examples/example_3_simplest_case_priority_resource/ex_3_simplest_case_priority_resource.ipynb
       - section: "Reference"
         contents:
           - function_reference.qmd
@@ -49,6 +50,7 @@ quartodoc:
       contents:
         - utils.populate_store
         - utils.CustomResource
+        - utils.VidigiPriorityStore
     - title: ciw Utility Functions
       desc: ""
       contents:

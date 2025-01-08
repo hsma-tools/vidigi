@@ -24,8 +24,9 @@
 
 | | |
 | --- | --- |
-| [utils.populate_store](utils.populate_store.qmd#vidigi.utils.populate_store) | Populate a SimPy Store with CustomResource objects. |
+| [utils.populate_store](utils.populate_store.qmd#vidigi.utils.populate_store) | Populate a SimPy Store (or VidigiPriorityStore) with CustomResource objects. |
 | [utils.CustomResource](utils.CustomResource.qmd#vidigi.utils.CustomResource) | A custom resource class that extends simpy.Resource with an additional ID attribute. |
+| [utils.VidigiPriorityStore](utils.VidigiPriorityStore.qmd#vidigi.utils.VidigiPriorityStore) | A SimPy store that processes requests with priority. |
 
 ## ciw Utility Functions
 

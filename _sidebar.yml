@@ -9,6 +9,7 @@ website:
     - contents:
       - examples/example_1_simplest_case/ex_1_simplest_case.ipynb
       - examples/example_2_branching_multistep/ex_2_branching_multistep_case.ipynb
+      - examples/example_3_simplest_case_priority_resource/ex_3_simplest_case_priority_resource.ipynb
       section: Examples
     - contents:
       - function_reference.qmd
@@ -24,6 +25,7 @@ website:
       - contents:
         - reference/utils.populate_store.qmd
         - reference/utils.CustomResource.qmd
+        - reference/utils.VidigiPriorityStore.qmd
         section: Simpy Utility Functions and Classes
       - contents:
         - reference/utils.event_log_from_ciw_recs.qmd

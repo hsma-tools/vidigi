@@ -1,27 +1,28 @@
 # utils.populate_store { #vidigi.utils.populate_store }
 
 ```python
-utils.populate_store(
-    num_resources,
-    simpy_store,
-    sim_env,
-    priority_resource=False,
-)
+utils.populate_store(num_resources, simpy_store, sim_env)
 ```
 
-Populate a SimPy Store with CustomResource objects.
+Populate a SimPy Store (or VidigiPriorityStore) with CustomResource objects.
 
-This function creates a specified number of CustomResource objects and adds them to a SimPy Store.
-Each CustomResource is initialized with a capacity of 1 and a unique ID attribute.
+This function creates a specified number of CustomResource objects and adds them to
+a SimPy Store or VidigiPriorityStore.
+
+Each CustomResource is initialized with a capacity of 1 and a unique ID attribute,
+which is crucial for animation functions where you wish to show an individual entity
+consistently using the same resource.
+
+If using VidigiPriorityStore, you will need to pass the relevant priority in to the
+.get() argument when pulling a resource out of the store.
 
 ## Parameters {.doc-section .doc-section-parameters}
 
-| Name              | Type              | Description                                                                                        | Default    |
-|-------------------|-------------------|----------------------------------------------------------------------------------------------------|------------|
-| num_resources     | int               | The number of CustomResource objects to create and add to the store.                               | _required_ |
-| simpy_store       | simpy.Store       | The SimPy Store object to populate with resources.                                                 | _required_ |
-| sim_env           | simpy.Environment | The SimPy environment in which the resources and store exist.                                      | _required_ |
-| priority_resource |                   | Whether to populate the resource with PriorityResources (True) or standard Simpy resources (False) | `False`    |
+| Name          | Type                                            | Description                                                          | Default    |
+|---------------|-------------------------------------------------|----------------------------------------------------------------------|------------|
+| num_resources | int                                             | The number of CustomResource objects to create and add to the store. | _required_ |
+| simpy_store   | simpy.Store or vidigi.utils.VidigiPriorityStore | The SimPy Store object to populate with resources.                   | _required_ |
+| sim_env       | simpy.Environment                               | The SimPy environment in which the resources and store exist.        | _required_ |
 
 ## Returns {.doc-section .doc-section-returns}
 
