@@ -3,12 +3,8 @@ import numpy as np
 import pandas as pd
 import simpy
 from sim_tools.distributions import Exponential, Lognormal
-from vidigi.utils import populate_store
+from vidigi.utils import populate_store, VidigiPriorityStore
 
-
-# Class to store global parameter values.  We don't create an instance of this
-# class - we just refer to the class blueprint itself to access the numbers
-# inside.
 class g:
     '''
     Create a scenario to parameterise the simulation model
@@ -43,7 +39,6 @@ class g:
     sim_duration = 600
     number_of_runs = 100
 
-# Class representing patients coming in to the clinic.
 class Patient:
     '''
     Class defining details for a patient entity
@@ -63,7 +58,13 @@ class Patient:
         self.total_time = -np.inf
         self.treat_duration = -np.inf
 
-# Class representing our model of the clinic.
+        # Randomly initialise a patient priority value
+        # Lower values will be prioritised - so priority 1 will be seen before priority 2
+        if random.uniform(0, 1) < 0.2:
+            self.priority = 1
+        else:
+            self.priority = 2
+
 class Model:
     '''
     Simulates the simplest minor treatment process for a patient
@@ -118,7 +119,7 @@ class Model:
             1. Nurses/treatment bays (same thing in this model)
 
         '''
-        self.treatment_cubicles = simpy.Store(self.env)
+        self.treatment_cubicles = VidigiPriorityStore(self.env)
 
         populate_store(num_resources=g.n_cubicles,
                        simpy_store=self.treatment_cubicles,
@@ -132,105 +133,110 @@ class Model:
         #             id_attribute = i+1)
         #         )
 
-    # A generator function that represents the DES generator for patient
-    # arrivals
+    # A generator function that represents the DES generator for patient arrivals
     def generator_patient_arrivals(self):
-        # We use an infinite loop here to keep doing this indefinitely whilst
-        # the simulation runs
+        # Use an infinite loop here to keep doing this indefinitely while the simulation runs
         while True:
-            # Increment the patient counter by 1 (this means our first patient
-            # will have an ID of 1)
+            # Increment the patient counter by 1 (first patient will have an ID of 1)
             self.patient_counter += 1
 
-            # Create a new patient - an instance of the Patient Class we
-            # defined above.  Remember, we pass in the ID when creating a
-            # patient - so here we pass the patient counter to use as the ID.
             p = Patient(self.patient_counter)
 
             # Store patient in list for later easy access
             self.patients.append(p)
 
-            # Tell SimPy to start up the attend_clinic generator function with
-            # this patient (the generator function that will model the
-            # patient's journey through the system)
+            # Tell SimPy to start up the attend_clinic generator function with this patient
+            # (the generator function that will model the patient's journey through the system)
             self.env.process(self.attend_clinic(p))
 
-            # Randomly sample the time to the next patient arriving.  Here, we
-            # sample from an exponential distribution (common for inter-arrival
-            # times), and pass in a lambda value of 1 / mean.  The mean
-            # inter-arrival time is stored in the g class.
+            # Randomly sample the time to the next patient arriving
             sampled_inter = self.patient_inter_arrival_dist.sample()
 
-            # Freeze this instance of this function in place until the
-            # inter-arrival time we sampled above has elapsed.  Note - time in
-            # SimPy progresses in "Time Units", which can represent anything
-            # you like (just make sure you're consistent within the model)
+            # Freeze this instance of this function in place until the inter-arrival time
+            # sampled above has elapsed
             yield self.env.timeout(sampled_inter)
 
-    # A generator function that represents the pathway for a patient going
-    # through the clinic.
-    # The patient object is passed in to the generator function so we can
-    # extract information from / record information to it
     def attend_clinic(self, patient):
+        """
+        A generator function that represents the pathway for a patient going through the clinic.
+
+        The patient object is passed in to the generator function so we can extract information
+        from / record information to it
+        """
         self.arrival = self.env.now
+
+        # ===== LOGGING FOR VIDIGI ANIMATION  ===== #
         self.event_log.append(
             {'patient': patient.identifier,
-             'pathway': 'Simplest',
+             'pathway': patient.priority,
              'event_type': 'arrival_departure',
              'event': 'arrival',
              'time': self.env.now}
         )
+        # ========================================= #
 
         # request examination resource
         start_wait = self.env.now
+
+        # ===== LOGGING FOR VIDIGI ANIMATION  ===== #
         self.event_log.append(
             {'patient': patient.identifier,
-             'pathway': 'Simplest',
+             'pathway': patient.priority,
              'event': 'treatment_wait_begins',
              'event_type': 'queue',
              'time': self.env.now}
         )
+        # ========================================= #
 
         # Seize a treatment resource when available
-        treatment_resource = yield self.treatment_cubicles.get()
+        # Note that we must pass in the patient priority
+        treatment_resource = yield self.treatment_cubicles.get(priority=patient.priority)
 
         # record the waiting time for registration
         self.wait_treat = self.env.now - start_wait
+
+        # ===== LOGGING FOR VIDIGI ANIMATION  ===== #
         self.event_log.append(
             {'patient': patient.identifier,
-                'pathway': 'Simplest',
+                'pathway': patient.priority,
                 'event': 'treatment_begins',
                 'event_type': 'resource_use',
                 'time': self.env.now,
                 'resource_id': treatment_resource.id_attribute
                 }
         )
+        # ========================================= #
 
         # sample treatment duration
         self.treat_duration = self.treat_dist.sample()
         yield self.env.timeout(self.treat_duration)
 
+        # ===== LOGGING FOR VIDIGI ANIMATION  ===== #
         self.event_log.append(
             {'patient': patient.identifier,
-                'pathway': 'Simplest',
+                'pathway': patient.priority,
                 'event': 'treatment_complete',
                 'event_type': 'resource_use_end',
                 'time': self.env.now,
                 'resource_id': treatment_resource.id_attribute}
         )
+        # ========================================= #
 
         # Resource is no longer in use, so put it back in
         self.treatment_cubicles.put(treatment_resource)
 
         # total time in system
         self.total_time = self.env.now - self.arrival
+
+        # ===== LOGGING FOR VIDIGI ANIMATION  ===== #
         self.event_log.append(
             {'patient': patient.identifier,
-            'pathway': 'Simplest',
+            'pathway': patient.priority,
             'event': 'depart',
             'event_type': 'arrival_departure',
             'time': self.env.now}
         )
+        # ========================================= #
 
 
     # This method calculates results over a single run.  Here we just calculate
