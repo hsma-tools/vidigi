@@ -16,7 +16,7 @@ def reshape_for_animations(event_log,
 
     Parameters
     ----------
-    event_log : DataFrame
+    event_log : pd.DataFrame
         The input event log containing patient events and timestamps.
     every_x_time_units : int, optional
         The time interval between snapshots in minutes (default is 10).
