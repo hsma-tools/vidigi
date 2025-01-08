@@ -82,56 +82,94 @@ class CustomResource(simpy.Resource):
         return super().release(*args, **kwargs)
 
 class PriorityGet(simpy.resources.base.Get):
-    # Credit to arabinelli
+    """
+    A priority-aware request for resources in a SimPy environment.
+
+    This class extends the SimPy `Get` class to allow prioritization of
+    resource requests. Requests with a smaller `priority` value are
+    served first. The request time and preemption flag are also considered
+    when determining the request's order.
+
+    Attributes:
+        priority (int): The priority of the request. Lower values indicate
+            higher priority. Defaults to 999.
+        preempt (bool): Indicates whether the request should preempt
+            another resource user. Defaults to True.
+            (Ignored by `PriorityResource`.)
+        time (float): The simulation time when the request was made.
+        usage_since (float or None): The simulation time when the
+            request succeeded, or `None` if not yet fulfilled.
+        key (tuple): A tuple `(priority, time, not preempt)` used for
+            sorting requests.
+            Consists of
+            - the priority (lower value is more important)
+            - the time at which the request was made (earlier requests are more important)
+            - and finally the preemption flag (preempt requests are more important)
+
+    Notes
+    -----
+    Credit to arabinelli
     # https://stackoverflow.com/questions/58603000/how-do-i-make-a-priority-get-request-from-resource-store
+    """
     def __init__(self, resource, priority=999, preempt=True):
         self.priority = priority
-        """The priority of this request. A smaller number means higher
-        priority."""
 
         self.preempt = preempt
-        """Indicates whether the request should preempt a resource user or not
-        (:class:`PriorityResource` ignores this flag)."""
 
         self.time = resource._env.now
-        """The time at which the request was made."""
 
         self.usage_since = None
-        """The time at which the request succeeded."""
 
         self.key = (self.priority, self.time, not self.preempt)
-        """Key for sorting events. Consists of the priority (lower value is
-        more important), the time at which the request was made (earlier
-        requests are more important) and finally the preemption flag (preempt
-        requests are more important)."""
 
         super().__init__(resource)
 
 class VidigiPriorityStore(simpy.resources.store.Store):
-    # Credit to arabinelli
+    """
+    A SimPy store that processes requests with priority.
+
+    This class extends the SimPy `Store` to include a priority queue for
+    handling requests. Requests are processed based on their priority,
+    submission time, and preemption flag.
+
+    Attributes:
+        GetQueue (class): A reference to the sorted queue implementation
+            used for handling prioritized requests.
+        get (class): A reference to the `PriorityGet` class, which handles
+            the creation of prioritized requests.
+
+    Notes
+    -----
+    Credit to arabinelli
     # https://stackoverflow.com/questions/58603000/how-do-i-make-a-priority-get-request-from-resource-store
+
+    """
     GetQueue = simpy.resources.resource.SortedQueue
 
     get = BoundClass(PriorityGet)
 
 def populate_store(num_resources, simpy_store, sim_env):
     """
-    Populate a SimPy Store with CustomResource objects.
+    Populate a SimPy Store (or VidigiPriorityStore) with CustomResource objects.
 
-    This function creates a specified number of CustomResource objects and adds them to a SimPy Store.
-    Each CustomResource is initialized with a capacity of 1 and a unique ID attribute.
+    This function creates a specified number of CustomResource objects and adds them to
+    a SimPy Store or VidigiPriorityStore.
+
+    Each CustomResource is initialized with a capacity of 1 and a unique ID attribute,
+    which is crucial for animation functions where you wish to show an individual entity
+    consistently using the same resource.
+
+    If using VidigiPriorityStore, you will need to pass the relevant priority in to the
+    .get() argument when pulling a resource out of the store.
 
     Parameters
     ----------
     num_resources : int
         The number of CustomResource objects to create and add to the store.
-    simpy_store : simpy.Store
+    simpy_store : simpy.Store or vidigi.utils.VidigiPriorityStore
         The SimPy Store object to populate with resources.
     sim_env : simpy.Environment
         The SimPy environment in which the resources and store exist.
-    priority_resource: bool
-        Whether to populate the resource with PriorityResources (True)
-        or standard Simpy resources (False)
 
     Returns
     -------
