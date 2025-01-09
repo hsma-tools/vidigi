@@ -16,7 +16,24 @@ quartodoc:
   sidebar:
     file: "_sidebar.yml"
     style: docked
+    tools:
+      - icon: github
+        menu:
+          - text: Source Code
+            href:  https://github.com/Bergam0t/vidigi
+            target: _blank
+          - text: Report a Bug
+            href:  https://github.com/Bergam0t/vidigi/issues
+            target: _blank
+      - icon: box-fill
+        menu:
+          - text: Download on pypi
+            href: https://pypi.org/project/vidigi/
+            target: _blank
+
     search: true
+    title: "vidigi"
+    subtitle: "Pathway Animations For Simulations and Reality"
     collapse-level: 3
     contents:
       - file: vidigi_docs/index.qmd
@@ -63,5 +80,5 @@ quartodoc:
 format:
   html:
     theme:
-      dark: darkly
       light: flatly
+      dark: darkly
