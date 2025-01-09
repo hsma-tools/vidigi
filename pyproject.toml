@@ -39,3 +39,8 @@ path = "vidigi/__init__.py"
 include = [
     "/vidigi",
 ]
+
+[project.optional-dependencies]
+streamlit = [
+  "st-javascript==0.1.5"
+]
