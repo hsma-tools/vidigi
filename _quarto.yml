@@ -59,3 +59,9 @@ quartodoc:
       desc: ""
       contents:
         - utils.event_log_from_ciw_recs
+
+format:
+  html:
+    theme:
+      dark: darkly
+      light: flatly
