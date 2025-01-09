@@ -194,51 +194,56 @@
   {
     "objectID": "reference/index.html",
     "href": "reference/index.html",
-    "title": "vidigi (Visual Interactive Dynamics and Integrated Graphical Insights)",
+    "title": "Function reference",
     "section": "",
-    "text": "vidigi (Visual Interactive Dynamics and Integrated Graphical Insights)\n\n\nWelcome to vidigi - a package for visualising real or simulated pathways.\nPrimarily developed for healthcare simulation and intended to allow easy integration with tools like Streamlit so users can see the impact of changes to simulation parameters in real-time, vidigi\nvidigi is the Esperanto  for ‘to show’\n(or it’s the backronym ‘Visual Interactive Dynamics and Integrated Graphical Insights’ - whichever floats your boat)",
+    "text": "animation.animate_activity_log\nGenerate an animated visualization of patient flow through a system.\n\n\n\n\n\n\n\n\n\nprep.reshape_for_animations\nReshape event log data for animation purposes.\n\n\nprep.generate_animation_df\nGenerate a DataFrame for animation purposes by adding position information to patient data.\n\n\nanimation.generate_animation\nGenerate an animated visualization of patient flow through a system.\n\n\n\n\n\n\n\n\n\nutils.populate_store\nPopulate a SimPy Store (or VidigiPriorityStore) with CustomResource objects.\n\n\nutils.CustomResource\nA custom resource class that extends simpy.Resource with an additional ID attribute.\n\n\nutils.VidigiPriorityStore\nA SimPy store that processes requests with priority.\n\n\n\n\n\n\n\n\n\nutils.event_log_from_ciw_recs\nGiven the ciw recs object, return a dataframe in the format expected by the vidigi",
     "crumbs": [
-      "Reference"
+      "Reference",
+      "index.html"
     ]
   },
   {
     "objectID": "reference/index.html#all-in-one-animation-functions",
     "href": "reference/index.html#all-in-one-animation-functions",
-    "title": "Function reference",
+    "title": "All Functions",
     "section": "All-In-One Animation Functions",
     "text": "All-In-One Animation Functions\n\n\n\nanimation.animate_activity_log\nGenerate an animated visualization of patient flow through a system.",
     "crumbs": [
-      "Reference"
+      "Reference",
+      "All Functions"
     ]
   },
   {
     "objectID": "reference/index.html#step-by-step-functions",
     "href": "reference/index.html#step-by-step-functions",
-    "title": "Function reference",
+    "title": "All Functions",
     "section": "Step-By-Step Functions",
     "text": "Step-By-Step Functions\n\n\n\nprep.reshape_for_animations\nReshape event log data for animation purposes.\n\n\nprep.generate_animation_df\nGenerate a DataFrame for animation purposes by adding position information to patient data.\n\n\nanimation.generate_animation\nGenerate an animated visualization of patient flow through a system.",
     "crumbs": [
-      "Reference"
+      "Reference",
+      "All Functions"
     ]
   },
   {
     "objectID": "reference/index.html#simpy-utility-functions-and-classes",
     "href": "reference/index.html#simpy-utility-functions-and-classes",
-    "title": "Function reference",
+    "title": "All Functions",
     "section": "Simpy Utility Functions and Classes",
-    "text": "Simpy Utility Functions and Classes\n\n\n\nutils.populate_store\nPopulate a SimPy Store with CustomResource objects.\n\n\nutils.CustomResource\nA custom resource class that extends simpy.Resource with an additional ID attribute.",
+    "text": "Simpy Utility Functions and Classes\n\n\n\nutils.populate_store\nPopulate a SimPy Store (or VidigiPriorityStore) with CustomResource objects.\n\n\nutils.CustomResource\nA custom resource class that extends simpy.Resource with an additional ID attribute.\n\n\nutils.VidigiPriorityStore\nA SimPy store that processes requests with priority.",
     "crumbs": [
-      "Reference"
+      "Reference",
+      "All Functions"
     ]
   },
   {
     "objectID": "reference/index.html#ciw-utility-functions",
     "href": "reference/index.html#ciw-utility-functions",
-    "title": "Function reference",
+    "title": "All Functions",
     "section": "ciw Utility Functions",
-    "text": "ciw Utility Functions\n\n\n\nutils.event_log_from_ciw_recs\nGiven the ciw recs object, return a dataframe in the format expected by the vidigi\n\n\n\nMore content stuff.",
+    "text": "ciw Utility Functions\n\n\n\nutils.event_log_from_ciw_recs\nGiven the ciw recs object, return a dataframe in the format expected by the vidigi",
     "crumbs": [
-      "Reference"
+      "Reference",
+      "All Functions"
     ]
   },
   {
@@ -671,35 +676,55 @@
     "href": "reference/function_reference.html",
     "title": "Function reference",
     "section": "",
-    "text": "animation.animate_activity_log\nGenerate an animated visualization of patient flow through a system.\n\n\n\n\n\n\n\n\n\nprep.reshape_for_animations\nReshape event log data for animation purposes.\n\n\nprep.generate_animation_df\nGenerate a DataFrame for animation purposes by adding position information to patient data.\n\n\nanimation.generate_animation\nGenerate an animated visualization of patient flow through a system.\n\n\n\n\n\n\n\n\n\nutils.populate_store\nPopulate a SimPy Store with CustomResource objects.\n\n\nutils.CustomResource\nA custom resource class that extends simpy.Resource with an additional ID attribute.\n\n\n\n\n\n\n\n\n\nutils.event_log_from_ciw_recs\nGiven the ciw recs object, return a dataframe in the format expected by the vidigi"
+    "text": "animation.animate_activity_log\nGenerate an animated visualization of patient flow through a system.\n\n\n\n\n\n\n\n\n\nprep.reshape_for_animations\nReshape event log data for animation purposes.\n\n\nprep.generate_animation_df\nGenerate a DataFrame for animation purposes by adding position information to patient data.\n\n\nanimation.generate_animation\nGenerate an animated visualization of patient flow through a system.\n\n\n\n\n\n\n\n\n\nutils.populate_store\nPopulate a SimPy Store (or VidigiPriorityStore) with CustomResource objects.\n\n\nutils.CustomResource\nA custom resource class that extends simpy.Resource with an additional ID attribute.\n\n\nutils.VidigiPriorityStore\nA SimPy store that processes requests with priority.\n\n\n\n\n\n\n\n\n\nutils.event_log_from_ciw_recs\nGiven the ciw recs object, return a dataframe in the format expected by the vidigi",
+    "crumbs": [
+      "Reference",
+      "Function List"
+    ]
   },
   {
     "objectID": "reference/function_reference.html#all-in-one-animation-functions",
     "href": "reference/function_reference.html#all-in-one-animation-functions",
     "title": "Function reference",
     "section": "",
-    "text": "animation.animate_activity_log\nGenerate an animated visualization of patient flow through a system."
+    "text": "animation.animate_activity_log\nGenerate an animated visualization of patient flow through a system.",
+    "crumbs": [
+      "Reference",
+      "Function List"
+    ]
   },
   {
     "objectID": "reference/function_reference.html#step-by-step-functions",
     "href": "reference/function_reference.html#step-by-step-functions",
     "title": "Function reference",
     "section": "",
-    "text": "prep.reshape_for_animations\nReshape event log data for animation purposes.\n\n\nprep.generate_animation_df\nGenerate a DataFrame for animation purposes by adding position information to patient data.\n\n\nanimation.generate_animation\nGenerate an animated visualization of patient flow through a system."
+    "text": "prep.reshape_for_animations\nReshape event log data for animation purposes.\n\n\nprep.generate_animation_df\nGenerate a DataFrame for animation purposes by adding position information to patient data.\n\n\nanimation.generate_animation\nGenerate an animated visualization of patient flow through a system.",
+    "crumbs": [
+      "Reference",
+      "Function List"
+    ]
   },
   {
     "objectID": "reference/function_reference.html#simpy-utility-functions-and-classes",
     "href": "reference/function_reference.html#simpy-utility-functions-and-classes",
     "title": "Function reference",
     "section": "",
-    "text": "utils.populate_store\nPopulate a SimPy Store with CustomResource objects.\n\n\nutils.CustomResource\nA custom resource class that extends simpy.Resource with an additional ID attribute."
+    "text": "utils.populate_store\nPopulate a SimPy Store (or VidigiPriorityStore) with CustomResource objects.\n\n\nutils.CustomResource\nA custom resource class that extends simpy.Resource with an additional ID attribute.\n\n\nutils.VidigiPriorityStore\nA SimPy store that processes requests with priority.",
+    "crumbs": [
+      "Reference",
+      "Function List"
+    ]
   },
   {
     "objectID": "reference/function_reference.html#ciw-utility-functions",
     "href": "reference/function_reference.html#ciw-utility-functions",
     "title": "Function reference",
     "section": "",
-    "text": "utils.event_log_from_ciw_recs\nGiven the ciw recs object, return a dataframe in the format expected by the vidigi"
+    "text": "utils.event_log_from_ciw_recs\nGiven the ciw recs object, return a dataframe in the format expected by the vidigi",
+    "crumbs": [
+      "Reference",
+      "Function List"
+    ]
   },
   {
     "objectID": "reference/utils.VidigiPriorityStore.html",
@@ -723,6 +748,429 @@
       "Reference",
       "Simpy Utility Functions and Classes",
       "utils.VidigiPriorityStore"
+    ]
+  },
+  {
+    "objectID": "reference/adding_vidigi_to_a_simple_simpy_model_hsma_structure.html",
+    "href": "reference/adding_vidigi_to_a_simple_simpy_model_hsma_structure.html",
+    "title": "Adding Vidigi to a Simple simpy Model (HSMA Structure)",
+    "section": "",
+    "text": "Adding Vidigi to a Simple simpy Model (HSMA Structure)\nOn the Health Service Modelling Associates (HSMA) course we teach a particular way of writing your simpy models.\nHowever, the core concepts of adding vidigi to your models will be the same across different models - so this example will hopefully be helpful regardless of the way you structure your simpy models.\n\n\n\n\n\n\nNote\n\n\n\nciw is quite different - we will not be able to add logging steps in the way we do in this simpy model.\nHowever, in the utils module, the"
+  },
+  {
+    "objectID": "examples/example_4_ciw/ex_4_ciw.html",
+    "href": "examples/example_4_ciw/ex_4_ciw.html",
+    "title": "Example 4: A ciw Model",
+    "section": "",
+    "text": "Note that this example is written using ciw 2.x\nIt will not run with 3.x - but could theoretically be adapted to do so\nThe ‘logs’ object is the result of running\nsim_engine.get_all_records()\nHowever, note that while we run multiple replications, we only pass the records for a single replication to the event_log_from_ciw_recs function.\n\nThe underlying model code is from Monks, T., Harper, A., & Heather, A. (2023). Towards Sharing Tools, Artefacts, and Reproducible Simulation: a ciw model example (v1.0.1). Zenodo. https://doi.org/10.5281/zenodo.10051494\nSee here for the adaptation embedded within that repo: https://github.com/Bergam0t/ciw-example-animation/tree/main\n\n\nimport pandas as pd\n# Import the wrapper objects for model interaction.\nfrom examples.example_4_ciw.ex_4_ciw_model import Experiment, multiple_replications\nfrom vidigi.utils import event_log_from_ciw_recs\nfrom vidigi.animation import animate_activity_log\n\n\nN_OPERATORS = 13\nN_NURSES = 9\nRESULTS_COLLECTION_PERIOD = 1000\n\nuser_experiment = Experiment(n_operators=N_OPERATORS,\n                             n_nurses=N_NURSES,\n                             chance_callback=0.4)\n\n# run multiple replications\nresults, logs = multiple_replications(user_experiment, n_reps=10)\n\n# the 'logs' object contains a list, where each entry is the recs object for that run\nlogs_run_1 = logs[0]\n\nprint(len(logs_run_1))\n\n2240\n\n\n\n# let's print all of the outputs for a single individual\n[print(log) for log in logs_run_1 if log.id_number==500]\n\n# let's now try turning this into an event log\nevent_log_test = event_log_from_ciw_recs(logs_run_1, node_name_list=[\"operator\", \"nurse\"])\n\nevent_log_test.head(25)\n\nRecord(id_number=500, customer_class=0, original_customer_class=0, node=1, arrival_date=287.6396005571297, waiting_time=0.0, service_start_date=287.6396005571297, service_time=7.199228099941479, service_end_date=294.8388286570712, time_blocked=0.0, exit_date=294.8388286570712, destination=-1, queue_size_at_arrival=12, queue_size_at_departure=6, server_id=13, record_type='service')\n\n\n\n\n\n\n\n\n\npatient\npathway\nevent_type\nevent\ntime\nresource_id\n\n\n\n\n0\n1\nModel\narrival_departure\narrival\n0.578986\nNaN\n\n\n1\n1\nModel\nqueue\noperator_wait_begins\n0.578986\nNaN\n\n\n2\n1\nModel\nresource_use\noperator_begins\n0.578986\n1.0\n\n\n3\n1\nModel\nresource_use\noperator_ends\n8.191760\n1.0\n\n\n4\n1\nModel\nqueue\nnurse_wait_begins\n8.191760\nNaN\n\n\n5\n1\nModel\nresource_use\nnurse_begins\n8.191760\n1.0\n\n\n6\n1\nModel\nresource_use\nnurse_ends\n20.318068\n1.0\n\n\n7\n1\nModel\narrival_departure\ndepart\n20.318068\nNaN\n\n\n8\n2\nModel\narrival_departure\narrival\n1.472150\nNaN\n\n\n9\n2\nModel\nqueue\noperator_wait_begins\n1.472150\nNaN\n\n\n10\n2\nModel\nresource_use\noperator_begins\n1.472150\n2.0\n\n\n11\n2\nModel\nresource_use\noperator_ends\n10.201862\n2.0\n\n\n12\n2\nModel\nqueue\nnurse_wait_begins\n10.201862\nNaN\n\n\n13\n2\nModel\nresource_use\nnurse_begins\n10.201862\n3.0\n\n\n14\n2\nModel\nresource_use\nnurse_ends\n22.937920\n3.0\n\n\n15\n2\nModel\narrival_departure\ndepart\n22.937920\nNaN\n\n\n16\n3\nModel\narrival_departure\narrival\n1.565093\nNaN\n\n\n17\n3\nModel\nqueue\noperator_wait_begins\n1.565093\nNaN\n\n\n18\n3\nModel\nresource_use\noperator_begins\n1.565093\n3.0\n\n\n19\n3\nModel\nresource_use\noperator_ends\n8.522090\n3.0\n\n\n20\n3\nModel\narrival_departure\ndepart\n8.522090\nNaN\n\n\n21\n4\nModel\narrival_departure\narrival\n1.672159\nNaN\n\n\n22\n4\nModel\nqueue\noperator_wait_begins\n1.672159\nNaN\n\n\n23\n4\nModel\nresource_use\noperator_begins\n1.672159\n4.0\n\n\n24\n4\nModel\nresource_use\noperator_ends\n8.275919\n4.0\n\n\n\n\n\n\n\n\n# Create required event_position_df for vidigi animation\nevent_position_df = pd.DataFrame([\n                    {'event': 'arrival',\n                     'x':  30, 'y': 350,\n                     'label': \"Arrival\"},\n\n                    {'event': 'operator_wait_begins',\n                     'x':  205, 'y': 270,\n                     'label': \"Waiting for Operator\"},\n\n                    {'event': 'operator_begins',\n                     'x':  210, 'y': 210,\n                     'resource':'n_operators',\n                     'label': \"Speaking to operator\"},\n\n                    {'event': 'nurse_wait_begins',\n                     'x':  205, 'y': 110,\n                     'label': \"Waiting for Nurse\"},\n\n                    {'event': 'nurse_begins',\n                     'x':  210, 'y': 50,\n                     'resource':'n_nurses',\n                     'label': \"Speaking to Nurse\"},\n\n                    {'event': 'exit',\n                     'x':  270, 'y': 10,\n                     'label': \"Exit\"}\n\n                ])\n\n\n# Create a suitable class to pass in the resource numbers\nclass model_params():\n    n_operators = N_OPERATORS\n    n_nurses = N_NURSES\n\n\n# Create animation\nanimate_activity_log(\n        event_log=event_log_test,\n        event_position_df= event_position_df,\n        scenario=model_params(),\n        debug_mode=True,\n        setup_mode=False,\n        every_x_time_units=1,\n        include_play_button=True,\n        icon_and_text_size=20,\n        gap_between_entities=8,\n        gap_between_rows=25,\n        plotly_height=700,\n        frame_duration=200,\n        plotly_width=1200,\n        override_x_max=300,\n        override_y_max=300,\n        limit_duration=RESULTS_COLLECTION_PERIOD,\n        wrap_queues_at=25,\n        step_snapshot_max=75,\n        time_display_units=\"dhm\",\n        display_stage_labels=True,\n    )\n\nAnimation function called at 18:32:43\nIteration through minute-by-minute logs complete 18:32:52\nSnapshot df concatenation complete at 18:32:52\nReshaped animation dataframe finished construction at 18:32:52\nPlacement dataframe finished construction at 18:32:52\nOutput animation generation complete at 18:33:00\nTotal Time Elapsed: 17.43 seconds\n\n\nUnable to display output for mime type(s): application/vnd.plotly.v1+json",
+    "crumbs": [
+      "Examples",
+      "Example 4: A ciw Model"
+    ]
+  },
+  {
+    "objectID": "examples/example_4_ciw/notes.html",
+    "href": "examples/example_4_ciw/notes.html",
+    "title": "",
+    "section": "",
+    "text": "This is adapted from the following repository: Monks, T., Harper, A., & Heather, A. (2023). Towards Sharing Tools, Artefacts, and Reproducible Simulation: a ciw model example (v1.0.1). Zenodo. https://doi.org/10.5281/zenodo.10051494\nSee here for the adaptation embedded within that repo: https://github.com/Bergam0t/ciw-example-animation/tree/main\nPlease also note this model runs ciw 2.x\nIt will not run with 3.x - but could theoretically be adapted to do so"
+  },
+  {
+    "objectID": "reference_additional/introduction.html",
+    "href": "reference_additional/introduction.html",
+    "title": "Usage Instructions with SimPy",
+    "section": "",
+    "text": "Visual display of the outputs of discrete event simulations in simpy have been identified as one of the limitations of simpy, potentially hindering adoption of FOSS simulation in comparison to commercial modelling offerings or GUI FOSS alternatives such as JaamSim.\n\nWhen compared to commercial DES software packages that are commonly used in health research, such as Simul8, or AnyLogic, a limitation of our approach is that we do not display a dynamic patient pathway or queuing network that updates as the model runs a single replication. This is termed Visual Interactive Simulation (VIS) and can help users understand where process problems and delays occur in a patient pathway; albeit with the caveat that single replications can be outliers. A potential FOSS solution compatible with a browser-based app could use a Python package that can represent a queuing network, such as NetworkX, and displaying results via matplotlib. If sophisticated VIS is essential for a FOSS model then researchers may need to look outside of web apps; for example, salabim provides a powerful FOSS solution for custom animation of DES models. - Monks T and Harper A. Improving the usability of open health service delivery simulation models using Python and web apps [version 2; peer review: 3 approved]. NIHR Open Res 2023, 3:48 (https://doi.org/10.3310/nihropenres.13467.2)\n\nThis package allows visually appealing, flexible visualisations of the movement of entities through some kind of pathway.\nIt is primarily tested with discrete event simulations to be created from simpy models, such as the examples below.\n\nPlotly is leveraged to create the final animation, meaning that users can benefit from the ability to further customise or extend the plotly plot, as well as easily integrating with web frameworks such as Streamlit, Dash or Shiny for Python.\nThe code has been designed to be flexible and could potentially be used with alternative simulation packages such as ciw or simmer if it is possible to provide all of the required details in the logs that are output.",
+    "crumbs": [
+      "Introduction"
+    ]
+  },
+  {
+    "objectID": "reference_additional/introduction.html#introduction",
+    "href": "reference_additional/introduction.html#introduction",
+    "title": "Usage Instructions with SimPy",
+    "section": "",
+    "text": "Visual display of the outputs of discrete event simulations in simpy have been identified as one of the limitations of simpy, potentially hindering adoption of FOSS simulation in comparison to commercial modelling offerings or GUI FOSS alternatives such as JaamSim.\n\nWhen compared to commercial DES software packages that are commonly used in health research, such as Simul8, or AnyLogic, a limitation of our approach is that we do not display a dynamic patient pathway or queuing network that updates as the model runs a single replication. This is termed Visual Interactive Simulation (VIS) and can help users understand where process problems and delays occur in a patient pathway; albeit with the caveat that single replications can be outliers. A potential FOSS solution compatible with a browser-based app could use a Python package that can represent a queuing network, such as NetworkX, and displaying results via matplotlib. If sophisticated VIS is essential for a FOSS model then researchers may need to look outside of web apps; for example, salabim provides a powerful FOSS solution for custom animation of DES models. - Monks T and Harper A. Improving the usability of open health service delivery simulation models using Python and web apps [version 2; peer review: 3 approved]. NIHR Open Res 2023, 3:48 (https://doi.org/10.3310/nihropenres.13467.2)\n\nThis package allows visually appealing, flexible visualisations of the movement of entities through some kind of pathway.\nIt is primarily tested with discrete event simulations to be created from simpy models, such as the examples below.\n\nPlotly is leveraged to create the final animation, meaning that users can benefit from the ability to further customise or extend the plotly plot, as well as easily integrating with web frameworks such as Streamlit, Dash or Shiny for Python.\nThe code has been designed to be flexible and could potentially be used with alternative simulation packages such as ciw or simmer if it is possible to provide all of the required details in the logs that are output.",
+    "crumbs": [
+      "Introduction"
+    ]
+  },
+  {
+    "objectID": "reference_additional/introduction.html#examples",
+    "href": "reference_additional/introduction.html#examples",
+    "title": "Usage Instructions with SimPy",
+    "section": "Examples",
+    "text": "Examples\nTo develop and demonstrate the concept, it has so far been used to incorporate visualisation into several existing simpy models that were not initially designed with this sort of visualisation in mind: - a minor injuries unit, showing the utility of the model at high resolutions with branching pathways and the ability to add in a custom background to clearly demarcate process steps\n\n\nan elective surgical pathway (with a focus on cancelled theatre slots due to bed unavailability in recovery areas), with length of stay displayed as well as additional text and graphical data\n\n\n\na community mental health assessment pathway, showing the wait to an appointment as well as highlighting ‘urgent’ patients with a different icon and showing the time from referral to appointment below the patient icons when they attend the appointment.\n\n\n\na community mental health assessment pathway with pooling of clinics, showing the ‘home’ clinic for clients via icon so the balance between ‘home’ and ‘other’ clients can be explored.\n\n\n\na community mental health assessment and treatment pathway, showing the movement of clients between a wait list, a booking list, and returning for repeat appointments over a period of time while sitting on a caseload in between.",
+    "crumbs": [
+      "Introduction"
+    ]
+  },
+  {
+    "objectID": "reference_additional/introduction.html#creating-a-visualisation-from-an-existing-model",
+    "href": "reference_additional/introduction.html#creating-a-visualisation-from-an-existing-model",
+    "title": "Usage Instructions with SimPy",
+    "section": "Creating a visualisation from an existing model",
+    "text": "Creating a visualisation from an existing model\nTwo key things need to happen to existing models to work with the visualisation code: 1. All simpy resources need to be changed to simpy stores containing a custom resource with an ID attribute 2. Logging needs to be added at key points: arrival, (queueing, resource use start, resource use end), departure where the steps in the middle can be repeated for as many queues and resource types as required\n\n1. All simpy resources need to be changed to simpy stores containing a custom resource with an ID attribute\nTo allow the use of resources to be visualised correctly - with entities staying with the same resource throughout the time they are using it - it is essential to be able to identify and track individual resources.\nBy default, this is not possible with Simpy resources. They have no ID attribute or similar.\n\n\nClick here for behind-the-scenes details on this\n\nThe easiest workaround which drops fairly painlessly into existing models is to use a simpy store with a custom resource class.\nThe custom resource is setup as follows:\n\nclass CustomResource(simpy.Resource):\n    def __init__(self, env, capacity, id_attribute=None):\n        super().__init__(env, capacity)\n        self.id_attribute = id_attribute\n\n    def request(self, *args, **kwargs):\n        # Add logic to handle the ID attribute when a request is made\n        return super().request(*args, **kwargs)\n\n    def release(self, *args, **kwargs):\n        # Add logic to handle the ID attribute when a release is made\n        return super().release(*args, **kwargs)\n\nThe creation of simpy resources is then replaced with the following pattern:\n\nbeds = simpy.Store(environment)\n\nfor i in range(number_of_beds):\n    beds.put(\n        CustomResource(\n            environment,\n            capacity=1,\n            id_attribute=i+1)\n        )\n\n\nvidigi.utils provides a helper function for setting up simpy resources in teh required manner.\nFor a given resource that would have been created like this:\n\nnurses = simpy.Resource(simpy_environment, capacity=number_of_nurses)\n\nYou would use\n\nfrom vidigi.utils import populate_store\nnurses = simpy.Store(simpy_environment)\n\npopulate_store(num_resources=number_of_nurses, simpy_store=nurses, sim_env=simpy_environment)\n\nInstead of requesting a resource in the standard way, you instead use the .get() method.\n\nreq = beds.get()\n\nor\n\nwith beds.get() as req:\n  ...CODE HERE THAT USES THE RESOURCE...\n\nAt the end, it is important to put the resource back into the store, even if you used the ‘with’ notation, so it can be made available to the next requester:\n\nbeds.put(req)\n\nThis becomes slightly more complex with conditional requesting (for example, where a resource request is made but if it cannot be fulfilled in time, the requester will renege). This is demonstrated in example 3.\nThe benefit of this is that when we are logging, we can use the .id_attribute attribute of the custom resource to record the resource that was in use. This can have wider benefits for monitoring individual resource utilisation within your model as well.\n\n\n2. Logging needs to be added at key points\nThe animation function needs to be passed an event log with the following layout:\n\n\n\n\n\n\n\n\n\n\n\npatient\npathway\nevent_type\nevent\ntime\nresource_id\n\n\n\n\n15\nPrimary\narrival_departure\narrival\n1.22\n\n\n\n15\nPrimary\nqueue\nenter_queue_for_bed\n1.35\n\n\n\n27\nRevision\narrival_departure\narrival\n1.47\n\n\n\n27\nRevision\nqueue\nenter_queue_for_bed\n1.58\n\n\n\n12\nPrimary\nresource_use_end\npost_surgery_stay_ends\n1.9\n4\n\n\n15\nRevision\nresource_use\npost_survery_stay_begins\n1.9\n4\n\n\n\nOne easy way to achieve this is by appending dictionaries to a list at each important point in the process. For example:\n\nevent_log = []\n...\n...\nevent_log.append(\n      {'patient': id,\n      'pathway': 'Revision',\n      'event_type': 'resource_use',\n      'event': 'post_surgery_stay_begins',\n      'time': self.env.now,\n      'resource_id': bed.id_attribute}\n  )\n\nThe list of dictionaries can then be converted to a pandas dataframe using\n\npd.DataFrame(event_log)\n\nand passed to the animation function where required.\n\nEvent types\nFour event types are supported in the model: ‘arrival_departure’, ‘resource_use’, ‘resource_use_end’, and ‘queue’.\nAs a minimum, you will require the use of ‘arrival_departure’ events and one of - ‘resource_use’/‘resource_use_end’ - OR ‘queue’\nYou can also use both ‘resource_use’ and ‘queue’ within the same model very effectively (see ex_1_simplest_case and ex_2_branching_and_optional_paths).\n\narrival_departure\nWithin this, a minimum of two ‘arrival_departure’ events per entity are mandatory - arrival and depart, both with an event_type of arrival_departure, as shown below.\n\nevent_log.append(\n      {'patient': unique_entity_identifier,\n      'pathway': 'Revision',\n      'event_type': 'arrival_departure',\n      'event': 'arrival',\n      'time': env.now}\n  )\n\n\nevent_log.append(\n      {'patient': unique_entity_identifier,\n      'pathway': 'Revision',\n      'event_type': 'arrival_departure',\n      'event': 'depart',\n      'time': env.now}\n  )\n\nThese are critical as they are used to determine when patients should first and last appear in the model. Forgetting to include a departure step for all types of patients can lead to slow model performance as the size of the event logs for individual moments will continue to increase indefinitely.\n\n\nqueue\nQueues are key steps in the model.\nIt is possible to solely use queues and never make use of a simpy resource.\nBy tracking each important step in the process as a ‘queue’ step, the movement of patients can be accurately tracked.\nPatients will be ordered by the point at which they are added to the queue, with the first entries appearing at the front (bottom-right) of the queue.\n\nevent_log.append(\n            {'patient': unique_entity_identifier,\n             'pathway': 'High intensity',\n             'event_type': 'queue',\n             'event': 'appointment_booked_waiting',\n             'time': self.env.now\n             }\n        )\n\nWhile the keys shown above are mandatory, you can add as many additional keys to a step’s log as desired. This can allow you to flexibly make use of the event log for other purposes as well as the animation.\n\n\nresource_use and resource_use_end\nResource use is more complex to include but comes with two key benefits over the queue: - it becomes easier to monitor the length of time a resource is in use by a single entity as users won’t ‘move through’ the resource use stage (which can also prove confusing to less experienced viewers) - it becomes possible to show the total number of resources that are available, making it easier to understand how well resources are being utilised at different stages\n\nclass CustomResource(simpy.Resource):\n    def __init__(self, env, capacity, id_attribute=None):\n        super().__init__(env, capacity)\n        self.id_attribute = id_attribute\n\n    def request(self, *args, **kwargs):\n        # Add logic to handle the ID attribute when a request is made\n        # For example, you can assign an ID to the requester\n        # self.id_attribute = assign_id_logic()\n        return super().request(*args, **kwargs)\n\n    def release(self, *args, **kwargs):\n        # Add logic to handle the ID attribute when a release is made\n        # For example, you can reset the ID attribute\n        # reset_id_logic(self.id_attribute)\n        return super().release(*args, **kwargs)\n\ntriage = simpy.Store(self.env)\n\nfor i in range(n_triage):\n    triage.put(\n        CustomResource(\n            env,\n            capacity=1,\n            id_attribute = i+1)\n        )\n\n# request sign-in/triage\ntriage_resource = yield triage.get()\n\nevent_log.append(\n    {'patient': unique_entity_identifier,\n     'pathway': 'Trauma',\n     'event_type': 'resource_use',\n     'event': 'triage_begins',\n     'time': env.now,\n     'resource_id': triage_resource.id_attribute\n    }\n)\n\nyield self.env.timeout(1)\n\nevent_log.append(\n            {'patient': unique_entity_identifier,\n             'pathway': 'Trauma',\n             'event_type': 'resource_use_end',\n             'event': 'triage_complete',\n             'time': env.now,\n             'resource_id': triage_resource.id_attribute}\n        )\n\n# Resource is no longer in use, so put it back in the store\ntriage.put(triage_resource)\n\nWhen providing your event position details, it then just requires you to include an identifier for the resource.\nNOTE: At present this requires you to be using an class to manage your resource counts (if following HSMA simpy structure, this will be your g class).\nThis requirement is planned to be removed in a future version of the work, allowing more flexibility.\n\n{'event': 'TRAUMA_stabilisation_begins',\n 'x': 300, 'y': 500, 'resource':'n_trauma', 'label': \"Being&lt;br&gt;Stabilised\" }",
+    "crumbs": [
+      "Introduction"
+    ]
+  },
+  {
+    "objectID": "reference_additional/introduction.html#creating-the-animation",
+    "href": "reference_additional/introduction.html#creating-the-animation",
+    "title": "Usage Instructions with SimPy",
+    "section": "Creating the animation",
+    "text": "Creating the animation\n\nDetermining event positioning in the animation\nOnce the event log has been created, the positions of each queue and resource must be set up.\nAn easy way to create this is passing a list of dictionaries to the pd.DataFrame function.\nThe columns required are event: This must match the label used for the event in the event log x: The x coordinate of the event for the animation. This will correspond to the bottom-right hand corner of a queue, or the rightmost resource. y: The y coordinate of the event for the animaation. This will correspond to the lowest row of a queue, or the central point of the resources. label: A label for the stage. This can be hidden at a later step if you opt to use a background image with labels built-in. Note that line breaks in the label can be created using the HTML tag &lt;br&gt;. resource (OPTIONAL): Only required if the step is a resource_use step. This looks at the ‘scenario’ object passed to the animate_activity_log() function and pulls the attribute with the given name, which should give the number of available resources for that step.\n\n        event_position_df = pd.DataFrame([\n                # Triage\n                {'event': 'triage_wait_begins',\n                 'x':  160, 'y': 400, 'label': \"Waiting for&lt;br&gt;Triage\"  },\n                {'event': 'triage_begins',\n                 'x':  160, 'y': 315, 'resource':'n_triage', 'label': \"Being Triaged\" },\n\n                # Trauma pathway\n                {'event': 'TRAUMA_stabilisation_wait_begins',\n                 'x': 300, 'y': 560, 'label': \"Waiting for&lt;br&gt;Stabilisation\" },\n                {'event': 'TRAUMA_stabilisation_begins',\n                 'x': 300, 'y': 500, 'resource':'n_trauma', 'label': \"Being&lt;br&gt;Stabilised\" },\n\n                {'event': 'TRAUMA_treatment_wait_begins',\n                 'x': 630, 'y': 560, 'label': \"Waiting for&lt;br&gt;Treatment\" },\n                {'event': 'TRAUMA_treatment_begins',\n                 'x': 630, 'y': 500, 'resource':'n_cubicles', 'label': \"Being&lt;br&gt;Treated\" },\n\n                 {'event': 'exit',\n                 'x':  670, 'y': 330, 'label': \"Exit\"}\n            ])\n\n\n\nCreating the animation\nThere are two main ways to create the animation:\n\nusing the one-step function animate_activity_log() (see pages/1_Simple_ED_interactive, pages/2_Simple_ED_Forced_Overcrowding or pages/3_Complex_ED_Interactive for examples of this)\nusing the functions reshape_for_animations(), generate_animation_df() and generate_animation() separately, passing the output of each to the next step. This allows you to apply significant extra customisations; examples demonstrating this will be added soon.",
+    "crumbs": [
+      "Introduction"
+    ]
+  },
+  {
+    "objectID": "reference_additional/introduction.html#emergency-department-treatment-centre-model",
+    "href": "reference_additional/introduction.html#emergency-department-treatment-centre-model",
+    "title": "Usage Instructions with SimPy",
+    "section": "Emergency department (Treatment Centre) model",
+    "text": "Emergency department (Treatment Centre) model\nMonks.T, Harper.A, Anagnoustou. A, Allen.M, Taylor.S. (2022) Open Science for Computer Simulation\nhttps://github.com/TomMonks/treatment-centre-sim\nThe layout code for the emergency department model: https://github.com/hsma-programme/Teaching_DES_Concepts_Streamlit",
+    "crumbs": [
+      "Introduction"
+    ]
+  },
+  {
+    "objectID": "reference_additional/introduction.html#the-hospital-efficiency-project-model",
+    "href": "reference_additional/introduction.html#the-hospital-efficiency-project-model",
+    "title": "Usage Instructions with SimPy",
+    "section": "The hospital efficiency project model",
+    "text": "The hospital efficiency project model\nHarper, A., & Monks, T. Hospital Efficiency Project Orthopaedic Planning Model Discrete-Event Simulation [Computer software]. https://doi.org/10.5281/zenodo.7951080\nhttps://github.com/AliHarp/HEP/tree/main",
+    "crumbs": [
+      "Introduction"
+    ]
+  },
+  {
+    "objectID": "reference_additional/introduction.html#simulation-model-with-scheduling-example",
+    "href": "reference_additional/introduction.html#simulation-model-with-scheduling-example",
+    "title": "Usage Instructions with SimPy",
+    "section": "Simulation model with scheduling example",
+    "text": "Simulation model with scheduling example\nMonks, T.\nhttps://github.com/health-data-science-OR/stochastic_systems\nhttps://github.com/health-data-science-OR/stochastic_systems/tree/master/labs/simulation/lab5",
+    "crumbs": [
+      "Introduction"
+    ]
+  },
+  {
+    "objectID": "reference_additional/adding_vidigi_to_a_simple_simpy_model_hsma_structure.html",
+    "href": "reference_additional/adding_vidigi_to_a_simple_simpy_model_hsma_structure.html",
+    "title": "Adding Vidigi to a Simple simpy Model (HSMA Structure)",
+    "section": "",
+    "text": "Warning\n\n\n\nThis section is currently in progress\nOn the Health Service Modelling Associates (HSMA) course we teach a particular way of writing your simpy models. More details of the approach we take can be found in our Little Book of DES.\nHowever, the core concepts of adding vidigi to your models will be the same across different models - so this example will hopefully be helpful regardless of the way you structure your simpy models."
+  },
+  {
+    "objectID": "reference_additional/adding_vidigi_to_a_simple_simpy_model_hsma_structure.html#vidigis-requirements",
+    "href": "reference_additional/adding_vidigi_to_a_simple_simpy_model_hsma_structure.html#vidigis-requirements",
+    "title": "Adding Vidigi to a Simple simpy Model (HSMA Structure)",
+    "section": "Vidigi’s requirements",
+    "text": "Vidigi’s requirements\nThe key input vidigi requires an event log of the times that each entity in your system reached key milestones like arriving in the system, beginning to queue for a resource, being seen by a resource, and exiting the system.\nWe also need to tell vidigi what kind of activity is happening at each point:\n\narrive/depart\nqueue\nresource_use\n\nWe also provide vidigi with a table of coordinates to lay out\nVidigi then takes this event log and will process it into a table that tracks the position of every entity in the system at specified time intervals. It also handles the layout"
+  },
+  {
+    "objectID": "reference_additional/adding_vidigi_to_a_simple_simpy_model_hsma_structure.html#hsma-model-structure",
+    "href": "reference_additional/adding_vidigi_to_a_simple_simpy_model_hsma_structure.html#hsma-model-structure",
+    "title": "Adding Vidigi to a Simple simpy Model (HSMA Structure)",
+    "section": "HSMA Model Structure",
+    "text": "HSMA Model Structure\nIn HSMA, we use four primary classes to structure our models:\n\ng, which stores model parameters (like the number of resources of a given type and distribution parameters) and simulation parameters (like the number of replications to run and the )\nEntity, which may be named something more descriptive like ‘Patient’ or ‘Customer’. You may also have more than one entity class. Each entity will store information such as its ID, and will be passed into the model to work through the pathway.\nModel, which will generate entities, simulate the pathway the entity takes through the system, and contain a way to run a single replication of the model\nTrial, which allows us to run the simulation multiple times, collect results from all of these, and get an indication of average performance and performance variation across our different model runs"
+  },
+  {
+    "objectID": "reference_additional/adding_vidigi_to_a_simple_simpy_model_hsma_structure.html#a-simple-model",
+    "href": "reference_additional/adding_vidigi_to_a_simple_simpy_model_hsma_structure.html#a-simple-model",
+    "title": "Adding Vidigi to a Simple simpy Model (HSMA Structure)",
+    "section": "A Simple Model",
+    "text": "A Simple Model\nWe’re going to start off with a very simple model of a walk-in clinic pathway.\nIn this clinic, patients arrive and are seen in the order they arrive by one of several available nurses. All nurses have the same skillset, so the queue is a simple first-in-first-out (FIFO). There is some variability in the arrival time of patients, as well as variability in how long it takes for each patient to be seen.\n\nthe g Class\nIn our g class, we set up parameters that will be used throughout.\n\nclass g:\n    random_number_set = 42 # Control the initial seeds of each stream of pseudorandom numbers used\n\n    n_cubicles = 4 # The number of treatment cubicles\n    trauma_treat_mean = 40 # Mean of the trauma cubicle treatment distribution (Lognormal)\n    trauma_treat_var = 5 # Variance of the trauma cubicle treatment distribution (Lognormal)\n\n    arrival_rate = 5 # mean of the exponential distribution for sampling the inter-arrival time of entities\n\n\n    sim_duration = 600 # The number of time units the simulation will run for\n    number_of_runs = 100 # The number of times the simulation will be run with different random number streams\n\n\n\nthe Patient Class\n\nclass Patient:\n    def __init__(self, p_id):\n        self.identifier = p_id\n        self.arrival = -np.inf\n        self.wait_treat = -np.inf\n        self.total_time = -np.inf\n        self.treat_duration = -np.inf"
+  },
+  {
+    "objectID": "reference_additional/adding_vidigi_to_a_simple_simpy_model_hsma_structure.html#making-changes-for-vidigi",
+    "href": "reference_additional/adding_vidigi_to_a_simple_simpy_model_hsma_structure.html#making-changes-for-vidigi",
+    "title": "Adding Vidigi to a Simple simpy Model (HSMA Structure)",
+    "section": "Making Changes for Vidigi",
+    "text": "Making Changes for Vidigi\n\nthe g Class\nOur g class is unchanged\n\n\nthe Entity Class\nOur entity class - in this case, Patient - is unchanged\n\n\nthe Model Class\n\n\n\n\n\n\n\n\n\n\n\nthe Trial Class"
+  },
+  {
+    "objectID": "reference_additional/adding_vidigi_to_a_simple_simpy_model_hsma_structure.html#using-vidigi-to-create-an-animation-from-our-event-log",
+    "href": "reference_additional/adding_vidigi_to_a_simple_simpy_model_hsma_structure.html#using-vidigi-to-create-an-animation-from-our-event-log",
+    "title": "Adding Vidigi to a Simple simpy Model (HSMA Structure)",
+    "section": "Using vidigi to create an animation from our event log",
+    "text": "Using vidigi to create an animation from our event log\nFor simple animations with vidigi, it is recommended that you use the animate_activity_log function.\nThis all-in-one function takes an event log of the structure discussed above,"
+  },
+  {
+    "objectID": "reference_additional/index.html",
+    "href": "reference_additional/index.html",
+    "title": "vidigi (Visual Interactive Dynamics and Integrated Graphical Insights)",
+    "section": "",
+    "text": "vidigi (Visual Interactive Dynamics and Integrated Graphical Insights)\n\n\nWelcome to vidigi - a package for visualising real or simulated pathways.\nPrimarily developed for healthcare simulation and intended to allow easy integration with tools like Streamlit so users can see the impact of changes to simulation parameters in real-time, vidigi\nvidigi is the Esperanto  for ‘to show’\n(or it’s the backronym ‘Visual Interactive Dynamics and Integrated Graphical Insights’ - whichever floats your boat)",
+    "crumbs": [
+      "Welcome"
+    ]
+  },
+  {
+    "objectID": "reference_additional/function_reference.html",
+    "href": "reference_additional/function_reference.html",
+    "title": "Function reference",
+    "section": "",
+    "text": "animation.animate_activity_log\nGenerate an animated visualization of patient flow through a system.\n\n\n\n\n\n\n\n\n\nprep.reshape_for_animations\nReshape event log data for animation purposes.\n\n\nprep.generate_animation_df\nGenerate a DataFrame for animation purposes by adding position information to patient data.\n\n\nanimation.generate_animation\nGenerate an animated visualization of patient flow through a system.\n\n\n\n\n\n\n\n\n\nutils.populate_store\nPopulate a SimPy Store (or VidigiPriorityStore) with CustomResource objects.\n\n\nutils.CustomResource\nA custom resource class that extends simpy.Resource with an additional ID attribute.\n\n\nutils.VidigiPriorityStore\nA SimPy store that processes requests with priority.\n\n\n\n\n\n\n\n\n\nutils.event_log_from_ciw_recs\nGiven the ciw recs object, return a dataframe in the format expected by the vidigi",
+    "crumbs": [
+      "Reference",
+      "function_reference.html"
+    ]
+  },
+  {
+    "objectID": "reference_additional/function_reference.html#all-in-one-animation-functions",
+    "href": "reference_additional/function_reference.html#all-in-one-animation-functions",
+    "title": "Function reference",
+    "section": "",
+    "text": "animation.animate_activity_log\nGenerate an animated visualization of patient flow through a system.",
+    "crumbs": [
+      "Reference",
+      "function_reference.html"
+    ]
+  },
+  {
+    "objectID": "reference_additional/function_reference.html#step-by-step-functions",
+    "href": "reference_additional/function_reference.html#step-by-step-functions",
+    "title": "Function reference",
+    "section": "",
+    "text": "prep.reshape_for_animations\nReshape event log data for animation purposes.\n\n\nprep.generate_animation_df\nGenerate a DataFrame for animation purposes by adding position information to patient data.\n\n\nanimation.generate_animation\nGenerate an animated visualization of patient flow through a system.",
+    "crumbs": [
+      "Reference",
+      "function_reference.html"
+    ]
+  },
+  {
+    "objectID": "reference_additional/function_reference.html#simpy-utility-functions-and-classes",
+    "href": "reference_additional/function_reference.html#simpy-utility-functions-and-classes",
+    "title": "Function reference",
+    "section": "",
+    "text": "utils.populate_store\nPopulate a SimPy Store (or VidigiPriorityStore) with CustomResource objects.\n\n\nutils.CustomResource\nA custom resource class that extends simpy.Resource with an additional ID attribute.\n\n\nutils.VidigiPriorityStore\nA SimPy store that processes requests with priority.",
+    "crumbs": [
+      "Reference",
+      "function_reference.html"
+    ]
+  },
+  {
+    "objectID": "reference_additional/function_reference.html#ciw-utility-functions",
+    "href": "reference_additional/function_reference.html#ciw-utility-functions",
+    "title": "Function reference",
+    "section": "",
+    "text": "utils.event_log_from_ciw_recs\nGiven the ciw recs object, return a dataframe in the format expected by the vidigi",
+    "crumbs": [
+      "Reference",
+      "function_reference.html"
+    ]
+  },
+  {
+    "objectID": "vidigi_docs/introduction.html",
+    "href": "vidigi_docs/introduction.html",
+    "title": "Usage Instructions with SimPy",
+    "section": "",
+    "text": "Visual display of the outputs of discrete event simulations in simpy have been identified as one of the limitations of simpy, potentially hindering adoption of FOSS simulation in comparison to commercial modelling offerings or GUI FOSS alternatives such as JaamSim.\n\nWhen compared to commercial DES software packages that are commonly used in health research, such as Simul8, or AnyLogic, a limitation of our approach is that we do not display a dynamic patient pathway or queuing network that updates as the model runs a single replication. This is termed Visual Interactive Simulation (VIS) and can help users understand where process problems and delays occur in a patient pathway; albeit with the caveat that single replications can be outliers. A potential FOSS solution compatible with a browser-based app could use a Python package that can represent a queuing network, such as NetworkX, and displaying results via matplotlib. If sophisticated VIS is essential for a FOSS model then researchers may need to look outside of web apps; for example, salabim provides a powerful FOSS solution for custom animation of DES models. - Monks T and Harper A. Improving the usability of open health service delivery simulation models using Python and web apps [version 2; peer review: 3 approved]. NIHR Open Res 2023, 3:48 (https://doi.org/10.3310/nihropenres.13467.2)\n\nThis package allows visually appealing, flexible visualisations of the movement of entities through some kind of pathway.\nIt is primarily tested with discrete event simulations to be created from simpy models, such as the examples below.\n\nPlotly is leveraged to create the final animation, meaning that users can benefit from the ability to further customise or extend the plotly plot, as well as easily integrating with web frameworks such as Streamlit, Dash or Shiny for Python.\nThe code has been designed to be flexible and could potentially be used with alternative simulation packages such as ciw or simmer if it is possible to provide all of the required details in the logs that are output.",
+    "crumbs": [
+      "Introduction"
+    ]
+  },
+  {
+    "objectID": "vidigi_docs/introduction.html#introduction",
+    "href": "vidigi_docs/introduction.html#introduction",
+    "title": "Usage Instructions with SimPy",
+    "section": "",
+    "text": "Visual display of the outputs of discrete event simulations in simpy have been identified as one of the limitations of simpy, potentially hindering adoption of FOSS simulation in comparison to commercial modelling offerings or GUI FOSS alternatives such as JaamSim.\n\nWhen compared to commercial DES software packages that are commonly used in health research, such as Simul8, or AnyLogic, a limitation of our approach is that we do not display a dynamic patient pathway or queuing network that updates as the model runs a single replication. This is termed Visual Interactive Simulation (VIS) and can help users understand where process problems and delays occur in a patient pathway; albeit with the caveat that single replications can be outliers. A potential FOSS solution compatible with a browser-based app could use a Python package that can represent a queuing network, such as NetworkX, and displaying results via matplotlib. If sophisticated VIS is essential for a FOSS model then researchers may need to look outside of web apps; for example, salabim provides a powerful FOSS solution for custom animation of DES models. - Monks T and Harper A. Improving the usability of open health service delivery simulation models using Python and web apps [version 2; peer review: 3 approved]. NIHR Open Res 2023, 3:48 (https://doi.org/10.3310/nihropenres.13467.2)\n\nThis package allows visually appealing, flexible visualisations of the movement of entities through some kind of pathway.\nIt is primarily tested with discrete event simulations to be created from simpy models, such as the examples below.\n\nPlotly is leveraged to create the final animation, meaning that users can benefit from the ability to further customise or extend the plotly plot, as well as easily integrating with web frameworks such as Streamlit, Dash or Shiny for Python.\nThe code has been designed to be flexible and could potentially be used with alternative simulation packages such as ciw or simmer if it is possible to provide all of the required details in the logs that are output.",
+    "crumbs": [
+      "Introduction"
+    ]
+  },
+  {
+    "objectID": "vidigi_docs/introduction.html#examples",
+    "href": "vidigi_docs/introduction.html#examples",
+    "title": "Usage Instructions with SimPy",
+    "section": "Examples",
+    "text": "Examples\nTo develop and demonstrate the concept, it has so far been used to incorporate visualisation into several existing simpy models that were not initially designed with this sort of visualisation in mind: - a minor injuries unit, showing the utility of the model at high resolutions with branching pathways and the ability to add in a custom background to clearly demarcate process steps\n\n\nan elective surgical pathway (with a focus on cancelled theatre slots due to bed unavailability in recovery areas), with length of stay displayed as well as additional text and graphical data\n\n\n\na community mental health assessment pathway, showing the wait to an appointment as well as highlighting ‘urgent’ patients with a different icon and showing the time from referral to appointment below the patient icons when they attend the appointment.\n\n\n\na community mental health assessment pathway with pooling of clinics, showing the ‘home’ clinic for clients via icon so the balance between ‘home’ and ‘other’ clients can be explored.\n\n\n\na community mental health assessment and treatment pathway, showing the movement of clients between a wait list, a booking list, and returning for repeat appointments over a period of time while sitting on a caseload in between.",
+    "crumbs": [
+      "Introduction"
+    ]
+  },
+  {
+    "objectID": "vidigi_docs/introduction.html#creating-a-visualisation-from-an-existing-model",
+    "href": "vidigi_docs/introduction.html#creating-a-visualisation-from-an-existing-model",
+    "title": "Usage Instructions with SimPy",
+    "section": "Creating a visualisation from an existing model",
+    "text": "Creating a visualisation from an existing model\nTwo key things need to happen to existing models to work with the visualisation code: 1. All simpy resources need to be changed to simpy stores containing a custom resource with an ID attribute 2. Logging needs to be added at key points: arrival, (queueing, resource use start, resource use end), departure where the steps in the middle can be repeated for as many queues and resource types as required\n\n1. All simpy resources need to be changed to simpy stores containing a custom resource with an ID attribute\nTo allow the use of resources to be visualised correctly - with entities staying with the same resource throughout the time they are using it - it is essential to be able to identify and track individual resources.\nBy default, this is not possible with Simpy resources. They have no ID attribute or similar.\n\n\nClick here for behind-the-scenes details on this\n\nThe easiest workaround which drops fairly painlessly into existing models is to use a simpy store with a custom resource class.\nThe custom resource is setup as follows:\n\nclass CustomResource(simpy.Resource):\n    def __init__(self, env, capacity, id_attribute=None):\n        super().__init__(env, capacity)\n        self.id_attribute = id_attribute\n\n    def request(self, *args, **kwargs):\n        # Add logic to handle the ID attribute when a request is made\n        return super().request(*args, **kwargs)\n\n    def release(self, *args, **kwargs):\n        # Add logic to handle the ID attribute when a release is made\n        return super().release(*args, **kwargs)\n\nThe creation of simpy resources is then replaced with the following pattern:\n\nbeds = simpy.Store(environment)\n\nfor i in range(number_of_beds):\n    beds.put(\n        CustomResource(\n            environment,\n            capacity=1,\n            id_attribute=i+1)\n        )\n\n\nvidigi.utils provides a helper function for setting up simpy resources in teh required manner.\nFor a given resource that would have been created like this:\n\nnurses = simpy.Resource(simpy_environment, capacity=number_of_nurses)\n\nYou would use\n\nfrom vidigi.utils import populate_store\nnurses = simpy.Store(simpy_environment)\n\npopulate_store(num_resources=number_of_nurses, simpy_store=nurses, sim_env=simpy_environment)\n\nInstead of requesting a resource in the standard way, you instead use the .get() method.\n\nreq = beds.get()\n\nor\n\nwith beds.get() as req:\n  ...CODE HERE THAT USES THE RESOURCE...\n\nAt the end, it is important to put the resource back into the store, even if you used the ‘with’ notation, so it can be made available to the next requester:\n\nbeds.put(req)\n\nThis becomes slightly more complex with conditional requesting (for example, where a resource request is made but if it cannot be fulfilled in time, the requester will renege). This is demonstrated in example 3.\nThe benefit of this is that when we are logging, we can use the .id_attribute attribute of the custom resource to record the resource that was in use. This can have wider benefits for monitoring individual resource utilisation within your model as well.\n\n\n2. Logging needs to be added at key points\nThe animation function needs to be passed an event log with the following layout:\n\n\n\n\n\n\n\n\n\n\n\npatient\npathway\nevent_type\nevent\ntime\nresource_id\n\n\n\n\n15\nPrimary\narrival_departure\narrival\n1.22\n\n\n\n15\nPrimary\nqueue\nenter_queue_for_bed\n1.35\n\n\n\n27\nRevision\narrival_departure\narrival\n1.47\n\n\n\n27\nRevision\nqueue\nenter_queue_for_bed\n1.58\n\n\n\n12\nPrimary\nresource_use_end\npost_surgery_stay_ends\n1.9\n4\n\n\n15\nRevision\nresource_use\npost_survery_stay_begins\n1.9\n4\n\n\n\nOne easy way to achieve this is by appending dictionaries to a list at each important point in the process. For example:\n\nevent_log = []\n...\n...\nevent_log.append(\n      {'patient': id,\n      'pathway': 'Revision',\n      'event_type': 'resource_use',\n      'event': 'post_surgery_stay_begins',\n      'time': self.env.now,\n      'resource_id': bed.id_attribute}\n  )\n\nThe list of dictionaries can then be converted to a pandas dataframe using\n\npd.DataFrame(event_log)\n\nand passed to the animation function where required.\n\nEvent types\nFour event types are supported in the model: ‘arrival_departure’, ‘resource_use’, ‘resource_use_end’, and ‘queue’.\nAs a minimum, you will require the use of ‘arrival_departure’ events and one of - ‘resource_use’/‘resource_use_end’ - OR ‘queue’\nYou can also use both ‘resource_use’ and ‘queue’ within the same model very effectively (see ex_1_simplest_case and ex_2_branching_and_optional_paths).\n\narrival_departure\nWithin this, a minimum of two ‘arrival_departure’ events per entity are mandatory - arrival and depart, both with an event_type of arrival_departure, as shown below.\n\nevent_log.append(\n      {'patient': unique_entity_identifier,\n      'pathway': 'Revision',\n      'event_type': 'arrival_departure',\n      'event': 'arrival',\n      'time': env.now}\n  )\n\n\nevent_log.append(\n      {'patient': unique_entity_identifier,\n      'pathway': 'Revision',\n      'event_type': 'arrival_departure',\n      'event': 'depart',\n      'time': env.now}\n  )\n\nThese are critical as they are used to determine when patients should first and last appear in the model. Forgetting to include a departure step for all types of patients can lead to slow model performance as the size of the event logs for individual moments will continue to increase indefinitely.\n\n\nqueue\nQueues are key steps in the model.\nIt is possible to solely use queues and never make use of a simpy resource.\nBy tracking each important step in the process as a ‘queue’ step, the movement of patients can be accurately tracked.\nPatients will be ordered by the point at which they are added to the queue, with the first entries appearing at the front (bottom-right) of the queue.\n\nevent_log.append(\n            {'patient': unique_entity_identifier,\n             'pathway': 'High intensity',\n             'event_type': 'queue',\n             'event': 'appointment_booked_waiting',\n             'time': self.env.now\n             }\n        )\n\nWhile the keys shown above are mandatory, you can add as many additional keys to a step’s log as desired. This can allow you to flexibly make use of the event log for other purposes as well as the animation.\n\n\nresource_use and resource_use_end\nResource use is more complex to include but comes with two key benefits over the queue: - it becomes easier to monitor the length of time a resource is in use by a single entity as users won’t ‘move through’ the resource use stage (which can also prove confusing to less experienced viewers) - it becomes possible to show the total number of resources that are available, making it easier to understand how well resources are being utilised at different stages\n\nclass CustomResource(simpy.Resource):\n    def __init__(self, env, capacity, id_attribute=None):\n        super().__init__(env, capacity)\n        self.id_attribute = id_attribute\n\n    def request(self, *args, **kwargs):\n        # Add logic to handle the ID attribute when a request is made\n        # For example, you can assign an ID to the requester\n        # self.id_attribute = assign_id_logic()\n        return super().request(*args, **kwargs)\n\n    def release(self, *args, **kwargs):\n        # Add logic to handle the ID attribute when a release is made\n        # For example, you can reset the ID attribute\n        # reset_id_logic(self.id_attribute)\n        return super().release(*args, **kwargs)\n\ntriage = simpy.Store(self.env)\n\nfor i in range(n_triage):\n    triage.put(\n        CustomResource(\n            env,\n            capacity=1,\n            id_attribute = i+1)\n        )\n\n# request sign-in/triage\ntriage_resource = yield triage.get()\n\nevent_log.append(\n    {'patient': unique_entity_identifier,\n     'pathway': 'Trauma',\n     'event_type': 'resource_use',\n     'event': 'triage_begins',\n     'time': env.now,\n     'resource_id': triage_resource.id_attribute\n    }\n)\n\nyield self.env.timeout(1)\n\nevent_log.append(\n            {'patient': unique_entity_identifier,\n             'pathway': 'Trauma',\n             'event_type': 'resource_use_end',\n             'event': 'triage_complete',\n             'time': env.now,\n             'resource_id': triage_resource.id_attribute}\n        )\n\n# Resource is no longer in use, so put it back in the store\ntriage.put(triage_resource)\n\nWhen providing your event position details, it then just requires you to include an identifier for the resource.\nNOTE: At present this requires you to be using an class to manage your resource counts (if following HSMA simpy structure, this will be your g class).\nThis requirement is planned to be removed in a future version of the work, allowing more flexibility.\n\n{'event': 'TRAUMA_stabilisation_begins',\n 'x': 300, 'y': 500, 'resource':'n_trauma', 'label': \"Being&lt;br&gt;Stabilised\" }",
+    "crumbs": [
+      "Introduction"
+    ]
+  },
+  {
+    "objectID": "vidigi_docs/introduction.html#creating-the-animation",
+    "href": "vidigi_docs/introduction.html#creating-the-animation",
+    "title": "Usage Instructions with SimPy",
+    "section": "Creating the animation",
+    "text": "Creating the animation\n\nDetermining event positioning in the animation\nOnce the event log has been created, the positions of each queue and resource must be set up.\nAn easy way to create this is passing a list of dictionaries to the pd.DataFrame function.\nThe columns required are event: This must match the label used for the event in the event log x: The x coordinate of the event for the animation. This will correspond to the bottom-right hand corner of a queue, or the rightmost resource. y: The y coordinate of the event for the animaation. This will correspond to the lowest row of a queue, or the central point of the resources. label: A label for the stage. This can be hidden at a later step if you opt to use a background image with labels built-in. Note that line breaks in the label can be created using the HTML tag &lt;br&gt;. resource (OPTIONAL): Only required if the step is a resource_use step. This looks at the ‘scenario’ object passed to the animate_activity_log() function and pulls the attribute with the given name, which should give the number of available resources for that step.\n\n        event_position_df = pd.DataFrame([\n                # Triage\n                {'event': 'triage_wait_begins',\n                 'x':  160, 'y': 400, 'label': \"Waiting for&lt;br&gt;Triage\"  },\n                {'event': 'triage_begins',\n                 'x':  160, 'y': 315, 'resource':'n_triage', 'label': \"Being Triaged\" },\n\n                # Trauma pathway\n                {'event': 'TRAUMA_stabilisation_wait_begins',\n                 'x': 300, 'y': 560, 'label': \"Waiting for&lt;br&gt;Stabilisation\" },\n                {'event': 'TRAUMA_stabilisation_begins',\n                 'x': 300, 'y': 500, 'resource':'n_trauma', 'label': \"Being&lt;br&gt;Stabilised\" },\n\n                {'event': 'TRAUMA_treatment_wait_begins',\n                 'x': 630, 'y': 560, 'label': \"Waiting for&lt;br&gt;Treatment\" },\n                {'event': 'TRAUMA_treatment_begins',\n                 'x': 630, 'y': 500, 'resource':'n_cubicles', 'label': \"Being&lt;br&gt;Treated\" },\n\n                 {'event': 'exit',\n                 'x':  670, 'y': 330, 'label': \"Exit\"}\n            ])\n\n\n\nCreating the animation\nThere are two main ways to create the animation:\n\nusing the one-step function animate_activity_log() (see pages/1_Simple_ED_interactive, pages/2_Simple_ED_Forced_Overcrowding or pages/3_Complex_ED_Interactive for examples of this)\nusing the functions reshape_for_animations(), generate_animation_df() and generate_animation() separately, passing the output of each to the next step. This allows you to apply significant extra customisations; examples demonstrating this will be added soon.",
+    "crumbs": [
+      "Introduction"
+    ]
+  },
+  {
+    "objectID": "vidigi_docs/introduction.html#emergency-department-treatment-centre-model",
+    "href": "vidigi_docs/introduction.html#emergency-department-treatment-centre-model",
+    "title": "Usage Instructions with SimPy",
+    "section": "Emergency department (Treatment Centre) model",
+    "text": "Emergency department (Treatment Centre) model\nMonks.T, Harper.A, Anagnoustou. A, Allen.M, Taylor.S. (2022) Open Science for Computer Simulation\nhttps://github.com/TomMonks/treatment-centre-sim\nThe layout code for the emergency department model: https://github.com/hsma-programme/Teaching_DES_Concepts_Streamlit",
+    "crumbs": [
+      "Introduction"
+    ]
+  },
+  {
+    "objectID": "vidigi_docs/introduction.html#the-hospital-efficiency-project-model",
+    "href": "vidigi_docs/introduction.html#the-hospital-efficiency-project-model",
+    "title": "Usage Instructions with SimPy",
+    "section": "The hospital efficiency project model",
+    "text": "The hospital efficiency project model\nHarper, A., & Monks, T. Hospital Efficiency Project Orthopaedic Planning Model Discrete-Event Simulation [Computer software]. https://doi.org/10.5281/zenodo.7951080\nhttps://github.com/AliHarp/HEP/tree/main",
+    "crumbs": [
+      "Introduction"
+    ]
+  },
+  {
+    "objectID": "vidigi_docs/introduction.html#simulation-model-with-scheduling-example",
+    "href": "vidigi_docs/introduction.html#simulation-model-with-scheduling-example",
+    "title": "Usage Instructions with SimPy",
+    "section": "Simulation model with scheduling example",
+    "text": "Simulation model with scheduling example\nMonks, T.\nhttps://github.com/health-data-science-OR/stochastic_systems\nhttps://github.com/health-data-science-OR/stochastic_systems/tree/master/labs/simulation/lab5",
+    "crumbs": [
+      "Introduction"
+    ]
+  },
+  {
+    "objectID": "vidigi_docs/function_reference.html",
+    "href": "vidigi_docs/function_reference.html",
+    "title": "Function reference",
+    "section": "",
+    "text": "animation.animate_activity_log\nGenerate an animated visualization of patient flow through a system.\n\n\n\n\n\n\n\n\n\nprep.reshape_for_animations\nReshape event log data for animation purposes.\n\n\nprep.generate_animation_df\nGenerate a DataFrame for animation purposes by adding position information to patient data.\n\n\nanimation.generate_animation\nGenerate an animated visualization of patient flow through a system.\n\n\n\n\n\n\n\n\n\nutils.populate_store\nPopulate a SimPy Store (or VidigiPriorityStore) with CustomResource objects.\n\n\nutils.CustomResource\nA custom resource class that extends simpy.Resource with an additional ID attribute.\n\n\nutils.VidigiPriorityStore\nA SimPy store that processes requests with priority.\n\n\n\n\n\n\n\n\n\nutils.event_log_from_ciw_recs\nGiven the ciw recs object, return a dataframe in the format expected by the vidigi",
+    "crumbs": [
+      "Reference",
+      "Function List"
+    ]
+  },
+  {
+    "objectID": "vidigi_docs/function_reference.html#all-in-one-animation-functions",
+    "href": "vidigi_docs/function_reference.html#all-in-one-animation-functions",
+    "title": "Function reference",
+    "section": "",
+    "text": "animation.animate_activity_log\nGenerate an animated visualization of patient flow through a system.",
+    "crumbs": [
+      "Reference",
+      "Function List"
+    ]
+  },
+  {
+    "objectID": "vidigi_docs/function_reference.html#step-by-step-functions",
+    "href": "vidigi_docs/function_reference.html#step-by-step-functions",
+    "title": "Function reference",
+    "section": "",
+    "text": "prep.reshape_for_animations\nReshape event log data for animation purposes.\n\n\nprep.generate_animation_df\nGenerate a DataFrame for animation purposes by adding position information to patient data.\n\n\nanimation.generate_animation\nGenerate an animated visualization of patient flow through a system.",
+    "crumbs": [
+      "Reference",
+      "Function List"
+    ]
+  },
+  {
+    "objectID": "vidigi_docs/function_reference.html#simpy-utility-functions-and-classes",
+    "href": "vidigi_docs/function_reference.html#simpy-utility-functions-and-classes",
+    "title": "Function reference",
+    "section": "",
+    "text": "utils.populate_store\nPopulate a SimPy Store (or VidigiPriorityStore) with CustomResource objects.\n\n\nutils.CustomResource\nA custom resource class that extends simpy.Resource with an additional ID attribute.\n\n\nutils.VidigiPriorityStore\nA SimPy store that processes requests with priority.",
+    "crumbs": [
+      "Reference",
+      "Function List"
+    ]
+  },
+  {
+    "objectID": "vidigi_docs/function_reference.html#ciw-utility-functions",
+    "href": "vidigi_docs/function_reference.html#ciw-utility-functions",
+    "title": "Function reference",
+    "section": "",
+    "text": "utils.event_log_from_ciw_recs\nGiven the ciw recs object, return a dataframe in the format expected by the vidigi",
+    "crumbs": [
+      "Reference",
+      "Function List"
+    ]
+  },
+  {
+    "objectID": "vidigi_docs/adding_vidigi_to_a_simple_simpy_model_hsma_structure.html",
+    "href": "vidigi_docs/adding_vidigi_to_a_simple_simpy_model_hsma_structure.html",
+    "title": "Adding Vidigi to a Simple simpy Model (HSMA Structure)",
+    "section": "",
+    "text": "Warning\n\n\n\nThis section is currently in progress\nOn the Health Service Modelling Associates (HSMA) course we teach a particular way of writing your simpy models. More details of the approach we take can be found in our Little Book of DES.\nHowever, the core concepts of adding vidigi to your models will be the same across different models - so this example will hopefully be helpful regardless of the way you structure your simpy models.",
+    "crumbs": [
+      "Walkthroughs",
+      "Adding Vidigi to a Simple simpy Model (HSMA Structure)"
+    ]
+  },
+  {
+    "objectID": "vidigi_docs/adding_vidigi_to_a_simple_simpy_model_hsma_structure.html#vidigis-requirements",
+    "href": "vidigi_docs/adding_vidigi_to_a_simple_simpy_model_hsma_structure.html#vidigis-requirements",
+    "title": "Adding Vidigi to a Simple simpy Model (HSMA Structure)",
+    "section": "Vidigi’s requirements",
+    "text": "Vidigi’s requirements\nThe key input vidigi requires an event log of the times that each entity in your system reached key milestones like arriving in the system, beginning to queue for a resource, being seen by a resource, and exiting the system.\nWe also need to tell vidigi what kind of activity is happening at each point:\n\narrive/depart\nqueue\nresource_use\n\nWe also provide vidigi with a table of coordinates to lay out\nVidigi then takes this event log and will process it into a table that tracks the position of every entity in the system at specified time intervals. It also handles the layout",
+    "crumbs": [
+      "Walkthroughs",
+      "Adding Vidigi to a Simple simpy Model (HSMA Structure)"
+    ]
+  },
+  {
+    "objectID": "vidigi_docs/adding_vidigi_to_a_simple_simpy_model_hsma_structure.html#hsma-model-structure",
+    "href": "vidigi_docs/adding_vidigi_to_a_simple_simpy_model_hsma_structure.html#hsma-model-structure",
+    "title": "Adding Vidigi to a Simple simpy Model (HSMA Structure)",
+    "section": "HSMA Model Structure",
+    "text": "HSMA Model Structure\nIn HSMA, we use four primary classes to structure our models:\n\ng, which stores model parameters (like the number of resources of a given type and distribution parameters) and simulation parameters (like the number of replications to run and the )\nEntity, which may be named something more descriptive like ‘Patient’ or ‘Customer’. You may also have more than one entity class. Each entity will store information such as its ID, and will be passed into the model to work through the pathway.\nModel, which will generate entities, simulate the pathway the entity takes through the system, and contain a way to run a single replication of the model\nTrial, which allows us to run the simulation multiple times, collect results from all of these, and get an indication of average performance and performance variation across our different model runs",
+    "crumbs": [
+      "Walkthroughs",
+      "Adding Vidigi to a Simple simpy Model (HSMA Structure)"
+    ]
+  },
+  {
+    "objectID": "vidigi_docs/adding_vidigi_to_a_simple_simpy_model_hsma_structure.html#a-simple-model",
+    "href": "vidigi_docs/adding_vidigi_to_a_simple_simpy_model_hsma_structure.html#a-simple-model",
+    "title": "Adding Vidigi to a Simple simpy Model (HSMA Structure)",
+    "section": "A Simple Model",
+    "text": "A Simple Model\nWe’re going to start off with a very simple model of a walk-in clinic pathway.\nIn this clinic, patients arrive and are seen in the order they arrive by one of several available nurses. All nurses have the same skillset, so the queue is a simple first-in-first-out (FIFO). There is some variability in the arrival time of patients, as well as variability in how long it takes for each patient to be seen.\n\nthe g Class\nIn our g class, we set up parameters that will be used throughout.\n\nclass g:\n    random_number_set = 42 # Control the initial seeds of each stream of pseudorandom numbers used\n\n    n_cubicles = 4 # The number of treatment cubicles\n    trauma_treat_mean = 40 # Mean of the trauma cubicle treatment distribution (Lognormal)\n    trauma_treat_var = 5 # Variance of the trauma cubicle treatment distribution (Lognormal)\n\n    arrival_rate = 5 # mean of the exponential distribution for sampling the inter-arrival time of entities\n\n\n    sim_duration = 600 # The number of time units the simulation will run for\n    number_of_runs = 100 # The number of times the simulation will be run with different random number streams\n\n\n\nthe Patient Class\n\nclass Patient:\n    def __init__(self, p_id):\n        self.identifier = p_id\n        self.arrival = -np.inf\n        self.wait_treat = -np.inf\n        self.total_time = -np.inf\n        self.treat_duration = -np.inf",
+    "crumbs": [
+      "Walkthroughs",
+      "Adding Vidigi to a Simple simpy Model (HSMA Structure)"
+    ]
+  },
+  {
+    "objectID": "vidigi_docs/adding_vidigi_to_a_simple_simpy_model_hsma_structure.html#making-changes-for-vidigi",
+    "href": "vidigi_docs/adding_vidigi_to_a_simple_simpy_model_hsma_structure.html#making-changes-for-vidigi",
+    "title": "Adding Vidigi to a Simple simpy Model (HSMA Structure)",
+    "section": "Making Changes for Vidigi",
+    "text": "Making Changes for Vidigi\n\nthe g Class\nOur g class is unchanged\n\n\nthe Entity Class\nOur entity class - in this case, Patient - is unchanged\n\n\nthe Model Class\n\n\n\n\n\n\n\n\n\n\n\nthe Trial Class",
+    "crumbs": [
+      "Walkthroughs",
+      "Adding Vidigi to a Simple simpy Model (HSMA Structure)"
+    ]
+  },
+  {
+    "objectID": "vidigi_docs/adding_vidigi_to_a_simple_simpy_model_hsma_structure.html#using-vidigi-to-create-an-animation-from-our-event-log",
+    "href": "vidigi_docs/adding_vidigi_to_a_simple_simpy_model_hsma_structure.html#using-vidigi-to-create-an-animation-from-our-event-log",
+    "title": "Adding Vidigi to a Simple simpy Model (HSMA Structure)",
+    "section": "Using vidigi to create an animation from our event log",
+    "text": "Using vidigi to create an animation from our event log\nFor simple animations with vidigi, it is recommended that you use the animate_activity_log function.\nThis all-in-one function takes an event log of the structure discussed above,",
+    "crumbs": [
+      "Walkthroughs",
+      "Adding Vidigi to a Simple simpy Model (HSMA Structure)"
+    ]
+  },
+  {
+    "objectID": "vidigi_docs/index.html",
+    "href": "vidigi_docs/index.html",
+    "title": "vidigi (Visual Interactive Dynamics and Integrated Graphical Insights)",
+    "section": "",
+    "text": "vidigi (Visual Interactive Dynamics and Integrated Graphical Insights)\n\n\nWelcome to vidigi - a package for visualising real or simulated pathways.\nPrimarily developed for healthcare simulation and intended to allow easy integration with tools like Streamlit so users can see the impact of changes to simulation parameters in real-time, vidigi\nvidigi is the Esperanto  for ‘to show’\n(or it’s the backronym ‘Visual Interactive Dynamics and Integrated Graphical Insights’ - whichever floats your boat)",
+    "crumbs": [
+      "Welcome"
     ]
   }
 ]

@@ -1,18 +1,21 @@
 website:
   sidebar:
-  - collapse-level: 2
+  - collapse-level: 3
     contents:
-    - file: reference/index.qmd
-      text: Reference
-    - href: reference/introduction.qmd
+    - file: vidigi_docs/index.qmd
+      text: Welcome
+    - href: vidigi_docs/introduction.qmd
       text: Introduction
+    - contents:
+      - vidigi_docs/adding_vidigi_to_a_simple_simpy_model_hsma_structure.qmd
+      section: Walkthroughs
     - contents:
       - examples/example_1_simplest_case/ex_1_simplest_case.ipynb
       - examples/example_2_branching_multistep/ex_2_branching_multistep_case.ipynb
       - examples/example_3_simplest_case_priority_resource/ex_3_simplest_case_priority_resource.ipynb
+      - examples/example_4_ciw/ex_4_ciw.ipynb
       section: Examples
     - contents:
-      - function_reference.qmd
       - reference/index.qmd
       - contents:
         - reference/animation.animate_activity_log.qmd

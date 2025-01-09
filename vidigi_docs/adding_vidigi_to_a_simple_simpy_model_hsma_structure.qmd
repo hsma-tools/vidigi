@@ -1,0 +1,132 @@
+# Adding Vidigi to a Simple simpy Model (HSMA Structure)
+
+:::{.callout-warning}
+This section is currently in progress
+:::
+
+On the [Health Service Modelling Associates (HSMA)](https://hsma-programme.github.io/hsma_site/) course we teach a particular way of writing your simpy models. More details of the approach we take can be found in our [Little Book of DES](https://hsma-programme.github.io/hsma6_des_book/).
+
+However, the core concepts of adding vidigi to your models will be the same across different models - so this example will hopefully be helpful regardless of the way you structure your simpy models.
+
+:::{.callout-note}
+ciw is quite different - we will not be able to add logging steps in the way we do in this simpy model.
+
+However, in the utils module, the `event_log_from_ciw_recs` function provides a simple way to get the required logs out of your ciw model without any additional logging being added in manually.
+
+:::
+
+## Vidigi's requirements
+
+The key input vidigi requires an **event log** of the times that each entity in your system reached key milestones like arriving in the system, beginning to queue for a resource, being seen by a resource, and exiting the system.
+
+We also need to tell vidigi what *kind* of activity is happening at each point:
+
+- `arrive/depart`
+- `queue`
+- `resource_use`
+
+We also provide vidigi with a table of coordinates to lay out
+
+Vidigi then takes this event log and will process it into a table that tracks the position of every entity in the system at specified time intervals. It also handles the layout
+
+
+## HSMA Model Structure
+
+In HSMA, we use four primary classes to structure our models:
+
+- [**g**](https://hsma-programme.github.io/hsma6_des_book/recommended_structure_classes_for_des_models.html#g-class), which stores model parameters (like the number of resources of a given type and distribution parameters) and simulation parameters (like the number of replications to run and the )
+- [**Entity**](https://hsma-programme.github.io/hsma6_des_book/recommended_structure_classes_for_des_models.html#entity-class), which may be named something more descriptive like 'Patient' or 'Customer'. You may also have more than one entity class. Each entity will store information such as its ID, and will be passed into the model to work through the pathway.
+- [**Model**](https://hsma-programme.github.io/hsma6_des_book/recommended_structure_classes_for_des_models.html#model-class), which will generate entities, simulate the pathway the entity takes through the system, and contain a way to run a single replication of the model
+- [**Trial**](https://hsma-programme.github.io/hsma6_des_book/recommended_structure_classes_for_des_models.html#trial-class), which allows us to run the simulation multiple times, collect results from all of these, and get an indication of average performance and performance variation across our different model runs
+
+
+## A Simple Model
+
+We're going to start off with a very simple model of a walk-in clinic pathway.
+
+In this clinic, patients arrive and are seen in the order they arrive by one of several available nurses. All nurses have the same skillset, so the queue is a simple first-in-first-out (FIFO). There is some variability in the arrival time of patients, as well as variability in how long it takes for each patient to be seen.
+
+### the g Class
+
+In our g class, we set up parameters that will be used throughout.
+
+```{python}
+class g:
+    random_number_set = 42 # Control the initial seeds of each stream of pseudorandom numbers used
+
+    n_cubicles = 4 # The number of treatment cubicles
+    trauma_treat_mean = 40 # Mean of the trauma cubicle treatment distribution (Lognormal)
+    trauma_treat_var = 5 # Variance of the trauma cubicle treatment distribution (Lognormal)
+
+    arrival_rate = 5 # mean of the exponential distribution for sampling the inter-arrival time of entities
+
+
+    sim_duration = 600 # The number of time units the simulation will run for
+    number_of_runs = 100 # The number of times the simulation will be run with different random number streams
+```
+
+### the Patient Class
+
+
+
+```{python}
+class Patient:
+    def __init__(self, p_id):
+        self.identifier = p_id
+        self.arrival = -np.inf
+        self.wait_treat = -np.inf
+        self.total_time = -np.inf
+        self.treat_duration = -np.inf
+```
+
+## Making Changes for Vidigi
+
+### the g Class
+
+Our g class is unchanged
+
+### the Entity Class
+
+Our entity class - in this case, Patient - is unchanged
+
+### the Model Class
+
+:::: {.columns}
+
+::: {.column width="47.5%"}
+
+:::
+
+::: {.column width="5%"}
+
+:::
+
+::: {.column width="47.5%"}
+
+:::
+
+::::
+
+### the Trial Class
+
+:::: {.columns}
+
+::: {.column width="47.5%"}
+
+:::
+
+::: {.column width="5%"}
+
+:::
+
+::: {.column width="47.5%"}
+
+:::
+
+::::
+
+## Using vidigi to create an animation from our event log
+
+For simple animations with vidigi, it is recommended that you use the `animate_activity_log` function.
+
+This all-in-one function takes an event log of the structure discussed above,

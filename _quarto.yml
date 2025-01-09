@@ -7,6 +7,7 @@ metadata-files:
   - _sidebar.yml
 
 quartodoc:
+  dir: reference
   out_index: _api_index.qmd
   # the name used to import the package you want to create reference docs for
   package: vidigi
@@ -16,20 +17,23 @@ quartodoc:
     file: "_sidebar.yml"
     style: docked
     search: true
-    collapse-level: 2
+    collapse-level: 3
     contents:
-      - file: reference/index.qmd
-        text: Reference
+      - file: vidigi_docs/index.qmd
+        text: Welcome
       - text: "Introduction"
-        href: reference/introduction.qmd
+        href: vidigi_docs/introduction.qmd
+      - section: "Walkthroughs"
+        contents:
+        - vidigi_docs/adding_vidigi_to_a_simple_simpy_model_hsma_structure.qmd
       - section: "Examples"
         contents:
         - examples/example_1_simplest_case/ex_1_simplest_case.ipynb
         - examples/example_2_branching_multistep/ex_2_branching_multistep_case.ipynb
         - examples/example_3_simplest_case_priority_resource/ex_3_simplest_case_priority_resource.ipynb
+        - examples/example_4_ciw/ex_4_ciw.ipynb
       - section: "Reference"
         contents:
-          - function_reference.qmd
           - "{{ contents }}"
 
   sections:

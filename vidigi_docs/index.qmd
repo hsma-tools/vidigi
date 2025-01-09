@@ -1,0 +1,16 @@
+# vidigi (Visual Interactive Dynamics and Integrated Graphical Insights)
+
+[<img src="https://img.shields.io/pypi/v/vidigi?label=pypi%20package">](https://pypi.org/project/vidigi/)
+
+---
+
+Welcome to vidigi - a package for visualising real or simulated pathways.
+
+Primarily developed for healthcare simulation and intended to allow easy integration with tools like Streamlit so users can see the impact of changes to simulation parameters in real-time, vidigi
+
+vidigi is the [Esperanto](https://en.wikipedia.org/wiki/Esperanto) ![](Flag_of_Esperanto.svg.png){height=30px} for 'to show'
+
+
+(or it's the backronym 'Visual Interactive Dynamics and Integrated Graphical Insights' - whichever floats your boat)
+
+{{< video videos/vidigi.mp4 >}}
