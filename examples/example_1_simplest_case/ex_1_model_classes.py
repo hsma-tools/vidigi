@@ -28,9 +28,15 @@ class g:
     trauma_treat_var: float
         Variance of the trauma cubicle treatment distribution (Lognormal)
 
-        arrival_rate: float
+    arrival_rate: float
         Set the mean of the exponential distribution that is used to sample the
         inter-arrival time of patients
+
+    sim_duration: int
+        The number of time units the simulation will run for
+
+    number_of_runs: int
+        The number of times the simulation will be run with different random number streams
 
     '''
     random_number_set = 42
@@ -40,6 +46,7 @@ class g:
     trauma_treat_var = 5
 
     arrival_rate = 5
+
     sim_duration = 600
     number_of_runs = 100
 
