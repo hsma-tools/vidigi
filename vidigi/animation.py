@@ -301,6 +301,7 @@ def animate_activity_log(
         scenario=None,
         every_x_time_units=10,
         wrap_queues_at=20,
+        wrap_resources_at=20,
         step_snapshot_max=50,
         limit_duration=10*60*24,
         plotly_height=900,
@@ -341,6 +342,8 @@ def animate_activity_log(
         Time interval between animation frames in minutes (default is 10).
     wrap_queues_at : int, optional
         Maximum number of entities to display in a queue before wrapping to a new row (default is 20).
+    wrap_resources_at : int, optional
+        Number of resources to show before wrapping to a new row (default is 20).
     step_snapshot_max : int, optional
         Maximum number of patients to show in each snapshot per event (default is 50).
     limit_duration : int, optional
@@ -423,6 +426,7 @@ def animate_activity_log(
                                 full_patient_df=full_patient_df,
                                 event_position_df=event_position_df,
                                 wrap_queues_at=wrap_queues_at,
+                                wrap_resources_at=wrap_resources_at,
                                 step_snapshot_max=step_snapshot_max,
                                 gap_between_entities=gap_between_entities,
                                 gap_between_resources=gap_between_resources,

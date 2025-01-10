@@ -175,6 +175,7 @@ def generate_animation_df(
         full_patient_df,
         event_position_df,
         wrap_queues_at=20,
+        wrap_resources_at=20,
         step_snapshot_max=50,
         gap_between_entities=10,
         gap_between_resources=10,
@@ -196,6 +197,8 @@ def generate_animation_df(
         DataFrame with columns 'event', 'x', and 'y', specifying initial positions for each event type.
     wrap_queues_at : int, optional
         Number of entities in a queue before wrapping to a new row (default is 20).
+    wrap_resources_at : int, optional
+        Number of resources to show before wrapping to a new row (default is 20).
     step_snapshot_max : int, optional
         Maximum number of patients to show in each snapshot (default is 50).
     gap_between_entities : int, optional
@@ -243,6 +246,14 @@ def generate_animation_df(
     if len(resource_use) > 0:
         resource_use = resource_use.rename(columns={"y": "y_final"})
         resource_use['x_final'] = resource_use['x'] - resource_use['resource_id'] * gap_between_resources
+
+    # If we want resources to wrap at a certain queue length, do this here
+    # They'll wrap at the defined point and then the queue will start expanding upwards
+    # from the starting row
+    if wrap_resources_at is not None:
+        resource_use['row'] = np.floor((resource_use['resource_id'] - 1) / (wrap_resources_at))
+        resource_use['x_final'] = resource_use['x_final'] + (wrap_resources_at * resource_use['row'] * gap_between_resources) + gap_between_resources
+        resource_use['y_final'] = resource_use['y_final'] + (resource_use['row'] * gap_between_rows)
 
     # Determine the position for any queuing steps
     queues = full_patient_df_plus_pos[full_patient_df_plus_pos['event_type']=='queue'].copy()
