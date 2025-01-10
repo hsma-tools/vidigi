@@ -1,0 +1,60 @@
+website:
+  sidebar:
+  - collapse-level: 3
+    contents:
+    - file: vidigi_docs/index.qmd
+      text: Welcome
+    - href: vidigi_docs/introduction.qmd
+      text: Introduction
+    - contents:
+      - vidigi_docs/adding_vidigi_to_a_simple_simpy_model_hsma_structure.qmd
+      section: Walkthroughs
+    - contents:
+      - vidigi_docs/populating_event_logs.qmd
+      section: Details
+    - contents:
+      - examples/example_1_simplest_case/ex_1_simplest_case.ipynb
+      - examples/example_2_branching_multistep/ex_2_branching_multistep_case.ipynb
+      - examples/example_3_simplest_case_priority_resource/ex_3_simplest_case_priority_resource.ipynb
+      - examples/example_4_ciw/ex_4_ciw.ipynb
+      - examples/example_5_simplest_case_wrapped_resources/ex_5_simplest_case_wrapped_resource.ipynb
+      section: Examples
+    - contents:
+      - reference/index.qmd
+      - contents:
+        - reference/animation.animate_activity_log.qmd
+        section: All-In-One Animation Functions
+      - contents:
+        - reference/prep.reshape_for_animations.qmd
+        - reference/prep.generate_animation_df.qmd
+        - reference/animation.generate_animation.qmd
+        section: Step-By-Step Functions
+      - contents:
+        - reference/utils.populate_store.qmd
+        - reference/utils.CustomResource.qmd
+        - reference/utils.VidigiPriorityStore.qmd
+        section: Simpy Utility Functions and Classes
+      - contents:
+        - reference/utils.event_log_from_ciw_recs.qmd
+        section: ciw Utility Functions
+      section: Reference
+    id: reference
+    search: true
+    style: docked
+    subtitle: Pathway Animations For Simulations and Reality
+    title: vidigi
+    tools:
+    - icon: github
+      menu:
+      - href: https://github.com/Bergam0t/vidigi
+        target: _blank
+        text: Source Code
+      - href: https://github.com/Bergam0t/vidigi/issues
+        target: _blank
+        text: Report a Bug
+    - icon: box-fill
+      menu:
+      - href: https://pypi.org/project/vidigi/
+        target: _blank
+        text: Download on pypi
+  - id: dummy-sidebar

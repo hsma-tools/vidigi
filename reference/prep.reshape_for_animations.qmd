@@ -1,0 +1,49 @@
+# prep.reshape_for_animations { #vidigi.prep.reshape_for_animations }
+
+```python
+prep.reshape_for_animations(
+    event_log,
+    every_x_time_units=10,
+    limit_duration=10 * 60 * 24,
+    step_snapshot_max=50,
+    debug_mode=False,
+)
+```
+
+Reshape event log data for animation purposes.
+
+This function processes an event log to create a series of snapshots at regular time intervals,
+suitable for creating animations of patient flow through a system.
+
+## Parameters {.doc-section .doc-section-parameters}
+
+| Name               | Type         | Description                                                                                | Default        |
+|--------------------|--------------|--------------------------------------------------------------------------------------------|----------------|
+| event_log          | pd.DataFrame | The input event log containing patient events and timestamps.                              | _required_     |
+| every_x_time_units | int          | The time interval between snapshots in minutes (default is 10).                            | `10`           |
+| limit_duration     | int          | The maximum duration to consider in minutes (default is 10 days).                          | `10 * 60 * 24` |
+| step_snapshot_max  | int          | The maximum number of patients to include in each snapshot for each event (default is 50). | `50`           |
+| debug_mode         | bool         | If True, print debug information during processing (default is False).                     | `False`        |
+
+## Returns {.doc-section .doc-section-returns}
+
+| Name   | Type      | Description                                                                                                           |
+|--------|-----------|-----------------------------------------------------------------------------------------------------------------------|
+|        | DataFrame | A reshaped DataFrame containing snapshots of patient positions at regular time intervals, sorted by minute and event. |
+
+## Notes {.doc-section .doc-section-notes}
+
+- The function creates snapshots of patient positions at specified time intervals.
+- It handles patients who are present in the system at each snapshot time.
+- Patients are ranked within each event based on their arrival order.
+- A maximum number of patients per event can be set to limit the number of patients who will be
+  displayed on screen within any one event type at a time.
+- An 'exit' event is added for each patient at the end of their journey.
+- The function uses memory management techniques (del and gc.collect()) to handle large datasets.
+
+## TODO {.doc-section .doc-section-todo}
+
+- Add behavior for when limit_duration is None.
+- Consider adding 'first step' and 'last step' parameters.
+- Implement pathway order and precedence columns.
+- Fix the automatic exit at the end of the simulation run for all patients.

@@ -8,7 +8,7 @@ Welcome to vidigi - a package for visualising real or simulated pathways.
 
 Primarily developed for healthcare simulation and intended to allow easy integration with tools like Streamlit so users can see the impact of changes to simulation parameters in real-time, vidigi
 
-vidigi is the Esperanto for 'to show' U+1F3F3+FE0F+200D+1F7E9+200D+2B50+200D+1F7E9
+vidigi is the Esperanto for 'to show'
 
 (or it's the backronym 'Visual Interactive Dynamics and Integrated Graphical Insights' - whichever floats your boat)
 
@@ -123,7 +123,7 @@ You would use
 from vidigi.utils import populate_store
 nurses = simpy.Store(simpy_environment)
 
-populate_store(num_resources=number_of_nurses, simpy_store=nurses, simpy_environment=simpy_environment)
+populate_store(num_resources=number_of_nurses, simpy_store=nurses, sim_env=simpy_environment)
 ```
 
 Instead of requesting a resource in the standard way, you instead use the .get() method.
@@ -363,6 +363,7 @@ Thanks are due to
 
 - [Dr Daniel Chalk](https://github.com/hsma-chief-elf) for support and simpy training on the HSMA programme
 - [Professor Tom Monks](https://github.com/TomMonks) for his extensive materials and teaching on the use of simpy in healthcare and his [material on converting code into packages](https://www.pythonhealthdatascience.com/content/03_mgt/03_mgt_front_page.html)
+- [Helena Robinson](https://github.com/helenajr) for testing and bugfinding
 
 # Models used as examples
 

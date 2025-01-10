@@ -1,0 +1,95 @@
+project:
+  type: website
+  output-dir: docs
+
+website:
+  title: vidigi
+  description: "Documentation for the vidigi pathway animation package"
+
+# tell quarto to read the generated sidebar
+metadata-files:
+  - _sidebar.yml
+
+quartodoc:
+  dir: reference
+  out_index: _api_index.qmd
+  # the name used to import the package you want to create reference docs for
+  package: vidigi
+
+  # write sidebar data to this file
+  sidebar:
+    file: "_sidebar.yml"
+    style: docked
+    tools:
+      - icon: github
+        menu:
+          - text: Source Code
+            href:  https://github.com/Bergam0t/vidigi
+            target: _blank
+          - text: Report a Bug
+            href:  https://github.com/Bergam0t/vidigi/issues
+            target: _blank
+      - icon: box-fill
+        menu:
+          - text: Download on pypi
+            href: https://pypi.org/project/vidigi/
+            target: _blank
+
+    search: true
+    title: "vidigi"
+    subtitle: "Pathway Animations For Simulations and Reality"
+    collapse-level: 3
+    contents:
+      - file: vidigi_docs/index.qmd
+        text: Welcome
+      - text: "Introduction"
+        href: vidigi_docs/introduction.qmd
+      - section: "Walkthroughs"
+        contents:
+        - vidigi_docs/adding_vidigi_to_a_simple_simpy_model_hsma_structure.qmd
+      - section: "Details"
+        contents:
+        - vidigi_docs/populating_event_logs.qmd
+      - section: "Examples"
+        contents:
+        - examples/example_1_simplest_case/ex_1_simplest_case.ipynb
+        - examples/example_2_branching_multistep/ex_2_branching_multistep_case.ipynb
+        - examples/example_3_simplest_case_priority_resource/ex_3_simplest_case_priority_resource.ipynb
+        - examples/example_4_ciw/ex_4_ciw.ipynb
+        - examples/example_5_simplest_case_wrapped_resources/ex_5_simplest_case_wrapped_resource.ipynb
+      - section: "Reference"
+        contents:
+          - "{{ contents }}"
+
+  sections:
+    - title: All-In-One Animation Functions
+      desc: ""
+      contents:
+        - animation.animate_activity_log
+    - title: Step-By-Step Functions
+      desc: ""
+      contents:
+        # the functions being documented in the package.
+        # you can refer to anything: class methods, modules, etc..
+        - prep.reshape_for_animations
+        - prep.generate_animation_df
+        - animation.generate_animation
+    - title: Simpy Utility Functions and Classes
+      desc: ""
+      contents:
+        - utils.populate_store
+        - utils.CustomResource
+        - utils.VidigiPriorityStore
+    - title: ciw Utility Functions
+      desc: ""
+      contents:
+        - utils.event_log_from_ciw_recs
+
+format:
+  html:
+    theme:
+      dark: [darkly, theme-dark.scss]
+      light: [flatly, theme-light.scss]
+
+    grid:
+      sidebar-width: 325px

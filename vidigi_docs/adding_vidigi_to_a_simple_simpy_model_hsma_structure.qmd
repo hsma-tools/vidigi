@@ -1,0 +1,1359 @@
+---
+title: Adding Vidigi to a Simple simpy Model (HSMA Structure)
+execute:
+  eval: false
+format:
+  html:
+    toc: true
+    toc-depth: 4
+    toc-expand: 4
+filters:
+  - quarto
+  - line-highlight
+---
+
+```{python}
+#| eval: true
+#| echo: false
+import pandas as pd
+```
+
+On the [Health Service Modelling Associates (HSMA)](https://hsma-programme.github.io/hsma_site/) course we teach a particular way of writing your simpy models. More details of the approach we take can be found in our [Little Book of DES](https://hsma-programme.github.io/hsma6_des_book/).
+
+However, the core concepts of adding vidigi to your models will be the same across different models - so this example will hopefully be helpful regardless of the way you structure your simpy models.
+
+:::{.callout-note}
+ciw is quite different - we will not be able to add logging steps in the way we do in this simpy model.
+
+However, in the utils module, the `event_log_from_ciw_recs` function provides a simple way to get the required logs out of your ciw model without any additional logging being added in manually.
+
+:::
+
+:::{.callout-note}
+This model has been adapted from [Monks](https://github.com/TomMonks/treatment-centre-sim), released under the [MIT Licence](https://github.com/TomMonks/treatment-centre-sim/blob/main/LICENSE)
+:::
+
+
+## Vidigi's requirements
+
+The key input vidigi requires an **event log** of the times that each entity in your system reached key milestones like arriving in the system, beginning to queue for a resource, being seen by a resource, and exiting the system.
+
+We also need to tell vidigi what *kind* of activity is happening at each point:
+
+- `arrive/depart`
+- `queue`
+- `resource_use`
+
+We also provide vidigi with a table of coordinates that will help it to lay out our entities and resources, and determine their path from the entrance, to the exit, and to some extent their movement between stages.
+
+Vidigi then takes this event log and the layout table and will process them into a table that tracks the position of every entity in the system at specified time intervals.
+
+
+## HSMA Model Structure
+
+In HSMA, we use four primary classes to structure our models:
+
+- [**g**](https://hsma-programme.github.io/hsma6_des_book/recommended_structure_classes_for_des_models.html#g-class), which stores model parameters (like the number of resources of a given type and distribution parameters) and simulation parameters (like the number of replications to run and the )
+- [**Entity**](https://hsma-programme.github.io/hsma6_des_book/recommended_structure_classes_for_des_models.html#entity-class), which may be named something more descriptive like 'Patient' or 'Customer'. You may also have more than one entity class. Each entity will store information such as its ID, and will be passed into the model to work through the pathway.
+- [**Model**](https://hsma-programme.github.io/hsma6_des_book/recommended_structure_classes_for_des_models.html#model-class), which will generate entities, simulate the pathway the entity takes through the system, and contain a way to run a single replication of the model
+- [**Trial**](https://hsma-programme.github.io/hsma6_des_book/recommended_structure_classes_for_des_models.html#trial-class), which allows us to run the simulation multiple times, collect results from all of these, and get an indication of average performance and performance variation across our different model runs
+
+
+## A Simple Model
+
+We're going to start off with a very simple model of a walk-in clinic pathway.
+
+In this clinic, patients arrive and are seen in the order they arrive by one of several available nurses. All nurses have the same skillset, so the queue is a simple first-in-first-out (FIFO). There is some variability in the arrival time of patients, as well as variability in how long it takes for each patient to be seen.
+
+### the g Class
+
+In our g class, we set up parameters that will be used throughout.
+
+```{python}
+class g:
+    random_number_set = 42 # Control
+    ial seeds of each stream of pseudorandom numbers used
+
+    n_cubicles = 3 # The number of treatment cubicles
+    trauma_treat_mean = 40 # Mean of the trauma cubicle treatment distribution (Lognormal)
+    trauma_treat_var = 5 # Variance of the trauma cubicle treatment distribution (Lognormal)
+
+    arrival_rate = 5 # mean of the exponential distribution for sampling the inter-arrival time of entities
+
+
+    sim_duration = 600 # The number of time units the simulation will run for
+    number_of_runs = 100 # The number of times the simulation will be run with different random number streams
+```
+
+### the Patient Class
+
+Our Patient class represents a single individual.
+
+The attributes in this class are used to track various metrics that will be used for determining how well our particular scenario has performed - think of it like a person holding a clipboard that is having various times and figures recorded on it as they move through the system.
+
+```{python}
+class Patient:
+    def __init__(self, p_id):
+        self.identifier = p_id
+        self.arrival = -np.inf
+        self.wait_treat = -np.inf
+        self.total_time = -np.inf
+        self.treat_duration = -np.inf
+```
+
+### the Model Class
+
+Our model class is more complex.
+
+:::
+
+#### the init method {.unlisted}
+
+First, we set up a series of attributes
+
+```{python}
+    def __init__(self, run_number):
+        # Create a SimPy environment in which everything will live
+        self.env = simpy.Environment()
+
+        # Create a patient counter (which we'll use as a patient ID)
+        self.patient_counter = 0
+
+        self.patients = []
+
+        # Create our resources
+        self.init_resources()
+
+        # Store the passed in run number
+        self.run_number = run_number
+
+        # Create a new Pandas DataFrame that will store some results against
+        # the patient ID (which we'll use as the index).
+        self.results_df = pd.DataFrame()
+        self.results_df["Patient ID"] = [1]
+        self.results_df["Queue Time Cubicle"] = [0.0]
+        self.results_df["Time with Nurse"] = [0.0]
+        self.results_df.set_index("Patient ID", inplace=True)
+
+        # Create an attribute to store the mean queuing times across this run of
+        # the model
+        self.mean_q_time_cubicle = 0
+
+        self.patient_inter_arrival_dist = Exponential(mean = g.arrival_rate,
+                                                      random_seed = self.run_number*g.random_number_set)
+        self.treat_dist = Lognormal(mean = g.trauma_treat_mean,
+                                    stdev = g.trauma_treat_var,
+                                    random_seed = self.run_number*g.random_number_set)
+```
+
+#### the init_resources method {.unlisted}
+
+```{python}
+    def init_resources(self):
+        '''
+        Init the number of resources
+
+        Resource list:
+            1. Nurses/treatment bays (same thing in this model)
+
+        '''
+        self.treatment_cubicles = simpy.Resource(self.env, capacity=g.n_cubicles)
+```
+
+#### the generator_patient_arrivals method {.unlisted}
+
+```{python}
+    def generator_patient_arrivals(self):
+        # We use an infinite loop here to keep doing this indefinitely whilst
+        # the simulation runs
+        while True:
+            # Increment the patient counter by 1 (this means our first patient
+            # will have an ID of 1)
+            self.patient_counter += 1
+
+            # Create a new patient - an instance of the Patient Class we
+            # defined above.  Remember, we pass in the ID when creating a
+            # patient - so here we pass the patient counter to use as the ID.
+            p = Patient(self.patient_counter)
+
+            # Store patient in list for later easy access
+            self.patients.append(p)
+
+            # Tell SimPy to start up the attend_clinic generator function with
+            # this patient (the generator function that will model the
+            # patient's journey through the system)
+            self.env.process(self.attend_clinic(p))
+
+            # Randomly sample the time to the next patient arriving.  Here, we
+            # sample from an exponential distribution (common for inter-arrival
+            # times), and pass in a lambda value of 1 / mean.  The mean
+            # inter-arrival time is stored in the g class.
+            sampled_inter = self.patient_inter_arrival_dist.sample()
+
+            # Freeze this instance of this function in place until the
+            # inter-arrival time we sampled above has elapsed.  Note - time in
+            # SimPy progresses in "Time Units", which can represent anything
+            # you like (just make sure you're consistent within the model)
+            yield self.env.timeout(sampled_inter)
+```
+
+#### the attend_clinic function {.unlisted}
+
+```{python}
+    def attend_clinic(self, patient):
+        self.arrival = self.env.now
+
+        # request examination resource
+        start_wait = self.env.now
+
+        with self.treatment_cubicles.request() as req:
+            # Seize a treatment resource when available
+            yield req
+
+            # record the waiting time for registration
+            self.wait_treat = self.env.now - start_wait
+
+            # sample treatment duration
+            self.treat_duration = self.treat_dist.sample()
+            yield self.env.timeout(self.treat_duration)
+
+        # total time in system
+        self.total_time = self.env.now - self.arrival
+
+```
+
+#### the calculate_run_results function {.unlisted}
+
+```{python}
+    def calculate_run_results(self):
+        # Take the mean of the queuing times across patients in this run of the
+        # model.
+        self.mean_q_time_cubicle = self.results_df["Queue Time Cubicle"].mean()
+```
+
+#### the run function {.unlisted}
+
+```{python}
+    def run(self):
+        # Start up our DES entity generators that create new patients.  We've
+        # only got one in this model, but we'd need to do this for each one if
+        # we had multiple generators.
+        self.env.process(self.generator_patient_arrivals())
+
+        # Run the model for the duration specified in g class
+        self.env.run(until=g.sim_duration)
+
+        # Now the simulation run has finished, call the method that calculates
+        # run results
+        self.calculate_run_results()
+```
+
+### the Trial Class
+
+#### the __init__ method {.unlisted}
+
+```{python}
+def  __init__(self):
+    self.df_trial_results = pd.DataFrame()
+    self.df_trial_results["Run Number"] = [0]
+    self.df_trial_results["Arrivals"] = [0]
+    self.df_trial_results["Mean Queue Time Cubicle"] = [0.0]
+    self.df_trial_results.set_index("Run Number", inplace=True)
+```
+
+#### The run_trial method {.unlisted}
+
+Run the simulation for the number of runs specified in g class.
+
+or each run, we create a new instance of the Model class and call its run method, which sets everything else in motion.
+
+Once the run has completed, we grab out the stored run results (just mean queuing time here) and store it against the run number in the trial results dataframe.
+
+```{python}
+
+    def run_trial(self):
+        print(f"{g.n_cubicles} nurses")
+        print("") ## Print a blank line
+
+        for run in range(g.number_of_runs):
+            random.seed(run)
+
+            my_model = Model(run)
+            my_model.run()
+
+            self.df_trial_results.loc[run] = [my_model.mean_q_time_cubicle]
+
+        return self.df_trial_results
+```
+
+## Making Changes for Vidigi
+
+### imports
+
+:::: {.columns}
+
+::: {.column width="47.5%"}
+
+##### Original
+
+```{python}
+import random
+import numpy as np
+import pandas as pd
+import simpy
+from sim_tools.distributions import Exponential, Lognormal
+```
+:::
+
+::: {.column width="5%"}
+:::
+
+::: {.column width="47.5%"}
+
+##### With Vidigi Modifications
+
+```{python}
+import random
+import numpy as np
+import pandas as pd
+import simpy
+from sim_tools.distributions import Exponential, Lognormal
+from vidigi.utils import populate_store #<<
+from vidigi.animation import animate_activity_log #<<
+```
+
+:::
+
+::::
+
+
+### the g Class
+
+Our g class is unchanged.
+
+### the Entity Class
+
+Our entity class - in this case, Patient - is unchanged.
+
+### the Model Class
+
+#### The __init__ method
+
+To our init method for the Model class, we add an empty list that will store event logs throughout the model run for each patient.
+
+:::: {.columns}
+
+::: {.column width="47.5%"}
+
+##### Original
+
+```{python}
+def __init__(self, run_number):
+    # Create a SimPy environment in which everything will live
+    self.env = simpy.Environment()
+
+    # Create a patient counter (which we'll use as a patient ID)
+    self.patient_counter = 0
+
+    # Create an empty list to store patient objects in
+    self.patients = []
+
+    # Create our resources
+    self.init_resources()
+
+    # Store the passed in run number
+    self.run_number = run_number
+
+    # Create a new Pandas DataFrame that will store some results
+    # against the patient ID (which we'll use as the index).
+    self.results_df = pd.DataFrame()
+    self.results_df["Patient ID"] = [1]
+    self.results_df["Queue Time Cubicle"] = [0.0]
+    self.results_df["Time with Nurse"] = [0.0]
+    self.results_df.set_index("Patient ID", inplace=True)
+
+    # Create an attribute to store the mean queuing times
+    # across this run of the model
+    self.mean_q_time_cubicle = 0
+
+    self.patient_inter_arrival_dist = Exponential(
+        mean = g.arrival_rate,
+        random_seed = self.run_number*g.random_number_set
+        )
+
+    self.treat_dist = Lognormal(
+        mean = g.trauma_treat_mean,
+        stdev = g.trauma_treat_var,
+        random_seed = self.run_number*g.random_number_set
+        )
+```
+:::
+
+::: {.column width="5%"}
+
+:::
+
+::: {.column width="47.5%"}
+
+##### With Vidigi Modifications
+
+```{python}
+def __init__(self, run_number):
+    # Create a SimPy environment in which everything will live
+    self.env = simpy.Environment()
+
+    # Add an empty list to store our event logs in #<<
+    self.event_log = [] #<<
+
+    # Create a patient counter (which we'll use as a patient ID)
+    self.patient_counter = 0
+
+    # Create an empty list to store patient objects in
+    self.patients = []
+
+    # Create our resources
+    self.init_resources()
+
+    # Store the passed in run number
+    self.run_number = run_number
+
+    # Create a new Pandas DataFrame that will store some results
+    # against the patient ID (which we'll use as the index)
+    self.results_df = pd.DataFrame()
+    self.results_df["Patient ID"] = [1]
+    self.results_df["Queue Time Cubicle"] = [0.0]
+    self.results_df["Time with Nurse"] = [0.0]
+    self.results_df.set_index("Patient ID", inplace=True)
+
+    # Create an attribute to store the mean queuing times
+    # across this run of the model
+    self.mean_q_time_cubicle = 0
+
+    self.patient_inter_arrival_dist = Exponential(
+        mean = g.arrival_rate,
+        random_seed = self.run_number*g.random_number_set
+        )
+
+    self.treat_dist = Lognormal(
+        mean = g.trauma_treat_mean,
+        stdev = g.trauma_treat_var,
+        random_seed = self.run_number*g.random_number_set
+        )
+```
+
+:::
+
+::::
+
+
+#### the init_resources method
+
+Vidigi needs to know *which* resource a user made use of so that we can ensure it stays with the correct resource throughout its time in the animation.
+
+The standard simpy Resource does not have a way of tracking that, so we need to do two things:
+    - create a **simpy Store** that we will store our resources in
+    - use the vidigi helper function `populate_store()` to generate a store full of special resources that each have a unique ID we can track when doing our event logging
+
+Overall, the use of stores won't generally change your code too much - and we cover exactly what needs to change a little later in this document.
+
+If you are using priority resources, this step will be a little different - see Example 3 in the documents if you need to use Resources that prioritise some entities over others.
+
+:::: {.columns}
+
+::: {.column width="47.5%"}
+
+##### Original
+
+```{python}
+def init_resources(self):
+    self.treatment_cubicles = simpy.Resource(
+        self.env,
+        capacity=g.n_cubicles
+        )
+```
+
+:::
+
+::: {.column width="5%"}
+
+:::
+
+::: {.column width="47.5%"}
+
+##### With Vidigi Modifications
+
+```{python}
+def init_resources(self):
+    self.treatment_cubicles = simpy.Store(self.env) #<<
+
+    populate_store(  #<<
+        num_resources=g.n_cubicles, #<<
+        simpy_store=self.treatment_cubicles, #<<
+        sim_env=self.env
+        ) #<<
+```
+
+:::
+
+::::
+
+#### the generator_patient_arrivals method
+
+This method is unchanged.
+
+#### the attend_clinic method
+
+This is the key place in which we add our *logging*. The logs are what vidigi relies on to calculate who should be where, when, within the animation.
+
+Event logging takes the format below:
+
+```{python}
+self.event_log.append(
+        {'patient': entity_identifier,
+            'pathway': 'My_Pathway_Name',
+            'event_type': 'arrival_departure', # or 'queue', 'resource_use', or 'resource_use_end'
+            'event': 'arrival', # or 'depart', or for 'queue' and 'resource_use' or 'resource_use_end' you can determine your own event name
+            'time': self.env.now}
+    )
+```
+
+More details about event logging can be found in the ['Event Logging' page](populating_event_logs.qmd).
+
+This is also where we need to change the way we request resources to account for the fact we are now using a simpy store instead of directly interacting with our simpy resources.
+
+Where we would have previously used
+
+```{python}
+with self.treatment_cubicles.request() as req:
+    # Seize a treatment resource when available
+    yield req
+
+    # ALL CODE WHERE WE NEED TO KEEP HOLD OF THE RESOURCE
+
+# CONTINUE AFTER RELEASING RESOURCE HERE
+```
+
+we instead now use
+
+```{python}
+# Seize a treatment resource when available
+treatment_resource = yield self.treatment_cubicles.get()
+
+# ALL CODE WHERE WE NEED TO KEEP HOLD OF THE RESOURCE
+
+# CONTINUE AFTER RELEASING RESOURCE HERE
+
+# Resource is no longer in use, so put it back in the store
+self.treatment_cubicles.put(treatment_resource)
+```
+
+:::: {.columns}
+
+::: {.column width="47.5%"}
+
+##### Original
+
+```{python}
+def attend_clinic(self, patient):
+    self.arrival = self.env.now
+
+    # request examination resource
+    start_wait = self.env.now
+
+    with self.treatment_cubicles.request() as req:
+        # Seize a treatment resource when available
+        yield req
+
+        # record the waiting time for registration
+        self.wait_treat = self.env.now - start_wait
+
+        # sample treatment duration
+        self.treat_duration = self.treat_dist.sample()
+        yield self.env.timeout(self.treat_duration)
+
+    # total time in system
+    self.total_time = self.env.now - self.arrival
+
+```
+
+:::
+
+::: {.column width="5%"}
+
+:::
+
+::: {.column width="47.5%"}
+
+##### With Vidigi Modifications
+
+```{python}
+def attend_clinic(self, patient):
+    self.arrival = self.env.now
+    self.event_log.append( #<<
+        {'patient': patient.identifier, #<<
+            'pathway': 'Simplest', #<<
+            'event_type': 'arrival_departure', #<<
+            # you must use this event name for arrival events
+            'event': 'arrival',  #<<
+            'time': self.env.now} #<<
+    ) #<<
+
+    # request examination resource
+    start_wait = self.env.now
+    self.event_log.append( #<<
+        {'patient': patient.identifier, #<<
+            'pathway': 'Simplest', #<<
+            # for a queue, you can define your chosen event name
+            'event': 'treatment_wait_begins', #<<
+            'event_type': 'queue', #<<
+            'time': self.env.now} #<<
+    ) #<<
+
+    # Seize a treatment resource when available
+    treatment_resource = yield self.treatment_cubicles.get() #<<
+
+    # record the waiting time for registration
+    self.wait_treat = self.env.now - start_wait
+    self.event_log.append( #<<
+        {'patient': patient.identifier, #<<
+            'pathway': 'Simplest', #<<
+            'event': 'treatment_begins', #<<
+            # for a resource_use, you can define your chosen event name
+            'event_type': 'resource_use', #<<
+            'time': self.env.now, #<<
+            # grab the resource id from the treatment_resource requested
+            'resource_id': treatment_resource.id_attribute #<<
+            } #<<
+    ) #<<
+
+    # sample treatment duration
+    self.treat_duration = self.treat_dist.sample()
+    yield self.env.timeout(self.treat_duration)
+
+    self.event_log.append( #<<
+        {'patient': patient.identifier, #<<
+            'pathway': 'Simplest', #<<
+            # for a resource_use_end, you can define your chosen event name
+            'event': 'treatment_complete', #<<
+            'event_type': 'resource_use_end', #<<
+            'time': self.env.now, #<<
+            'resource_id': treatment_resource.id_attribute} #<<
+    ) #<<
+
+    # Resource is no longer in use, so put it back in the store #<<
+    self.treatment_cubicles.put(treatment_resource) #<<
+
+    # total time in system
+    self.total_time = self.env.now - self.arrival
+    self.event_log.append( #<<
+        {'patient': patient.identifier, #<<
+        'pathway': 'Simplest', #<<
+        'event': 'depart', # you must use this event name for departure events #<<
+        'event_type': 'arrival_departure', #<<
+        'time': self.env.now} #<<
+    ) #<<
+```
+
+:::
+
+::::
+
+#### the calculate_run_results method
+
+This method is unchanged.
+
+#### the run method
+
+:::: {.columns}
+
+::: {.column width="47.5%"}
+
+##### Original
+
+```{python}
+def run(self):
+    # Start up our DES entity generators that create new patients.  We've
+    # only got one in this model, but we'd need to do this for each one if
+    # we had multiple generators.
+    self.env.process(self.generator_patient_arrivals())
+
+    # Run the model for the duration specified in g class
+    self.env.run(until=g.sim_duration)
+
+    # Now the simulation run has finished, call the method that calculates
+    # run results
+    self.calculate_run_results()
+```
+
+:::
+
+::: {.column width="5%"}
+
+:::
+
+::: {.column width="47.5%"}
+
+##### With Vidigi Modifications
+
+```{python}
+def run(self):
+    # Start up our DES entity generators that create new patients.  We've
+    # only got one in this model, but we'd need to do this for each one if
+    # we had multiple generators.
+    self.env.process(self.generator_patient_arrivals())
+
+    # Run the model for the duration specified in g class
+    self.env.run(until=g.sim_duration)
+
+    # Now the simulation run has finished, call the method that calculates
+    # run results
+    self.calculate_run_results()
+
+    self.event_log = pd.DataFrame(self.event_log) #<<
+
+    self.event_log["run"] = self.run_number #<<
+
+    return {'results': self.results_df, 'event_log': self.event_log}  #<<
+```
+
+:::
+
+::::
+
+
+### the Trial Class
+
+#### the __init__ method
+
+:::: {.columns}
+
+::: {.column width="47.5%"}
+
+##### Original
+
+```{python}
+def  __init__(self):
+    self.df_trial_results = pd.DataFrame()
+    self.df_trial_results["Run Number"] = [0]
+    self.df_trial_results["Arrivals"] = [0]
+    self.df_trial_results["Mean Queue Time Cubicle"] = [0.0]
+    self.df_trial_results.set_index("Run Number", inplace=True)
+
+```
+
+:::
+
+::: {.column width="5%"}
+
+:::
+
+::: {.column width="47.5%"}
+
+##### With Vidigi Modifications
+
+```{python}
+def  __init__(self):
+    self.df_trial_results = pd.DataFrame()
+    self.df_trial_results["Run Number"] = [0]
+    self.df_trial_results["Arrivals"] = [0]
+    self.df_trial_results["Mean Queue Time Cubicle"] = [0.0]
+    self.df_trial_results.set_index("Run Number", inplace=True)
+
+    self.all_event_logs = [] #<<
+```
+
+:::
+
+::::
+
+
+#### the run_trial method
+
+:::: {.columns}
+
+::: {.column width="47.5%"}
+
+##### Original
+
+```{python}
+def run_trial(self):
+    for run in range(g.number_of_runs):
+        random.seed(run)
+
+        my_model = Model(run)
+        my_model.run()
+
+        self.df_trial_results.loc[run] = [
+            my_model.mean_q_time_cubicle
+        ]
+
+    return self.df_trial_results
+```
+
+:::
+
+::: {.column width="5%"}
+
+:::
+
+::: {.column width="47.5%"}
+
+##### With Vidigi Modifications
+
+```{python}
+def run_trial(self):
+    for run in range(g.number_of_runs):
+        random.seed(run)
+
+        my_model = Model(run)
+        model_outputs = my_model.run()
+        patient_level_results = model_outputs["results"] #<<
+        event_log = model_outputs["event_log"] #<<
+
+        self.df_trial_results.loc[run] = [
+            my_model.mean_q_time_cubicle
+        ]
+
+        self.all_event_logs.append(event_log) #<<
+
+    self.all_event_logs = pd.concat(self.all_event_logs) #<<
+```
+
+:::
+
+::::
+
+## Using vidigi to create an animation from our event log
+
+For simple animations with vidigi, it is recommended that you use the `animate_activity_log` function.
+
+This all-in-one function takes an event log of the structure discussed above, then turns it into an animated output that can be embedded in a quarto document, a web app, or saved as a standalone HTML file.
+
+First, we need to create an instance of our trial class, then run the trial.
+
+```{python}
+my_trial = Trial()
+
+my_trial.run_trial()
+```
+
+The dataframe of event logs can then be viewed using `my_trial.all_event_logs`
+
+### The event_position_df
+
+We can then generate our coordinates for the initial positioning of each step.
+
+:::{.callout-note}
+The 'event' names must match the event names you assigned in the logging steps.
+
+However, this will not be displayed anywhere in the final setup. Instead, use 'label' to define a human-readable label that can optionally be displayed in the final animation.
+:::
+
+:::{.callout-warning}
+'label' should not be left out or be an empty string - both of these will cause problems.
+:::
+
+:::{.callout-note}
+You only need to provide positions for
+
+- arrival
+- departure
+- queue
+- resource_use (optional - you can have an animation that is only queues)
+
+*i.e. you do not need to provide coordinates for resource_use_end*
+
+You can also opt to skip any queue or resource_use steps you do not want to show, though note that this could produce a misleading output if not carefully explained to end users
+:::
+
+:::{.callout-tip}
+For queues and resource use, the coordinate will correspond to the *bottom-right-hand corner* of the block of queueing entities or resources.
+:::
+
+```{python}
+#| eval: true
+event_position_df = pd.DataFrame([
+                    {'event': 'arrival',
+                     'x':  50, 'y': 300,
+                     'label': "Arrival" },
+
+                    # Triage - minor and trauma
+                    {'event': 'treatment_wait_begins',
+                     'x':  205, 'y': 275,
+                     'label': "Waiting for Treatment"},
+
+                    {'event': 'treatment_begins',
+                     'x':  205, 'y': 175,
+                     'resource':'n_cubicles',
+                     'label': "Being Treated"},
+
+                    {'event': 'exit',
+                     'x':  270, 'y': 70,
+                     'label': "Exit"}
+
+                ])
+
+```
+
+## Creating the animation
+
+Finally, we can create the animation.
+
+:::{.callout-warning}
+It is important that you only pass in a single run at a time!
+
+Passing a dataframe in containing more than one run will produce incorrect animations.
+
+You may, however, wish to give the user control over which run they visualise using a dropdown in something like Streamlit or Shiny - or perhaps
+:::
+
+```{python}
+single_run_event_log_df = my_trial.all_event_logs[my_trial.all_event_logs['run']==1]
+
+animate_activity_log(
+        event_log=single_run_event_log_df,
+        event_position_df= event_position_df,
+        scenario=g(), # Use an instance of the g class as our scenario
+        limit_duration=g.sim_duration,
+        debug_mode=True, # Turn on logging messages
+        setup_mode=True, # Turn on axis units - this can help with honing your event_position_df
+        every_x_time_units=1,
+        include_play_button=True,
+        icon_and_text_size=20,
+        gap_between_entities=6,
+        gap_between_rows=25,
+        plotly_height=700,
+        frame_duration=200,
+        plotly_width=1200,
+        override_x_max=300,
+        override_y_max=500,
+        wrap_queues_at=25,
+        step_snapshot_max=125,
+        time_display_units="dhm",
+        display_stage_labels=True # display our Label column from our event_position_df
+    )
+```
+
+:::{.callout-note collapse="true"}
+#### Click here to view the full code
+
+```{python}
+#| eval: true
+
+import random
+import numpy as np
+import pandas as pd
+import simpy
+from sim_tools.distributions import Exponential, Lognormal
+from vidigi.utils import populate_store
+from vidigi.animation import animate_activity_log
+
+# Class to store global parameter values.  We don't create an instance of this
+# class - we just refer to the class blueprint itself to access the numbers
+# inside.
+class g:
+    '''
+    Create a scenario to parameterise the simulation model
+
+    Parameters:
+    -----------
+    random_number_set: int, optional (default=DEFAULT_RNG_SET)
+        Set to control the initial seeds of each stream of pseudo
+        random numbers used in the model.
+
+    n_cubicles: int
+        The number of treatment cubicles
+
+    trauma_treat_mean: float
+        Mean of the trauma cubicle treatment distribution (Lognormal)
+
+    trauma_treat_var: float
+        Variance of the trauma cubicle treatment distribution (Lognormal)
+
+    arrival_rate: float
+        Set the mean of the exponential distribution that is used to sample the
+        inter-arrival time of patients
+
+    sim_duration: int
+        The number of time units the simulation will run for
+
+    number_of_runs: int
+        The number of times the simulation will be run with different random number streams
+
+    '''
+    random_number_set = 42
+
+    n_cubicles = 3
+    trauma_treat_mean = 40
+    trauma_treat_var = 5
+
+    arrival_rate = 5
+
+    sim_duration = 600
+    number_of_runs = 100
+
+# Class representing patients coming in to the clinic.
+class Patient:
+    '''
+    Class defining details for a patient entity
+    '''
+    def __init__(self, p_id):
+        '''
+        Constructor method
+
+        Params:
+        -----
+        identifier: int
+            a numeric identifier for the patient.
+        '''
+        self.identifier = p_id
+        self.arrival = -np.inf
+        self.wait_treat = -np.inf
+        self.total_time = -np.inf
+        self.treat_duration = -np.inf
+
+# Class representing our model of the clinic.
+class Model:
+    '''
+    Simulates the simplest minor treatment process for a patient
+
+    1. Arrive
+    2. Examined/treated by nurse when one available
+    3. Discharged
+    '''
+    # Constructor to set up the model for a run.  We pass in a run number when
+    # we create a new model.
+    def __init__(self, run_number):
+        # Create a SimPy environment in which everything will live
+        self.env = simpy.Environment()
+
+        self.event_log = []
+
+        # Create a patient counter (which we'll use as a patient ID)
+        self.patient_counter = 0
+
+        self.patients = []
+
+        # Create our resources
+        self.init_resources()
+
+        # Store the passed in run number
+        self.run_number = run_number
+
+        # Create a new Pandas DataFrame that will store some results against
+        # the patient ID (which we'll use as the index).
+        self.results_df = pd.DataFrame()
+        self.results_df["Patient ID"] = [1]
+        self.results_df["Queue Time Cubicle"] = [0.0]
+        self.results_df["Time with Nurse"] = [0.0]
+        self.results_df.set_index("Patient ID", inplace=True)
+
+        # Create an attribute to store the mean queuing times across this run of
+        # the model
+        self.mean_q_time_cubicle = 0
+
+        self.patient_inter_arrival_dist = Exponential(mean = g.arrival_rate,
+                                                      random_seed = self.run_number*g.random_number_set)
+        self.treat_dist = Lognormal(mean = g.trauma_treat_mean,
+                                    stdev = g.trauma_treat_var,
+                                    random_seed = self.run_number*g.random_number_set)
+
+    def init_resources(self):
+        '''
+        Init the number of resources
+        and store in the arguments container object
+
+        Resource list:
+            1. Nurses/treatment bays (same thing in this model)
+
+        '''
+        self.treatment_cubicles = simpy.Store(self.env)
+
+        populate_store(num_resources=g.n_cubicles,
+                       simpy_store=self.treatment_cubicles,
+                       sim_env=self.env)
+
+        # for i in range(g.n_cubicles):
+        #     self.treatment_cubicles.put(
+        #         CustomResource(
+        #             self.env,
+        #             capacity=1,
+        #             id_attribute = i+1)
+        #         )
+
+    # A generator function that represents the DES generator for patient
+    # arrivals
+    def generator_patient_arrivals(self):
+        # We use an infinite loop here to keep doing this indefinitely whilst
+        # the simulation runs
+        while True:
+            # Increment the patient counter by 1 (this means our first patient
+            # will have an ID of 1)
+            self.patient_counter += 1
+
+            # Create a new patient - an instance of the Patient Class we
+            # defined above.  Remember, we pass in the ID when creating a
+            # patient - so here we pass the patient counter to use as the ID.
+            p = Patient(self.patient_counter)
+
+            # Store patient in list for later easy access
+            self.patients.append(p)
+
+            # Tell SimPy to start up the attend_clinic generator function with
+            # this patient (the generator function that will model the
+            # patient's journey through the system)
+            self.env.process(self.attend_clinic(p))
+
+            # Randomly sample the time to the next patient arriving.  Here, we
+            # sample from an exponential distribution (common for inter-arrival
+            # times), and pass in a lambda value of 1 / mean.  The mean
+            # inter-arrival time is stored in the g class.
+            sampled_inter = self.patient_inter_arrival_dist.sample()
+
+            # Freeze this instance of this function in place until the
+            # inter-arrival time we sampled above has elapsed.  Note - time in
+            # SimPy progresses in "Time Units", which can represent anything
+            # you like (just make sure you're consistent within the model)
+            yield self.env.timeout(sampled_inter)
+
+    # A generator function that represents the pathway for a patient going
+    # through the clinic.
+    # The patient object is passed in to the generator function so we can
+    # extract information from / record information to it
+    def attend_clinic(self, patient):
+        self.arrival = self.env.now
+        self.event_log.append(
+            {'patient': patient.identifier,
+             'pathway': 'Simplest',
+             'event_type': 'arrival_departure',
+             'event': 'arrival',
+             'time': self.env.now}
+        )
+
+        # request examination resource
+        start_wait = self.env.now
+        self.event_log.append(
+            {'patient': patient.identifier,
+             'pathway': 'Simplest',
+             'event': 'treatment_wait_begins',
+             'event_type': 'queue',
+             'time': self.env.now}
+        )
+
+        # Seize a treatment resource when available
+        treatment_resource = yield self.treatment_cubicles.get()
+
+        # record the waiting time for registration
+        self.wait_treat = self.env.now - start_wait
+        self.event_log.append(
+            {'patient': patient.identifier,
+                'pathway': 'Simplest',
+                'event': 'treatment_begins',
+                'event_type': 'resource_use',
+                'time': self.env.now,
+                'resource_id': treatment_resource.id_attribute
+                }
+        )
+
+        # sample treatment duration
+        self.treat_duration = self.treat_dist.sample()
+        yield self.env.timeout(self.treat_duration)
+
+        self.event_log.append(
+            {'patient': patient.identifier,
+                'pathway': 'Simplest',
+                'event': 'treatment_complete',
+                'event_type': 'resource_use_end',
+                'time': self.env.now,
+                'resource_id': treatment_resource.id_attribute}
+        )
+
+        # Resource is no longer in use, so put it back in
+        self.treatment_cubicles.put(treatment_resource)
+
+        # total time in system
+        self.total_time = self.env.now - self.arrival
+        self.event_log.append(
+            {'patient': patient.identifier,
+            'pathway': 'Simplest',
+            'event': 'depart',
+            'event_type': 'arrival_departure',
+            'time': self.env.now}
+        )
+
+
+    # This method calculates results over a single run.  Here we just calculate
+    # a mean, but in real world models you'd probably want to calculate more.
+    def calculate_run_results(self):
+        # Take the mean of the queuing times across patients in this run of the
+        # model.
+        self.mean_q_time_cubicle = self.results_df["Queue Time Cubicle"].mean()
+
+    # The run method starts up the DES entity generators, runs the simulation,
+    # and in turns calls anything we need to generate results for the run
+    def run(self):
+        # Start up our DES entity generators that create new patients.  We've
+        # only got one in this model, but we'd need to do this for each one if
+        # we had multiple generators.
+        self.env.process(self.generator_patient_arrivals())
+
+        # Run the model for the duration specified in g class
+        self.env.run(until=g.sim_duration)
+
+        # Now the simulation run has finished, call the method that calculates
+        # run results
+        self.calculate_run_results()
+
+        self.event_log = pd.DataFrame(self.event_log)
+
+        self.event_log["run"] = self.run_number
+
+        return {'results': self.results_df, 'event_log': self.event_log}
+
+# Class representing a Trial for our simulation - a batch of simulation runs.
+class Trial:
+    # The constructor sets up a pandas dataframe that will store the key
+    # results from each run against run number, with run number as the index.
+    def  __init__(self):
+        self.df_trial_results = pd.DataFrame()
+        self.df_trial_results["Run Number"] = [0]
+        self.df_trial_results["Arrivals"] = [0]
+        self.df_trial_results["Mean Queue Time Cubicle"] = [0.0]
+        self.df_trial_results.set_index("Run Number", inplace=True)
+
+        self.all_event_logs = []
+
+    # Method to run a trial
+    def run_trial(self):
+        print(f"{g.n_cubicles} nurses")
+        print("") ## Print a blank line
+
+        # Run the simulation for the number of runs specified in g class.
+        # For each run, we create a new instance of the Model class and call its
+        # run method, which sets everything else in motion.  Once the run has
+        # completed, we grab out the stored run results (just mean queuing time
+        # here) and store it against the run number in the trial results
+        # dataframe.
+        for run in range(g.number_of_runs):
+            random.seed(run)
+
+            my_model = Model(run)
+            model_outputs = my_model.run()
+            patient_level_results = model_outputs["results"]
+            event_log = model_outputs["event_log"]
+
+            self.df_trial_results.loc[run] = [
+                len(patient_level_results),
+                my_model.mean_q_time_cubicle,
+            ]
+
+            # print(event_log)
+
+            self.all_event_logs.append(event_log)
+
+        self.all_event_logs = pd.concat(self.all_event_logs)
+
+```
+
+:::
+
+
+```{python}
+#| eval: true
+my_trial = Trial()
+
+my_trial.run_trial()
+
+single_run_event_log_df = my_trial.all_event_logs[my_trial.all_event_logs['run']==1]
+
+animate_activity_log(
+        event_log=single_run_event_log_df,
+        event_position_df= event_position_df,
+        scenario=g(), # Use an instance of the g class as our scenario
+        limit_duration=g.sim_duration,
+        debug_mode=True, # Turn on logging messages
+        setup_mode=True, # Turn on axis units - this can help with honing your event_position_df
+        every_x_time_units=1,
+        include_play_button=True,
+        icon_and_text_size=20,
+        gap_between_entities=6,
+        gap_between_rows=25,
+        plotly_height=700,
+        frame_duration=200,
+        plotly_width=1200,
+        override_x_max=300,
+        override_y_max=500,
+        wrap_queues_at=25,
+        step_snapshot_max=125,
+        time_display_units="dhm",
+        display_stage_labels=True # display our Label column from our event_position_df
+    )
+```
+
+When you have finished tweaking the layout, you can further enhance your output.
+
+```{python}
+#| eval: true
+animate_activity_log(
+        event_log=single_run_event_log_df,
+        event_position_df= event_position_df,
+        scenario=g(),
+        limit_duration=g.sim_duration,
+        debug_mode=False, # Turn off logging messages
+        setup_mode=False, # Turn off axis units
+        every_x_time_units=1,
+        include_play_button=True,
+        icon_and_text_size=20,
+        gap_between_entities=6,
+        gap_between_rows=25,
+        plotly_height=700,
+        frame_duration=200,
+        plotly_width=1200,
+        override_x_max=300,
+        override_y_max=500,
+        wrap_queues_at=25,
+        step_snapshot_max=125,
+        time_display_units="dhm",
+        display_stage_labels=False, # hide our Label column from our event_position_df
+        # Add a local or web-hosted image as our background
+        add_background_image="https://raw.githubusercontent.com/Bergam0t/vidigi/refs/heads/main/examples/example_1_simplest_case/Simplest%20Model%20Background%20Image%20-%20Horizontal%20Layout.drawio.png")
+```
+
+We can then rerun our animation, passing in different parameters - though make sure to rerun your trial if you do so!
+
+Here, we will increase the number of cubicles from 3 to 7 and see the impact this has on the queue size.
+
+```{python}
+#| eval: true
+g.n_cubicles = 7 #<<
+
+my_trial = Trial()
+
+my_trial.run_trial()
+
+single_run_event_log_df = my_trial.all_event_logs[my_trial.all_event_logs['run']==1]
+
+animate_activity_log(
+        event_log=single_run_event_log_df,
+        event_position_df= event_position_df,
+        scenario=g(),
+        limit_duration=g.sim_duration,
+        debug_mode=False, # Turn off logging messages
+        setup_mode=False, # Turn off axis units
+        every_x_time_units=1,
+        include_play_button=True,
+        icon_and_text_size=20,
+        gap_between_entities=6,
+        gap_between_rows=25,
+        plotly_height=700,
+        frame_duration=200,
+        plotly_width=1200,
+        override_x_max=300,
+        override_y_max=500,
+        wrap_queues_at=25,
+        step_snapshot_max=125,
+        time_display_units="dhm",
+        display_stage_labels=False, # hide our Label column from our event_position_df
+        # Add a local or web-hosted image as our background
+        add_background_image="https://raw.githubusercontent.com/Bergam0t/vidigi/refs/heads/main/examples/example_1_simplest_case/Simplest%20Model%20Background%20Image%20-%20Horizontal%20Layout.drawio.png")
+```

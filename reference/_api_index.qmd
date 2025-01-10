@@ -1,0 +1,37 @@
+# Function reference {.doc .doc-index}
+
+## All-In-One Animation Functions
+
+
+
+| | |
+| --- | --- |
+| [animation.animate_activity_log](animation.animate_activity_log.qmd#vidigi.animation.animate_activity_log) | Generate an animated visualization of patient flow through a system. |
+
+## Step-By-Step Functions
+
+
+
+| | |
+| --- | --- |
+| [prep.reshape_for_animations](prep.reshape_for_animations.qmd#vidigi.prep.reshape_for_animations) | Reshape event log data for animation purposes. |
+| [prep.generate_animation_df](prep.generate_animation_df.qmd#vidigi.prep.generate_animation_df) | Generate a DataFrame for animation purposes by adding position information to patient data. |
+| [animation.generate_animation](animation.generate_animation.qmd#vidigi.animation.generate_animation) | Generate an animated visualization of patient flow through a system. |
+
+## Simpy Utility Functions and Classes
+
+
+
+| | |
+| --- | --- |
+| [utils.populate_store](utils.populate_store.qmd#vidigi.utils.populate_store) | Populate a SimPy Store (or VidigiPriorityStore) with CustomResource objects. |
+| [utils.CustomResource](utils.CustomResource.qmd#vidigi.utils.CustomResource) | A custom resource class that extends simpy.Resource with an additional ID attribute. |
+| [utils.VidigiPriorityStore](utils.VidigiPriorityStore.qmd#vidigi.utils.VidigiPriorityStore) | A SimPy store that processes requests with priority. |
+
+## ciw Utility Functions
+
+
+
+| | |
+| --- | --- |
+| [utils.event_log_from_ciw_recs](utils.event_log_from_ciw_recs.qmd#vidigi.utils.event_log_from_ciw_recs) | Given the ciw recs object, return a dataframe in the format expected by the vidigi |

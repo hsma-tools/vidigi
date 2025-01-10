@@ -1,0 +1,159 @@
+---
+title: Populating Event Logs
+execute:
+  eval: false
+format:
+  html:
+    toc: true
+    toc-depth: 4
+    toc-expand: 4
+filters:
+  - quarto
+  - line-highlight
+---
+
+## Event types
+
+Four **event types** are supported in the model:
+
+- 'arrival_departure'
+- 'resource_use'
+- 'resource_use_end'
+- 'queue'.
+
+As a minimum, you will require the use of 'arrival_departure' events and one of
+
+- 'resource_use' / 'resource_use_end'
+- OR 'queue'
+
+You can also use both 'resource_use' and 'queue' within the same model very effectively (see `ex_1_simplest_case` and `ex_2_branching_and_optional_paths`, among others).
+
+### arrival_departure
+
+Within this, two 'arrival_departure' **events** per entity are mandatory - `arrival` and `depart`, both with an event_type of `arrival_departure`, as shown below.
+
+#### Arrivals
+
+:::{.callout-important}
+Arrivals **must** use
+
+'event_type': 'arrival_departure'
+
+'event': 'arrival'
+
+:::
+
+```{python}
+event_log.append(
+      {'patient': unique_entity_identifier,
+      'pathway': 'Revision',
+      'event_type': 'arrival_departure',
+      'event': 'arrival',
+      'time': env.now}
+  )
+```
+
+#### Departures
+
+:::{.callout-important}
+Departures **must** use
+
+'event_type': 'arrival_departure'
+
+'event': 'depart'
+
+:::
+
+```{python}
+event_log.append(
+      {'patient': unique_entity_identifier,
+      'pathway': 'Revision',
+      'event_type': 'arrival_departure',
+      'event': 'depart',
+      'time': env.now}
+  )
+```
+
+:::{.callout-warning}
+These are critical as they are used to determine when patients should first and last appear in the model.
+:::
+
+:::{.callout-important}
+Forgetting to include a departure step for all types of patients can lead to slow model and animation performance as the size of the event logs for individual moments will continue to increase indefinitely.
+:::
+
+### queue
+
+Queues are key steps in the model.
+
+It is possible to solely use queues and never make use of a simpy resource.
+
+By tracking each important step in the process as a 'queue' step, the movement of patients can be accurately tracked.
+
+Patients will be ordered by the point at which they are added to the queue, with the first entries appearing at the front (bottom-right) of the queue.
+
+Record the time the entity begins queueing for a resource with an event_type of 'queue'.
+
+You may use whatever string you wish to for the `event` name.
+
+```{python}
+event_log.append(
+            {'patient': unique_entity_identifier,
+             'pathway': 'High intensity',
+             'event_type': 'queue',
+             'event': 'appointment_booked_waiting',
+             'time': self.env.now
+             }
+        )
+```
+
+While the keys shown above are mandatory, you can add as many additional keys to a step's log as desired. This can allow you to flexibly make use of the event log for other purposes as well as the animation.
+
+### resource_use and resource_use_end
+
+Resource use is more complex to include but comes with two key benefits over the queue:
+- it becomes easier to monitor the length of time a resource is in use by a single entity as users won't 'move through' the resource use stage (which can also prove confusing to less experienced viewers)
+- it becomes possible to show the total number of resources that are available, making it easier to understand how well resources are being utilised at different stages
+
+In addition to the other fields, this also requires you to pass a `resource_id` argument. If you have set up your simpy store using the `populate_store` function from the `utils` module of the vidigi package, then your resources will have an ID attribute you can access in the way shown below after you have requested the resource with `.get()`
+
+Record the time the resource begins use with an event_type of 'resource_use'.
+
+You may use whatever string you wish to for the `event` name.
+
+```{python}
+# request the resource
+my_resource = yield my_resource_store.get()
+
+event_log.append( #<<
+    {'patient': unique_entity_identifier, #<<
+     'pathway': 'My Pathway Name', #<<
+     'event_type': 'resource_use', #<<
+     'event': 'triage_begins', #<<
+     'time': env.now, #<<
+     'resource_id': triage_resource.id_attribute #<<
+    } #<<
+) #<<
+```
+
+When the resource is no longer in use, record the time with an event_type of 'resource_use_end'.
+
+Again, you may use whatever string you wish to for the `event` name.
+
+Once again, you must record the ID of the resource that is being freed up.
+
+You can do this before or after putting the resource back in the store.
+
+```{python}
+event_log.append( #<<
+            {'patient': unique_entity_identifier, #<<
+             'pathway': 'My Pathway Name', #<<
+             'event_type': 'resource_use_end', #<<
+             'event': 'triage_complete', #<<
+             'time': env.now, #<<
+             'resource_id': triage_resource.id_attribute} #<<
+        ) #<<
+
+# Resource is no longer in use, so put it back in the store
+my_resource_store.put(my_resource)
+```

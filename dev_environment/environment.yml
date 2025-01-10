@@ -17,3 +17,5 @@ dependencies:
   - plotly=5.12.0
   - simpy=4.0.2
   - sim-tools=0.6.1
+  - quartodoc=0.9.1
+  - ciw=2.3.1

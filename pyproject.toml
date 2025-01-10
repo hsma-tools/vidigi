@@ -25,6 +25,7 @@ dependencies = [
     "plotly>=5.12.0",
     "numpy>=1.26.2",
     "pandas>=2.0.1",
+    "simpy>=4.0.0"
 ]
 
 [project.urls]
@@ -37,4 +38,9 @@ path = "vidigi/__init__.py"
 [tool.hatch.build.targets.sdist]
 include = [
     "/vidigi",
+]
+
+[project.optional-dependencies]
+streamlit = [
+  "st-javascript==0.1.5"
 ]
