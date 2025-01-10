@@ -18,10 +18,6 @@ filters:
 import pandas as pd
 ```
 
-:::{.callout-warning}
-This section is currently in progress
-:::
-
 On the [Health Service Modelling Associates (HSMA)](https://hsma-programme.github.io/hsma_site/) course we teach a particular way of writing your simpy models. More details of the approach we take can be found in our [Little Book of DES](https://hsma-programme.github.io/hsma6_des_book/).
 
 However, the core concepts of adding vidigi to your models will be the same across different models - so this example will hopefully be helpful regardless of the way you structure your simpy models.
@@ -32,6 +28,11 @@ ciw is quite different - we will not be able to add logging steps in the way we 
 However, in the utils module, the `event_log_from_ciw_recs` function provides a simple way to get the required logs out of your ciw model without any additional logging being added in manually.
 
 :::
+
+:::{.callout-note}
+This model has been adapted from [Monks](https://github.com/TomMonks/treatment-centre-sim), released under the [MIT Licence](https://github.com/TomMonks/treatment-centre-sim/blob/main/LICENSE)
+:::
+
 
 ## Vidigi's requirements
 
