@@ -404,14 +404,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>The underlying model code is from Monks, T., Harper, A., &amp; Heather, A. (2023). Towards Sharing Tools, Artefacts, and Reproducible Simulation: a ciw model example (v1.0.1). Zenodo. https://doi.org/10.5281/zenodo.10051494</p>
 <p>See here for the adaptation embedded within that repo: <a href="https://github.com/Bergam0t/ciw-example-animation/tree/main">https://github.com/Bergam0t/ciw-example-animation/tree/main</a></p>
 <hr>
-<div id="cell-3" class="cell" data-execution_count="18">
+<div id="cell-3" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Import the wrapper objects for model interaction.</span></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> examples.example_4_ciw.ex_4_ciw_model <span class="im">import</span> Experiment, multiple_replications</span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> vidigi.utils <span class="im">import</span> event_log_from_ciw_recs</span>
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> vidigi.animation <span class="im">import</span> animate_activity_log</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div id="cell-4" class="cell" data-execution_count="19">
+<div id="cell-4" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>N_OPERATORS <span class="op">=</span> <span class="dv">13</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>N_NURSES <span class="op">=</span> <span class="dv">9</span></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>RESULTS_COLLECTION_PERIOD <span class="op">=</span> <span class="dv">1000</span></span>
@@ -428,10 +428,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="bu">len</span>(logs_run_1))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>2240</code></pre>
+<pre><code>2266</code></pre>
 </div>
 </div>
-<div id="cell-5" class="cell" data-execution_count="20">
+<div id="cell-5" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># let's print all of the outputs for a single individual</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>[<span class="bu">print</span>(log) <span class="cf">for</span> log <span class="kw">in</span> logs_run_1 <span class="cf">if</span> log.id_number<span class="op">==</span><span class="dv">500</span>]</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -440,9 +440,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>event_log_test.head(<span class="dv">25</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Record(id_number=500, customer_class=0, original_customer_class=0, node=1, arrival_date=287.6396005571297, waiting_time=0.0, service_start_date=287.6396005571297, service_time=7.199228099941479, service_end_date=294.8388286570712, time_blocked=0.0, exit_date=294.8388286570712, destination=-1, queue_size_at_arrival=12, queue_size_at_departure=6, server_id=13, record_type='service')</code></pre>
+<pre><code>Record(id_number=500, customer_class=0, original_customer_class=0, node=1, arrival_date=269.6165843237451, waiting_time=14.514495676004913, service_start_date=284.13107999975, service_time=8.289105946048721, service_end_date=292.4201859457987, time_blocked=0.0, exit_date=292.4201859457987, destination=-1, queue_size_at_arrival=37, queue_size_at_departure=43, server_id=1, record_type='service')</code></pre>
 </div>
-<div class="cell-output cell-output-display" data-execution_count="20">
+<div class="cell-output cell-output-display" data-execution_count="3">
 <div>
 
 
@@ -465,7 +465,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>Model</td>
 <td>arrival_departure</td>
 <td>arrival</td>
-<td>0.578986</td>
+<td>0.503707</td>
 <td>NaN</td>
 </tr>
 <tr class="even">
@@ -474,7 +474,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>Model</td>
 <td>queue</td>
 <td>operator_wait_begins</td>
-<td>0.578986</td>
+<td>0.503707</td>
 <td>NaN</td>
 </tr>
 <tr class="odd">
@@ -483,7 +483,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>Model</td>
 <td>resource_use</td>
 <td>operator_begins</td>
-<td>0.578986</td>
+<td>0.503707</td>
 <td>1.0</td>
 </tr>
 <tr class="even">
@@ -492,7 +492,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>Model</td>
 <td>resource_use</td>
 <td>operator_ends</td>
-<td>8.191760</td>
+<td>6.136387</td>
 <td>1.0</td>
 </tr>
 <tr class="odd">
@@ -501,7 +501,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>Model</td>
 <td>queue</td>
 <td>nurse_wait_begins</td>
-<td>8.191760</td>
+<td>6.136387</td>
 <td>NaN</td>
 </tr>
 <tr class="even">
@@ -510,7 +510,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>Model</td>
 <td>resource_use</td>
 <td>nurse_begins</td>
-<td>8.191760</td>
+<td>6.136387</td>
 <td>1.0</td>
 </tr>
 <tr class="odd">
@@ -519,7 +519,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>Model</td>
 <td>resource_use</td>
 <td>nurse_ends</td>
-<td>20.318068</td>
+<td>23.061561</td>
 <td>1.0</td>
 </tr>
 <tr class="even">
@@ -528,7 +528,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>Model</td>
 <td>arrival_departure</td>
 <td>depart</td>
-<td>20.318068</td>
+<td>23.061561</td>
 <td>NaN</td>
 </tr>
 <tr class="odd">
@@ -537,7 +537,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>Model</td>
 <td>arrival_departure</td>
 <td>arrival</td>
-<td>1.472150</td>
+<td>1.048958</td>
 <td>NaN</td>
 </tr>
 <tr class="even">
@@ -546,7 +546,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>Model</td>
 <td>queue</td>
 <td>operator_wait_begins</td>
-<td>1.472150</td>
+<td>1.048958</td>
 <td>NaN</td>
 </tr>
 <tr class="odd">
@@ -555,7 +555,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>Model</td>
 <td>resource_use</td>
 <td>operator_begins</td>
-<td>1.472150</td>
+<td>1.048958</td>
 <td>2.0</td>
 </tr>
 <tr class="even">
@@ -564,61 +564,61 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>Model</td>
 <td>resource_use</td>
 <td>operator_ends</td>
-<td>10.201862</td>
+<td>8.075635</td>
 <td>2.0</td>
 </tr>
 <tr class="odd">
 <td data-quarto-table-cell-role="th">12</td>
 <td>2</td>
 <td>Model</td>
-<td>queue</td>
-<td>nurse_wait_begins</td>
-<td>10.201862</td>
+<td>arrival_departure</td>
+<td>depart</td>
+<td>8.075635</td>
 <td>NaN</td>
 </tr>
 <tr class="even">
 <td data-quarto-table-cell-role="th">13</td>
-<td>2</td>
+<td>3</td>
 <td>Model</td>
-<td>resource_use</td>
-<td>nurse_begins</td>
-<td>10.201862</td>
-<td>3.0</td>
+<td>arrival_departure</td>
+<td>arrival</td>
+<td>1.392097</td>
+<td>NaN</td>
 </tr>
 <tr class="odd">
 <td data-quarto-table-cell-role="th">14</td>
-<td>2</td>
+<td>3</td>
 <td>Model</td>
-<td>resource_use</td>
-<td>nurse_ends</td>
-<td>22.937920</td>
-<td>3.0</td>
+<td>queue</td>
+<td>operator_wait_begins</td>
+<td>1.392097</td>
+<td>NaN</td>
 </tr>
 <tr class="even">
 <td data-quarto-table-cell-role="th">15</td>
-<td>2</td>
+<td>3</td>
 <td>Model</td>
-<td>arrival_departure</td>
-<td>depart</td>
-<td>22.937920</td>
-<td>NaN</td>
+<td>resource_use</td>
+<td>operator_begins</td>
+<td>1.392097</td>
+<td>3.0</td>
 </tr>
 <tr class="odd">
 <td data-quarto-table-cell-role="th">16</td>
 <td>3</td>
 <td>Model</td>
-<td>arrival_departure</td>
-<td>arrival</td>
-<td>1.565093</td>
-<td>NaN</td>
+<td>resource_use</td>
+<td>operator_ends</td>
+<td>8.482409</td>
+<td>3.0</td>
 </tr>
 <tr class="even">
 <td data-quarto-table-cell-role="th">17</td>
 <td>3</td>
 <td>Model</td>
 <td>queue</td>
-<td>operator_wait_begins</td>
-<td>1.565093</td>
+<td>nurse_wait_begins</td>
+<td>8.482409</td>
 <td>NaN</td>
 </tr>
 <tr class="odd">
@@ -626,18 +626,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>3</td>
 <td>Model</td>
 <td>resource_use</td>
-<td>operator_begins</td>
-<td>1.565093</td>
-<td>3.0</td>
+<td>nurse_begins</td>
+<td>8.482409</td>
+<td>2.0</td>
 </tr>
 <tr class="even">
 <td data-quarto-table-cell-role="th">19</td>
 <td>3</td>
 <td>Model</td>
 <td>resource_use</td>
-<td>operator_ends</td>
-<td>8.522090</td>
-<td>3.0</td>
+<td>nurse_ends</td>
+<td>19.488025</td>
+<td>2.0</td>
 </tr>
 <tr class="odd">
 <td data-quarto-table-cell-role="th">20</td>
@@ -645,7 +645,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>Model</td>
 <td>arrival_departure</td>
 <td>depart</td>
-<td>8.522090</td>
+<td>19.488025</td>
 <td>NaN</td>
 </tr>
 <tr class="even">
@@ -654,7 +654,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>Model</td>
 <td>arrival_departure</td>
 <td>arrival</td>
-<td>1.672159</td>
+<td>2.280472</td>
 <td>NaN</td>
 </tr>
 <tr class="odd">
@@ -663,7 +663,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>Model</td>
 <td>queue</td>
 <td>operator_wait_begins</td>
-<td>1.672159</td>
+<td>2.280472</td>
 <td>NaN</td>
 </tr>
 <tr class="even">
@@ -672,7 +672,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>Model</td>
 <td>resource_use</td>
 <td>operator_begins</td>
-<td>1.672159</td>
+<td>2.280472</td>
 <td>4.0</td>
 </tr>
 <tr class="odd">
@@ -681,7 +681,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>Model</td>
 <td>resource_use</td>
 <td>operator_ends</td>
-<td>8.275919</td>
+<td>10.076369</td>
 <td>4.0</td>
 </tr>
 </tbody>
@@ -690,7 +690,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-<div id="cell-6" class="cell" data-execution_count="21">
+<div id="cell-6" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create required event_position_df for vidigi animation</span></span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>event_position_df <span class="op">=</span> pd.DataFrame([</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>                    {<span class="st">'event'</span>: <span class="st">'arrival'</span>,</span>
@@ -721,13 +721,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>                ])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div id="cell-7" class="cell" data-execution_count="22">
+<div id="cell-7" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a suitable class to pass in the resource numbers</span></span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> model_params():</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    n_operators <span class="op">=</span> N_OPERATORS</span>
 <span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    n_nurses <span class="op">=</span> N_NURSES</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div id="cell-8" class="cell" data-execution_count="23">
+<div id="cell-8" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create animation</span></span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>animate_activity_log(</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>        event_log<span class="op">=</span>event_log_test,</span>
@@ -752,13 +752,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>        display_stage_labels<span class="op">=</span><span class="va">True</span>,</span>
 <span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>    )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Animation function called at 18:32:43
-Iteration through minute-by-minute logs complete 18:32:52
-Snapshot df concatenation complete at 18:32:52
-Reshaped animation dataframe finished construction at 18:32:52
-Placement dataframe finished construction at 18:32:52
-Output animation generation complete at 18:33:00
-Total Time Elapsed: 17.43 seconds</code></pre>
+<pre><code>Animation function called at 18:07:36
+Iteration through minute-by-minute logs complete 18:07:40
+Snapshot df concatenation complete at 18:07:40
+Reshaped animation dataframe finished construction at 18:07:40
+Placement dataframe finished construction at 18:07:40
+Output animation generation complete at 18:07:44
+Total Time Elapsed: 7.97 seconds</code></pre>
 </div>
 <div class="cell-output cell-output-display">
 <pre><code>Unable to display output for mime type(s): application/vnd.plotly.v1+json</code></pre>
