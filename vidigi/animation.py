@@ -4,6 +4,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from vidigi.prep import reshape_for_animations, generate_animation_df
+import numpy as np
 
 def generate_animation(
         full_patient_df_plus_pos,
@@ -21,7 +22,9 @@ def generate_animation(
         start_date=None,
         resource_opacity=0.8,
         custom_resource_icon=None,
+        wrap_resources_at=20,
         gap_between_resources=10,
+        gap_between_rows=30,
         setup_mode=False,
         frame_duration=400, #milliseconds
         frame_transition_duration=600, #milliseconds
@@ -66,8 +69,15 @@ def generate_animation(
         Opacity of resource icons (default is 0.8).
     custom_resource_icon : str, optional
         Custom icon to use for resources (default is None).
+    wrap_resources_at : int, optional
+        Number of resources to show before wrapping to a new row (default is 20).
+        If this has been set elsewhere, it is also important to set it in this function to ensure
+        the visual indicators of the resources wrap in the same way the entities using those
+        resources do.
     gap_between_resources : int, optional
         Spacing between resources in pixels (default is 10).
+    gap_between_rows : int, optional
+        Vertical spacing between rows in pixels (default is 30).
     setup_mode : bool, optional
         Whether to run in setup mode, showing grid and tick marks (default is False).
     frame_duration : int, optional
@@ -202,6 +212,13 @@ def generate_animation(
         events_with_resources = events_with_resources.join(events_with_resources.apply(
             lambda r: pd.Series({'x_final': [r['x']-(gap_between_resources*(i+1)) for i in range(r['resource_count'])]}), axis=1).explode('x_final'),
             how='right')
+
+        events_with_resources = events_with_resources.assign(resource_id=range(len(events_with_resources)))
+
+        if wrap_resources_at is not None:
+            events_with_resources['row'] = np.floor((events_with_resources['resource_id']) / (wrap_resources_at))
+            events_with_resources['x_final'] = events_with_resources['x_final'] + (wrap_resources_at * events_with_resources['row'] * gap_between_resources) + gap_between_resources
+            events_with_resources['y'] = events_with_resources['y'] + (events_with_resources['row'] * gap_between_rows)
 
         # This just adds an additional scatter trace that creates large dots
         # that represent the individual resources
@@ -450,6 +467,8 @@ def animate_activity_log(
         time_display_units=time_display_units,
         setup_mode=setup_mode,
         resource_opacity=resource_opacity,
+        wrap_resources_at=wrap_resources_at,
+        gap_between_resources=gap_between_resources,
         custom_resource_icon=custom_resource_icon,
         frame_duration=frame_duration, #milliseconds
         frame_transition_duration=frame_transition_duration, #milliseconds
