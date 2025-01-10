@@ -1,4 +1,11 @@
-# Adding Vidigi to a Simple simpy Model (HSMA Structure)
+---
+title: Adding Vidigi to a Simple simpy Model (HSMA Structure)
+execute:
+  eval: true
+format:
+  html:
+    toc: true
+---
 
 :::{.callout-warning}
 This section is currently in progress

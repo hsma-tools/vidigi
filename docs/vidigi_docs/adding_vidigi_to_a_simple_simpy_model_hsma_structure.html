@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>adding_vidigi_to_a_simple_simpy_model_hsma_structure</title>
+<title>Adding Vidigi to a Simple simpy Model (HSMA Structure)</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -106,7 +106,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 </head>
 
-<body class="nav-sidebar docked fullcontent">
+<body class="nav-sidebar docked">
 
 <div id="quarto-search-results"></div>
   <header id="quarto-header" class="headroom fixed-top">
@@ -233,7 +233,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../examples/example_5_simplest_case_wrapped_resources/ex_5_simplest_case_wrapped_resource.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Example 1: Simplest Case</span></a>
+ <span class="menu-text">Example 5: Simplest Case with Higher Number of Resources - Resource Wrapping Demonstration</span></a>
   </div>
 </li>
       </ul>
@@ -352,7 +352,29 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </nav>
 <div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
 <!-- margin-sidebar -->
-    
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#vidigis-requirements" id="toc-vidigis-requirements" class="nav-link active" data-scroll-target="#vidigis-requirements">Vidigi’s requirements</a></li>
+  <li><a href="#hsma-model-structure" id="toc-hsma-model-structure" class="nav-link" data-scroll-target="#hsma-model-structure">HSMA Model Structure</a></li>
+  <li><a href="#a-simple-model" id="toc-a-simple-model" class="nav-link" data-scroll-target="#a-simple-model">A Simple Model</a>
+  <ul class="collapse">
+  <li><a href="#the-g-class" id="toc-the-g-class" class="nav-link" data-scroll-target="#the-g-class">the g Class</a></li>
+  <li><a href="#the-patient-class" id="toc-the-patient-class" class="nav-link" data-scroll-target="#the-patient-class">the Patient Class</a></li>
+  </ul></li>
+  <li><a href="#making-changes-for-vidigi" id="toc-making-changes-for-vidigi" class="nav-link" data-scroll-target="#making-changes-for-vidigi">Making Changes for Vidigi</a>
+  <ul class="collapse">
+  <li><a href="#the-g-class-1" id="toc-the-g-class-1" class="nav-link" data-scroll-target="#the-g-class-1">the g Class</a></li>
+  <li><a href="#the-entity-class" id="toc-the-entity-class" class="nav-link" data-scroll-target="#the-entity-class">the Entity Class</a></li>
+  <li><a href="#the-model-class" id="toc-the-model-class" class="nav-link" data-scroll-target="#the-model-class">the Model Class</a></li>
+  <li><a href="#the-trial-class" id="toc-the-trial-class" class="nav-link" data-scroll-target="#the-trial-class">the Trial Class</a></li>
+  </ul></li>
+  <li><a href="#using-vidigi-to-create-an-animation-from-our-event-log" id="toc-using-vidigi-to-create-an-animation-from-our-event-log" class="nav-link" data-scroll-target="#using-vidigi-to-create-an-animation-from-our-event-log">Using vidigi to create an animation from our event log</a></li>
+  </ul>
+</nav>
+    </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
@@ -433,7 +455,7 @@ Note
 <section id="the-g-class" class="level3">
 <h3 class="anchored" data-anchor-id="the-g-class">the g Class</h3>
 <p>In our g class, we set up parameters that will be used throughout.</p>
-<div id="39c133d0" class="cell" data-execution_count="1">
+<div id="0afb2ebb" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> g:</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    random_number_set <span class="op">=</span> <span class="dv">42</span> <span class="co"># Control the initial seeds of each stream of pseudorandom numbers used</span></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -450,7 +472,7 @@ Note
 </section>
 <section id="the-patient-class" class="level3">
 <h3 class="anchored" data-anchor-id="the-patient-class">the Patient Class</h3>
-<div id="057a70e3" class="cell" data-execution_count="2">
+<div id="5e0af1c6" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Patient:</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, p_id):</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.identifier <span class="op">=</span> p_id</span>
