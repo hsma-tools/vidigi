@@ -218,7 +218,9 @@ def generate_animation(
         if wrap_resources_at is not None:
             events_with_resources['row'] = np.floor((events_with_resources['resource_id']) / (wrap_resources_at))
             events_with_resources['x_final'] = events_with_resources['x_final'] + (wrap_resources_at * events_with_resources['row'] * gap_between_resources) + gap_between_resources
-            events_with_resources['y'] = events_with_resources['y'] + (events_with_resources['row'] * gap_between_rows)
+            events_with_resources['y_final'] = events_with_resources['y'] + (events_with_resources['row'] * gap_between_rows)
+        else:
+            events_with_resources['y_final'] = events_with_resources['y']
 
         # This just adds an additional scatter trace that creates large dots
         # that represent the individual resources
@@ -230,7 +232,7 @@ def generate_animation(
                 x=events_with_resources['x_final'].to_list(),
                 # Place these slightly below the y position for each entity
                 # that will be using the resource
-                y=[i-10 for i in events_with_resources['y'].to_list()],
+                y=[i-10 for i in events_with_resources['y_final'].to_list()],
                 mode="markers+text",
                 text=custom_resource_icon,
                 # Make the actual marker invisible
@@ -244,7 +246,7 @@ def generate_animation(
                 x=events_with_resources['x_final'].to_list(),
                 # Place these slightly below the y position for each entity
                 # that will be using the resource
-                y=[i-10 for i in events_with_resources['y'].to_list()],
+                y=[i-10 for i in events_with_resources['y_final'].to_list()],
                 mode="markers",
                 # Define what the marker will look like
                 marker=dict(
@@ -469,6 +471,7 @@ def animate_activity_log(
         resource_opacity=resource_opacity,
         wrap_resources_at=wrap_resources_at,
         gap_between_resources=gap_between_resources,
+        gap_between_rows=gap_between_rows,
         custom_resource_icon=custom_resource_icon,
         frame_duration=frame_duration, #milliseconds
         frame_transition_duration=frame_transition_duration, #milliseconds
