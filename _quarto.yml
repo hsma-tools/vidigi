@@ -2,6 +2,10 @@ project:
   type: website
   output-dir: docs
 
+website:
+  title: vidigi
+  description: "Documentation for the vidigi pathway animation package"
+
 # tell quarto to read the generated sidebar
 metadata-files:
   - _sidebar.yml
@@ -43,6 +47,9 @@ quartodoc:
       - section: "Walkthroughs"
         contents:
         - vidigi_docs/adding_vidigi_to_a_simple_simpy_model_hsma_structure.qmd
+      - section: "Details"
+        contents:
+        - vidigi_docs/populating_event_logs.qmd
       - section: "Examples"
         contents:
         - examples/example_1_simplest_case/ex_1_simplest_case.ipynb

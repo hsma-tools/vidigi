@@ -10,6 +10,9 @@ website:
       - vidigi_docs/adding_vidigi_to_a_simple_simpy_model_hsma_structure.qmd
       section: Walkthroughs
     - contents:
+      - vidigi_docs/populating_event_logs.qmd
+      section: Details
+    - contents:
       - examples/example_1_simplest_case/ex_1_simplest_case.ipynb
       - examples/example_2_branching_multistep/ex_2_branching_multistep_case.ipynb
       - examples/example_3_simplest_case_priority_resource/ex_3_simplest_case_priority_resource.ipynb
