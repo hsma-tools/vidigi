@@ -80,5 +80,8 @@ quartodoc:
 format:
   html:
     theme:
-      light: flatly
-      dark: darkly
+      dark: [darkly, theme-dark.scss]
+      light: [flatly, theme-light.scss]
+
+    grid:
+      sidebar-width: 325px
