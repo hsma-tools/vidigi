@@ -73,8 +73,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="../site_libs/quarto-html/quarto-syntax-highlighting-dark-474c6d7e63be50eb6972897072b39b27.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-340adedf927205964cc3bd0fb276f08a.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="../site_libs/bootstrap/bootstrap-dark-8e6fb6491b543492adaabe9861e1b043.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../site_libs/bootstrap/bootstrap-76b51144e8a80e356d66852f3974f469.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-dark-2313ed53adaed14f5ff8659d8cee79e1.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
 <script id="quarto-search-options" type="application/json">{
   "location": "sidebar",
   "copy-button": false,
@@ -230,6 +230,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">Example 4: A ciw Model</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../examples/example_5_simplest_case_wrapped_resources/ex_5_simplest_case_wrapped_resource.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Example 1: Simplest Case</span></a>
+  </div>
+</li>
       </ul>
   </li>
         <li class="sidebar-item sidebar-item-section">
@@ -371,22 +377,24 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    start_date<span class="op">=</span><span class="va">None</span>,</span>
 <span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    resource_opacity<span class="op">=</span><span class="fl">0.8</span>,</span>
 <span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    custom_resource_icon<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    gap_between_resources<span class="op">=</span><span class="dv">10</span>,</span>
-<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    setup_mode<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>    frame_duration<span class="op">=</span><span class="dv">400</span>,</span>
-<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>    frame_transition_duration<span class="op">=</span><span class="dv">600</span>,</span>
-<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>    debug_mode<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    wrap_resources_at<span class="op">=</span><span class="dv">20</span>,</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    gap_between_resources<span class="op">=</span><span class="dv">10</span>,</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>    gap_between_rows<span class="op">=</span><span class="dv">30</span>,</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>    setup_mode<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>    frame_duration<span class="op">=</span><span class="dv">400</span>,</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>    frame_transition_duration<span class="op">=</span><span class="dv">600</span>,</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>    debug_mode<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Generate an animated visualization of patient flow through a system.</p>
 <p>This function creates an interactive Plotly animation based on patient data and event positions.</p>
 <section id="parameters" class="level2 doc-section doc-section-parameters">
 <h2 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h2>
 <table class="caption-top table">
 <colgroup>
-<col style="width: 11%">
-<col style="width: 5%">
-<col style="width: 77%">
-<col style="width: 5%">
+<col style="width: 8%">
+<col style="width: 4%">
+<col style="width: 83%">
+<col style="width: 3%">
 </colgroup>
 <thead>
 <tr class="header">
@@ -488,10 +496,22 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td><code>None</code></td>
 </tr>
 <tr class="even">
+<td>wrap_resources_at</td>
+<td>int</td>
+<td>Number of resources to show before wrapping to a new row (default is 20). If this has been set elsewhere, it is also important to set it in this function to ensure the visual indicators of the resources wrap in the same way the entities using those resources do.</td>
+<td><code>20</code></td>
+</tr>
+<tr class="odd">
 <td>gap_between_resources</td>
 <td>int</td>
 <td>Spacing between resources in pixels (default is 10).</td>
 <td><code>10</code></td>
+</tr>
+<tr class="even">
+<td>gap_between_rows</td>
+<td>int</td>
+<td>Vertical spacing between rows in pixels (default is 30).</td>
+<td><code>30</code></td>
 </tr>
 <tr class="odd">
 <td>setup_mode</td>

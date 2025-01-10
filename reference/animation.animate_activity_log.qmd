@@ -7,6 +7,7 @@ animation.animate_activity_log(
     scenario=None,
     every_x_time_units=10,
     wrap_queues_at=20,
+    wrap_resources_at=20,
     step_snapshot_max=50,
     limit_duration=10 * 60 * 24,
     plotly_height=900,
@@ -45,6 +46,7 @@ an interactive Plotly animation representing patient movement through various st
 | scenario                  | object       | An object containing attributes for resource counts at different steps.                             | `None`         |
 | every_x_time_units        | int          | Time interval between animation frames in minutes (default is 10).                                  | `10`           |
 | wrap_queues_at            | int          | Maximum number of entities to display in a queue before wrapping to a new row (default is 20).      | `20`           |
+| wrap_resources_at         | int          | Number of resources to show before wrapping to a new row (default is 20).                           | `20`           |
 | step_snapshot_max         | int          | Maximum number of patients to show in each snapshot per event (default is 50).                      | `50`           |
 | limit_duration            | int          | Maximum duration to animate in minutes (default is 10 days or 14400 minutes).                       | `10 * 60 * 24` |
 | plotly_height             | int          | Height of the Plotly figure in pixels (default is 900).                                             | `900`          |

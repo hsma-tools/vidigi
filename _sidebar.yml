@@ -14,6 +14,7 @@ website:
       - examples/example_2_branching_multistep/ex_2_branching_multistep_case.ipynb
       - examples/example_3_simplest_case_priority_resource/ex_3_simplest_case_priority_resource.ipynb
       - examples/example_4_ciw/ex_4_ciw.ipynb
+      - examples/example_5_simplest_case_wrapped_resources/ex_5_simplest_case_wrapped_resource.ipynb
       section: Examples
     - contents:
       - reference/index.qmd

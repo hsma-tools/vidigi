@@ -5,6 +5,7 @@ prep.generate_animation_df(
     full_patient_df,
     event_position_df,
     wrap_queues_at=20,
+    wrap_resources_at=20,
     step_snapshot_max=50,
     gap_between_entities=10,
     gap_between_resources=10,
@@ -26,6 +27,7 @@ handling both queuing and resource use events.
 | full_patient_df       | pd.DataFrame | Output of reshape_for_animation(), containing patient event data.                               | _required_ |
 | event_position_df     | pd.DataFrame | DataFrame with columns 'event', 'x', and 'y', specifying initial positions for each event type. | _required_ |
 | wrap_queues_at        | int          | Number of entities in a queue before wrapping to a new row (default is 20).                     | `20`       |
+| wrap_resources_at     | int          | Number of resources to show before wrapping to a new row (default is 20).                       | `20`       |
 | step_snapshot_max     | int          | Maximum number of patients to show in each snapshot (default is 50).                            | `50`       |
 | gap_between_entities  | int          | Horizontal spacing between entities in pixels (default is 10).                                  | `10`       |
 | gap_between_resources | int          | Horizontal spacing between resources in pixels (default is 10).                                 | `10`       |

@@ -73,8 +73,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="site_libs/quarto-html/quarto-syntax-highlighting-dark-474c6d7e63be50eb6972897072b39b27.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
 <script src="site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap-340adedf927205964cc3bd0fb276f08a.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="site_libs/bootstrap/bootstrap-dark-8e6fb6491b543492adaabe9861e1b043.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="site_libs/bootstrap/bootstrap-76b51144e8a80e356d66852f3974f469.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-dark-2313ed53adaed14f5ff8659d8cee79e1.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
 <script id="quarto-search-options" type="application/json">{
   "location": "sidebar",
   "copy-button": false,
@@ -227,7 +227,7 @@ self.args.treatment.put(treatment_resource)</code></pre>
 <h2 class="anchored" data-anchor-id="creating-an-object-that-stores-resources---a-scenario-object---which-then-informs-the-number-of-resources-displayed">3. Creating an object that stores resources - a ‘scenario’ object - which then informs the number of resources displayed</h2>
 <p>At present this part of the code expects a scenario object. This could be changed to - expect a dictionary instead - work with either a scenario or dictionary object (maybe if the route of expanding TM’s approach to simpy modelling into an opinionated framework)</p>
 <p>If going with the first option, the scenario class used in TM’s work routinely could be expanded to include a method to export the required data to a dictionary format.</p>
-<div id="3ec229bf" class="cell" data-execution_count="1">
+<div id="309b6409" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>events_with_resources <span class="op">=</span> event_position_df[event_position_df[<span class="st">'resource'</span>].notnull()].copy()</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>events_with_resources[<span class="st">'resource_count'</span>] <span class="op">=</span> events_with_resources[<span class="st">'resource'</span>].<span class="bu">apply</span>(<span class="kw">lambda</span> x: <span class="bu">getattr</span>(scenario, x))</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
