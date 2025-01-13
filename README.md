@@ -1,6 +1,8 @@
 # vidigi (Visual Interactive Dynamics and Integrated Graphical Insights)
 
 [<img src="https://img.shields.io/pypi/v/vidigi?label=pypi%20package">](https://pypi.org/project/vidigi/)
+[![DOI](https://zenodo.org/badge/888169040.svg)](https://doi.org/10.5281/zenodo.14635602)
+
 
 ---
 
