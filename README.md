@@ -16,6 +16,9 @@ vidigi is the Esperanto for 'to show'
 
 https://github.com/hsma-programme/Teaching_DES_Concepts_Streamlit/assets/29951987/1adc36a0-7bc0-4808-8d71-2d253a855b31
 
+> [!CAUTION]
+> Some bugs were introduced in v0.0.4. You may wish to use the more stable 0.0.3 for now!
+
 ## Introduction
 
 Visual display of the outputs of discrete event simulations in simpy have been identified as one of the limitations of simpy, potentially hindering adoption of FOSS simulation in comparison to commercial modelling offerings or GUI FOSS alternatives such as JaamSim.
