@@ -19,3 +19,4 @@ dependencies:
   - sim-tools=0.6.1
   - quartodoc=0.9.1
   - ciw=2.3.1
+  - ipywidgets=8.1.5
