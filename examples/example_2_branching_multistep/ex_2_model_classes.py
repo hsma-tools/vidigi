@@ -551,7 +551,7 @@ class Model:
             self.event_log.append(
                 {'patient': patient.identifier,
                     'pathway': 'Non-Trauma',
-                    'event': 'MINORS_treatment_ends',
+                    'event': 'MINORS_treatment_complete',
                     'event_type': 'resource_use_end',
                     'time': self.env.now,
                     'resource_id': non_trauma_treatment_resource.id_attribute}
