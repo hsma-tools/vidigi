@@ -485,12 +485,12 @@
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
     </div>
 <!-- main -->
-<main class="content" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../vidigi_docs/vidigi_vs_bupar.html">Other</a></li><li class="breadcrumb-item"><a href="../vidigi_docs/vidigi_vs_bupar.html">Vidigi vs BupaR</a></li></ol></nav></header>    <div class="cell-container"><div class="cell-decorator"><pre>In [1]:</pre></div><div id="cell-0" class="cell" data-execution_count="1">
+<main class="content" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../vidigi_docs/vidigi_vs_bupar.html">Other</a></li><li class="breadcrumb-item"><a href="../vidigi_docs/vidigi_vs_bupar.html">Vidigi vs BupaR</a></li></ol></nav></header>    <div class="cell-container"><div class="cell-decorator"><pre>In [4]:</pre></div><div id="cell-0" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> examples.example_2_branching_multistep.ex_2_model_classes <span class="im">import</span> Trial, g</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div></div>
-<div class="cell-container"><div class="cell-decorator"><pre>In [2]:</pre></div><div id="cell-1" class="cell" data-execution_count="2">
+<div class="cell-container"><div class="cell-decorator"><pre>In [5]:</pre></div><div id="cell-1" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>g.sim_duration <span class="op">=</span> <span class="dv">3000</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>g.number_of_runs <span class="op">=</span> <span class="dv">1</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div></div>
@@ -1313,14 +1313,14 @@ View Imported Code, which has had logging steps added at the appropriate points 
 </div>
 </div>
 </div>
-<div class="cell-container"><div class="cell-decorator"><pre>In [4]:</pre></div><div id="cell-3" class="cell" data-execution_count="4">
+<div class="cell-container"><div class="cell-decorator"><pre>In [7]:</pre></div><div id="cell-3" class="cell" data-execution_count="7">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>my_trial <span class="op">=</span> Trial()</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>my_trial.run_trial()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div></div>
-<div class="cell-container"><div class="cell-decorator"><pre>In [5]:</pre></div><div id="cell-4" class="cell" data-execution_count="5">
+<div class="cell-container"><div class="cell-decorator"><pre>In [8]:</pre></div><div id="cell-4" class="cell" data-execution_count="8">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>my_trial.all_event_logs.head(<span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display" data-execution_count="5">
+<div class="cell-output cell-output-display" data-execution_count="8">
 <div>
 
 
@@ -1444,9 +1444,9 @@ View Imported Code, which has had logging steps added at the appropriate points 
 </div>
 </div>
 </div></div>
-<div class="cell-container"><div class="cell-decorator"><pre>In [6]:</pre></div><div id="cell-5" class="cell" data-execution_count="6">
+<div class="cell-container"><div class="cell-decorator"><pre>In [9]:</pre></div><div id="cell-5" class="cell" data-execution_count="9">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>my_trial.all_event_logs.event_type.value_counts()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display" data-execution_count="6">
+<div class="cell-output cell-output-display" data-execution_count="9">
 <pre><code>event_type
 queue                 2100
 resource_use          2035
@@ -1456,9 +1456,9 @@ attribute_assigned     264
 Name: count, dtype: int64</code></pre>
 </div>
 </div></div>
-<div class="cell-container"><div class="cell-decorator"><pre>In [7]:</pre></div><div id="cell-6" class="cell" data-execution_count="7">
+<div class="cell-container"><div class="cell-decorator"><pre>In [10]:</pre></div><div id="cell-6" class="cell" data-execution_count="10">
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>my_trial.all_event_logs.event.value_counts()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display" data-execution_count="7">
+<div class="cell-output cell-output-display" data-execution_count="10">
 <pre><code>event
 arrival                             623
 triage_wait_begins                  623
@@ -1484,59 +1484,56 @@ TRAUMA_treatment_complete            74
 Name: count, dtype: int64</code></pre>
 </div>
 </div></div>
-<div id="cell-7" class="cell markdown">
-<p>For simplicity, we’ll only include those patients who actually went through the whole system.</p>
-<p>Note - this could be very misleading in systems with huge capacity issues!</p>
-</div>
-<div class="cell-container"><div class="cell-decorator"><pre>In [8]:</pre></div><div id="cell-8" class="cell" data-execution_count="8">
+<div class="cell-container"><div class="cell-decorator"><pre>In [11]:</pre></div><div id="cell-7" class="cell" data-execution_count="11">
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># First, identify all patients who have a 'depart' event</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>patients_with_depart <span class="op">=</span> my_trial.all_event_logs[my_trial.all_event_logs[<span class="st">'event'</span>].<span class="bu">str</span>.contains(<span class="st">'depart'</span>)][<span class="st">'patient'</span>].unique()</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="co"># patients_with_depart = my_trial.all_event_logs[my_trial.all_event_logs['event'].str.contains('depart')]['patient'].unique()</span></span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Then filter the original DataFrame to only include those patients</span></span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>filtered_df <span class="op">=</span> my_trial.all_event_logs[my_trial.all_event_logs[<span class="st">'patient'</span>].isin(patients_with_depart)]</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="co"># filtered_df = my_trial.all_event_logs[my_trial.all_event_logs['patient'].isin(patients_with_depart)]</span></span>
 <span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>logs_transformed <span class="op">=</span> filtered_df[<span class="op">~</span>filtered_df[<span class="st">'event'</span>].<span class="bu">str</span>.contains(<span class="st">'wait'</span>)].copy()</span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>logs_transformed <span class="op">=</span> logs_transformed[logs_transformed[<span class="st">'event_type'</span>].isin([<span class="st">'resource_use'</span>, <span class="st">'resource_use_end'</span>])].copy()</span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>logs_transformed[<span class="st">'event_stage'</span>] <span class="op">=</span> logs_transformed[<span class="st">'event_type'</span>].<span class="bu">apply</span>(<span class="kw">lambda</span> x: <span class="st">'complete'</span> <span class="cf">if</span> <span class="st">'end'</span> <span class="kw">in</span> x <span class="cf">else</span> <span class="st">'start'</span>)</span>
-<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>logs_transformed[<span class="st">'event_name'</span>] <span class="op">=</span> logs_transformed[<span class="st">'event'</span>].<span class="bu">str</span>.replace(<span class="st">'_begins|_complete'</span>, <span class="st">''</span>, regex<span class="op">=</span><span class="va">True</span>)</span>
-<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>logs_transformed[<span class="st">'resource_id_full'</span>] <span class="op">=</span> logs_transformed.<span class="bu">apply</span>(<span class="kw">lambda</span> x: <span class="ss">f"</span><span class="sc">{</span>x[<span class="st">'event_name'</span>]<span class="sc">}</span><span class="ss">_</span><span class="sc">{</span>x[<span class="st">'resource_id'</span>]<span class="sc">:.0f}</span><span class="ss">"</span>, axis<span class="op">=</span><span class="dv">1</span>)</span>
-<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>logs_transformed <span class="op">=</span> logs_transformed.sort_values([<span class="st">'run'</span>, <span class="st">'time'</span>], ascending<span class="op">=</span><span class="va">True</span>)</span>
-<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a><span class="co"># logs_transformed["activity_id"] = (</span></span>
-<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a><span class="co">#     logs_transformed.groupby(["run", "patient", "event_name"]).ngroup() + 1</span></span>
-<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a><span class="co"># )</span></span>
-<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a><span class="co"># logs_transformed = logs_transformed.sort_values(["run", "patient", "activity_id", "event_stage"], ascending=[True, True, True, False])</span></span>
-<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a><span class="co"># Sort the data by run, patient, time, and event_name to handle tied start times</span></span>
-<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>logs_transformed <span class="op">=</span> logs_transformed.sort_values([<span class="st">"run"</span>, <span class="st">"patient"</span>, <span class="st">"time"</span>, <span class="st">"event_name"</span>])</span>
-<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a><span class="co"># Get the first occurrence of each activity (the start event)</span></span>
-<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a>first_occurrences <span class="op">=</span> (</span>
-<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a>    logs_transformed[logs_transformed[<span class="st">"event_stage"</span>] <span class="op">==</span> <span class="st">"start"</span>]</span>
-<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a>    .drop_duplicates([<span class="st">"run"</span>, <span class="st">"patient"</span>, <span class="st">"event_name"</span>])</span>
-<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a>    .copy()</span>
-<span id="cb10-27"><a href="#cb10-27" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb10-28"><a href="#cb10-28" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-29"><a href="#cb10-29" aria-hidden="true" tabindex="-1"></a><span class="co"># Sort by time within each run to determine the proper sequence</span></span>
-<span id="cb10-30"><a href="#cb10-30" aria-hidden="true" tabindex="-1"></a>first_occurrences <span class="op">=</span> first_occurrences.sort_values([<span class="st">"run"</span>, <span class="st">"time"</span>, <span class="st">"event_name"</span>])</span>
-<span id="cb10-31"><a href="#cb10-31" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-32"><a href="#cb10-32" aria-hidden="true" tabindex="-1"></a><span class="co"># Assign sequential activity_id within each run</span></span>
-<span id="cb10-33"><a href="#cb10-33" aria-hidden="true" tabindex="-1"></a>first_occurrences[<span class="st">"activity_id"</span>] <span class="op">=</span> first_occurrences.groupby(<span class="st">"run"</span>).cumcount() <span class="op">+</span> <span class="dv">1</span></span>
-<span id="cb10-34"><a href="#cb10-34" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-35"><a href="#cb10-35" aria-hidden="true" tabindex="-1"></a><span class="co"># Merge the activity_id back to the main DataFrame</span></span>
-<span id="cb10-36"><a href="#cb10-36" aria-hidden="true" tabindex="-1"></a>logs_transformed <span class="op">=</span> logs_transformed.merge(</span>
-<span id="cb10-37"><a href="#cb10-37" aria-hidden="true" tabindex="-1"></a>    first_occurrences[[<span class="st">"run"</span>, <span class="st">"patient"</span>, <span class="st">"event_name"</span>, <span class="st">"activity_id"</span>]],</span>
-<span id="cb10-38"><a href="#cb10-38" aria-hidden="true" tabindex="-1"></a>    on<span class="op">=</span>[<span class="st">"run"</span>, <span class="st">"patient"</span>, <span class="st">"event_name"</span>],</span>
-<span id="cb10-39"><a href="#cb10-39" aria-hidden="true" tabindex="-1"></a>    how<span class="op">=</span><span class="st">"left"</span></span>
-<span id="cb10-40"><a href="#cb10-40" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb10-41"><a href="#cb10-41" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-42"><a href="#cb10-42" aria-hidden="true" tabindex="-1"></a><span class="co"># Sort for final ordering</span></span>
-<span id="cb10-43"><a href="#cb10-43" aria-hidden="true" tabindex="-1"></a>logs_transformed <span class="op">=</span> logs_transformed.sort_values(</span>
-<span id="cb10-44"><a href="#cb10-44" aria-hidden="true" tabindex="-1"></a>    [<span class="st">"run"</span>, <span class="st">"patient"</span>, <span class="st">"activity_id"</span>, <span class="st">"event_stage"</span>],</span>
-<span id="cb10-45"><a href="#cb10-45" aria-hidden="true" tabindex="-1"></a>    ascending<span class="op">=</span>[<span class="va">True</span>, <span class="va">True</span>, <span class="va">True</span>, <span class="va">False</span>]</span>
-<span id="cb10-46"><a href="#cb10-46" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb10-47"><a href="#cb10-47" aria-hidden="true" tabindex="-1"></a>logs_transformed.head(<span class="dv">50</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display" data-execution_count="8">
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>logs_transformed <span class="op">=</span> my_trial.all_event_logs[<span class="op">~</span>my_trial.all_event_logs[<span class="st">'event'</span>].<span class="bu">str</span>.contains(<span class="st">'wait'</span>)].copy()</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="co"># logs_transformed = filtered_df[~filtered_df['event'].str.contains('wait')].copy()</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>logs_transformed <span class="op">=</span> logs_transformed[logs_transformed[<span class="st">'event_type'</span>].isin([<span class="st">'resource_use'</span>, <span class="st">'resource_use_end'</span>])].copy()</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>logs_transformed[<span class="st">'event_stage'</span>] <span class="op">=</span> logs_transformed[<span class="st">'event_type'</span>].<span class="bu">apply</span>(<span class="kw">lambda</span> x: <span class="st">'complete'</span> <span class="cf">if</span> <span class="st">'end'</span> <span class="kw">in</span> x <span class="cf">else</span> <span class="st">'start'</span>)</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>logs_transformed[<span class="st">'event_name'</span>] <span class="op">=</span> logs_transformed[<span class="st">'event'</span>].<span class="bu">str</span>.replace(<span class="st">'_begins|_complete'</span>, <span class="st">''</span>, regex<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>logs_transformed[<span class="st">'resource_id_full'</span>] <span class="op">=</span> logs_transformed.<span class="bu">apply</span>(<span class="kw">lambda</span> x: <span class="ss">f"</span><span class="sc">{</span>x[<span class="st">'event_name'</span>]<span class="sc">}</span><span class="ss">_</span><span class="sc">{</span>x[<span class="st">'resource_id'</span>]<span class="sc">:.0f}</span><span class="ss">"</span>, axis<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>logs_transformed <span class="op">=</span> logs_transformed.sort_values([<span class="st">'run'</span>, <span class="st">'time'</span>], ascending<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a><span class="co"># logs_transformed["activity_id"] = (</span></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a><span class="co">#     logs_transformed.groupby(["run", "patient", "event_name"]).ngroup() + 1</span></span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a><span class="co"># )</span></span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a><span class="co"># logs_transformed = logs_transformed.sort_values(["run", "patient", "activity_id", "event_stage"], ascending=[True, True, True, False])</span></span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a><span class="co"># Sort the data by run, patient, time, and event_name to handle tied start times</span></span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>logs_transformed <span class="op">=</span> logs_transformed.sort_values([<span class="st">"run"</span>, <span class="st">"patient"</span>, <span class="st">"time"</span>, <span class="st">"event_name"</span>])</span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a><span class="co"># Get the first occurrence of each activity (the start event)</span></span>
+<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a>first_occurrences <span class="op">=</span> (</span>
+<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a>    logs_transformed[logs_transformed[<span class="st">"event_stage"</span>] <span class="op">==</span> <span class="st">"start"</span>]</span>
+<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a>    .drop_duplicates([<span class="st">"run"</span>, <span class="st">"patient"</span>, <span class="st">"event_name"</span>])</span>
+<span id="cb10-27"><a href="#cb10-27" aria-hidden="true" tabindex="-1"></a>    .copy()</span>
+<span id="cb10-28"><a href="#cb10-28" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb10-29"><a href="#cb10-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-30"><a href="#cb10-30" aria-hidden="true" tabindex="-1"></a><span class="co"># Sort by time within each run to determine the proper sequence</span></span>
+<span id="cb10-31"><a href="#cb10-31" aria-hidden="true" tabindex="-1"></a>first_occurrences <span class="op">=</span> first_occurrences.sort_values([<span class="st">"run"</span>, <span class="st">"time"</span>, <span class="st">"event_name"</span>])</span>
+<span id="cb10-32"><a href="#cb10-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-33"><a href="#cb10-33" aria-hidden="true" tabindex="-1"></a><span class="co"># Assign sequential activity_id within each run</span></span>
+<span id="cb10-34"><a href="#cb10-34" aria-hidden="true" tabindex="-1"></a>first_occurrences[<span class="st">"activity_id"</span>] <span class="op">=</span> first_occurrences.groupby(<span class="st">"run"</span>).cumcount() <span class="op">+</span> <span class="dv">1</span></span>
+<span id="cb10-35"><a href="#cb10-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-36"><a href="#cb10-36" aria-hidden="true" tabindex="-1"></a><span class="co"># Merge the activity_id back to the main DataFrame</span></span>
+<span id="cb10-37"><a href="#cb10-37" aria-hidden="true" tabindex="-1"></a>logs_transformed <span class="op">=</span> logs_transformed.merge(</span>
+<span id="cb10-38"><a href="#cb10-38" aria-hidden="true" tabindex="-1"></a>    first_occurrences[[<span class="st">"run"</span>, <span class="st">"patient"</span>, <span class="st">"event_name"</span>, <span class="st">"activity_id"</span>]],</span>
+<span id="cb10-39"><a href="#cb10-39" aria-hidden="true" tabindex="-1"></a>    on<span class="op">=</span>[<span class="st">"run"</span>, <span class="st">"patient"</span>, <span class="st">"event_name"</span>],</span>
+<span id="cb10-40"><a href="#cb10-40" aria-hidden="true" tabindex="-1"></a>    how<span class="op">=</span><span class="st">"left"</span></span>
+<span id="cb10-41"><a href="#cb10-41" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb10-42"><a href="#cb10-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-43"><a href="#cb10-43" aria-hidden="true" tabindex="-1"></a><span class="co"># Sort for final ordering</span></span>
+<span id="cb10-44"><a href="#cb10-44" aria-hidden="true" tabindex="-1"></a>logs_transformed <span class="op">=</span> logs_transformed.sort_values(</span>
+<span id="cb10-45"><a href="#cb10-45" aria-hidden="true" tabindex="-1"></a>    [<span class="st">"run"</span>, <span class="st">"patient"</span>, <span class="st">"activity_id"</span>, <span class="st">"event_stage"</span>],</span>
+<span id="cb10-46"><a href="#cb10-46" aria-hidden="true" tabindex="-1"></a>    ascending<span class="op">=</span>[<span class="va">True</span>, <span class="va">True</span>, <span class="va">True</span>, <span class="va">False</span>]</span>
+<span id="cb10-47"><a href="#cb10-47" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb10-48"><a href="#cb10-48" aria-hidden="true" tabindex="-1"></a>logs_transformed.head(<span class="dv">50</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="11">
 <div>
 
 
@@ -2264,9 +2261,9 @@ Name: count, dtype: int64</code></pre>
 </div>
 </div>
 </div></div>
-<div class="cell-container"><div class="cell-decorator"><pre>In [9]:</pre></div><div id="cell-9" class="cell" data-execution_count="9">
+<div class="cell-container"><div class="cell-decorator"><pre>In [12]:</pre></div><div id="cell-8" class="cell" data-execution_count="12">
 <div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>logs_transformed[(logs_transformed[<span class="st">"run"</span>]<span class="op">==</span><span class="dv">1</span>) <span class="op">&amp;</span> (logs_transformed[<span class="st">"activity_id"</span>]<span class="op">==</span><span class="dv">26</span>)]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display" data-execution_count="9">
+<div class="cell-output cell-output-display" data-execution_count="12">
 <div>
 
 
@@ -2294,9 +2291,9 @@ Name: count, dtype: int64</code></pre>
 </div>
 </div>
 </div></div>
-<div class="cell-container"><div class="cell-decorator"><pre>In [10]:</pre></div><div id="cell-10" class="cell" data-execution_count="10">
+<div class="cell-container"><div class="cell-decorator"><pre>In [13]:</pre></div><div id="cell-9" class="cell" data-execution_count="13">
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>logs_transformed[logs_transformed[<span class="st">"activity_id"</span>]<span class="op">==</span><span class="dv">26</span>].sort_values(<span class="st">'run'</span>).head(<span class="dv">30</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display" data-execution_count="10">
+<div class="cell-output cell-output-display" data-execution_count="13">
 <div>
 
 
@@ -2352,9 +2349,9 @@ Name: count, dtype: int64</code></pre>
 </div>
 </div>
 </div></div>
-<div class="cell-container"><div class="cell-decorator"><pre>In [11]:</pre></div><div id="cell-11" class="cell" data-execution_count="11">
+<div class="cell-container"><div class="cell-decorator"><pre>In [14]:</pre></div><div id="cell-10" class="cell" data-execution_count="14">
 <div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>logs_transformed.sort_values(<span class="st">'activity_id'</span>).head(<span class="dv">20</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display" data-execution_count="11">
+<div class="cell-output cell-output-display" data-execution_count="14">
 <div>
 
 
@@ -2517,20 +2514,6 @@ Name: count, dtype: int64</code></pre>
 <td>5</td>
 </tr>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">9</td>
-<td>2</td>
-<td>Non-Trauma</td>
-<td>MINORS_examination_begins</td>
-<td>resource_use</td>
-<td>17.104670</td>
-<td>2.0</td>
-<td>0</td>
-<td>start</td>
-<td>MINORS_examination</td>
-<td>MINORS_examination_2</td>
-<td>6</td>
-</tr>
-<tr class="even">
 <td data-quarto-table-cell-role="th">11</td>
 <td>2</td>
 <td>Non-Trauma</td>
@@ -2540,6 +2523,20 @@ Name: count, dtype: int64</code></pre>
 <td>2.0</td>
 <td>0</td>
 <td>complete</td>
+<td>MINORS_examination</td>
+<td>MINORS_examination_2</td>
+<td>6</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">9</td>
+<td>2</td>
+<td>Non-Trauma</td>
+<td>MINORS_examination_begins</td>
+<td>resource_use</td>
+<td>17.104670</td>
+<td>2.0</td>
+<td>0</td>
+<td>start</td>
 <td>MINORS_examination</td>
 <td>MINORS_examination_2</td>
 <td>6</td>
@@ -2573,20 +2570,6 @@ Name: count, dtype: int64</code></pre>
 <td>7</td>
 </tr>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">16</td>
-<td>3</td>
-<td>Non-Trauma</td>
-<td>triage_complete</td>
-<td>resource_use_end</td>
-<td>33.545008</td>
-<td>1.0</td>
-<td>0</td>
-<td>complete</td>
-<td>triage</td>
-<td>triage_1</td>
-<td>8</td>
-</tr>
-<tr class="even">
 <td data-quarto-table-cell-role="th">14</td>
 <td>3</td>
 <td>Non-Trauma</td>
@@ -2596,6 +2579,20 @@ Name: count, dtype: int64</code></pre>
 <td>1.0</td>
 <td>0</td>
 <td>start</td>
+<td>triage</td>
+<td>triage_1</td>
+<td>8</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">16</td>
+<td>3</td>
+<td>Non-Trauma</td>
+<td>triage_complete</td>
+<td>resource_use_end</td>
+<td>33.545008</td>
+<td>1.0</td>
+<td>0</td>
+<td>complete</td>
 <td>triage</td>
 <td>triage_1</td>
 <td>8</td>
@@ -2662,50 +2659,50 @@ Name: count, dtype: int64</code></pre>
 </div>
 </div>
 </div></div>
-<div class="cell-container"><div class="cell-decorator"><pre>In [12]:</pre></div><div id="cell-12" class="cell" data-execution_count="12">
+<div class="cell-container"><div class="cell-decorator"><pre>In [15]:</pre></div><div id="cell-11" class="cell" data-execution_count="15">
 <div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>logs_transformed[[<span class="st">"event_name"</span>, <span class="st">"event_stage"</span>, <span class="st">"event_type"</span>]].value_counts()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display" data-execution_count="12">
+<div class="cell-output cell-output-display" data-execution_count="15">
 <pre><code>event_name            event_stage  event_type      
-triage                complete     resource_use_end    544
-                      start        resource_use        544
-MINORS_examination    complete     resource_use_end    470
-                      start        resource_use        470
-MINORS_registration   complete     resource_use_end    470
-                      start        resource_use        470
-MINORS_treatment      complete     resource_use_end    262
-                      start        resource_use        262
-TRAUMA_stabilisation  complete     resource_use_end     74
-                      start        resource_use         74
-TRAUMA_treatment      complete     resource_use_end     74
-                      start        resource_use         74
+triage                start        resource_use        622
+                      complete     resource_use_end    620
+MINORS_registration   start        resource_use        514
+                      complete     resource_use_end    512
+MINORS_examination    start        resource_use        475
+                      complete     resource_use_end    472
+MINORS_treatment      start        resource_use        264
+                      complete     resource_use_end    262
+TRAUMA_stabilisation  complete     resource_use_end     81
+                      start        resource_use         81
+TRAUMA_treatment      start        resource_use         79
+                      complete     resource_use_end     74
 Name: count, dtype: int64</code></pre>
 </div>
 </div></div>
-<div class="cell-container"><div class="cell-decorator"><pre>In [13]:</pre></div><div id="cell-13" class="cell" data-execution_count="13">
+<div class="cell-container"><div class="cell-decorator"><pre>In [16]:</pre></div><div id="cell-12" class="cell" data-execution_count="16">
 <div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>logs_transformed.event.value_counts()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display" data-execution_count="13">
+<div class="cell-output cell-output-display" data-execution_count="16">
 <pre><code>event
-triage_begins                    544
-triage_complete                  544
-MINORS_registration_begins       470
-MINORS_registration_complete     470
-MINORS_examination_begins        470
-MINORS_examination_complete      470
-MINORS_treatment_begins          262
+triage_begins                    622
+triage_complete                  620
+MINORS_registration_begins       514
+MINORS_registration_complete     512
+MINORS_examination_begins        475
+MINORS_examination_complete      472
+MINORS_treatment_begins          264
 MINORS_treatment_complete        262
-TRAUMA_stabilisation_begins       74
-TRAUMA_stabilisation_complete     74
-TRAUMA_treatment_begins           74
+TRAUMA_stabilisation_begins       81
+TRAUMA_stabilisation_complete     81
+TRAUMA_treatment_begins           79
 TRAUMA_treatment_complete         74
 Name: count, dtype: int64</code></pre>
 </div>
 </div></div>
-<div id="cell-14" class="cell markdown">
+<div id="cell-13" class="cell markdown">
 <p>For ease, now let’s save these results as a file that we can load into R.</p>
 <p>We could use a csv for easy interoperability. Alternatively, we could use something like Feather or Parquet, which are usable by both R and Python while retaining data types.</p>
 <p>For ease of use and long-term readbility, we will use csv in this case.</p>
 </div>
-<div class="cell-container"><div class="cell-decorator"><pre>In [14]:</pre></div><div id="cell-15" class="cell" data-execution_count="14">
+<div class="cell-container"><div class="cell-decorator"><pre>In [17]:</pre></div><div id="cell-14" class="cell" data-execution_count="17">
 <div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>logs_transformed.to_csv(<span class="st">'simulation_logs_for_bupar.csv'</span>, index<span class="op">=</span><span class="va">False</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div></div>
 

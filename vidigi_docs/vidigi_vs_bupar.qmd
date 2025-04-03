@@ -11,7 +11,7 @@ format:
 ---
 
 :::{.callout-tip}
-Switch this page to the light mode using the toggle in the top right-hand corner of this page.
+Switch this page to the light mode using the toggle at the top of the navigation sidebar on the left of this page.
 
 I have not yet worked out how to change the colour of the text on the resulting process maps, so using light mode is currently the only way to see it.
 :::
@@ -20,9 +20,7 @@ The title of this section is perhaps misleading! As the author of the package, I
 
 As an additional bonus, the process of creating the logs you require for a vidigi project give you the perfect dataset for your bupaR visuals too!
 
-bupaR outputs could form part of a verification and validation strategy, helping you to ensure
-
-They can also perform part of your communications strategy, helping to provide a talking point for meetings with stakeholders in much the same way as a screenshot of your Simul8 or Anylogic model would. In the absence of a graphical interface for building a model, the bupar outputs can help you - and your stakeholders - to ensure that linkages between different model steps are sensible and appropriate.
+bupaR outputs could form part of a verification and validation strategy. They can also perform part of your communications strategy, helping to provide a talking point for meetings with stakeholders in much the same way as a screenshot of your Simul8 or Anylogic model would. In the absence of a graphical interface for building a model, the bupar outputs can help you - and your stakeholders - to ensure that linkages between different model steps are sensible and appropriate.
 
 We will begin in Python, working to add a couple of columns to our vidigi event log to prepare it for use in bupaR.
 
@@ -93,7 +91,9 @@ activity_log
 
 ## Creating outputs
 
-### Absolute frequencies
+### Process Maps
+
+#### Absolute frequencies
 
 ```{r}
 activity_log %>%
@@ -105,7 +105,7 @@ activity_log %>%
     process_map(frequency("absolute-case"))
 ```
 
-### Relative frequencies
+#### Relative frequencies
 
 ```{r}
 activity_log %>%
@@ -126,19 +126,49 @@ activity_log %>%
 
 ### Performance Maps
 
+#### Mean Waits
+
 ```{r}
 activity_log %>%
     process_map(performance())
 ```
 
-### Idle Time
+#### Max Waits
+
+```{r}
+activity_log %>%
+    process_map(performance(FUN = max))
+```
+
+#### 90th percentile
+
+```{r}
+p90 <- function(x, ...) {
+    quantile(x, probs = 0.9, ...)
+}
+
+activity_log %>%
+    process_map(performance(FUN = p90))
+```
+
+### Analytics
+
+Take a look at [this page in the bupaR docs](https://bupaverse.github.io/docs/performance_analysis.html) details of each of these plots.
+
+#### Idle Time
 
 ```{r}
 activity_log %>%
     idle_time("resource", units = "mins")
 ```
 
-### Processing Time
+```{r}
+activity_log %>%
+    idle_time("resource", units = "mins") %>%
+    plot()
+```
+
+#### Processing Time
 
 ```{r}
 activity_log %>%
@@ -164,13 +194,22 @@ activity_log %>%
     plot()
 ```
 
-### Throughput time
+#### Throughput time
 
 ```{r}
 activity_log %>%
     throughput_time("log", units = "mins") %>%
     plot()
 ```
+
+#### Activity Presence
+
+```{r}
+activity_log %>%
+    activity_presence() %>%
+    plot()
+```
+
 
 ### Resource visualisations
 
@@ -198,6 +237,8 @@ activity_log %>%
 ```
 
 ### Trace Explorer
+
+This plot helps us to unerstand how often different combinations of activities occur, and whether there are any unexpected paths in our data.
 
 ```{r}
 activity_log %>%
@@ -232,7 +273,8 @@ from examples.example_2_branching_multistep.ex_2_model_classes import Trial, g
 from vidigi.animation import animate_activity_log
 import pandas as pd
 import plotly.io as pio
-pio.renderers.default = "notebook"
+#pio.renderers.default = "notebook"
+pio.renderers.default = "iframe"
 
 g.sim_duration = 3000
 g.number_of_runs = 3
@@ -291,8 +333,8 @@ animate_activity_log(
         event_log=my_trial.all_event_logs[my_trial.all_event_logs['run']==0],
         event_position_df=event_position_df,
         scenario=g(),
-        debug_mode=True,
-        setup_mode=True,
+        debug_mode=False,
+        setup_mode=False,
         every_x_time_units=5,
         include_play_button=True,
         gap_between_entities=10,
@@ -322,8 +364,8 @@ animate_activity_log(
         event_log=my_trial.all_event_logs[my_trial.all_event_logs['run']==1],
         event_position_df= event_position_df,
         scenario=g(),
-        debug_mode=True,
-        setup_mode=True,
+        debug_mode=False,
+        setup_mode=False,
         every_x_time_units=5,
         include_play_button=True,
         gap_between_entities=10,
@@ -347,16 +389,51 @@ animate_activity_log(
 
 #### Dotted chart
 
+We can see the impact of the pattern of daily arrivals across the course of the model, with the waits clearing out overnight when arrivals slow down.
+
 ```{r}
 activity_log %>%
     dotted_chart(x = "absolute")
 ```
 
-### Performance Spectrum
-
 ```{r}
 activity_log %>%
-    ps_detailed()
+    dotted_chart(x = "relative", sort="start")
+```
+
+
+#### Breaking down dotted charts by route
+
+##### Minors
+
+```{r}
+#| label: dot-minors-absolute
+activity_log %>%
+    filter(event_name %in% c('MINORS_examination', 'MINORS_registration', 'MINORS_treatment', 'triage')) %>%
+    dotted_chart(x = "absolute")
+```
+
+```{r}
+#| label: dot-minors-relative
+activity_log %>%
+    filter(event_name %in% c('MINORS_examination', 'MINORS_registration', 'MINORS_treatment', 'triage')) %>%
+    dotted_chart(x = "relative", sort="start")
+```
+
+##### Trauma
+
+```{r}
+#| label: dot-trauma-absolute
+activity_log %>%
+    filter(event_name %in% c('TRAUMA_stabilisation', 'TRAUMA_treatment', 'triage')) %>%
+    dotted_chart(x = "absolute")
+```
+
+```{r}
+#| label: dot-trauma-relative
+activity_log %>%
+    filter(event_name %in% c('TRAUMA_stabilisation', 'TRAUMA_treatment', 'triage')) %>%
+    dotted_chart(x = "relative", sort="start")
 ```
 
 ## Conclusion
