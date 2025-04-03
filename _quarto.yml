@@ -60,6 +60,9 @@ quartodoc:
       - section: "Reference"
         contents:
           - "{{ contents }}"
+      - section: "Other"
+        contents:
+        - vidigi_docs/vidigi_vs_bupar.qmd
 
   sections:
     - title: All-In-One Animation Functions

@@ -1,0 +1,364 @@
+---
+title: Vidigi vs BupaR
+execute:
+  echo: true
+format:
+  html:
+    toc: true
+    theme:
+      light: [flatly, ../theme-light.scss]
+      dark: [darkly, ../theme-dark.scss]
+---
+
+:::{.callout-tip}
+Switch this page to the light mode using the toggle in the top right-hand corner of this page.
+
+I have not yet worked out how to change the colour of the text on the resulting process maps, so using light mode is currently the only way to see it.
+:::
+
+The title of this section is perhaps misleading! As the author of the package, I think the visuals produced by the two packages occupy slightly different niches, and the use of both can benefit your project.
+
+As an additional bonus, the process of creating the logs you require for a vidigi project give you the perfect dataset for your bupaR visuals too!
+
+bupaR outputs could form part of a verification and validation strategy, helping you to ensure
+
+They can also perform part of your communications strategy, helping to provide a talking point for meetings with stakeholders in much the same way as a screenshot of your Simul8 or Anylogic model would. In the absence of a graphical interface for building a model, the bupar outputs can help you - and your stakeholders - to ensure that linkages between different model steps are sensible and appropriate.
+
+We will begin in Python, working to add a couple of columns to our vidigi event log to prepare it for use in bupaR.
+
+{{< embed vidigi_vs_bupar.ipynb >}}
+
+Now, it's time to move to R (as bupaR and the bupaverse is only implemented in R).
+
+pm4py exists as a process analytics package for Python, but the visuals of bupaR are of a high quality.
+
+### Importing the required R functions and our data
+
+```{r}
+library(dplyr)
+library(readr)
+library(bupaverse)
+library(processanimateR)
+library(lubridate)
+library(DT)
+library(psmineR)
+
+data <- readr::read_csv("simulation_logs_for_bupar.csv")
+
+data %>% head()
+```
+
+### Ensuring our data has the required time columns and is only for a single run
+
+```{r}
+#| label: preprocess-data
+
+data_processed <- data %>%
+    dplyr::filter(run == 0) %>%
+    dplyr::rename(minutes_after_origin=time) %>%
+    # We provide a theoretical date to act as a starting point - the date does not have to be
+    # a true representation of the actual simulation, though you may wish it to be if there
+    # are date elements in your simulation (e.g. within-week or within-year seasonality)
+    dplyr::mutate(time = as.POSIXct("2024-01-01 00:00:00", tz = "UTC") + lubridate::dminutes(minutes_after_origin)) %>%
+    bupaR::convert_timestamps("time", ymd_hms) %>%
+    dplyr::mutate(patient = as.factor(patient))
+
+DT::datatable(data_processed)
+```
+
+### Converting to the activitylog format
+
+```{r}
+#| label: make-activity-log
+
+activity_log <- data_processed  %>%
+    bupaR::eventlog(
+        case_id = "patient",
+        activity_id = "event_name",
+        activity_instance_id = "activity_id",
+        lifecycle_id = "event_stage",
+        timestamp = "time",
+        resource_id = "resource_id_full"
+        )
+
+## !!!! Note that the bupaR documentation recommmends using the
+## to_activitylog() function at the end of this set of steps.
+## This caused significant errors in testing of this code, so
+## I would not recommend following this recommendation, and instead
+## you can mimic the above
+
+activity_log
+```
+
+
+## Creating outputs
+
+### Absolute frequencies
+
+```{r}
+activity_log %>%
+    process_map(frequency("absolute"))
+```
+
+```{r}
+activity_log %>%
+    process_map(frequency("absolute-case"))
+```
+
+### Relative frequencies
+
+```{r}
+activity_log %>%
+    process_map(frequency("relative"))
+```
+
+```{r}
+activity_log %>%
+    process_map(frequency("relative-case"),
+              render_options = list(edge_label_color = "white"))
+```
+
+```{r}
+activity_log %>%
+    process_map(frequency("relative-consequent"),
+              render_options = list(edge_label_color = "white"))
+```
+
+### Performance Maps
+
+```{r}
+activity_log %>%
+    process_map(performance())
+```
+
+### Idle Time
+
+```{r}
+activity_log %>%
+    idle_time("resource", units = "mins")
+```
+
+### Processing Time
+
+```{r}
+activity_log %>%
+    processing_time("log", units = "mins") %>%
+    plot()
+```
+
+```{r}
+activity_log %>%
+    processing_time("case", units = "mins") %>%
+    plot()
+```
+
+```{r}
+activity_log %>%
+    processing_time("activity", units = "mins") %>%
+    plot()
+```
+
+```{r}
+activity_log %>%
+    processing_time("resource-activity", units = "mins") %>%
+    plot()
+```
+
+### Throughput time
+
+```{r}
+activity_log %>%
+    throughput_time("log", units = "mins") %>%
+    plot()
+```
+
+### Resource visualisations
+
+#### Handover-of-work network
+
+```{r}
+activity_log %>%
+    resource_map()
+```
+
+#### Resource precedence matrix
+
+```{r}
+activity_log %>%
+    resource_matrix() %>%
+    plot()
+```
+
+### Process matrix
+
+```{r}
+activity_log %>%
+    process_matrix(frequency("absolute")) %>%
+    plot()
+```
+
+### Trace Explorer
+
+```{r}
+activity_log %>%
+    trace_explorer(n_traces = 10)
+```
+
+### Animated process map
+
+```{r}
+activity_log %>%
+    animate_process()
+```
+
+
+Let's compare directly with our vidigi output.
+
+:::{.callout-tip}
+The key difference between what is produced via bupaverse's `animate_process` and what can be created via vidigi is the ability of vidigi to more clearly show the scale of queues, and the number of resources available at any given point.
+
+Vidigi can also more clearly highlight the impact of priority on resources through the use of distinct icons, though this is not demonstrated in this example.
+:::
+
+:::{.callout-note collapse="true"}
+### Click here to expand vidigi animation generation code
+
+```{python}
+#| label: rerun-run-python-model
+#| eval: true
+#| echo: true
+
+from examples.example_2_branching_multistep.ex_2_model_classes import Trial, g
+from vidigi.animation import animate_activity_log
+import pandas as pd
+import plotly.io as pio
+pio.renderers.default = "notebook"
+
+g.sim_duration = 3000
+g.number_of_runs = 3
+
+my_trial = Trial()
+
+my_trial.run_trial()
+
+event_position_df = pd.DataFrame([
+                # {'event': 'arrival', 'x':  10, 'y': 250, 'label': "Arrival" },
+
+                # Triage - minor and trauma
+                {'event': 'triage_wait_begins',
+                 'x':  160, 'y': 375, 'label': "Waiting for<br>Triage"  },
+                {'event': 'triage_begins',
+                 'x':  160, 'y': 315, 'resource':'n_triage', 'label': "Being Triaged" },
+
+                # Minors (non-trauma) pathway
+                {'event': 'MINORS_registration_wait_begins',
+                 'x':  300, 'y': 145, 'label': "Waiting for<br>Registration"  },
+                {'event': 'MINORS_registration_begins',
+                 'x':  300, 'y': 85, 'resource':'n_reg', 'label':'Being<br>Registered'  },
+
+                {'event': 'MINORS_examination_wait_begins',
+                 'x':  465, 'y': 145, 'label': "Waiting for<br>Examination"  },
+                {'event': 'MINORS_examination_begins',
+                 'x':  465, 'y': 85, 'resource':'n_exam', 'label': "Being<br>Examined" },
+
+                {'event': 'MINORS_treatment_wait_begins',
+                 'x':  630, 'y': 145, 'label': "Waiting for<br>Treatment"  },
+                {'event': 'MINORS_treatment_begins',
+                 'x':  630, 'y': 85, 'resource':'n_cubicles_non_trauma_treat', 'label': "Being<br>Treated" },
+
+                # Trauma pathway
+                {'event': 'TRAUMA_stabilisation_wait_begins',
+                 'x': 300, 'y': 560, 'label': "Waiting for<br>Stabilisation" },
+                {'event': 'TRAUMA_stabilisation_begins',
+                 'x': 300, 'y': 490, 'resource':'n_trauma', 'label': "Being<br>Stabilised" },
+
+                {'event': 'TRAUMA_treatment_wait_begins',
+                 'x': 630, 'y': 560, 'label': "Waiting for<br>Treatment" },
+                {'event': 'TRAUMA_treatment_begins',
+                 'x': 630, 'y': 490, 'resource':'n_cubicles_trauma_treat', 'label': "Being<br>Treated" },
+
+                 {'event': 'exit',
+                 'x':  670, 'y': 330, 'label': "Exit"}
+            ])
+```
+
+```{python}
+#| eval: false
+#| echo: true
+#| label: make-vidigi-anim-for-comparison
+
+animate_activity_log(
+        event_log=my_trial.all_event_logs[my_trial.all_event_logs['run']==0],
+        event_position_df=event_position_df,
+        scenario=g(),
+        debug_mode=True,
+        setup_mode=True,
+        every_x_time_units=5,
+        include_play_button=True,
+        gap_between_entities=10,
+        gap_between_rows=20,
+        plotly_height=900,
+        plotly_width=1600,
+        override_x_max=700,
+        override_y_max=675,
+        icon_and_text_size=20,
+        wrap_queues_at=10,
+        step_snapshot_max=50,
+        limit_duration=3000,
+        time_display_units="dhm",
+        display_stage_labels=False,
+        add_background_image="https://raw.githubusercontent.com/Bergam0t/vidigi/refs/heads/main/examples/example_2_branching_multistep/Full%20Model%20Background%20Image%20-%20Horizontal%20Layout.drawio.png",
+    )
+
+```
+
+:::
+
+```{python}
+#| echo: false
+#| eval: true
+
+animate_activity_log(
+        event_log=my_trial.all_event_logs[my_trial.all_event_logs['run']==1],
+        event_position_df= event_position_df,
+        scenario=g(),
+        debug_mode=True,
+        setup_mode=True,
+        every_x_time_units=5,
+        include_play_button=True,
+        gap_between_entities=10,
+        gap_between_rows=20,
+        plotly_height=900,
+        plotly_width=1600,
+        override_x_max=700,
+        override_y_max=675,
+        icon_and_text_size=20,
+        wrap_queues_at=10,
+        step_snapshot_max=50,
+        limit_duration=3000,
+        time_display_units="dhm",
+        display_stage_labels=False,
+        add_background_image="https://raw.githubusercontent.com/Bergam0t/vidigi/refs/heads/main/examples/example_2_branching_multistep/Full%20Model%20Background%20Image%20-%20Horizontal%20Layout.drawio.png",
+    )
+
+```
+
+### Other chart types
+
+#### Dotted chart
+
+```{r}
+activity_log %>%
+    dotted_chart(x = "absolute")
+```
+
+### Performance Spectrum
+
+```{r}
+activity_log %>%
+    ps_detailed()
+```
+
+## Conclusion
+
+vidigi and bupaR are complementary packages to use when visualising, verifying and validating your simulation models - or working with real-world process data.

@@ -38,6 +38,9 @@ website:
         - reference/utils.event_log_from_ciw_recs.qmd
         section: ciw Utility Functions
       section: Reference
+    - contents:
+      - vidigi_docs/vidigi_vs_bupar.qmd
+      section: Other
     id: reference
     search: true
     style: docked

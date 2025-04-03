@@ -227,7 +227,7 @@ self.args.treatment.put(treatment_resource)</code></pre>
 <h2 class="anchored" data-anchor-id="creating-an-object-that-stores-resources---a-scenario-object---which-then-informs-the-number-of-resources-displayed">3. Creating an object that stores resources - a ‘scenario’ object - which then informs the number of resources displayed</h2>
 <p>At present this part of the code expects a scenario object. This could be changed to - expect a dictionary instead - work with either a scenario or dictionary object (maybe if the route of expanding TM’s approach to simpy modelling into an opinionated framework)</p>
 <p>If going with the first option, the scenario class used in TM’s work routinely could be expanded to include a method to export the required data to a dictionary format.</p>
-<div id="dd504937" class="cell" data-execution_count="1">
+<div id="7f0784a1" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>events_with_resources <span class="op">=</span> event_position_df[event_position_df[<span class="st">'resource'</span>].notnull()].copy()</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>events_with_resources[<span class="st">'resource_count'</span>] <span class="op">=</span> events_with_resources[<span class="st">'resource'</span>].<span class="bu">apply</span>(<span class="kw">lambda</span> x: <span class="bu">getattr</span>(scenario, x))</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
