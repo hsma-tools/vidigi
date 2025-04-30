@@ -3,7 +3,8 @@ import numpy as np
 import pandas as pd
 import simpy
 from sim_tools.distributions import Exponential, Lognormal
-from vidigi.utils import populate_store, VidigiPriorityStore
+from vidigi.utils import populate_store
+from vidigi.utils import VidigiPriorityStoreLegacy as VidigiPriorityStore
 
 class g:
     '''

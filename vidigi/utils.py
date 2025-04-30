@@ -1,6 +1,8 @@
 import simpy
 import pandas as pd
 from simpy.core import BoundClass
+from simpy.resources.store import Store
+from simpy.resources.resource import SortedQueue
 from contextlib import contextmanager
 
 class CustomResource(simpy.Resource):
@@ -82,73 +84,6 @@ class CustomResource(simpy.Resource):
         # reset_id_logic(self.id_attribute)
         return super().release(*args, **kwargs)
 
-class PriorityGet(simpy.resources.base.Get):
-    """
-    A priority-aware request for resources in a SimPy environment.
-
-    This class extends the SimPy `Get` class to allow prioritization of
-    resource requests. Requests with a smaller `priority` value are
-    served first. The request time and preemption flag are also considered
-    when determining the request's order.
-
-    Attributes:
-        priority (int): The priority of the request. Lower values indicate
-            higher priority. Defaults to 999.
-        preempt (bool): Indicates whether the request should preempt
-            another resource user. Defaults to True.
-            (Ignored by `PriorityResource`.)
-        time (float): The simulation time when the request was made.
-        usage_since (float or None): The simulation time when the
-            request succeeded, or `None` if not yet fulfilled.
-        key (tuple): A tuple `(priority, time, not preempt)` used for
-            sorting requests.
-            Consists of
-            - the priority (lower value is more important)
-            - the time at which the request was made (earlier requests are more important)
-            - and finally the preemption flag (preempt requests are more important)
-
-    Notes
-    -----
-    Credit to arabinelli
-    # https://stackoverflow.com/questions/58603000/how-do-i-make-a-priority-get-request-from-resource-store
-    """
-    def __init__(self, resource, priority=999, preempt=True):
-        self.priority = priority
-
-        self.preempt = preempt
-
-        self.time = resource._env.now
-
-        self.usage_since = None
-
-        self.key = (self.priority, self.time, not self.preempt)
-
-        super().__init__(resource)
-
-class VidigiPriorityStore(simpy.resources.store.Store):
-    """
-    A SimPy store that processes requests with priority.
-
-    This class extends the SimPy `Store` to include a priority queue for
-    handling requests. Requests are processed based on their priority,
-    submission time, and preemption flag.
-
-    Attributes:
-        GetQueue (class): A reference to the sorted queue implementation
-            used for handling prioritized requests.
-        get (class): A reference to the `PriorityGet` class, which handles
-            the creation of prioritized requests.
-
-    Notes
-    -----
-    Credit to arabinelli
-    # https://stackoverflow.com/questions/58603000/how-do-i-make-a-priority-get-request-from-resource-store
-
-    """
-    GetQueue = simpy.resources.resource.SortedQueue
-
-    get = BoundClass(PriorityGet)
-
 def populate_store(num_resources, simpy_store, sim_env):
     """
     Populate a SimPy Store (or VidigiPriorityStore) with CustomResource objects.
@@ -201,79 +136,9 @@ def populate_store(num_resources, simpy_store, sim_env):
                 id_attribute = i+1)
             )
 
-def streamlit_play_all():
-    try:
-        from streamlit_javascript import st_javascript
-
-        st_javascript("""new Promise((resolve, reject) => {
-    console.log('You pressed the play button');
-
-    const parentDocument = window.parent.document;
-
-    // Define playButtons at the beginning
-    const playButtons = parentDocument.querySelectorAll('g.updatemenu-button text');
-
-    let buttonFound = false;
-
-    // Create an array to hold the click events to dispatch later
-    let clickEvents = [];
-
-    // Loop through all found play buttons
-    playButtons.forEach(button => {
-        if (button.textContent.trim() === '▶') {
-        console.log("Queueing click on button");
-        const clickEvent = new MouseEvent('click', {
-            view: window,
-            bubbles: true,
-            cancelable: true
-        });
-
-        // Store the click event in the array
-        clickEvents.push(button.parentElement);
-        buttonFound = true;
-        }
-    });
-
-    // If at least one button is found, dispatch all events
-    if (buttonFound) {
-        console.log('Dispatching click events');
-        clickEvents.forEach(element => {
-        element.dispatchEvent(new MouseEvent('click', {
-            view: window,
-            bubbles: true,
-            cancelable: true
-        }));
-        });
-
-        resolve('All buttons clicked successfully');
-    } else {
-        reject('No play buttons found');
-    }
-    })
-    .then((message) => {
-    console.log(message);
-    return 'Play clicks completed';
-    })
-    .catch((error) => {
-    console.log(error);
-    return 'Operation failed';
-    })
-    .then((finalMessage) => {
-    console.log(finalMessage);
-    });
-
-    """)
-
-    except ImportError:
-        raise ImportError(
-            "This function requires the dependency 'st_javascript', but this is not installed with vidigi by default. "
-            "Install it with: pip install vidigi[helper]"
-        )
-
-
-
-import simpy
-from contextlib import contextmanager
+#\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\#
+# VidigiStore and Associated Methods
+#\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\#
 
 class VidigiStore:
     """
@@ -399,3 +264,446 @@ class _StoreRequest:
             # Return the item to the store
             self.store.put(self.item)
         return False  # Don't suppress exceptions
+
+#\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\#
+
+
+#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&#
+# LEGACY VidigiPriorityStore and Associated Methods
+#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&#
+class PriorityGetLegacy(simpy.resources.base.Get):
+    """
+    A priority-aware request for resources in a SimPy environment.
+
+    This class extends the SimPy `Get` class to allow prioritization of
+    resource requests. Requests with a smaller `priority` value are
+    served first. The request time and preemption flag are also considered
+    when determining the request's order.
+
+    Attributes:
+        priority (int): The priority of the request. Lower values indicate
+            higher priority. Defaults to 999.
+        preempt (bool): Indicates whether the request should preempt
+            another resource user. Defaults to True.
+            (Ignored by `PriorityResource`.)
+        time (float): The simulation time when the request was made.
+        usage_since (float or None): The simulation time when the
+            request succeeded, or `None` if not yet fulfilled.
+        key (tuple): A tuple `(priority, time, not preempt)` used for
+            sorting requests.
+            Consists of
+            - the priority (lower value is more important)
+            - the time at which the request was made (earlier requests are more important)
+            - and finally the preemption flag (preempt requests are more important)
+
+    Notes
+    -----
+    Credit to arabinelli
+    # https://stackoverflow.com/questions/58603000/how-do-i-make-a-priority-get-request-from-resource-store
+    """
+    def __init__(self, resource, priority=999, preempt=True):
+        self.priority = priority
+
+        self.preempt = preempt
+
+        self.time = resource._env.now
+
+        self.usage_since = None
+
+        self.key = (self.priority, self.time, not self.preempt)
+
+        super().__init__(resource)
+
+class VidigiPriorityStoreLegacy(simpy.resources.store.Store):
+    """
+    A SimPy store that processes requests with priority.
+
+    This class extends the SimPy `Store` to include a priority queue for
+    handling requests. Requests are processed based on their priority,
+    submission time, and preemption flag.
+
+    Attributes:
+        GetQueue (class): A reference to the sorted queue implementation
+            used for handling prioritized requests.
+        get (class): A reference to the `PriorityGet` class, which handles
+            the creation of prioritized requests.
+
+    Notes
+    -----
+    Credit to arabinelli
+    # https://stackoverflow.com/questions/58603000/how-do-i-make-a-priority-get-request-from-resource-store
+
+    """
+    GetQueue = simpy.resources.resource.SortedQueue
+
+    get = BoundClass(PriorityGetLegacy)
+
+#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&#
+
+#================================================#
+# VidigiPriorityStore and Associated Methods
+#================================================#
+
+# Create the PriorityStore by subclassing simpy.Store
+class VidigiPriorityStore(simpy.resources.store.Store):
+    """
+    A SimPy Store that processes 'get' requests based on priority.
+    Lower priority numbers represent higher priority and are processed first.
+    Supports the context manager pattern for automatic item return.
+
+    Inherits from simpy.Store and overrides the get queue logic and binds
+    PriorityGet to the get method.
+    """
+
+    GetQueue = simpy.resources.resource.SortedQueue
+    PutQueue = simpy.resources.resource.SortedQueue
+
+    getPriorityAware = BoundClass(PriorityGetLegacy)
+
+    def __init__(self, env, capacity=float('inf'), init_items=None):
+        """
+        Initialize the VidigiPriorityStore.
+
+        Args:
+            env: The SimPy environment.
+            capacity: Maximum capacity of the store (default: infinite).
+        """
+
+        self.env = env
+        self._env = env
+        self.store = simpy.Store(env, capacity)
+        self.get_queue = self.GetQueue()
+        self.put_queue = self.PutQueue()
+
+        # Initialize with items if provided
+        if init_items:
+            for item in init_items:
+                self.store.put(item)
+
+    def request(self, priority):
+        """
+        Request context manager for getting an item from the store.
+        The item is automatically returned when exiting the context.
+
+        Usage:
+            with store.request() as req:
+                yield req  # This yields the get event
+                # Now we have the item from the store
+                yield env.timeout(10)
+                # Item is automatically returned when exiting the context
+
+        Returns:
+            A context manager that returns the get event and handles returning the item
+        """
+        return _PriorityStoreRequest(store=self, priority=priority)
+
+    def get(self):
+        """
+        Alias for request() to maintain compatibility with both patterns.
+
+        Returns:
+            A context manager for getting an item
+        """
+        return self.request()
+
+    def put(self, item):
+        """
+        Put an item into the store.
+
+        Args:
+            item: The item to put in the store
+        """
+        return self.store.put(item)
+
+    def get_direct(self):
+        """
+        Get an item from the store without the context manager.
+        Use this if you don't want to automatically return the item.
+
+        Returns:
+            A get event that can be yielded
+        """
+        return self.store.get()
+
+    def request_direct(self):
+        """
+        Alias for get_direct() to maintain consistent API with SimPy resources.
+
+        Returns:
+            A get event that can be yielded
+        """
+        return self.get_direct()
+
+    @property
+    def items(self):
+        """Get all items currently in the store"""
+        return self.store.items
+
+    @property
+    def capacity(self):
+        """Get the capacity of the store"""
+        return self.store.capacity
+
+
+class _PriorityStoreRequest:
+    """
+    Context manager helper class for VidigiStore.
+    This class manages the resource request/release pattern.
+
+    AI USE DISCLOSURE: This code was generated by Claude 3.7 Sonnet. It has been evaluated,
+    modified and tested by a human.
+    """
+
+    def __init__(self, store, priority):
+        self.store = store
+        self.item = None
+        self.priority = priority
+        self.get_event = store.getPriorityAware(priority=self.priority)  # Create the get event
+
+    def __enter__(self):
+        # Return the get event which will be yielded by the user
+        return self.get_event
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        # If the get event has been processed and we have an item, put it back
+        if self.get_event.processed and hasattr(self.get_event, 'value'):
+            self.item = self.get_event.value
+            # Return the item to the store
+            self.store.put(self.item)
+        return False  # Don't suppress exceptions
+
+# # class PriorityGet(simpy.resources.store.StoreGet):
+# class PriorityGet(simpy.resources.base.Get):
+#     """
+#     Request to get an item from a priority store resource with a given priority.
+
+#     This prioritized request class is used for implementing priority-based
+#     item retrieval from a store.
+
+#     Notes
+#     -----
+#     Credit to arabinelli
+#     # https://stackoverflow.com/questions/58603000/how-do-i-make-a-priority-get-request-from-resource-store
+#     """
+#     def __init__(self, resource, priority=999, preempt=True):
+#         """
+#         Initialize a prioritized get request.
+
+#         Args:
+#             resource: The store resource to request from
+#             priority: Priority of the request (lower value = higher priority)
+#         """
+#         self.priority = priority
+
+#         self.preempt = preempt
+
+#         self.time = resource._env.now
+
+#         self.usage_since = None
+
+#         self.key = (self.priority, self.time, not self.preempt)
+
+#         super().__init__(resource)
+
+
+# class VidigiPriorityStore:
+#     """
+#     A SimPy store that processes requests with priority and supports the context manager pattern.
+
+#     This class extends the SimPy `Store` to include a priority queue for
+#     handling requests. Requests are processed based on their priority and submission time.
+#     It also supports the context manager pattern for easier resource management.
+
+#     Usage:
+#         with store.request(priority=1) as req:
+#             item = yield req  # Get the item from the store
+#             # Use the item
+#             yield env.timeout(10)
+#             # Item is automatically returned when exiting the context
+#     """
+#     # GetQueue = simpy.resources.resource.SortedQueue
+
+#     # get = BoundClass(PriorityGet)
+
+#     def __init__(self, env, capacity=float('inf'), init_items=None):
+#         """
+#         Initialize the VidigiStore.
+
+#         Args:
+#             env: SimPy environment
+#             capacity: Maximum capacity of the store
+#             init_items: Initial items to put in the store
+#         """
+#         self.env = env
+#         self._env = env
+#         self.store = simpy.Store(env, capacity)
+#         self.get_queue = simpy.resources.resource.SortedQueue
+
+#         # Initialize with items if provided
+#         if init_items:
+#             for item in init_items:
+#                 self.store.put(item)
+
+#     def request(self, priority=0):
+#         """
+#         Request context manager for getting an item from the store with priority.
+#         The item is automatically returned when exiting the context.
+
+#         Args:
+#             priority: Priority of the request (lower value = higher priority)
+
+#         Usage:
+#             with store.request(priority=1) as req:
+#                 yield req  # This yields the get event
+#                 # Now we have the item from the store
+#                 yield env.timeout(10)
+#                 # Item is automatically returned when exiting the context
+
+#         Returns:
+#             A context manager that returns the get event and handles returning the item
+#         """
+#         return _PriorityStoreRequest(self, priority)
+#         # return PriorityGet(self, priority)
+
+#     def get(self, priority=0):
+#         """
+#         Alias for request() to maintain compatibility with both patterns.
+
+#         Returns:
+#             A context manager for getting an item
+#         """
+#         return self.request(priority)
+
+#     def put(self, item):
+#         """
+#         Put an item into the store.
+
+#         Args:
+#             item: The item to put in the store
+#         """
+#         return self.store.put(item)
+
+#     def get_direct(self, priority=0):
+#         """
+#         Get an item from the store without the context manager, with priority.
+#         Use this if you don't want to automatically return the item.
+
+#         Args:
+#             priority: Priority of the request (lower value = higher priority)
+
+#         Returns:
+#             A get event that can be yielded
+#         """
+#         return self.get(priority=priority)
+
+#     def request_direct(self, priority=0):
+#         """
+#         Alias for get_direct() to maintain consistent API with SimPy resources.
+
+#         Args:
+#             priority: Priority of the request (lower value = higher priority)
+
+#         Returns:
+#             A get event that can be yielded
+#         """
+#         return self.get_direct(priority=priority)
+
+# class _PriorityStoreRequest:
+#     """
+#     Context manager helper class for VidigiPriorityStore.
+#     This class manages the resource request/release pattern with priority.
+#     """
+
+#     def __init__(self, store, priority=0):
+#         self.store = store
+#         self.item = None
+#         self.priority = priority
+#         self.get_event = store.store.get(priority=priority)  # Create the get event with priority
+
+#     def __enter__(self):
+#         # Return the get event which will be yielded by the user
+#         return self.get_event
+
+#     def __exit__(self, exc_type, exc_val, exc_tb):
+#         # If the get event has been processed and we have an item, put it back
+#         if self.get_event.processed and hasattr(self.get_event, 'value'):
+#             self.item = self.get_event.value
+#             # Return the item to the store
+#             self.store.put(self.item)
+#         return False  # Don't suppress exceptions
+
+
+#================================================#
+
+
+#'''''''''''''''''''''''''''''''''''''#
+# Webdev + visualisation helpers
+#'''''''''''''''''''''''''''''''''''''#
+def streamlit_play_all():
+    try:
+        from streamlit_javascript import st_javascript
+
+        st_javascript("""new Promise((resolve, reject) => {
+    console.log('You pressed the play button');
+
+    const parentDocument = window.parent.document;
+
+    // Define playButtons at the beginning
+    const playButtons = parentDocument.querySelectorAll('g.updatemenu-button text');
+
+    let buttonFound = false;
+
+    // Create an array to hold the click events to dispatch later
+    let clickEvents = [];
+
+    // Loop through all found play buttons
+    playButtons.forEach(button => {
+        if (button.textContent.trim() === '▶') {
+        console.log("Queueing click on button");
+        const clickEvent = new MouseEvent('click', {
+            view: window,
+            bubbles: true,
+            cancelable: true
+        });
+
+        // Store the click event in the array
+        clickEvents.push(button.parentElement);
+        buttonFound = true;
+        }
+    });
+
+    // If at least one button is found, dispatch all events
+    if (buttonFound) {
+        console.log('Dispatching click events');
+        clickEvents.forEach(element => {
+        element.dispatchEvent(new MouseEvent('click', {
+            view: window,
+            bubbles: true,
+            cancelable: true
+        }));
+        });
+
+        resolve('All buttons clicked successfully');
+    } else {
+        reject('No play buttons found');
+    }
+    })
+    .then((message) => {
+    console.log(message);
+    return 'Play clicks completed';
+    })
+    .catch((error) => {
+    console.log(error);
+    return 'Operation failed';
+    })
+    .then((finalMessage) => {
+    console.log(finalMessage);
+    });
+
+    """)
+
+    except ImportError:
+        raise ImportError(
+            "This function requires the dependency 'st_javascript', but this is not installed with vidigi by default. "
+            "Install it with: pip install vidigi[helper]"
+        )
