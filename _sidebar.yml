@@ -35,7 +35,10 @@ website:
         - reference/utils.VidigiPriorityStore.qmd
         section: Simpy Utility Functions and Classes
       - contents:
-        - reference/utils.event_log_from_ciw_recs.qmd
+        - reference/utils.streamlit_play_all.qmd
+        section: Streamlit Utility Functions
+      - contents:
+        - reference/ciw.event_log_from_ciw_recs.qmd
         section: ciw Utility Functions
       section: Reference
     - contents:

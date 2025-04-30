@@ -86,7 +86,7 @@ quartodoc:
     - title: ciw Utility Functions
       desc: ""
       contents:
-        - utils.event_log_from_ciw_recs
+        - ciw.event_log_from_ciw_recs
 
 format:
   html:
