@@ -1,0 +1,6 @@
+# utils.streamlit_play_all { #vidigi.utils.streamlit_play_all }
+
+```python
+utils.streamlit_play_all()
+```
+

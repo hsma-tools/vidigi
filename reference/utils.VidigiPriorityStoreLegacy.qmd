@@ -1,0 +1,22 @@
+# utils.VidigiPriorityStoreLegacy { #vidigi.utils.VidigiPriorityStoreLegacy }
+
+```python
+utils.VidigiPriorityStoreLegacy()
+```
+
+A SimPy store that processes requests with priority.
+
+This class extends the SimPy `Store` to include a priority queue for
+handling requests. Requests are processed based on their priority,
+submission time, and preemption flag.
+
+Attributes:
+    GetQueue (class): A reference to the sorted queue implementation
+        used for handling prioritized requests.
+    get (class): A reference to the `PriorityGet` class, which handles
+        the creation of prioritized requests.
+
+## Notes {.doc-section .doc-section-notes}
+
+Credit to arabinelli
+# https://stackoverflow.com/questions/58603000/how-do-i-make-a-priority-get-request-from-resource-store
