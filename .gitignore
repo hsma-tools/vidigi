@@ -3,3 +3,5 @@
 token.txt
 
 /.quarto/
+tests/*test*.csv
+tests/outputs/*test*.csv

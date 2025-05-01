@@ -32,7 +32,7 @@ def run_trial(trial_cls, drop_resource_id=False, filename=None, run_kwargs=None)
     if drop_resource_id and "resource_id" in df.columns:
         df.drop(columns="resource_id", inplace=True)
     if filename:
-        df.to_csv(f"tests/{filename}.csv", index=False)
+        df.to_csv(f"tests/outputs/{filename}.csv", index=False)
     return df.reset_index(drop=True)
 
 # Updated test cases
@@ -132,7 +132,7 @@ trial_cases = [
          "run_kwargs": {}},
         {"trial_cls": simplest_with_logging_priority_stores,
          "run_kwargs": {"use_populate_store_func": False},
-         "drop_resource_id": True},
+         "drop_resource_id": False},
     ),
     # 12.Test that when using the VidigiPriorityStore with and without
     # the populate_store func, you get the same output
@@ -164,21 +164,21 @@ def get_trial_id(trial_cls):
     return f"{trial_cls.__module__.split('.')[-1]}_{trial_cls.__name__}"
 
 
-@pytest.mark.parametrize("trial_1_config, trial_2_config",
-                         trial_cases,
+@pytest.mark.parametrize("trial_1_config, trial_2_config, trial_id",
+                         [(t1, t2, id_) for (t1, t2), id_ in zip(trial_cases, trial_ids)],
                          ids=trial_ids)
-def test_trial_equivalence(trial_1_config, trial_2_config):
+def test_trial_equivalence(trial_1_config, trial_2_config, trial_id):
     df1 = run_trial(
         trial_cls=trial_1_config["trial_cls"],
         run_kwargs=trial_1_config.get("run_kwargs", {}),
         drop_resource_id=trial_1_config.get("drop_resource_id", False),
-        filename=f"TEST_{get_trial_id(trial_1_config['trial_cls'])}_1"
+        filename=f"TEST_{trial_id}_df_1"
                 )
     df2 = run_trial(
         trial_cls=trial_2_config["trial_cls"],
         run_kwargs=trial_2_config.get("run_kwargs", {}),
         drop_resource_id=trial_2_config.get("drop_resource_id", False),
-        filename=f"TEST_{get_trial_id(trial_2_config['trial_cls'])}_2"
+        filename=f"TEST_{trial_id}_df_2"
     )
 
     try:
