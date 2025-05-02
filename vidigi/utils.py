@@ -1,16 +1,5 @@
 import simpy
-import pandas as pd
 from simpy.core import BoundClass
-# from simpy.resources.store import Store
-# from simpy.resources.resource import SortedQueue
-from contextlib import contextmanager
-from functools import partial
-
-
-# def add_results_row(event_log):
-#     """
-#     When passed a
-#     """
 
 class CustomResource(simpy.Resource):
     """
