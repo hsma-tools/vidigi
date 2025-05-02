@@ -57,6 +57,8 @@ quartodoc:
         - examples/example_3_simplest_case_priority_resource/ex_3_simplest_case_priority_resource.ipynb
         - examples/example_4_ciw/ex_4_ciw.ipynb
         - examples/example_5_simplest_case_wrapped_resources/ex_5_simplest_case_wrapped_resource.ipynb
+        - examples/example_6_simplest_case_storewrapper/ex_6_simplest_case.ipynb
+        - examples/example_7_simplest_case_priority_resource_storewrapper/ex_7_simplest_case_priority_resource.ipynb
       - section: "Reference"
         contents:
           - "{{ contents }}"
@@ -82,11 +84,17 @@ quartodoc:
       contents:
         - utils.populate_store
         - utils.CustomResource
+        - utils.VidigiStore
         - utils.VidigiPriorityStore
+        - utils.VidigiPriorityStoreLegacy
+    - title: Streamlit Utility Functions
+      desc: ""
+      contents:
+        - utils.streamlit_play_all
     - title: ciw Utility Functions
       desc: ""
       contents:
-        - utils.event_log_from_ciw_recs
+        - ciw.event_log_from_ciw_recs
 
 format:
   html:

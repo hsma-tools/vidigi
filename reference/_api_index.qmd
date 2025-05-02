@@ -26,7 +26,17 @@
 | --- | --- |
 | [utils.populate_store](utils.populate_store.qmd#vidigi.utils.populate_store) | Populate a SimPy Store (or VidigiPriorityStore) with CustomResource objects. |
 | [utils.CustomResource](utils.CustomResource.qmd#vidigi.utils.CustomResource) | A custom resource class that extends simpy.Resource with an additional ID attribute. |
-| [utils.VidigiPriorityStore](utils.VidigiPriorityStore.qmd#vidigi.utils.VidigiPriorityStore) | A SimPy store that processes requests with priority. |
+| [utils.VidigiStore](utils.VidigiStore.qmd#vidigi.utils.VidigiStore) | A wrapper around SimPy's Store that allows using a context manager pattern |
+| [utils.VidigiPriorityStore](utils.VidigiPriorityStore.qmd#vidigi.utils.VidigiPriorityStore) | A SimPy Store that processes 'get' requests based on priority. |
+| [utils.VidigiPriorityStoreLegacy](utils.VidigiPriorityStoreLegacy.qmd#vidigi.utils.VidigiPriorityStoreLegacy) | A SimPy store that processes requests with priority. |
+
+## Streamlit Utility Functions
+
+
+
+| | |
+| --- | --- |
+| [utils.streamlit_play_all](utils.streamlit_play_all.qmd#vidigi.utils.streamlit_play_all) |  |
 
 ## ciw Utility Functions
 
@@ -34,4 +44,4 @@
 
 | | |
 | --- | --- |
-| [utils.event_log_from_ciw_recs](utils.event_log_from_ciw_recs.qmd#vidigi.utils.event_log_from_ciw_recs) | Given the ciw recs object, return a dataframe in the format expected by the vidigi |
+| [ciw.event_log_from_ciw_recs](ciw.event_log_from_ciw_recs.qmd#vidigi.ciw.event_log_from_ciw_recs) | Given the ciw recs object, return a dataframe in the format expected by the vidigi |
