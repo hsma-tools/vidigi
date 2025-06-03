@@ -101,7 +101,7 @@ for i in range(number_of_beds):
 
 </details>
 
-`vidigi.utils` provides a helper function for setting up simpy resources in teh required manner.
+`vidigi.utils` provides a helper function for setting up simpy resources in the required manner.
 
 For a given resource that would have been created like this:
 
