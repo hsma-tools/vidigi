@@ -22,6 +22,9 @@ website:
       - examples/example_7_simplest_case_priority_resource_storewrapper/ex_7_simplest_case_priority_resource.ipynb
       section: Examples
     - contents:
+      - examples/feat_changing_sim_time/feat_changing_sim_time.ipynb
+      section: Feature Breakdowns
+    - contents:
       - reference/index.qmd
       - contents:
         - reference/animation.animate_activity_log.qmd

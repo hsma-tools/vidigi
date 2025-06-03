@@ -7,9 +7,14 @@ from vidigi.prep import reshape_for_animations, generate_animation_df
 import numpy as np
 
 def generate_animation(
-        full_patient_df_plus_pos,
+        full_entity_df_plus_pos,
         event_position_df,
         scenario=None,
+        time_col_name="time",
+        entity_col_name="patient",
+        event_col_name="event",
+        pathway_col_name=None,
+        simulation_time_unit="minutes",
         plotly_height=900,
         plotly_width=None,
         include_play_button=True,
@@ -20,6 +25,7 @@ def generate_animation(
         override_y_max=None,
         time_display_units=None,
         start_date=None,
+        start_time=None,
         resource_opacity=0.8,
         custom_resource_icon=None,
         wrap_resources_at=20,
@@ -37,14 +43,29 @@ def generate_animation(
 
     Parameters
     ----------
-    full_patient_df_plus_pos : pd.DataFrame
-        DataFrame containing patient data with position information.
+    full_entity_df_plus_pos : pd.DataFrame
+        DataFrame containing entity data with position information.
         This will be the output of passing an event log through the reshape_for_animations()
         and generate_animation_df() functions
     event_position_df : pd.DataFrame
         DataFrame specifying the positions of different events.
     scenario : object, optional
         Object containing attributes for resource counts at different steps.
+        time_col_name : str, default="time"
+        Name of the column in `event_log` that contains the timestamp of each event.
+        Timestamps should represent the number of time units since the simulation began.
+    entity_col_name : str, default="patient"
+        Name of the column in `event_log` that contains the unique identifier for each entity
+        (e.g., "patient", "patient_id", "customer", "ID").
+    event_col_name : str, default="event"
+        Name of the column in `event_log` that specifies the actual event that occurred.
+    pathway_col_name : str, optional, default=None
+        Name of the column in `event_log` that identifies the specific pathway or
+        process flow the entity is following. If `None`, it is assumed that pathway
+        information is not present.
+    simulation_time_unit: string, optional
+        Time unit used within the simulation (default is minutes).
+        Possible values are 'seconds', 'minutes', 'hours', 'days', 'weeks', 'years'
     plotly_height : int, optional
         Height of the Plotly figure in pixels (default is 900).
     plotly_width : int, optional
@@ -64,7 +85,9 @@ def generate_animation(
     time_display_units : str, optional
         Units for displaying time. Options are 'dhm' (days, hours, minutes), 'd' (days), or None (default).
     start_date : str, optional
-        Start date for the animation in 'YYYY-MM-DD' format. Only used when time_display_units is 'd' (default is None).
+        Start date for the animation in 'YYYY-MM-DD' format. Only used when time_display_units is 'd' or 'dhm' (default is None).
+    start_time : str, optional
+        Start date for the animation in 'HH:MM:SS' format. Only used when time_display_units is 'd' or 'dhm' (default is None).
     resource_opacity : float, optional
         Opacity of resource icons (default is 0.8).
     custom_resource_icon : str, optional
@@ -117,59 +140,136 @@ def generate_animation(
         y_max = event_position_df['y'].max()*1.1
 
     # If we're displaying time as a clock instead of as units of whatever time our model
-    # is working in, create a minute_display column that will display as a psuedo datetime
+    # is working in, create a snapshot_time_display column that will display as a psuedo datetime
 
-    # For now, it starts a few months after the current date, just to give the
-    # idea of simulating some hypothetical future time. It might be nice to allow
-    # the start point to be changed, particular if we're simulating something on
-    # a larger timescale that includes a level of weekly or monthly seasonality.
+    # We need to keep the original snapshot time and exact time columns in existance because they're
+    # important for sorting
+    full_entity_df_plus_pos["snapshot_time_base"] = full_entity_df_plus_pos["snapshot_time"]
 
-    # We need to keep the original minute column in existance because it's important for sorting
-    if time_display_units == "dhm":
-        full_patient_df_plus_pos['minute'] = dt.date.today() + pd.DateOffset(days=165) +  pd.TimedeltaIndex(full_patient_df_plus_pos['minute'], unit='m')
-        # https://strftime.org/
-        full_patient_df_plus_pos['minute_display'] = full_patient_df_plus_pos['minute'].apply(
-            lambda x: dt.datetime.strftime(x, '%d %B %Y\n%H:%M')
-            )
-        full_patient_df_plus_pos['minute'] = full_patient_df_plus_pos['minute'].apply(
-            lambda x: dt.datetime.strftime(x, '%Y-%m-%d %H:%M')
-            )
-    if time_display_units == "d":
+    # Assuming time display units are set to something other
+
+    if time_display_units is not None:
+
+        if simulation_time_unit in ("second", "seconds"):
+            unit = "s"
+        elif simulation_time_unit in ("minute", "minutes"):
+            unit = "m"
+        elif simulation_time_unit in ("hour", "hours"):
+            unit = "h"
+        elif simulation_time_unit in ("day", "days"):
+            unit = "d"
+        elif simulation_time_unit in ("week", "weeks"):
+            unit = "w"
+        elif simulation_time_unit in ("month", "months"):
+            # Approximate 1 month as 30 days
+            full_entity_df_plus_pos["snapshot_time"] *= 30
+            unit = "d"
+        elif simulation_time_unit in ("year", "years"):
+            # Approximate 1 year as 365 days
+            full_entity_df_plus_pos["snapshot_time"] *= 365
+            unit = "d"
+
         if start_date is None:
-            full_patient_df_plus_pos['minute'] = dt.date.today() + pd.DateOffset(days=165) +  pd.TimedeltaIndex(full_patient_df_plus_pos['minute'], unit='d')
+            full_entity_df_plus_pos["snapshot_time"] = (
+                dt.date.today() +
+                pd.DateOffset(days=165) +
+                pd.TimedeltaIndex(full_entity_df_plus_pos["snapshot_time"], unit=unit)
+                )
+
         else:
-            full_patient_df_plus_pos['minute'] = dt.datetime.strptime(start_date, "%Y-%m-%d") +  pd.TimedeltaIndex(full_patient_df_plus_pos['minute'], unit='d')
+            if start_time is None:
 
-        full_patient_df_plus_pos['minute_display'] = full_patient_df_plus_pos['minute'].apply(
-            lambda x: dt.datetime.strftime(x, '%A %d %B %Y')
-            )
-        full_patient_df_plus_pos['minute'] = full_patient_df_plus_pos['minute'].apply(
-            lambda x: dt.datetime.strftime(x, '%Y-%m-%d')
-            )
+                full_entity_df_plus_pos["snapshot_time"] = (
+                    dt.datetime.strptime(start_date, "%Y-%m-%d") +
+                    pd.TimedeltaIndex(full_entity_df_plus_pos["snapshot_time"], unit=unit)
+                    )
+            else:
+                start_time_dt = dt.datetime.strptime(start_time, "%H:%M:%S")
+
+                start_time_time_delta = dt.timedelta(
+                        hours=start_time_dt.hour,
+                        minutes=start_time_dt.minute,
+                        seconds=start_time_dt.second
+                    )
+
+                full_entity_df_plus_pos["snapshot_time"] = (
+                    dt.datetime.strptime(start_date, "%Y-%m-%d") +
+                    start_time_time_delta +
+                    pd.TimedeltaIndex(full_entity_df_plus_pos["snapshot_time"], unit=unit)
+                    )
+
+        # https://strftime.org/
+        if time_display_units in ("dhm", "minutes", "days hours minutes", "days, hours and minutes"):
+            full_entity_df_plus_pos["snapshot_time_display"] = full_entity_df_plus_pos["snapshot_time"].apply(
+                lambda x: dt.datetime.strftime(x, '%d %B %Y\n%H:%M')
+                )
+            full_entity_df_plus_pos["snapshot_time"] = full_entity_df_plus_pos["snapshot_time"].apply(
+                lambda x: dt.datetime.strftime(x, '%Y-%m-%d %H:%M')
+                )
+
+        if time_display_units in ("dh", "hours", "days and hours"):
+            full_entity_df_plus_pos["snapshot_time_display"] = full_entity_df_plus_pos["snapshot_time"].apply(
+                lambda x: dt.datetime.strftime(x, '%d %B %Y\n%H')
+                )
+            full_entity_df_plus_pos["snapshot_time"] = full_entity_df_plus_pos["snapshot_time"].apply(
+                lambda x: dt.datetime.strftime(x, '%Y-%m-%d %H')
+                )
+
+        if time_display_units in ("d", "day", "days"):
+            full_entity_df_plus_pos["snapshot_time_display"] = full_entity_df_plus_pos["snapshot_time"].apply(
+                lambda x: dt.datetime.strftime(x, '%A %d %B %Y')
+                )
+            full_entity_df_plus_pos["snapshot_time"] = full_entity_df_plus_pos["snapshot_time"].apply(
+                lambda x: dt.datetime.strftime(x, '%Y-%m-%d')
+                )
+
+        if time_display_units in ("m", "my", "months", "months and years"):
+            full_entity_df_plus_pos["snapshot_time_display"] = full_entity_df_plus_pos["snapshot_time"].apply(
+                lambda x: dt.datetime.strftime(x, '%B %Y')
+                )
+            full_entity_df_plus_pos["snapshot_time"] = full_entity_df_plus_pos["snapshot_time"].apply(
+                lambda x: dt.datetime.strftime(x, '%B %Y')
+                )
+
+        if time_display_units in ("y", "years", "year"):
+            full_entity_df_plus_pos["snapshot_time_display"] = full_entity_df_plus_pos["snapshot_time"].apply(
+                lambda x: dt.datetime.strftime(x, '%Y')
+                )
+            full_entity_df_plus_pos["snapshot_time"] = full_entity_df_plus_pos["snapshot_time"].apply(
+                lambda x: dt.datetime.strftime(x, '%Y')
+                )
+
     else:
-        full_patient_df_plus_pos['minute_display'] = full_patient_df_plus_pos['minute']
+        full_entity_df_plus_pos["snapshot_time_display"] = full_entity_df_plus_pos["snapshot_time"]
 
-    # We are effectively making use of an animated plotly express scatterploy
+    # We are effectively making use of an animated plotly express scatterplot
     # to do all of the heavy lifting
     # Because of the way plots animate in this, it deals with all of the difficulty
     # of paths between individual positions - so we just have to tell it where to put
     # people at each defined step of the process, and the scattergraph will move them
     if scenario is not None:
-        hovers = ["patient", "pathway", "time", "minute", "resource_id"]
+        if pathway_col_name is not None:
+            hovers = [entity_col_name, pathway_col_name, time_col_name, "snapshot_time", "resource_id"]
+        else:
+            hovers = [entity_col_name, time_col_name, "snapshot_time", "resource_id"]
+
     else:
-        hovers = ["patient", "pathway", "time", "minute"]
+        if pathway_col_name is not None:
+            hovers = [entity_col_name, pathway_col_name, time_col_name, "snapshot_time"]
+        else:
+            hovers = [entity_col_name, time_col_name, "snapshot_time"]
 
     fig = px.scatter(
-            full_patient_df_plus_pos.sort_values('minute'),
+            full_entity_df_plus_pos.sort_values("snapshot_time_base"),
             x="x_final",
             y="y_final",
             # Each frame is one step of time, with the gap being determined
             # in the reshape_for_animation function
-            animation_frame="minute_display",
+            animation_frame="snapshot_time_display",
             # Important to group by patient here
-            animation_group="patient",
+            animation_group=entity_col_name,
             text="icon",
-            hover_name="event",
+            hover_name=event_col_name,
             hover_data=hovers,
             range_x=[0, x_max],
             range_y=[0, y_max],
@@ -210,15 +310,23 @@ def generate_animation(
         events_with_resources['resource_count'] = events_with_resources['resource'].apply(lambda x: getattr(scenario, x))
 
         events_with_resources = events_with_resources.join(events_with_resources.apply(
-            lambda r: pd.Series({'x_final': [r['x']-(gap_between_resources*(i+1)) for i in range(r['resource_count'])]}), axis=1).explode('x_final'),
+            lambda r: pd.Series({'x_final': [r['x']-(gap_between_resources*(i+1))
+                                             for i in range(r['resource_count'])]}), axis=1).explode('x_final'),
             how='right')
 
         events_with_resources = events_with_resources.assign(resource_id=range(len(events_with_resources)))
 
         if wrap_resources_at is not None:
             events_with_resources['row'] = np.floor((events_with_resources['resource_id']) / (wrap_resources_at))
-            events_with_resources['x_final'] = events_with_resources['x_final'] + (wrap_resources_at * events_with_resources['row'] * gap_between_resources) + gap_between_resources
-            events_with_resources['y_final'] = events_with_resources['y'] + (events_with_resources['row'] * gap_between_rows)
+            events_with_resources['x_final'] = (
+                events_with_resources['x_final']
+                + (wrap_resources_at * events_with_resources['row'] * gap_between_resources)
+                + gap_between_resources
+                )
+            events_with_resources['y_final'] = (
+                events_with_resources['y']
+                + (events_with_resources['row'] * gap_between_rows)
+                )
         else:
             events_with_resources['y_final'] = events_with_resources['y']
 
@@ -307,8 +415,16 @@ def generate_animation(
         fig["layout"].pop("updatemenus")
 
     # Adjust speed of animation
-    fig.layout.updatemenus[0].buttons[0].args[1]['frame']['duration'] = frame_duration
-    fig.layout.updatemenus[0].buttons[0].args[1]['transition']['duration'] = frame_transition_duration
+    try:
+        fig.layout.updatemenus[0].buttons[0].args[1]['frame']['duration'] = frame_duration
+    except IndexError:
+        print("Error changing frame duration")
+
+    try:
+        fig.layout.updatemenus[0].buttons[0].args[1]['transition']['duration'] = frame_transition_duration
+    except IndexError:
+        print("Error changing frame transition duration")
+
     if debug_mode:
         print(f'Output animation generation complete at {time.strftime("%H:%M:%S", time.localtime())}')
 
@@ -318,6 +434,12 @@ def animate_activity_log(
         event_log,
         event_position_df,
         scenario=None,
+        time_col_name="time",
+        entity_col_name="patient",
+        event_type_col_name="event_type",
+        event_col_name="event",
+        pathway_col_name=None,
+        simulation_time_unit="minutes",
         every_x_time_units=10,
         wrap_queues_at=20,
         wrap_resources_at=20,
@@ -336,6 +458,8 @@ def animate_activity_log(
         custom_resource_icon=None,
         override_x_max=None,
         override_y_max=None,
+        start_date=None,
+        start_time=None,
         time_display_units=None,
         setup_mode=False,
         frame_duration=400, #milliseconds
@@ -357,6 +481,25 @@ def animate_activity_log(
         DataFrame specifying the positions of different events, with columns 'event', 'x', and 'y'.
     scenario : object
         An object containing attributes for resource counts at different steps.
+        time_col_name : str, default="time"
+        Name of the column in `event_log` that contains the timestamp of each event.
+        Timestamps should represent the number of time units since the simulation began.
+    entity_col_name : str, default="patient"
+        Name of the column in `event_log` that contains the unique identifier for each entity
+        (e.g., "patient", "patient_id", "customer", "ID").
+    event_type_col_name : str, default="event_type"
+        Name of the column in `event_log` that specifies the category of the event.
+        Supported event types include 'arrival_departure', 'resource_use',
+        'resource_use_end', and 'queue'.
+    event_col_name : str, default="event"
+        Name of the column in `event_log` that specifies the actual event that occurred.
+    pathway_col_name : str, optional, default=None
+        Name of the column in `event_log` that identifies the specific pathway or
+        process flow the entity is following. If `None`, it is assumed that pathway
+        information is not present.
+    simulation_time_unit: string, optional
+        Time unit used within the simulation (default is minutes).
+        Possible values are 'seconds', 'minutes', 'hours', 'days', 'weeks', 'years'
     every_x_time_units : int, optional
         Time interval between animation frames in minutes (default is 10).
     wrap_queues_at : int, optional
@@ -430,19 +573,24 @@ def animate_activity_log(
         start_time_function = time.perf_counter()
         print(f'Animation function called at {time.strftime("%H:%M:%S", time.localtime())}')
 
-    full_patient_df = reshape_for_animations(event_log,
-                                             every_x_time_units=every_x_time_units,
-                                             limit_duration=limit_duration,
-                                             step_snapshot_max=step_snapshot_max,
-                                             debug_mode=debug_mode)
+    full_entity_df = reshape_for_animations(
+        event_log,
+        every_x_time_units=every_x_time_units,
+        limit_duration=limit_duration,
+        step_snapshot_max=step_snapshot_max,
+        debug_mode=debug_mode,
+        time_col_name=time_col_name,
+        entity_col_name=entity_col_name,
+        event_type_col_name=event_type_col_name,
+        event_col_name=event_col_name,
+        pathway_col_name=pathway_col_name
+        )
 
     if debug_mode:
         print(f'Reshaped animation dataframe finished construction at {time.strftime("%H:%M:%S", time.localtime())}')
 
-
-
-    full_patient_df_plus_pos = generate_animation_df(
-                                full_patient_df=full_patient_df,
+    full_entity_df_plus_pos = generate_animation_df(
+                                full_entity_df=full_entity_df,
                                 event_position_df=event_position_df,
                                 wrap_queues_at=wrap_queues_at,
                                 wrap_resources_at=wrap_resources_at,
@@ -451,13 +599,17 @@ def animate_activity_log(
                                 gap_between_resources=gap_between_resources,
                                 gap_between_rows=gap_between_rows,
                                 debug_mode=debug_mode,
-                                custom_entity_icon_list=custom_entity_icon_list
-                        )
+                                custom_entity_icon_list=custom_entity_icon_list,
+                                time_col_name=time_col_name,
+                                entity_col_name=entity_col_name,
+                                event_type_col_name=event_type_col_name,
+                                event_col_name=event_col_name                        )
 
     animation = generate_animation(
-        full_patient_df_plus_pos=full_patient_df_plus_pos,
+        full_entity_df_plus_pos=full_entity_df_plus_pos,
         event_position_df=event_position_df,
         scenario=scenario,
+        simulation_time_unit=simulation_time_unit,
         plotly_height=plotly_height,
         plotly_width=plotly_width,
         include_play_button=include_play_button,
@@ -466,6 +618,8 @@ def animate_activity_log(
         icon_and_text_size=icon_and_text_size,
         override_x_max=override_x_max,
         override_y_max=override_y_max,
+        start_date=start_date,
+        start_time=start_time,
         time_display_units=time_display_units,
         setup_mode=setup_mode,
         resource_opacity=resource_opacity,
@@ -475,7 +629,11 @@ def animate_activity_log(
         custom_resource_icon=custom_resource_icon,
         frame_duration=frame_duration, #milliseconds
         frame_transition_duration=frame_transition_duration, #milliseconds
-        debug_mode=debug_mode
+        debug_mode=debug_mode,
+        time_col_name=time_col_name,
+        entity_col_name=entity_col_name,
+        event_col_name=event_col_name,
+        pathway_col_name=pathway_col_name
     )
 
     if debug_mode:

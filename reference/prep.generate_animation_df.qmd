@@ -2,7 +2,7 @@
 
 ```python
 prep.generate_animation_df(
-    full_patient_df,
+    full_entity_df,
     event_position_df,
     wrap_queues_at=20,
     wrap_resources_at=20,
@@ -10,43 +10,51 @@ prep.generate_animation_df(
     gap_between_entities=10,
     gap_between_resources=10,
     gap_between_rows=30,
+    time_col_name='time',
+    entity_col_name='patient',
+    event_type_col_name='event_type',
+    event_col_name='event',
     debug_mode=False,
     custom_entity_icon_list=None,
 )
 ```
 
-Generate a DataFrame for animation purposes by adding position information to patient data.
+Generate a DataFrame for animation purposes by adding position information to entity data.
 
-This function takes patient event data and adds positional information for visualization,
+This function takes entity event data and adds positional information for visualization,
 handling both queuing and resource use events.
 
 ## Parameters {.doc-section .doc-section-parameters}
 
-| Name                  | Type         | Description                                                                                     | Default    |
-|-----------------------|--------------|-------------------------------------------------------------------------------------------------|------------|
-| full_patient_df       | pd.DataFrame | Output of reshape_for_animation(), containing patient event data.                               | _required_ |
-| event_position_df     | pd.DataFrame | DataFrame with columns 'event', 'x', and 'y', specifying initial positions for each event type. | _required_ |
-| wrap_queues_at        | int          | Number of entities in a queue before wrapping to a new row (default is 20).                     | `20`       |
-| wrap_resources_at     | int          | Number of resources to show before wrapping to a new row (default is 20).                       | `20`       |
-| step_snapshot_max     | int          | Maximum number of patients to show in each snapshot (default is 50).                            | `50`       |
-| gap_between_entities  | int          | Horizontal spacing between entities in pixels (default is 10).                                  | `10`       |
-| gap_between_resources | int          | Horizontal spacing between resources in pixels (default is 10).                                 | `10`       |
-| gap_between_rows      | int          | Vertical spacing between rows in pixels (default is 30).                                        | `30`       |
-| debug_mode            | bool         | If True, print debug information during processing (default is False).                          | `False`    |
+| Name                  | Type         | Description                                                                                                                                                                     | Default        |
+|-----------------------|--------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------|
+| full_entity_df        | pd.DataFrame | Output of reshape_for_animation(), containing entity event data.                                                                                                                | _required_     |
+| event_position_df     | pd.DataFrame | DataFrame with columns 'event', 'x', and 'y', specifying initial positions for each event type.                                                                                 | _required_     |
+| wrap_queues_at        | int          | Number of entities in a queue before wrapping to a new row (default is 20).                                                                                                     | `20`           |
+| wrap_resources_at     | int          | Number of resources to show before wrapping to a new row (default is 20).                                                                                                       | `20`           |
+| step_snapshot_max     | int          | Maximum number of patients to show in each snapshot (default is 50).                                                                                                            | `50`           |
+| gap_between_entities  | int          | Horizontal spacing between entities in pixels (default is 10).                                                                                                                  | `10`           |
+| gap_between_resources | int          | Horizontal spacing between resources in pixels (default is 10).                                                                                                                 | `10`           |
+| gap_between_rows      | int          | Vertical spacing between rows in pixels (default is 30).                                                                                                                        | `30`           |
+| time_col_name         | str          | Name of the column in `event_log` that contains the timestamp of each event. Timestamps should represent the number of time units since the simulation began.                   | `"time"`       |
+| entity_col_name       | str          | Name of the column in `event_log` that contains the unique identifier for each entity (e.g., "patient", "patient_id", "customer", "ID").                                        | `"patient"`    |
+| event_type_col_name   | str          | Name of the column in `event_log` that specifies the category of the event. Supported event types include 'arrival_departure', 'resource_use', 'resource_use_end', and 'queue'. | `"event_type"` |
+| event_col_name        | str          | Name of the column in `event_log` that specifies the actual event that occurred.                                                                                                | `"event"`      |
+| debug_mode            | bool         | If True, print debug information during processing (default is False).                                                                                                          | `False`        |
 
 ## Returns {.doc-section .doc-section-returns}
 
-| Name   | Type         | Description                                                                       |
-|--------|--------------|-----------------------------------------------------------------------------------|
-|        | pd.DataFrame | A DataFrame with added columns for x and y positions, and icons for each patient. |
+| Name   | Type         | Description                                                                      |
+|--------|--------------|----------------------------------------------------------------------------------|
+|        | pd.DataFrame | A DataFrame with added columns for x and y positions, and icons for each entity. |
 
 ## Notes {.doc-section .doc-section-notes}
 
 - The function handles both queuing and resource use events differently.
-- It assigns unique icons to patients for visualization.
+- It assigns unique icons to entities for visualization.
 - Queues can be wrapped to multiple rows if they exceed a specified length.
-- The function adds a visual indicator for additional patients when exceeding the snapshot limit.
+- The function adds a visual indicator for additional entities when exceeding the snapshot limit.
 
 ## TODO {.doc-section .doc-section-todo}
 
-- Write a test to ensure that no patient ID appears in multiple places at a single minute.
+- Write a test to ensure that no entity ID appears in multiple places at a single time unit.
