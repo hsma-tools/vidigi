@@ -128,26 +128,48 @@ def generate_animation(
         y_max = event_position_df['y'].max()*1.1
 
     # If we're displaying time as a clock instead of as units of whatever time our model
-    # is working in, create a minute_display column that will display as a psuedo datetime
+    # is working in, create a snapshot_time_display column that will display as a psuedo datetime
 
-    # For now, it starts a few months after the current date, just to give the
-    # idea of simulating some hypothetical future time. It might be nice to allow
-    # the start point to be changed, particular if we're simulating something on
-    # a larger timescale that includes a level of weekly or monthly seasonality.
+    # We need to keep the original snapshot time and exact time columns in existance because they're
+    # important for sorting
+    full_entity_df_plus_pos["snapshot_time_base"] = full_entity_df_plus_pos["snapshot_time"]
 
-    # We need to keep the original minute column in existance because it's important for sorting
-    if time_display_units == "dhm":
+    # Assuming time display units are set to something other
+
+    if time_display_units is not None:
+
+        if simulation_time_unit in ("second", "seconds"):
+            unit = "s"
+        elif simulation_time_unit in ("minute", "minutes"):
+            unit = "m"
+        elif simulation_time_unit in ("hour", "hours"):
+            unit = "h"
+        elif simulation_time_unit in ("day", "days"):
+            unit = "d"
+        elif simulation_time_unit in ("week", "weeks"):
+            unit = "w"
+        elif simulation_time_unit in ("month", "months"):
+            # Approximate 1 month as 30 days
+            full_entity_df_plus_pos["snapshot_time"] *= 30
+            unit = "d"
+        elif simulation_time_unit in ("year", "years"):
+            # Approximate 1 year as 365 days
+            full_entity_df_plus_pos["snapshot_time"] *= 365
+            unit = "d"
+
         if start_date is None:
             full_entity_df_plus_pos["snapshot_time"] = (
                 dt.date.today() +
                 pd.DateOffset(days=165) +
-                pd.TimedeltaIndex(full_entity_df_plus_pos["snapshot_time"], unit='m')
+                pd.TimedeltaIndex(full_entity_df_plus_pos["snapshot_time"], unit=unit)
                 )
+
         else:
             if start_time is None:
+
                 full_entity_df_plus_pos["snapshot_time"] = (
                     dt.datetime.strptime(start_date, "%Y-%m-%d") +
-                    pd.TimedeltaIndex(full_entity_df_plus_pos["snapshot_time"], unit='m')
+                    pd.TimedeltaIndex(full_entity_df_plus_pos["snapshot_time"], unit=unit)
                     )
             else:
                 start_time_dt = dt.datetime.strptime(start_time, "%H:%M:%S")
@@ -161,38 +183,54 @@ def generate_animation(
                 full_entity_df_plus_pos["snapshot_time"] = (
                     dt.datetime.strptime(start_date, "%Y-%m-%d") +
                     start_time_time_delta +
-                    pd.TimedeltaIndex(full_entity_df_plus_pos["snapshot_time"], unit='m')
+                    pd.TimedeltaIndex(full_entity_df_plus_pos["snapshot_time"], unit=unit)
                     )
 
         # https://strftime.org/
-        full_entity_df_plus_pos["snapshot_time_display"] = full_entity_df_plus_pos["snapshot_time"].apply(
-            lambda x: dt.datetime.strftime(x, '%d %B %Y\n%H:%M')
-            )
-        full_entity_df_plus_pos["snapshot_time"] = full_entity_df_plus_pos["snapshot_time"].apply(
-            lambda x: dt.datetime.strftime(x, '%Y-%m-%d %H:%M')
-            )
-    if time_display_units == "d":
-        if start_date is None:
-            full_entity_df_plus_pos["snapshot_time"] = (
-                dt.date.today() + pd.DateOffset(days=165) +
-                pd.TimedeltaIndex(full_entity_df_plus_pos["snapshot_time"], unit='d')
+        if time_display_units in ("dhm", "minutes", "days hours minutes", "days, hours and minutes"):
+            full_entity_df_plus_pos["snapshot_time_display"] = full_entity_df_plus_pos["snapshot_time"].apply(
+                lambda x: dt.datetime.strftime(x, '%d %B %Y\n%H:%M')
                 )
-        else:
-            full_entity_df_plus_pos["snapshot_time"] = (
-                dt.datetime.strptime(start_date, "%Y-%m-%d") +
-                pd.TimedeltaIndex(full_entity_df_plus_pos["snapshot_time"], unit='d')
+            full_entity_df_plus_pos["snapshot_time"] = full_entity_df_plus_pos["snapshot_time"].apply(
+                lambda x: dt.datetime.strftime(x, '%Y-%m-%d %H:%M')
                 )
 
-        full_entity_df_plus_pos["snapshot_time_display"] = full_entity_df_plus_pos["snapshot_time"].apply(
-            lambda x: dt.datetime.strftime(x, '%A %d %B %Y')
-            )
-        full_entity_df_plus_pos["snapshot_time"] = full_entity_df_plus_pos["snapshot_time"].apply(
-            lambda x: dt.datetime.strftime(x, '%Y-%m-%d')
-            )
+        if time_display_units in ("dh", "hours", "days and hours"):
+            full_entity_df_plus_pos["snapshot_time_display"] = full_entity_df_plus_pos["snapshot_time"].apply(
+                lambda x: dt.datetime.strftime(x, '%d %B %Y\n%H')
+                )
+            full_entity_df_plus_pos["snapshot_time"] = full_entity_df_plus_pos["snapshot_time"].apply(
+                lambda x: dt.datetime.strftime(x, '%Y-%m-%d %H')
+                )
+
+        if time_display_units in ("d", "day", "days"):
+            full_entity_df_plus_pos["snapshot_time_display"] = full_entity_df_plus_pos["snapshot_time"].apply(
+                lambda x: dt.datetime.strftime(x, '%A %d %B %Y')
+                )
+            full_entity_df_plus_pos["snapshot_time"] = full_entity_df_plus_pos["snapshot_time"].apply(
+                lambda x: dt.datetime.strftime(x, '%Y-%m-%d')
+                )
+
+        if time_display_units in ("m", "my", "months", "months and years"):
+            full_entity_df_plus_pos["snapshot_time_display"] = full_entity_df_plus_pos["snapshot_time"].apply(
+                lambda x: dt.datetime.strftime(x, '%B %Y')
+                )
+            full_entity_df_plus_pos["snapshot_time"] = full_entity_df_plus_pos["snapshot_time"].apply(
+                lambda x: dt.datetime.strftime(x, '%B %Y')
+                )
+
+        if time_display_units in ("y", "years", "year"):
+            full_entity_df_plus_pos["snapshot_time_display"] = full_entity_df_plus_pos["snapshot_time"].apply(
+                lambda x: dt.datetime.strftime(x, '%Y')
+                )
+            full_entity_df_plus_pos["snapshot_time"] = full_entity_df_plus_pos["snapshot_time"].apply(
+                lambda x: dt.datetime.strftime(x, '%Y')
+                )
+
     else:
         full_entity_df_plus_pos["snapshot_time_display"] = full_entity_df_plus_pos["snapshot_time"]
 
-    # We are effectively making use of an animated plotly express scatterploy
+    # We are effectively making use of an animated plotly express scatterplot
     # to do all of the heavy lifting
     # Because of the way plots animate in this, it deals with all of the difficulty
     # of paths between individual positions - so we just have to tell it where to put
@@ -210,7 +248,7 @@ def generate_animation(
             hovers = [entity_col_name, time_col_name, "snapshot_time"]
 
     fig = px.scatter(
-            full_entity_df_plus_pos.sort_values("snapshot_time"),
+            full_entity_df_plus_pos.sort_values("snapshot_time_base"),
             x="x_final",
             y="y_final",
             # Each frame is one step of time, with the gap being determined
@@ -365,8 +403,16 @@ def generate_animation(
         fig["layout"].pop("updatemenus")
 
     # Adjust speed of animation
-    fig.layout.updatemenus[0].buttons[0].args[1]['frame']['duration'] = frame_duration
-    fig.layout.updatemenus[0].buttons[0].args[1]['transition']['duration'] = frame_transition_duration
+    try:
+        fig.layout.updatemenus[0].buttons[0].args[1]['frame']['duration'] = frame_duration
+    except IndexError:
+        print("Error changing frame duration")
+
+    try:
+        fig.layout.updatemenus[0].buttons[0].args[1]['transition']['duration'] = frame_transition_duration
+    except IndexError:
+        print("Error changing frame transition duration")
+
     if debug_mode:
         print(f'Output animation generation complete at {time.strftime("%H:%M:%S", time.localtime())}')
 
