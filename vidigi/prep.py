@@ -30,6 +30,22 @@ def reshape_for_animations(event_log,
         The maximum duration to consider in preferred time units (default is 10 days).
     step_snapshot_max : int, optional
         The maximum number of entities to include in each snapshot for each event (default is 50).
+    time_col_name : str, default="time"
+        Name of the column in `event_log` that contains the timestamp of each event.
+        Timestamps should represent the number of time units since the simulation began.
+    entity_col_name : str, default="patient"
+        Name of the column in `event_log` that contains the unique identifier for each entity
+        (e.g., "patient", "patient_id", "customer", "ID").
+    event_type_col_name : str, default="event_type"
+        Name of the column in `event_log` that specifies the category of the event.
+        Supported event types include 'arrival_departure', 'resource_use',
+        'resource_use_end', and 'queue'.
+    event_col_name : str, default="event"
+        Name of the column in `event_log` that specifies the actual event that occurred.
+    pathway_col_name : str, optional, default=None
+        Name of the column in `event_log` that identifies the specific pathway or
+        process flow the entity is following. If `None`, it is assumed that pathway
+        information is not present.
     debug_mode : bool, optional
         If True, print debug information during processing (default is False).
 
@@ -262,6 +278,18 @@ def generate_animation_df(
         Horizontal spacing between resources in pixels (default is 10).
     gap_between_rows : int, optional
         Vertical spacing between rows in pixels (default is 30).
+    time_col_name : str, default="time"
+        Name of the column in `event_log` that contains the timestamp of each event.
+        Timestamps should represent the number of time units since the simulation began.
+    entity_col_name : str, default="patient"
+        Name of the column in `event_log` that contains the unique identifier for each entity
+        (e.g., "patient", "patient_id", "customer", "ID").
+    event_type_col_name : str, default="event_type"
+        Name of the column in `event_log` that specifies the category of the event.
+        Supported event types include 'arrival_departure', 'resource_use',
+        'resource_use_end', and 'queue'.
+    event_col_name : str, default="event"
+        Name of the column in `event_log` that specifies the actual event that occurred.
     debug_mode : bool, optional
         If True, print debug information during processing (default is False).
 

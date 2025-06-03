@@ -438,8 +438,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       </div>
       <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
- <span class="menu-text">examples/feat_changing_sim_time.feat_changing_sim_time.ipynb</span>
-  </li>
+  <div class="sidebar-item-container"> 
+  <a href="../examples/feat_changing_sim_time/feat_changing_sim_time.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Feature Breakdown: Changing how the date and time are displayed</span></a>
+  </div>
+</li>
       </ul>
   </li>
         <li class="sidebar-item sidebar-item-section">
@@ -630,10 +633,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h2>
 <table class="caption-top table">
 <colgroup>
-<col style="width: 11%">
-<col style="width: 7%">
-<col style="width: 71%">
 <col style="width: 9%">
+<col style="width: 6%">
+<col style="width: 77%">
+<col style="width: 6%">
 </colgroup>
 <thead>
 <tr class="header">
@@ -669,6 +672,36 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td><code>50</code></td>
 </tr>
 <tr class="odd">
+<td>time_col_name</td>
+<td>str</td>
+<td>Name of the column in <code>event_log</code> that contains the timestamp of each event. Timestamps should represent the number of time units since the simulation began.</td>
+<td><code>"time"</code></td>
+</tr>
+<tr class="even">
+<td>entity_col_name</td>
+<td>str</td>
+<td>Name of the column in <code>event_log</code> that contains the unique identifier for each entity (e.g., “patient”, “patient_id”, “customer”, “ID”).</td>
+<td><code>"patient"</code></td>
+</tr>
+<tr class="odd">
+<td>event_type_col_name</td>
+<td>str</td>
+<td>Name of the column in <code>event_log</code> that specifies the category of the event. Supported event types include ‘arrival_departure’, ‘resource_use’, ‘resource_use_end’, and ‘queue’.</td>
+<td><code>"event_type"</code></td>
+</tr>
+<tr class="even">
+<td>event_col_name</td>
+<td>str</td>
+<td>Name of the column in <code>event_log</code> that specifies the actual event that occurred.</td>
+<td><code>"event"</code></td>
+</tr>
+<tr class="odd">
+<td>pathway_col_name</td>
+<td>str</td>
+<td>Name of the column in <code>event_log</code> that identifies the specific pathway or process flow the entity is following. If <code>None</code>, it is assumed that pathway information is not present.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
 <td>debug_mode</td>
 <td>bool</td>
 <td>If True, print debug information during processing (default is False).</td>

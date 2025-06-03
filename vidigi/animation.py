@@ -51,6 +51,18 @@ def generate_animation(
         DataFrame specifying the positions of different events.
     scenario : object, optional
         Object containing attributes for resource counts at different steps.
+        time_col_name : str, default="time"
+        Name of the column in `event_log` that contains the timestamp of each event.
+        Timestamps should represent the number of time units since the simulation began.
+    entity_col_name : str, default="patient"
+        Name of the column in `event_log` that contains the unique identifier for each entity
+        (e.g., "patient", "patient_id", "customer", "ID").
+    event_col_name : str, default="event"
+        Name of the column in `event_log` that specifies the actual event that occurred.
+    pathway_col_name : str, optional, default=None
+        Name of the column in `event_log` that identifies the specific pathway or
+        process flow the entity is following. If `None`, it is assumed that pathway
+        information is not present.
     simulation_time_unit: string, optional
         Time unit used within the simulation (default is minutes).
         Possible values are 'seconds', 'minutes', 'hours', 'days', 'weeks', 'years'
@@ -469,6 +481,22 @@ def animate_activity_log(
         DataFrame specifying the positions of different events, with columns 'event', 'x', and 'y'.
     scenario : object
         An object containing attributes for resource counts at different steps.
+        time_col_name : str, default="time"
+        Name of the column in `event_log` that contains the timestamp of each event.
+        Timestamps should represent the number of time units since the simulation began.
+    entity_col_name : str, default="patient"
+        Name of the column in `event_log` that contains the unique identifier for each entity
+        (e.g., "patient", "patient_id", "customer", "ID").
+    event_type_col_name : str, default="event_type"
+        Name of the column in `event_log` that specifies the category of the event.
+        Supported event types include 'arrival_departure', 'resource_use',
+        'resource_use_end', and 'queue'.
+    event_col_name : str, default="event"
+        Name of the column in `event_log` that specifies the actual event that occurred.
+    pathway_col_name : str, optional, default=None
+        Name of the column in `event_log` that identifies the specific pathway or
+        process flow the entity is following. If `None`, it is assumed that pathway
+        information is not present.
     simulation_time_unit: string, optional
         Time unit used within the simulation (default is minutes).
         Possible values are 'seconds', 'minutes', 'hours', 'days', 'weeks', 'years'
