@@ -4,7 +4,8 @@ token.txt
 
 /.quarto/
 tests/*test*.csv
-tests/outputs/*test*.csv
+tests/outputs/*test*
+tests/outputs/simple_funcs_run/*test*
 
 .tox
 htmlcov/
