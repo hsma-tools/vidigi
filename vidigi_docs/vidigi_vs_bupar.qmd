@@ -10,11 +10,25 @@ format:
       dark: [darkly, ../theme-dark.scss]
 ---
 
-:::{.callout-tip}
-Switch this page to the light mode using the toggle at the top of the navigation sidebar on the left of this page.
+```{=html}
+<style>
+.processmapR {
+  background-color: white;
+  border-radius: 4px;
+}
 
-I have not yet worked out how to change the colour of the text on the resulting process maps, so using light mode is currently the only way to see it.
-:::
+.processanimateR {
+  background-color: white;
+  border-radius: 4px;
+}
+
+.dataTables_wrapper {
+  background-color: white;
+  border-radius: 4px;
+}
+
+</style>
+```
 
 The title of this section is perhaps misleading! As the author of the package, I think the visuals produced by the two packages occupy slightly different niches, and the use of both can benefit your project.
 
