@@ -33,6 +33,7 @@ event_position_df = pd.DataFrame([
 
 LIMIT_DURATION = g.sim_duration
 
+@pytest.mark.quick
 def test_prep_RESHAPE_FOR_ANIMATIONS():
     try:
         full_entity_df = reshape_for_animations(
@@ -46,6 +47,7 @@ def test_prep_RESHAPE_FOR_ANIMATIONS():
     except:
         pytest.fail("prep.reshape_for_animations() function failed to run with default params")
 
+@pytest.mark.quick
 def test_prep_GENERATE_ANIMATION_DF():
     try:
         full_entity_df = reshape_for_animations(
@@ -66,7 +68,7 @@ def test_prep_GENERATE_ANIMATION_DF():
     except:
         pytest.fail("prep.generate_animation_df() function failed to run with default params")
 
-
+@pytest.mark.quick
 def test_prep_GENERATE_ANIMATION():
     try:
         full_entity_df = reshape_for_animations(
@@ -94,6 +96,7 @@ def test_prep_GENERATE_ANIMATION():
         pytest.fail("animation.animate_activity_log() function failed to run with default params")
 
 
+@pytest.mark.quick
 def test_all_in_one_ANIMATE_ACTIVITY_LOG():
     try:
         animate_activity_log(
