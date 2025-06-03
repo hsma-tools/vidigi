@@ -5,6 +5,12 @@ animation.animate_activity_log(
     event_log,
     event_position_df,
     scenario=None,
+    time_col_name='time',
+    entity_col_name='patient',
+    event_type_col_name='event_type',
+    event_col_name='event',
+    pathway_col_name=None,
+    simulation_time_unit='minutes',
     every_x_time_units=10,
     wrap_queues_at=20,
     wrap_resources_at=20,
@@ -23,6 +29,8 @@ animation.animate_activity_log(
     custom_resource_icon=None,
     override_x_max=None,
     override_y_max=None,
+    start_date=None,
+    start_time=None,
     time_display_units=None,
     setup_mode=False,
     frame_duration=400,
@@ -39,35 +47,36 @@ an interactive Plotly animation representing patient movement through various st
 
 ## Parameters {.doc-section .doc-section-parameters}
 
-| Name                      | Type         | Description                                                                                         | Default        |
-|---------------------------|--------------|-----------------------------------------------------------------------------------------------------|----------------|
-| event_log                 | pd.DataFrame | The log of events to be animated, containing patient activities.                                    | _required_     |
-| event_position_df         | pd.DataFrame | DataFrame specifying the positions of different events, with columns 'event', 'x', and 'y'.         | _required_     |
-| scenario                  | object       | An object containing attributes for resource counts at different steps.                             | `None`         |
-| every_x_time_units        | int          | Time interval between animation frames in minutes (default is 10).                                  | `10`           |
-| wrap_queues_at            | int          | Maximum number of entities to display in a queue before wrapping to a new row (default is 20).      | `20`           |
-| wrap_resources_at         | int          | Number of resources to show before wrapping to a new row (default is 20).                           | `20`           |
-| step_snapshot_max         | int          | Maximum number of patients to show in each snapshot per event (default is 50).                      | `50`           |
-| limit_duration            | int          | Maximum duration to animate in minutes (default is 10 days or 14400 minutes).                       | `10 * 60 * 24` |
-| plotly_height             | int          | Height of the Plotly figure in pixels (default is 900).                                             | `900`          |
-| plotly_width              | int          | Width of the Plotly figure in pixels (default is None, which auto-adjusts).                         | `None`         |
-| include_play_button       | bool         | Whether to include a play button in the animation (default is True).                                | `True`         |
-| add_background_image      | str          | Path to a background image file to add to the animation (default is None).                          | `None`         |
-| display_stage_labels      | bool         | Whether to display labels for each stage (default is True).                                         | `True`         |
-| icon_and_text_size        | int          | Size of icons and text in the animation (default is 24).                                            | `24`           |
-| gap_between_entities      | int          | Horizontal spacing between entities in pixels (default is 10).                                      | `10`           |
-| gap_between_rows          | int          | Vertical spacing between rows in pixels (default is 30).                                            | `30`           |
-| gap_between_resources     | int          | Horizontal spacing between resources in pixels (default is 10).                                     | `10`           |
-| resource_opacity          | float        | Opacity of resource icons (default is 0.8).                                                         | `0.8`          |
-| custom_resource_icon      | str          | Custom icon to use for resources (default is None).                                                 | `None`         |
-| override_x_max            | int          | Override the maximum x-coordinate of the plot (default is None).                                    | `None`         |
-| override_y_max            | int          | Override the maximum y-coordinate of the plot (default is None).                                    | `None`         |
-| time_display_units        | str          | Units for displaying time. Options are 'dhm' (days, hours, minutes), 'd' (days), or None (default). | `None`         |
-| setup_mode                | bool         | If True, display grid and tick marks for initial setup (default is False).                          | `False`        |
-| frame_duration            | int          | Duration of each frame in milliseconds (default is 400).                                            | `400`          |
-| frame_transition_duration | int          | Duration of transition between frames in milliseconds (default is 600).                             | `600`          |
-| debug_mode                | bool         | If True, print debug information during processing (default is False).                              | `False`        |
-| custom_entity_icon_list   |              | If given, overrides the default list of emojis used to represent entities                           | `None`         |
+| Name                      | Type         | Description                                                                                                                            | Default        |
+|---------------------------|--------------|----------------------------------------------------------------------------------------------------------------------------------------|----------------|
+| event_log                 | pd.DataFrame | The log of events to be animated, containing patient activities.                                                                       | _required_     |
+| event_position_df         | pd.DataFrame | DataFrame specifying the positions of different events, with columns 'event', 'x', and 'y'.                                            | _required_     |
+| scenario                  | object       | An object containing attributes for resource counts at different steps.                                                                | `None`         |
+| simulation_time_unit      |              | Time unit used within the simulation (default is minutes). Possible values are 'seconds', 'minutes', 'hours', 'days', 'weeks', 'years' | `'minutes'`    |
+| every_x_time_units        | int          | Time interval between animation frames in minutes (default is 10).                                                                     | `10`           |
+| wrap_queues_at            | int          | Maximum number of entities to display in a queue before wrapping to a new row (default is 20).                                         | `20`           |
+| wrap_resources_at         | int          | Number of resources to show before wrapping to a new row (default is 20).                                                              | `20`           |
+| step_snapshot_max         | int          | Maximum number of patients to show in each snapshot per event (default is 50).                                                         | `50`           |
+| limit_duration            | int          | Maximum duration to animate in minutes (default is 10 days or 14400 minutes).                                                          | `10 * 60 * 24` |
+| plotly_height             | int          | Height of the Plotly figure in pixels (default is 900).                                                                                | `900`          |
+| plotly_width              | int          | Width of the Plotly figure in pixels (default is None, which auto-adjusts).                                                            | `None`         |
+| include_play_button       | bool         | Whether to include a play button in the animation (default is True).                                                                   | `True`         |
+| add_background_image      | str          | Path to a background image file to add to the animation (default is None).                                                             | `None`         |
+| display_stage_labels      | bool         | Whether to display labels for each stage (default is True).                                                                            | `True`         |
+| icon_and_text_size        | int          | Size of icons and text in the animation (default is 24).                                                                               | `24`           |
+| gap_between_entities      | int          | Horizontal spacing between entities in pixels (default is 10).                                                                         | `10`           |
+| gap_between_rows          | int          | Vertical spacing between rows in pixels (default is 30).                                                                               | `30`           |
+| gap_between_resources     | int          | Horizontal spacing between resources in pixels (default is 10).                                                                        | `10`           |
+| resource_opacity          | float        | Opacity of resource icons (default is 0.8).                                                                                            | `0.8`          |
+| custom_resource_icon      | str          | Custom icon to use for resources (default is None).                                                                                    | `None`         |
+| override_x_max            | int          | Override the maximum x-coordinate of the plot (default is None).                                                                       | `None`         |
+| override_y_max            | int          | Override the maximum y-coordinate of the plot (default is None).                                                                       | `None`         |
+| time_display_units        | str          | Units for displaying time. Options are 'dhm' (days, hours, minutes), 'd' (days), or None (default).                                    | `None`         |
+| setup_mode                | bool         | If True, display grid and tick marks for initial setup (default is False).                                                             | `False`        |
+| frame_duration            | int          | Duration of each frame in milliseconds (default is 400).                                                                               | `400`          |
+| frame_transition_duration | int          | Duration of transition between frames in milliseconds (default is 600).                                                                | `600`          |
+| debug_mode                | bool         | If True, print debug information during processing (default is False).                                                                 | `False`        |
+| custom_entity_icon_list   |              | If given, overrides the default list of emojis used to represent entities                                                              | `None`         |
 
 ## Returns {.doc-section .doc-section-returns}
 
