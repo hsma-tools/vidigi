@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import simpy
 from sim_tools.distributions import Exponential, Lognormal
-from vidigi.resources import populate_store, VidigiPriorityStore
+from vidigi.resources import VidigiPriorityStore
 
 class g:
     '''
@@ -119,11 +119,7 @@ class Model:
             1. Nurses/treatment bays (same thing in this model)
 
         '''
-        self.treatment_cubicles = VidigiPriorityStore(self.env)
-
-        populate_store(num_resources=g.n_cubicles,
-                       simpy_store=self.treatment_cubicles,
-                       sim_env=self.env)
+        self.treatment_cubicles = VidigiPriorityStore(self.env, num_resources=g.n_cubicles)
 
     # A generator function that represents the DES generator for patient arrivals
     def generator_patient_arrivals(self):

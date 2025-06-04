@@ -11,7 +11,7 @@ prep.generate_animation_df(
     gap_between_resources=10,
     gap_between_rows=30,
     time_col_name='time',
-    entity_col_name='patient',
+    entity_col_name='entity_id',
     event_type_col_name='event_type',
     event_col_name='event',
     debug_mode=False,
@@ -37,7 +37,7 @@ handling both queuing and resource use events.
 | gap_between_resources | int          | Horizontal spacing between resources in pixels (default is 10).                                                                                                                 | `10`           |
 | gap_between_rows      | int          | Vertical spacing between rows in pixels (default is 30).                                                                                                                        | `30`           |
 | time_col_name         | str          | Name of the column in `event_log` that contains the timestamp of each event. Timestamps should represent the number of time units since the simulation began.                   | `"time"`       |
-| entity_col_name       | str          | Name of the column in `event_log` that contains the unique identifier for each entity (e.g., "patient", "patient_id", "customer", "ID").                                        | `"patient"`    |
+| entity_col_name       | str          | Name of the column in `event_log` that contains the unique identifier for each entity (e.g., "entity_id", "entity", "patient", "patient_id", "customer", "ID").                 | `"entity_id"`  |
 | event_type_col_name   | str          | Name of the column in `event_log` that specifies the category of the event. Supported event types include 'arrival_departure', 'resource_use', 'resource_use_end', and 'queue'. | `"event_type"` |
 | event_col_name        | str          | Name of the column in `event_log` that specifies the actual event that occurred.                                                                                                | `"event"`      |
 | debug_mode            | bool         | If True, print debug information during processing (default is False).                                                                                                          | `False`        |

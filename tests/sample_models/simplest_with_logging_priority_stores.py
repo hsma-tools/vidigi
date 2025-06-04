@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import simpy
 from sim_tools.distributions import Exponential, Lognormal, Uniform
-from vidigi.utils import VidigiResource, populate_store, VidigiPriorityStore
+from vidigi.resources import VidigiResource, populate_store, VidigiPriorityStore
 
 class g:
     n_cubicles = 4

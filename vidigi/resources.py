@@ -98,7 +98,7 @@ def populate_store(num_resources, simpy_store, sim_env):
     ----------
     num_resources : int
         The number of VidigiResource objects to create and add to the store.
-    simpy_store : simpy.Store or vidigi.utils.VidigiPriorityStore
+    simpy_store : simpy.Store, vidigi.resources.VidigiStore or vidigi.resources.VidigiPriorityStore
         The SimPy Store object to populate with resources.
     sim_env : simpy.Environment
         The SimPy environment in which the resources and store exist.

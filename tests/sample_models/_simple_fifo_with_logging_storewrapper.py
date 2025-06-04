@@ -3,8 +3,7 @@ import numpy as np
 import pandas as pd
 import simpy
 from sim_tools.distributions import Exponential, Lognormal
-from vidigi.utils import VidigiStore, populate_store
-
+from vidigi.resources import VidigiStore, populate_store
 
 # Class to store global parameter values.  We don't create an instance of this
 # class - we just refer to the class blueprint itself to access the numbers

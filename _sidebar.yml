@@ -11,6 +11,7 @@ website:
       section: Walkthroughs
     - contents:
       - vidigi_docs/populating_event_logs.qmd
+      - examples/feat_vidigi_logging_class/feat_example_logging_class.ipynb
       section: Details
     - contents:
       - examples/example_1_simplest_case/ex_1_simplest_case.ipynb
@@ -25,6 +26,9 @@ website:
       - examples/feat_changing_sim_time/feat_changing_sim_time.ipynb
       section: Feature Breakdowns
     - contents:
+      - vidigi_docs/vidigi_vs_bupar.qmd
+      section: Other
+    - contents:
       - reference/index.qmd
       - contents:
         - reference/animation.animate_activity_log.qmd
@@ -35,12 +39,15 @@ website:
         - reference/animation.generate_animation.qmd
         section: Step-By-Step Functions
       - contents:
-        - reference/utils.populate_store.qmd
-        - reference/utils.CustomResource.qmd
-        - reference/utils.VidigiStore.qmd
-        - reference/utils.VidigiPriorityStore.qmd
-        - reference/utils.VidigiPriorityStoreLegacy.qmd
-        section: Simpy Utility Functions and Classes
+        - reference/resources.VidigiResource.qmd
+        - reference/resources.VidigiStore.qmd
+        - reference/resources.VidigiPriorityStore.qmd
+        - reference/resources.VidigiPriorityStoreLegacy.qmd
+        - reference/resources.populate_store.qmd
+        section: Simpy Resource Classes
+      - contents:
+        - reference/logging.EventLogger.qmd
+        section: Event Logging Utility Functions and Classes
       - contents:
         - reference/utils.streamlit_play_all.qmd
         section: Streamlit Utility Functions
@@ -48,9 +55,6 @@ website:
         - reference/ciw.event_log_from_ciw_recs.qmd
         section: ciw Utility Functions
       section: Reference
-    - contents:
-      - vidigi_docs/vidigi_vs_bupar.qmd
-      section: Other
     id: reference
     search: true
     style: docked

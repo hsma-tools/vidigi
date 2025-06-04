@@ -131,14 +131,6 @@ class Model:
                        simpy_store=self.treatment_cubicles,
                        sim_env=self.env)
 
-        # for i in range(g.n_cubicles):
-        #     self.treatment_cubicles.put(
-        #         VidigiResource(
-        #             self.env,
-        #             capacity=1,
-        #             id_attribute = i+1)
-        #         )
-
     # A generator function that represents the DES generator for patient
     # arrivals
     def generator_patient_arrivals(self):

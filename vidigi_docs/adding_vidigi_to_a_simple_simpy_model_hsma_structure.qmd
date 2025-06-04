@@ -16,6 +16,8 @@ filters:
 #| eval: true
 #| echo: false
 import pandas as pd
+import plotly.io as pio
+pio.renderers.default = "notebook"
 ```
 
 On the [Health Service Modelling Associates (HSMA)](https://hsma-programme.github.io/hsma_site/) course we teach a particular way of writing your simpy models. More details of the approach we take can be found in our [Little Book of DES](https://hsma-programme.github.io/hsma6_des_book/).
@@ -318,7 +320,7 @@ import numpy as np
 import pandas as pd
 import simpy
 from sim_tools.distributions import Exponential, Lognormal
-from vidigi.utils import populate_store #<<
+from vidigi.resources import populate_store #<<
 from vidigi.animation import animate_activity_log #<<
 ```
 
@@ -945,7 +947,7 @@ import numpy as np
 import pandas as pd
 import simpy
 from sim_tools.distributions import Exponential, Lognormal
-from vidigi.utils import populate_store
+from vidigi.resources import populate_store
 from vidigi.animation import animate_activity_log
 
 # Class to store global parameter values.  We don't create an instance of this
@@ -1270,6 +1272,7 @@ animate_activity_log(
         event_log=single_run_event_log_df,
         event_position_df= event_position_df,
         scenario=g(), # Use an instance of the g class as our scenario
+        entity_col_name="patient",
         limit_duration=g.sim_duration,
         debug_mode=True, # Turn on logging messages
         setup_mode=True, # Turn on axis units - this can help with honing your event_position_df
@@ -1298,6 +1301,7 @@ animate_activity_log(
         event_log=single_run_event_log_df,
         event_position_df= event_position_df,
         scenario=g(),
+        entity_col_name="patient",
         limit_duration=g.sim_duration,
         debug_mode=False, # Turn off logging messages
         setup_mode=False, # Turn off axis units
@@ -1337,6 +1341,7 @@ animate_activity_log(
         event_log=single_run_event_log_df,
         event_position_df= event_position_df,
         scenario=g(),
+        entity_col_name="patient",
         limit_duration=g.sim_duration,
         debug_mode=False, # Turn off logging messages
         setup_mode=False, # Turn off axis units

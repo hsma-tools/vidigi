@@ -6,7 +6,7 @@ animation.animate_activity_log(
     event_position_df,
     scenario=None,
     time_col_name='time',
-    entity_col_name='patient',
+    entity_col_name='entity_id',
     event_type_col_name='event_type',
     event_col_name='event',
     pathway_col_name=None,
@@ -52,7 +52,7 @@ an interactive Plotly animation representing patient movement through various st
 | event_log                 | pd.DataFrame | The log of events to be animated, containing patient activities.                                                                                                                                                                                                          | _required_     |
 | event_position_df         | pd.DataFrame | DataFrame specifying the positions of different events, with columns 'event', 'x', and 'y'.                                                                                                                                                                               | _required_     |
 | scenario                  | object       | An object containing attributes for resource counts at different steps. time_col_name : str, default="time" Name of the column in `event_log` that contains the timestamp of each event. Timestamps should represent the number of time units since the simulation began. | `None`         |
-| entity_col_name           | str          | Name of the column in `event_log` that contains the unique identifier for each entity (e.g., "patient", "patient_id", "customer", "ID").                                                                                                                                  | `"patient"`    |
+| entity_col_name           | str          | Name of the column in `event_log` that contains the unique identifier for each entity (e.g., "entity_id",  "entity", "patient", "patient_id", "customer", "ID").                                                                                                          | `"entity_id"`  |
 | event_type_col_name       | str          | Name of the column in `event_log` that specifies the category of the event. Supported event types include 'arrival_departure', 'resource_use', 'resource_use_end', and 'queue'.                                                                                           | `"event_type"` |
 | event_col_name            | str          | Name of the column in `event_log` that specifies the actual event that occurred.                                                                                                                                                                                          | `"event"`      |
 | pathway_col_name          | str          | Name of the column in `event_log` that identifies the specific pathway or process flow the entity is following. If `None`, it is assumed that pathway information is not present.                                                                                         | `None`         |

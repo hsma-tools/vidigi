@@ -50,6 +50,7 @@ quartodoc:
       - section: "Details"
         contents:
         - vidigi_docs/populating_event_logs.qmd
+        - examples/feat_vidigi_logging_class/feat_example_logging_class.ipynb
       - section: "Examples"
         contents:
         - examples/example_1_simplest_case/ex_1_simplest_case.ipynb
@@ -62,12 +63,12 @@ quartodoc:
       - section: "Feature Breakdowns"
         contents:
         - examples/feat_changing_sim_time/feat_changing_sim_time.ipynb
-      - section: "Reference"
-        contents:
-          - "{{ contents }}"
       - section: "Other"
         contents:
         - vidigi_docs/vidigi_vs_bupar.qmd
+      - section: "Reference"
+        contents:
+          - "{{ contents }}"
 
   sections:
     - title: All-In-One Animation Functions
@@ -82,14 +83,18 @@ quartodoc:
         - prep.reshape_for_animations
         - prep.generate_animation_df
         - animation.generate_animation
-    - title: Simpy Utility Functions and Classes
+    - title: Simpy Resource Classes
       desc: ""
       contents:
-        - utils.populate_store
-        - utils.CustomResource
-        - utils.VidigiStore
-        - utils.VidigiPriorityStore
-        - utils.VidigiPriorityStoreLegacy
+        - resources.VidigiResource
+        - resources.VidigiStore
+        - resources.VidigiPriorityStore
+        - resources.VidigiPriorityStoreLegacy
+        - resources.populate_store
+    - title: Event Logging Utility Functions and Classes
+      desc: ""
+      contents:
+        - logging.EventLogger
     - title: Streamlit Utility Functions
       desc: ""
       contents:

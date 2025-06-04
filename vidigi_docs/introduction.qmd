@@ -101,7 +101,7 @@ for i in range(number_of_beds):
 
 </details>
 
-`vidigi.utils` provides a helper function for setting up simpy resources in the required manner.
+`vidigi.resources` provides a helper function for setting up simpy resources in the required manner.
 
 For a given resource that would have been created like this:
 
@@ -112,7 +112,7 @@ nurses = simpy.Resource(simpy_environment, capacity=number_of_nurses)
 You would use
 
 ```{python}
-from vidigi.utils import populate_store
+from vidigi.resources import populate_store
 nurses = simpy.Store(simpy_environment)
 
 populate_store(num_resources=number_of_nurses, simpy_store=nurses, sim_env=simpy_environment)

@@ -18,17 +18,25 @@
 | [prep.generate_animation_df](prep.generate_animation_df.qmd#vidigi.prep.generate_animation_df) | Generate a DataFrame for animation purposes by adding position information to entity data. |
 | [animation.generate_animation](animation.generate_animation.qmd#vidigi.animation.generate_animation) | Generate an animated visualization of patient flow through a system. |
 
-## Simpy Utility Functions and Classes
+## Simpy Resource Classes
 
 
 
 | | |
 | --- | --- |
-| [utils.populate_store](utils.populate_store.qmd#vidigi.utils.populate_store) | Populate a SimPy Store (or VidigiPriorityStore) with CustomResource objects. |
-| [utils.CustomResource](utils.CustomResource.qmd#vidigi.utils.CustomResource) | A custom resource class that extends simpy.Resource with an additional ID attribute. |
-| [utils.VidigiStore](utils.VidigiStore.qmd#vidigi.utils.VidigiStore) | A wrapper around SimPy's Store that allows using a context manager pattern |
-| [utils.VidigiPriorityStore](utils.VidigiPriorityStore.qmd#vidigi.utils.VidigiPriorityStore) | An optimized SimPy priority store that eliminates delays between resource |
-| [utils.VidigiPriorityStoreLegacy](utils.VidigiPriorityStoreLegacy.qmd#vidigi.utils.VidigiPriorityStoreLegacy) | A SimPy store that processes requests with priority. |
+| [resources.VidigiResource](resources.VidigiResource.qmd#vidigi.resources.VidigiResource) | A custom resource class that extends simpy.Resource with an additional ID attribute. |
+| [resources.VidigiStore](resources.VidigiStore.qmd#vidigi.resources.VidigiStore) | A wrapper around SimPy's Store that allows using a context manager pattern |
+| [resources.VidigiPriorityStore](resources.VidigiPriorityStore.qmd#vidigi.resources.VidigiPriorityStore) | An optimized SimPy priority store that eliminates delays between resource |
+| [resources.VidigiPriorityStoreLegacy](resources.VidigiPriorityStoreLegacy.qmd#vidigi.resources.VidigiPriorityStoreLegacy) | A SimPy store that processes requests with priority. |
+| [resources.populate_store](resources.populate_store.qmd#vidigi.resources.populate_store) | Populate a SimPy Store (or VidigiPriorityStore) with VidigiResource objects. |
+
+## Event Logging Utility Functions and Classes
+
+
+
+| | |
+| --- | --- |
+| [logging.EventLogger](logging.EventLogger.qmd#vidigi.logging.EventLogger) |  |
 
 ## Streamlit Utility Functions
 
