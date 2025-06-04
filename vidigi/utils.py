@@ -1,7 +1,7 @@
 import simpy
 from simpy.core import BoundClass
 
-class CustomResource(simpy.Resource):
+class VidigiResource(simpy.Resource):
     """
     A custom resource class that extends simpy.Resource with an additional ID attribute.
 
@@ -32,7 +32,7 @@ class CustomResource(simpy.Resource):
     --------
     ```
     env = simpy.Environment()
-    custom_resource = CustomResource(env, capacity=1, id_attribute="Resource_1")
+    custom_resource = VidigiResource(env, capacity=1, id_attribute="Resource_1")
     def process(env, resource):
         with resource.request() as req:
             yield req
@@ -82,12 +82,12 @@ class CustomResource(simpy.Resource):
 
 def populate_store(num_resources, simpy_store, sim_env):
     """
-    Populate a SimPy Store (or VidigiPriorityStore) with CustomResource objects.
+    Populate a SimPy Store (or VidigiPriorityStore) with VidigiResource objects.
 
-    This function creates a specified number of CustomResource objects and adds them to
+    This function creates a specified number of VidigiResource objects and adds them to
     a SimPy Store, a VidigiStore, or VidigiPriorityStore.
 
-    Each CustomResource is initialized with a capacity of 1 and a unique ID attribute,
+    Each VidigiResource is initialized with a capacity of 1 and a unique ID attribute,
     which is crucial for animation functions where you wish to show an individual entity
     consistently using the same resource.
 
@@ -97,7 +97,7 @@ def populate_store(num_resources, simpy_store, sim_env):
     Parameters
     ----------
     num_resources : int
-        The number of CustomResource objects to create and add to the store.
+        The number of VidigiResource objects to create and add to the store.
     simpy_store : simpy.Store or vidigi.utils.VidigiPriorityStore
         The SimPy Store object to populate with resources.
     sim_env : simpy.Environment
@@ -109,8 +109,8 @@ def populate_store(num_resources, simpy_store, sim_env):
 
     Notes
     -----
-    - Each CustomResource is created with a capacity of 1.
-    - The ID attribute of each CustomResource is set to its index in the creation loop plus one,
+    - Each VidigiResource is created with a capacity of 1.
+    - The ID attribute of each VidigiResource is set to its index in the creation loop plus one,
       ensuring unique IDs starting from 1.
     - This function is typically used to initialize a pool of resources at the start of a simulation.
 
@@ -120,13 +120,13 @@ def populate_store(num_resources, simpy_store, sim_env):
     >>> env = simpy.Environment()
     >>> resource_store = simpy.Store(env)
     >>> populate_store(5, resource_store, env)
-    >>> len(resource_store.items)  # The store now contains 5 CustomResource objects
+    >>> len(resource_store.items)  # The store now contains 5 VidigiResource objects
     5
     """
     for i in range(num_resources):
 
         simpy_store.put(
-            CustomResource(
+            VidigiResource(
                 sim_env,
                 capacity=1,
                 id_attribute = i+1)
