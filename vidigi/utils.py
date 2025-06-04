@@ -1068,9 +1068,10 @@ class BaseEvent(BaseModel):
         return self
 
 class EventLogger:
-    def __init__(self, event_model=BaseEvent, env: Any = None):
+    def __init__(self, event_model=BaseEvent, env: Any = None, run_number: int = None):
         self.event_model = event_model
         self.env = env  # Optional simulation env with .now
+        self.run_number = run_number
         self._log: List[dict] = []
 
     def log_event(self, **event_data):
@@ -1080,111 +1081,16 @@ class EventLogger:
             else:
                 raise ValueError("Missing 'time' and no simulation environment provided.")
 
+        if "run_number" not in event_data:
+            if self.run_number is not None:
+                event_data["run_number"] = self.run_number
+
         try:
             event = self.event_model(**event_data)
         except Exception as e:
             raise ValueError(f"Invalid event data: {e}")
 
         self._log.append(event.model_dump())
-
-    @property
-    def log(self):
-        return self._log
-
-    def get_log(self) -> List[dict]:
-        return self._log
-
-    def to_json_string(self, indent: int = 2) -> str:
-        """Return the event log as a pretty JSON string."""
-        return json.dumps(self._log, indent=indent)
-
-    def to_json(self, path_or_buffer: str | Path | TextIOBase, indent: int = 2) -> None:
-        """Write the event log to a JSON file or file-like buffer."""
-        if not self._log:
-            raise ValueError("Event log is empty.")
-        json_str = self.to_json_string(indent=indent)
-
-        if isinstance(path_or_buffer, (str, Path)):
-            with open(path_or_buffer, 'w', encoding='utf-8') as f:
-                f.write(json_str)
-        else:
-            # Assume it's a writable file-like object
-            path_or_buffer.write(json_str)
-
-
-    def to_csv(self, path_or_buffer: str | Path | TextIOBase) -> None:
-        """Write the log to a CSV file."""
-        if not self._log:
-            raise ValueError("Event log is empty.")
-
-        df = self.to_dataframe()
-        df.to_csv(path_or_buffer, index=False)
-
-    def to_dataframe(self) -> pd.DataFrame:
-        """Convert the event log to a pandas DataFrame."""
-        return pd.DataFrame(self._log)
-
-    def summary(self) -> dict:
-        if not self._log:
-            return {"total_events": 0}
-        df = self.to_dataframe()
-        return {
-            "total_events": len(df),
-            "event_types": df["event_type"].value_counts().to_dict(),
-            "time_range": (df["time"].min(), df["time"].max()),
-            "unique_entities": df["entity_id"].nunique() if "entity_id" in df else None,
-        }
-
-    def get_events_by_run(self, run_number: Any, as_dataframe: bool = True):
-        """Return all events associated with a specific entity_id."""
-        filtered = [event for event in self._log if event.get("run_number") == run_number]
-        return pd.DataFrame(filtered) if as_dataframe else filtered
-
-    def get_events_by_entity(self, entity_id: Any, as_dataframe: bool = True):
-        """Return all events associated with a specific entity_id."""
-        filtered = [event for event in self._log if event.get("entity_id") == entity_id]
-        return pd.DataFrame(filtered) if as_dataframe else filtered
-
-    def get_events_by_event_type(self, event_type: str, as_dataframe: bool = True):
-        """Return all events of a specific event_type."""
-        filtered = [event for event in self._log if event.get("event_type") == event_type]
-        return pd.DataFrame(filtered) if as_dataframe else filtered
-
-    def get_events_by_event_name(self, event: str, as_dataframe: bool = True):
-        """Return all events of a specific event_type."""
-        filtered = [event for event in self._log if event.get("event") == event]
-        return pd.DataFrame(filtered) if as_dataframe else filtered
-
-    def plot_entity_timeline(self, entity_id: any):
-        """
-        Plot a timeline of events for a specific entity_id.
-        """
-        if not self._log:
-            raise ValueError("Event log is empty.")
-
-        df = self.to_dataframe()
-        entity_events = df[df["entity_id"] == entity_id]
-
-        if entity_events.empty:
-            raise ValueError(f"No events found for entity_id = {entity_id}")
-
-        # Sort by time for timeline plot
-        entity_events = entity_events.sort_values("time")
-
-        fig = px.scatter(entity_events,
-                         x="time",
-                         y=["event_type"],  # y axis can show event_type to separate events vertically
-                         color="event_type",
-                         hover_data=["event", "pathway", "run_number"],
-                         labels={"time": "Time", "event_type": "Event Type"},
-                         title=f"Timeline of Events for Entity {entity_id}")
-
-        # Optional: jitter y axis for better visualization if multiple events at same time
-        fig.update_traces(marker=dict(size=10, line=dict(width=1, color='DarkSlateGrey')))
-
-        fig.update_yaxes(type="category")  # treat event_type as categorical on y-axis
-
-        fig.show()
 
     #################################################################
     # Logging Helper Functions                                      #
@@ -1276,3 +1182,117 @@ class EventLogger:
         }
         event_data.update(extra_fields)
         self.log_event(**{k: v for k, v in event_data.items() if v is not None})
+
+    ####################################################
+    # Accessing and exporting the resulting logs       #
+    ####################################################
+
+    @property
+    def log(self):
+        return self._log
+
+    def get_log(self) -> List[dict]:
+        return self._log
+
+    def to_json_string(self, indent: int = 2) -> str:
+        """Return the event log as a pretty JSON string."""
+        return json.dumps(self._log, indent=indent)
+
+    def to_json(self, path_or_buffer: str | Path | TextIOBase, indent: int = 2) -> None:
+        """Write the event log to a JSON file or file-like buffer."""
+        if not self._log:
+            raise ValueError("Event log is empty.")
+        json_str = self.to_json_string(indent=indent)
+
+        if isinstance(path_or_buffer, (str, Path)):
+            with open(path_or_buffer, 'w', encoding='utf-8') as f:
+                f.write(json_str)
+        else:
+            # Assume it's a writable file-like object
+            path_or_buffer.write(json_str)
+
+    def to_csv(self, path_or_buffer: str | Path | TextIOBase) -> None:
+        """Write the log to a CSV file."""
+        if not self._log:
+            raise ValueError("Event log is empty.")
+
+        df = self.to_dataframe()
+        df.to_csv(path_or_buffer, index=False)
+
+    def to_dataframe(self) -> pd.DataFrame:
+        """Convert the event log to a pandas DataFrame."""
+        return pd.DataFrame(self._log)
+
+    ####################################################
+    # Summarising Logs                                 #
+    ####################################################
+
+    def summary(self) -> dict:
+        if not self._log:
+            return {"total_events": 0}
+        df = self.to_dataframe()
+        return {
+            "total_events": len(df),
+            "event_types": df["event_type"].value_counts().to_dict(),
+            "time_range": (df["time"].min(), df["time"].max()),
+            "unique_entities": df["entity_id"].nunique() if "entity_id" in df else None,
+        }
+
+    ####################################################
+    # Accessing certain elements of logs               #
+    ####################################################
+
+    def get_events_by_run(self, run_number: Any, as_dataframe: bool = True):
+        """Return all events associated with a specific entity_id."""
+        filtered = [event for event in self._log if event.get("run_number") == run_number]
+        return pd.DataFrame(filtered) if as_dataframe else filtered
+
+    def get_events_by_entity(self, entity_id: Any, as_dataframe: bool = True):
+        """Return all events associated with a specific entity_id."""
+        filtered = [event for event in self._log if event.get("entity_id") == entity_id]
+        return pd.DataFrame(filtered) if as_dataframe else filtered
+
+    def get_events_by_event_type(self, event_type: str, as_dataframe: bool = True):
+        """Return all events of a specific event_type."""
+        filtered = [event for event in self._log if event.get("event_type") == event_type]
+        return pd.DataFrame(filtered) if as_dataframe else filtered
+
+    def get_events_by_event_name(self, event: str, as_dataframe: bool = True):
+        """Return all events of a specific event_type."""
+        filtered = [event for event in self._log if event.get("event") == event]
+        return pd.DataFrame(filtered) if as_dataframe else filtered
+
+    ####################################################
+    # Plotting from logs                               #
+    ####################################################
+
+    def plot_entity_timeline(self, entity_id: any):
+        """
+        Plot a timeline of events for a specific entity_id.
+        """
+        if not self._log:
+            raise ValueError("Event log is empty.")
+
+        df = self.to_dataframe()
+        entity_events = df[df["entity_id"] == entity_id]
+
+        if entity_events.empty:
+            raise ValueError(f"No events found for entity_id = {entity_id}")
+
+        # Sort by time for timeline plot
+        entity_events = entity_events.sort_values("time")
+
+        fig = px.scatter(entity_events,
+                         x="time",
+                         y=["event_type"],  # y axis can show event_type to separate events vertically
+                         color="event_type",
+                         hover_data=["event", "pathway", "run_number"],
+                         labels={"time": "Time", "event_type": "Event Type"},
+                         title=f"Timeline of Events for Entity {entity_id}")
+
+        # Optional: jitter y axis for better visualization if multiple events at same time
+        fig.update_traces(marker=dict(size=10, line=dict(width=1, color='DarkSlateGrey')))
+
+        fig.update_yaxes(type="category")  # treat event_type as categorical on y-axis
+
+        fig.show()
