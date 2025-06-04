@@ -80,7 +80,7 @@ def event_log_from_ciw_recs(ciw_recs_obj, node_name_list):
         for i, event in enumerate(entity_tuples):
             if i==0:
                 event_logs.append(
-                    {'patient': entity_id,
+                    {'entity_id': entity_id,
                     'pathway': 'Model',
                     'event_type': 'arrival_departure',
                     'event': 'arrival',
@@ -88,7 +88,7 @@ def event_log_from_ciw_recs(ciw_recs_obj, node_name_list):
                 )
 
             event_logs.append(
-            {'patient': entity_id,
+            {'entity_id': entity_id,
              'pathway': 'Model',
              'event_type': 'queue',
              'event': f"{node_name_list[event.node-1]}_wait_begins",
@@ -97,7 +97,7 @@ def event_log_from_ciw_recs(ciw_recs_obj, node_name_list):
             )
 
             event_logs.append(
-                {'patient': entity_id,
+                {'entity_id': entity_id,
                 'pathway': 'Model',
                 'event_type': 'resource_use',
                 'event': f"{node_name_list[event.node-1]}_begins",
@@ -106,7 +106,7 @@ def event_log_from_ciw_recs(ciw_recs_obj, node_name_list):
             )
 
             event_logs.append(
-                {'patient': entity_id,
+                {'entity_id': entity_id,
                 'pathway': 'Model',
                 'event_type': 'resource_use',
                 'event': f"{node_name_list[event.node-1]}_ends",
@@ -117,7 +117,7 @@ def event_log_from_ciw_recs(ciw_recs_obj, node_name_list):
 
             if i==total_steps-1:
                 event_logs.append(
-                    {'patient': entity_id,
+                    {'entity_id': entity_id,
                     'pathway': 'Model',
                     'event_type': 'arrival_departure',
                     'event': 'depart',
