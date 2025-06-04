@@ -1027,6 +1027,17 @@ class BaseEvent(BaseModel):
         "extra": "allow"
     }
 
+    @field_validator("event_type", mode="before")
+    @classmethod
+    def warn_if_unrecognized_event_type(cls, v: str, info: ValidationInfo):
+        if v not in RECOGNIZED_EVENT_TYPES:
+            warnings.warn(
+                f"Unrecognized event_type '{v}'. Recommended values are: {', '.join(RECOGNIZED_EVENT_TYPES)}.",
+                UserWarning,
+                stacklevel=3
+            )
+        return v
+
     @field_validator("resource_id", mode="before")
     @classmethod
     def warn_if_missing_resource_id(cls, v, info: ValidationInfo):
