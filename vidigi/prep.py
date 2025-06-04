@@ -8,7 +8,7 @@ def reshape_for_animations(event_log,
                            limit_duration=10*60*24,
                            step_snapshot_max=50,
                            time_col_name="time",
-                           entity_col_name="patient",
+                           entity_col_name="entity_id",
                            event_type_col_name="event_type",
                            event_col_name="event",
                            pathway_col_name=None,
@@ -33,9 +33,9 @@ def reshape_for_animations(event_log,
     time_col_name : str, default="time"
         Name of the column in `event_log` that contains the timestamp of each event.
         Timestamps should represent the number of time units since the simulation began.
-    entity_col_name : str, default="patient"
+    entity_col_name : str, default="entity_id"
         Name of the column in `event_log` that contains the unique identifier for each entity
-        (e.g., "patient", "patient_id", "customer", "ID").
+        (e.g., "entity_id", "entity", "patient", "patient_id", "customer", "ID").
     event_type_col_name : str, default="event_type"
         Name of the column in `event_log` that specifies the category of the event.
         Supported event types include 'arrival_departure', 'resource_use',
@@ -231,12 +231,12 @@ def reshape_for_animations(event_log,
     final_step[time_col_name] = final_step[time_col_name] + every_x_time_units
     final_step[event_col_name] = "exit"
 
-    full_patient_df = pd.concat([full_entity_df, final_step], ignore_index=True)
+    full_entity_df = pd.concat([full_entity_df, final_step], ignore_index=True)
 
     del final_step
     gc.collect()
 
-    return full_patient_df.sort_values([time_col_name, event_col_name]).reset_index(drop=True)
+    return full_entity_df.sort_values([time_col_name, event_col_name]).reset_index(drop=True)
 
 def generate_animation_df(
         full_entity_df,
@@ -248,7 +248,7 @@ def generate_animation_df(
         gap_between_resources=10,
         gap_between_rows=30,
         time_col_name="time",
-        entity_col_name="patient",
+        entity_col_name="entity_id",
         event_type_col_name="event_type",
         event_col_name="event",
         debug_mode=False,
@@ -281,9 +281,9 @@ def generate_animation_df(
     time_col_name : str, default="time"
         Name of the column in `event_log` that contains the timestamp of each event.
         Timestamps should represent the number of time units since the simulation began.
-    entity_col_name : str, default="patient"
+    entity_col_name : str, default="entity_id"
         Name of the column in `event_log` that contains the unique identifier for each entity
-        (e.g., "patient", "patient_id", "customer", "ID").
+        (e.g., "entity_id", "entity", "patient", "patient_id", "customer", "ID").
     event_type_col_name : str, default="event_type"
         Name of the column in `event_log` that specifies the category of the event.
         Supported event types include 'arrival_departure', 'resource_use',
@@ -322,7 +322,7 @@ def generate_animation_df(
         .rank(method='first')
         )
 
-    full_patient_df_plus_pos = (
+    full_entity_df_plus_pos = (
         full_entity_df
         .merge(event_position_df, on=event_col_name, how='left')
         .sort_values([event_col_name, "snapshot_time", time_col_name])
@@ -330,7 +330,7 @@ def generate_animation_df(
 
     # Determine the position for any resource use steps
     resource_use = (
-        full_patient_df_plus_pos[full_patient_df_plus_pos[event_type_col_name] == "resource_use"]
+        full_entity_df_plus_pos[full_entity_df_plus_pos[event_type_col_name] == "resource_use"]
         .copy()
         )
     # resource_use['y_final'] =  resource_use['y']
@@ -354,7 +354,7 @@ def generate_animation_df(
         resource_use['y_final'] = resource_use['y_final'] + (resource_use['row'] * gap_between_rows)
 
     # Determine the position for any queuing steps
-    queues = full_patient_df_plus_pos[full_patient_df_plus_pos['event_type']=='queue'].copy()
+    queues = full_entity_df_plus_pos[full_entity_df_plus_pos['event_type']=='queue'].copy()
     # queues['y_final'] =  queues['y']
     queues = queues.rename(columns={"y": "y_final"})
     queues['x_final'] = queues['x'] - queues['rank'] * gap_between_entities
@@ -424,9 +424,9 @@ def generate_animation_df(
     full_icon_list = full_icon_list[0:len(individual_entities)]
 
     full_entity_df_plus_pos = full_entity_df_plus_pos.merge(
-        pd.DataFrame({'patient':list(individual_entities),
+        pd.DataFrame({entity_col_name:list(individual_entities),
                       'icon':full_icon_list}),
-        on="patient")
+        on=entity_col_name)
 
     if 'additional' in full_entity_df_plus_pos.columns:
         exceeded_snapshot_limit = (

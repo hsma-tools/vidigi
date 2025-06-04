@@ -11,7 +11,7 @@ def generate_animation(
         event_position_df,
         scenario=None,
         time_col_name="time",
-        entity_col_name="patient",
+        entity_col_name="entity_id",
         event_col_name="event",
         pathway_col_name=None,
         simulation_time_unit="minutes",
@@ -54,9 +54,9 @@ def generate_animation(
         time_col_name : str, default="time"
         Name of the column in `event_log` that contains the timestamp of each event.
         Timestamps should represent the number of time units since the simulation began.
-    entity_col_name : str, default="patient"
+    entity_col_name : str, default="entity_id"
         Name of the column in `event_log` that contains the unique identifier for each entity
-        (e.g., "patient", "patient_id", "customer", "ID").
+        (e.g., "entity_id", "entity", "patient", "patient_id", "customer", "ID").
     event_col_name : str, default="event"
         Name of the column in `event_log` that specifies the actual event that occurred.
     pathway_col_name : str, optional, default=None
@@ -435,7 +435,7 @@ def animate_activity_log(
         event_position_df,
         scenario=None,
         time_col_name="time",
-        entity_col_name="patient",
+        entity_col_name="entity_id",
         event_type_col_name="event_type",
         event_col_name="event",
         pathway_col_name=None,
@@ -484,9 +484,9 @@ def animate_activity_log(
         time_col_name : str, default="time"
         Name of the column in `event_log` that contains the timestamp of each event.
         Timestamps should represent the number of time units since the simulation began.
-    entity_col_name : str, default="patient"
+    entity_col_name : str, default="entity_id"
         Name of the column in `event_log` that contains the unique identifier for each entity
-        (e.g., "patient", "patient_id", "customer", "ID").
+        (e.g., "entity_id",  "entity", "patient", "patient_id", "customer", "ID").
     event_type_col_name : str, default="event_type"
         Name of the column in `event_log` that specifies the category of the event.
         Supported event types include 'arrival_departure', 'resource_use',
