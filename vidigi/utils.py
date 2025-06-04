@@ -987,15 +987,17 @@ def streamlit_play_all():
             "Install it with: pip install vidigi[helper]"
         )
 
+RECOGNIZED_EVENT_TYPES = {'arrival_departure', 'resource_use', 'resource_use_end', 'queue'}
+
 class BaseEvent(BaseModel):
     entity_id: Any = Field(
         ...,
         description="Identifier for the entity related to this event (e.g. patient ID, customer ID). Can be any type."
     )
 
-    event_type: Literal['arrival_departure', 'resource_use', 'resource_use_end', 'queue'] = Field(
+    event_type: str = Field(
         ...,
-        description="Type of event. Vidigi will recognise the following types: 'arrival_departure', 'resource_use', 'resource_use_end', 'queue'."
+        description=f"Type of event. Recommended values: {', '.join(RECOGNIZED_EVENT_TYPES)}"
     )
 
     event: str = Field(..., description="Name of the specific event.")
