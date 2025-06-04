@@ -133,7 +133,7 @@ class Model:
 
         # for i in range(g.n_cubicles):
         #     self.treatment_cubicles.put(
-        #         CustomResource(
+        #         VidigiResource(
         #             self.env,
         #             capacity=1,
         #             id_attribute = i+1)
