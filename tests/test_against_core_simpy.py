@@ -24,7 +24,6 @@ from tests.sample_models.simplest_with_logging_priority_storesLEGACY \
 from tests.sample_models.simplest_with_logging_priority_stores \
     import Trial as simplest_with_logging_priority_stores
 
-
 def run_trial(trial_cls, drop_resource_id=False, filename=None, run_kwargs=None):
     trial = trial_cls(master_seed=42)
     trial.run_trial(**(run_kwargs or {}))
