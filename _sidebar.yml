@@ -8,6 +8,7 @@ website:
       text: Introduction
     - contents:
       - vidigi_docs/adding_vidigi_to_a_simple_simpy_model_hsma_structure.qmd
+      - vidigi_docs/adding_vidigi_to_a_simple_simpy_model_hsma_structure_old.qmd
       section: Walkthroughs
     - contents:
       - vidigi_docs/populating_event_logs.qmd

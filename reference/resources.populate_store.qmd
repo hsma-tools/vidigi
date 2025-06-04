@@ -18,11 +18,11 @@ If using VidigiPriorityStore, you will need to pass the relevant priority in to 
 
 ## Parameters {.doc-section .doc-section-parameters}
 
-| Name          | Type                                            | Description                                                          | Default    |
-|---------------|-------------------------------------------------|----------------------------------------------------------------------|------------|
-| num_resources | int                                             | The number of VidigiResource objects to create and add to the store. | _required_ |
-| simpy_store   | simpy.Store or vidigi.utils.VidigiPriorityStore | The SimPy Store object to populate with resources.                   | _required_ |
-| sim_env       | simpy.Environment                               | The SimPy environment in which the resources and store exist.        | _required_ |
+| Name          | Type                                                                                | Description                                                          | Default    |
+|---------------|-------------------------------------------------------------------------------------|----------------------------------------------------------------------|------------|
+| num_resources | int                                                                                 | The number of VidigiResource objects to create and add to the store. | _required_ |
+| simpy_store   | (simpy.Store, vidigi.resources.VidigiStore or vidigi.resources.VidigiPriorityStore) | The SimPy Store object to populate with resources.                   | _required_ |
+| sim_env       | simpy.Environment                                                                   | The SimPy environment in which the resources and store exist.        | _required_ |
 
 ## Returns {.doc-section .doc-section-returns}
 
