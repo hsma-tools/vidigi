@@ -153,22 +153,49 @@ class VidigiStore:
     and tested by a human.
     """
 
-    def __init__(self, env, capacity=float('inf'), init_items=None):
+    def __init__(self, env, capacity=float('inf')
+                #  , init_items=None
+                 ):
         """
         Initialize the VidigiStore.
 
         Args:
             env: SimPy environment
             capacity: Maximum capacity of the store
-            init_items: Initial items to put in the store
         """
         self.env = env
         self.store = simpy.Store(env, capacity)
 
-        # Initialize with items if provided
-        if init_items:
-            for item in init_items:
-                self.store.put(item)
+        # # Initialize with items if provided
+        # if init_items:
+        #     for item in init_items:
+        #         self.store.put(item)
+
+    def populate(self, num_resources):
+        """
+        Populate this VidigiStore with VidigiResource objects.
+
+        Creates `num_resources` VidigiResource objects and adds them to this store.
+
+        Each VidigiResource is initialized with a capacity of 1 and a unique ID starting at 1.
+
+        Parameters
+        ----------
+        num_resources : int
+            The number of VidigiResource objects to create and add to the store.
+
+        Returns
+        -------
+        None
+        """
+        for i in range(num_resources):
+            self.put(
+                VidigiResource(
+                    self.env,
+                    capacity=1,
+                    id_attribute=i + 1
+                )
+            )
 
     def request(self):
         """
@@ -353,23 +380,51 @@ class VidigiPriorityStore:
     and tested by a human.
     """
 
-    def __init__(self, env, capacity=float('inf'), init_items=None):
+    def __init__(self, env, capacity=float('inf')
+                #  , init_items=None
+                 ):
         """
         Initialize the OptimizedVidigiPriorityStore.
 
         Args:
             env: The SimPy environment.
             capacity: Maximum capacity of the store (default: infinite).
-            init_items: Optional list of items to initialize the store with.
+
         """
         self.env = env
         self.capacity = capacity
-        self.items = [] if init_items is None else list(init_items)
+        self.items = [] #if init_items is None else list(init_items)
 
         # Custom priority queue for get requests
         self.get_queue = []  # We'll maintain this as a sorted list
         # Standard queue for put requests
         self.put_queue = []
+
+    def populate(self, num_resources):
+        """
+        Populate this VidigiPriorityStore with VidigiResource objects.
+
+        Creates `num_resources` VidigiResource objects and adds them to this store.
+
+        Each VidigiResource is initialized with a capacity of 1 and a unique ID starting at 1.
+
+        Parameters
+        ----------
+        num_resources : int
+            The number of VidigiResource objects to create and add to the store.
+
+        Returns
+        -------
+        None
+        """
+        for i in range(num_resources):
+            self.put(
+                VidigiResource(
+                    self.env,
+                    capacity=1,
+                    id_attribute=i + 1
+                )
+            )
 
     def request(self, priority=0):
         """
