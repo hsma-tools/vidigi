@@ -162,7 +162,9 @@ class VidigiStore:
     and tested by a human.
     """
 
-    def __init__(self, env, capacity=float('inf')
+    def __init__(self, env,
+                 capacity=float('inf'),
+                 num_resources=None
                 #  , init_items=None
                  ):
         """
@@ -174,6 +176,9 @@ class VidigiStore:
         """
         self.env = env
         self.store = simpy.Store(env, capacity)
+
+        if num_resources is not None:
+            self.populate(num_resources)
 
         # # Initialize with items if provided
         # if init_items:
@@ -389,7 +394,9 @@ class VidigiPriorityStore:
     and tested by a human.
     """
 
-    def __init__(self, env, capacity=float('inf')
+    def __init__(self, env,
+                 capacity=float('inf'),
+                 num_resources=None
                 #  , init_items=None
                  ):
         """
@@ -408,6 +415,9 @@ class VidigiPriorityStore:
         self.get_queue = []  # We'll maintain this as a sorted list
         # Standard queue for put requests
         self.put_queue = []
+
+        if num_resources is not None:
+            self.populate(num_resources)
 
     def populate(self, num_resources):
         """
