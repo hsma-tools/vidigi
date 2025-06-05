@@ -330,15 +330,19 @@ def generate_animation(
                                              for i in range(r['resource_count'])]}), axis=1).explode('x_final'),
             how='right')
 
-        events_with_resources = events_with_resources.assign(resource_id=range(len(events_with_resources)))
+        # events_with_resources = events_with_resources.assign(resource_id=range(len(events_with_resources)))
+        # After exploding
+        events_with_resources['resource_id'] = events_with_resources.groupby([event_col_name]).cumcount()
 
         if wrap_resources_at is not None:
             events_with_resources['row'] = np.floor((events_with_resources['resource_id']) / (wrap_resources_at))
+
             events_with_resources['x_final'] = (
                 events_with_resources['x_final']
                 + (wrap_resources_at * events_with_resources['row'] * gap_between_resources)
                 + gap_between_resources
                 )
+
             events_with_resources['y_final'] = (
                 events_with_resources['y']
                 + (events_with_resources['row'] * gap_between_resource_rows)
