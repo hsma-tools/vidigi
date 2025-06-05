@@ -18,7 +18,7 @@ dependencies:
   - simpy=4.0.2
   - sim-tools=0.9.0
   - quartodoc=0.9.1
-  - ciw=2.3.1
+  - ciw=3.2.5
   - ipywidgets=8.1.5
   - pytest-html=4.1.1
   - tox=4.25.0
