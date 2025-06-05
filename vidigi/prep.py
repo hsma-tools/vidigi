@@ -172,7 +172,7 @@ def reshape_for_animations(event_log,
 
                 # ----------------------------------------------------------------------------- #
                 # TODO - think this section might be the source of bug #53
-                most_recent_events_minute_ungrouped = most_recent_events_time_unit_ungrouped[
+                most_recent_events_time_unit_ungrouped = most_recent_events_time_unit_ungrouped[
                     most_recent_events_time_unit_ungrouped['rank'] <= (step_snapshot_max + 1)
                     ].copy()
 
@@ -252,7 +252,8 @@ def generate_animation_df(
         event_type_col_name="event_type",
         event_col_name="event",
         debug_mode=False,
-        custom_entity_icon_list=None
+        custom_entity_icon_list=None,
+        include_fun_emojis=False
 ):
     """
     Generate a DataFrame for animation purposes by adding position information to entity data.
@@ -292,6 +293,14 @@ def generate_animation_df(
         Name of the column in `event_log` that specifies the actual event that occurred.
     debug_mode : bool, optional
         If True, print debug information during processing (default is False).
+    custom_entity_icon_list : list, optional
+        If provided, will be used as the list for entity icons. Once the end of the list is reached,
+        it will loop back around to the beginning (so e.g. if a list of 8 icons is provided, entities
+        1 to 8 will use the provided emoji list, and then entity 9 will use the same icon as entity 1,
+        and so on.)
+    include_fun_emojis : bool, default=False
+        If True, include the more 'fun' emojis, such as Santa Claus. Ignored if a custom entity icon list
+        is passed.
 
     Returns
     -------
@@ -414,8 +423,11 @@ def generate_animation_df(
             '👨🏾‍🦲', '🧍🏾‍♂️', '👧🏼', '🤷🏿‍♂️', '👨🏿‍🔧',
             '👱🏾‍♂️', '👨🏼‍🎓', '👵🏼', '🤵🏿', '🤦🏾‍♀️',
             '👳🏻', '🙋🏼‍♂️', '👩🏻‍🎓', '👩🏼‍🌾', '👩🏾‍🔬',
-            '👩🏿‍✈️', '🎅🏼', '👵🏿', '🤵🏻', '🤰'
+            '👩🏿‍✈️',  '👵🏿', '🤵🏻', '🤰'
         ]
+        if include_fun_emojis:
+            additional_fun_icon_list = ['🎅🏼']
+            icon_list.extend(additional_fun_icon_list)
     else:
         icon_list = custom_entity_icon_list.copy()
 
