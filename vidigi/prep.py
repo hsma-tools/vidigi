@@ -246,7 +246,8 @@ def generate_animation_df(
         step_snapshot_max=50,
         gap_between_entities=10,
         gap_between_resources=10,
-        gap_between_rows=30,
+        gap_between_resource_rows=30,
+        gap_between_entity_rows=30,
         time_col_name="time",
         entity_col_name="entity_id",
         event_type_col_name="event_type",
@@ -277,7 +278,9 @@ def generate_animation_df(
         Horizontal spacing between entities in pixels (default is 10).
     gap_between_resources : int, optional
         Horizontal spacing between resources in pixels (default is 10).
-    gap_between_rows : int, optional
+    gap_between_entity_rows : int, optional
+        Vertical spacing between rows in pixels (default is 30).
+    gap_between_resource_rows : int, optional
         Vertical spacing between rows in pixels (default is 30).
     time_col_name : str, default="time"
         Name of the column in `event_log` that contains the timestamp of each event.
@@ -360,7 +363,7 @@ def generate_animation_df(
             gap_between_resources
             )
 
-        resource_use['y_final'] = resource_use['y_final'] + (resource_use['row'] * gap_between_rows)
+        resource_use['y_final'] = resource_use['y_final'] + (resource_use['row'] * gap_between_resource_rows)
 
     # Determine the position for any queuing steps
     queues = full_entity_df_plus_pos[full_entity_df_plus_pos['event_type']=='queue'].copy()
@@ -380,7 +383,7 @@ def generate_animation_df(
             gap_between_entities
         )
 
-        queues['y_final'] = queues['y_final'] + (queues['row'] * gap_between_rows)
+        queues['y_final'] = queues['y_final'] + (queues['row'] * gap_between_entity_rows)
 
     queues['x_final'] = np.where(
         queues['rank'] != step_snapshot_max + 1,
@@ -408,6 +411,7 @@ def generate_animation_df(
     # emojis from v12.0 and below - Windows 10 got no more updates after that point
 
     if custom_entity_icon_list is None:
+
         icon_list = [
             '🧔🏼', '👨🏿‍🦯', '👨🏻‍🦰', '🧑🏻', '👩🏿‍🦱',
             '🤰', '👳🏽', '👩🏼‍🦳', '👨🏿‍🦳', '👩🏼‍🦱',
@@ -425,8 +429,11 @@ def generate_animation_df(
             '👳🏻', '🙋🏼‍♂️', '👩🏻‍🎓', '👩🏼‍🌾', '👩🏾‍🔬',
             '👩🏿‍✈️',  '👵🏿', '🤵🏻', '🤰'
         ]
+
         if include_fun_emojis:
-            additional_fun_icon_list = ['🎅🏼']
+            additional_fun_icon_list = ['🎅🏼', '👽', '🤸', '🧜', '🏇', '🧟', '🧞', '🧚', '🧙',
+                                        '🦹', '🦸']
+
             icon_list.extend(additional_fun_icon_list)
     else:
         icon_list = custom_entity_icon_list.copy()

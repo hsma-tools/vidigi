@@ -20,7 +20,9 @@ def generate_animation(
         include_play_button=True,
         add_background_image=None,
         display_stage_labels=True,
-        icon_and_text_size=24,
+        entity_icon_size=24,
+        text_size=24,
+        resource_icon_size=24,
         override_x_max=None,
         override_y_max=None,
         time_display_units=None,
@@ -30,7 +32,8 @@ def generate_animation(
         custom_resource_icon=None,
         wrap_resources_at=20,
         gap_between_resources=10,
-        gap_between_rows=30,
+        gap_between_entity_rows=30,
+        gap_between_resource_rows=30,
         setup_mode=False,
         frame_duration=400, #milliseconds
         frame_transition_duration=600, #milliseconds
@@ -76,8 +79,12 @@ def generate_animation(
         Path to a background image file to add to the animation (default is None).
     display_stage_labels : bool, optional
         Whether to display labels for each stage (default is True).
-    icon_and_text_size : int, optional
-        Size of icons and text in the animation (default is 24).
+    entity_icon_size : int, optional
+        Size of entity icons in the animation (default is 24).
+    text_size : int, optional
+        Size of text labels in the animation (default is 24).
+    resource_icon_size : int, optional
+        Size of resource icons in the animation (default is 24).
     override_x_max : int, optional
         Override the maximum x-coordinate (default is None).
     override_y_max : int, optional
@@ -99,7 +106,9 @@ def generate_animation(
         resources do.
     gap_between_resources : int, optional
         Spacing between resources in pixels (default is 10).
-    gap_between_rows : int, optional
+    gap_between_entity_rows : int, optional
+        Vertical spacing between rows in pixels (default is 30).
+    gap_between_resource_rows : int, optional
         Vertical spacing between rows in pixels (default is 30).
     setup_mode : bool, optional
         Whether to run in setup mode, showing grid and tick marks (default is False).
@@ -279,6 +288,12 @@ def generate_animation(
             opacity=0
             )
 
+
+    # Update the size of the icons and labels
+    # This is what determines the size of the individual emojis that
+    # represent our people!
+    fig.data[0].textfont.size = entity_icon_size
+
     # Now add labels identifying each stage (optional - can either be used
     # in conjunction with a background image or as a way to see stage names
     # without the need to create a background image)
@@ -296,7 +311,8 @@ def generate_animation(
     # Update the size of the icons and labels
     # This is what determines the size of the individual emojis that
     # represent our people!
-    fig.update_traces(textfont_size=icon_and_text_size)
+    # Update the text size for the LAST ADDED trace (stage labels)
+    fig.data[-1].textfont.size = text_size
 
     #############################################
     # Add in icons to indicate the available resources
@@ -325,7 +341,7 @@ def generate_animation(
                 )
             events_with_resources['y_final'] = (
                 events_with_resources['y']
-                + (events_with_resources['row'] * gap_between_rows)
+                + (events_with_resources['row'] * gap_between_resource_rows)
                 )
         else:
             events_with_resources['y_final'] = events_with_resources['y']
@@ -363,6 +379,13 @@ def generate_animation(
                 opacity=resource_opacity,
                 hoverinfo='none'
             ))
+
+    # Update the size of the icons and labels
+    # This is what determines the size of the individual emojis that
+    # represent our people!
+    fig.data[-1].textfont.size = resource_icon_size
+    # fig.data[-1].opacity = resource_opacity # Set opacity for the resource icon text
+
 
     #############################################
     # Optional step to add a background image
@@ -450,9 +473,12 @@ def animate_activity_log(
         include_play_button=True,
         add_background_image=None,
         display_stage_labels=True,
-        icon_and_text_size=24,
+        entity_icon_size=24,
+        text_size=24,
+        resource_icon_size=24,
         gap_between_entities=10,
-        gap_between_rows=30,
+        gap_between_entity_rows=30,
+        gap_between_resource_rows=30,
         gap_between_resources=10,
         resource_opacity=0.8,
         custom_resource_icon=None,
@@ -520,11 +546,17 @@ def animate_activity_log(
         Path to a background image file to add to the animation (default is None).
     display_stage_labels : bool, optional
         Whether to display labels for each stage (default is True).
-    icon_and_text_size : int, optional
-        Size of icons and text in the animation (default is 24).
+    entity_icon_size : int, optional
+        Size of entity icons in the animation (default is 24).
+    text_size : int, optional
+        Size of text labels in the animation (default is 24).
+    resource_icon_size : int, optional
+        Size of resource icons in the animation (default is 24).
     gap_between_entities : int, optional
         Horizontal spacing between entities in pixels (default is 10).
-    gap_between_rows : int, optional
+    gap_between_entity_rows : int, optional
+        Vertical spacing between rows in pixels (default is 30).
+    gap_between_resource_rows : int, optional
         Vertical spacing between rows in pixels (default is 30).
     gap_between_resources : int, optional
         Horizontal spacing between resources in pixels (default is 10).
@@ -597,13 +629,15 @@ def animate_activity_log(
                                 step_snapshot_max=step_snapshot_max,
                                 gap_between_entities=gap_between_entities,
                                 gap_between_resources=gap_between_resources,
-                                gap_between_rows=gap_between_rows,
+                                gap_between_resource_rows=gap_between_resource_rows,
+                                gap_between_entity_rows=gap_between_entity_rows,
                                 debug_mode=debug_mode,
                                 custom_entity_icon_list=custom_entity_icon_list,
                                 time_col_name=time_col_name,
                                 entity_col_name=entity_col_name,
                                 event_type_col_name=event_type_col_name,
-                                event_col_name=event_col_name                        )
+                                event_col_name=event_col_name
+                                )
 
     animation = generate_animation(
         full_entity_df_plus_pos=full_entity_df_plus_pos,
@@ -615,7 +649,10 @@ def animate_activity_log(
         include_play_button=include_play_button,
         add_background_image=add_background_image,
         display_stage_labels=display_stage_labels,
-        icon_and_text_size=icon_and_text_size,
+        entity_icon_size=entity_icon_size,
+        resource_icon_size=resource_icon_size,
+        text_size=text_size,
+        gap_between_resource_rows=gap_between_resource_rows,
         override_x_max=override_x_max,
         override_y_max=override_y_max,
         start_date=start_date,
@@ -625,7 +662,6 @@ def animate_activity_log(
         resource_opacity=resource_opacity,
         wrap_resources_at=wrap_resources_at,
         gap_between_resources=gap_between_resources,
-        gap_between_rows=gap_between_rows,
         custom_resource_icon=custom_resource_icon,
         frame_duration=frame_duration, #milliseconds
         frame_transition_duration=frame_transition_duration, #milliseconds
