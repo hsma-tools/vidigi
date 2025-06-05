@@ -247,7 +247,7 @@ def generate_animation_df(
         gap_between_entities=10,
         gap_between_resources=10,
         gap_between_resource_rows=30,
-        gap_between_entity_rows=30,
+        gap_between_queue_rows=30,
         time_col_name="time",
         entity_col_name="entity_id",
         event_type_col_name="event_type",
@@ -278,7 +278,7 @@ def generate_animation_df(
         Horizontal spacing between entities in pixels (default is 10).
     gap_between_resources : int, optional
         Horizontal spacing between resources in pixels (default is 10).
-    gap_between_entity_rows : int, optional
+    gap_between_queue_rows : int, optional
         Vertical spacing between rows in pixels (default is 30).
     gap_between_resource_rows : int, optional
         Vertical spacing between rows in pixels (default is 30).
@@ -383,7 +383,7 @@ def generate_animation_df(
             gap_between_entities
         )
 
-        queues['y_final'] = queues['y_final'] + (queues['row'] * gap_between_entity_rows)
+        queues['y_final'] = queues['y_final'] + (queues['row'] * gap_between_queue_rows)
 
     queues['x_final'] = np.where(
         queues['rank'] != step_snapshot_max + 1,

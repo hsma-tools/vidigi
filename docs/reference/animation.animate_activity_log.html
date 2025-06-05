@@ -664,23 +664,26 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    include_play_button<span class="op">=</span><span class="va">True</span>,</span>
 <span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>    add_background_image<span class="op">=</span><span class="va">None</span>,</span>
 <span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>    display_stage_labels<span class="op">=</span><span class="va">True</span>,</span>
-<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>    icon_and_text_size<span class="op">=</span><span class="dv">24</span>,</span>
-<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>    gap_between_entities<span class="op">=</span><span class="dv">10</span>,</span>
-<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>    gap_between_rows<span class="op">=</span><span class="dv">30</span>,</span>
-<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>    gap_between_resources<span class="op">=</span><span class="dv">10</span>,</span>
-<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>    resource_opacity<span class="op">=</span><span class="fl">0.8</span>,</span>
-<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>    custom_resource_icon<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>    override_x_max<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>    override_y_max<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>    start_date<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>    start_time<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>    time_display_units<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>    setup_mode<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>    frame_duration<span class="op">=</span><span class="dv">400</span>,</span>
-<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>    frame_transition_duration<span class="op">=</span><span class="dv">600</span>,</span>
-<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>    debug_mode<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>    custom_entity_icon_list<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>    entity_icon_size<span class="op">=</span><span class="dv">24</span>,</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>    text_size<span class="op">=</span><span class="dv">24</span>,</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>    resource_icon_size<span class="op">=</span><span class="dv">24</span>,</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>    gap_between_entities<span class="op">=</span><span class="dv">10</span>,</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>    gap_between_queue_rows<span class="op">=</span><span class="dv">30</span>,</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>    gap_between_resource_rows<span class="op">=</span><span class="dv">30</span>,</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>    gap_between_resources<span class="op">=</span><span class="dv">10</span>,</span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>    resource_opacity<span class="op">=</span><span class="fl">0.8</span>,</span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>    custom_resource_icon<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>    override_x_max<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>    override_y_max<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>    start_date<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>    start_time<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>    time_display_units<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>    setup_mode<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>    frame_duration<span class="op">=</span><span class="dv">400</span>,</span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>    frame_transition_duration<span class="op">=</span><span class="dv">600</span>,</span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>    debug_mode<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>    custom_entity_icon_list<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Generate an animated visualization of patient flow through a system.</p>
 <p>This function processes event log data, adds positional information, and creates an interactive Plotly animation representing patient movement through various stages.</p>
 <section id="parameters" class="level2 doc-section doc-section-parameters">
@@ -810,9 +813,21 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td><code>True</code></td>
 </tr>
 <tr class="odd">
-<td>icon_and_text_size</td>
+<td>entity_icon_size</td>
 <td>int</td>
-<td>Size of icons and text in the animation (default is 24).</td>
+<td>Size of entity icons in the animation (default is 24).</td>
+<td><code>24</code></td>
+</tr>
+<tr class="even">
+<td>text_size</td>
+<td>int</td>
+<td>Size of text labels in the animation (default is 24).</td>
+<td><code>24</code></td>
+</tr>
+<tr class="odd">
+<td>resource_icon_size</td>
+<td>int</td>
+<td>Size of resource icons in the animation (default is 24).</td>
 <td><code>24</code></td>
 </tr>
 <tr class="even">
@@ -822,72 +837,78 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td><code>10</code></td>
 </tr>
 <tr class="odd">
-<td>gap_between_rows</td>
+<td>gap_between_queue_rows</td>
 <td>int</td>
 <td>Vertical spacing between rows in pixels (default is 30).</td>
 <td><code>30</code></td>
 </tr>
 <tr class="even">
+<td>gap_between_resource_rows</td>
+<td>int</td>
+<td>Vertical spacing between rows in pixels (default is 30).</td>
+<td><code>30</code></td>
+</tr>
+<tr class="odd">
 <td>gap_between_resources</td>
 <td>int</td>
 <td>Horizontal spacing between resources in pixels (default is 10).</td>
 <td><code>10</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>resource_opacity</td>
 <td>float</td>
 <td>Opacity of resource icons (default is 0.8).</td>
 <td><code>0.8</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>custom_resource_icon</td>
 <td>str</td>
 <td>Custom icon to use for resources (default is None).</td>
 <td><code>None</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>override_x_max</td>
 <td>int</td>
 <td>Override the maximum x-coordinate of the plot (default is None).</td>
 <td><code>None</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>override_y_max</td>
 <td>int</td>
 <td>Override the maximum y-coordinate of the plot (default is None).</td>
 <td><code>None</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>time_display_units</td>
 <td>str</td>
 <td>Units for displaying time. Options are ‘dhm’ (days, hours, minutes), ‘d’ (days), or None (default).</td>
 <td><code>None</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>setup_mode</td>
 <td>bool</td>
 <td>If True, display grid and tick marks for initial setup (default is False).</td>
 <td><code>False</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>frame_duration</td>
 <td>int</td>
 <td>Duration of each frame in milliseconds (default is 400).</td>
 <td><code>400</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>frame_transition_duration</td>
 <td>int</td>
 <td>Duration of transition between frames in milliseconds (default is 600).</td>
 <td><code>600</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>debug_mode</td>
 <td>bool</td>
 <td>If True, print debug information during processing (default is False).</td>
 <td><code>False</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>custom_entity_icon_list</td>
 <td></td>
 <td>If given, overrides the default list of emojis used to represent entities</td>

@@ -652,24 +652,26 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    step_snapshot_max<span class="op">=</span><span class="dv">50</span>,</span>
 <span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    gap_between_entities<span class="op">=</span><span class="dv">10</span>,</span>
 <span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    gap_between_resources<span class="op">=</span><span class="dv">10</span>,</span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    gap_between_rows<span class="op">=</span><span class="dv">30</span>,</span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    time_col_name<span class="op">=</span><span class="st">'time'</span>,</span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    entity_col_name<span class="op">=</span><span class="st">'entity_id'</span>,</span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    event_type_col_name<span class="op">=</span><span class="st">'event_type'</span>,</span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    event_col_name<span class="op">=</span><span class="st">'event'</span>,</span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    debug_mode<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    custom_entity_icon_list<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    gap_between_resource_rows<span class="op">=</span><span class="dv">30</span>,</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    gap_between_queue_rows<span class="op">=</span><span class="dv">30</span>,</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    time_col_name<span class="op">=</span><span class="st">'time'</span>,</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    entity_col_name<span class="op">=</span><span class="st">'entity_id'</span>,</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    event_type_col_name<span class="op">=</span><span class="st">'event_type'</span>,</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    event_col_name<span class="op">=</span><span class="st">'event'</span>,</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    debug_mode<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    custom_entity_icon_list<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    include_fun_emojis<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Generate a DataFrame for animation purposes by adding position information to entity data.</p>
 <p>This function takes entity event data and adds positional information for visualization, handling both queuing and resource use events.</p>
 <section id="parameters" class="level2 doc-section doc-section-parameters">
 <h2 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h2>
 <table class="caption-top table">
 <colgroup>
-<col style="width: 10%">
-<col style="width: 6%">
-<col style="width: 76%">
-<col style="width: 6%">
+<col style="width: 7%">
+<col style="width: 3%">
+<col style="width: 83%">
+<col style="width: 4%">
 </colgroup>
 <thead>
 <tr class="header">
@@ -723,39 +725,57 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td><code>10</code></td>
 </tr>
 <tr class="even">
-<td>gap_between_rows</td>
+<td>gap_between_queue_rows</td>
 <td>int</td>
 <td>Vertical spacing between rows in pixels (default is 30).</td>
 <td><code>30</code></td>
 </tr>
 <tr class="odd">
+<td>gap_between_resource_rows</td>
+<td>int</td>
+<td>Vertical spacing between rows in pixels (default is 30).</td>
+<td><code>30</code></td>
+</tr>
+<tr class="even">
 <td>time_col_name</td>
 <td>str</td>
 <td>Name of the column in <code>event_log</code> that contains the timestamp of each event. Timestamps should represent the number of time units since the simulation began.</td>
 <td><code>"time"</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>entity_col_name</td>
 <td>str</td>
 <td>Name of the column in <code>event_log</code> that contains the unique identifier for each entity (e.g., “entity_id”, “entity”, “patient”, “patient_id”, “customer”, “ID”).</td>
 <td><code>"entity_id"</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>event_type_col_name</td>
 <td>str</td>
 <td>Name of the column in <code>event_log</code> that specifies the category of the event. Supported event types include ‘arrival_departure’, ‘resource_use’, ‘resource_use_end’, and ‘queue’.</td>
 <td><code>"event_type"</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>event_col_name</td>
 <td>str</td>
 <td>Name of the column in <code>event_log</code> that specifies the actual event that occurred.</td>
 <td><code>"event"</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>debug_mode</td>
 <td>bool</td>
 <td>If True, print debug information during processing (default is False).</td>
+<td><code>False</code></td>
+</tr>
+<tr class="odd">
+<td>custom_entity_icon_list</td>
+<td>list</td>
+<td>If provided, will be used as the list for entity icons. Once the end of the list is reached, it will loop back around to the beginning (so e.g.&nbsp;if a list of 8 icons is provided, entities 1 to 8 will use the provided emoji list, and then entity 9 will use the same icon as entity 1, and so on.)</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>include_fun_emojis</td>
+<td>bool</td>
+<td>If True, include the more ‘fun’ emojis, such as Santa Claus. Ignored if a custom entity icon list is passed.</td>
 <td><code>False</code></td>
 </tr>
 </tbody>

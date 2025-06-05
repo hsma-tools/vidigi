@@ -32,7 +32,7 @@ def generate_animation(
         custom_resource_icon=None,
         wrap_resources_at=20,
         gap_between_resources=10,
-        gap_between_entity_rows=30,
+        gap_between_queue_rows=30,
         gap_between_resource_rows=30,
         setup_mode=False,
         frame_duration=400, #milliseconds
@@ -106,7 +106,7 @@ def generate_animation(
         resources do.
     gap_between_resources : int, optional
         Spacing between resources in pixels (default is 10).
-    gap_between_entity_rows : int, optional
+    gap_between_queue_rows : int, optional
         Vertical spacing between rows in pixels (default is 30).
     gap_between_resource_rows : int, optional
         Vertical spacing between rows in pixels (default is 30).
@@ -477,7 +477,7 @@ def animate_activity_log(
         text_size=24,
         resource_icon_size=24,
         gap_between_entities=10,
-        gap_between_entity_rows=30,
+        gap_between_queue_rows=30,
         gap_between_resource_rows=30,
         gap_between_resources=10,
         resource_opacity=0.8,
@@ -554,7 +554,7 @@ def animate_activity_log(
         Size of resource icons in the animation (default is 24).
     gap_between_entities : int, optional
         Horizontal spacing between entities in pixels (default is 10).
-    gap_between_entity_rows : int, optional
+    gap_between_queue_rows : int, optional
         Vertical spacing between rows in pixels (default is 30).
     gap_between_resource_rows : int, optional
         Vertical spacing between rows in pixels (default is 30).
@@ -630,7 +630,7 @@ def animate_activity_log(
                                 gap_between_entities=gap_between_entities,
                                 gap_between_resources=gap_between_resources,
                                 gap_between_resource_rows=gap_between_resource_rows,
-                                gap_between_entity_rows=gap_between_entity_rows,
+                                gap_between_queue_rows=gap_between_queue_rows,
                                 debug_mode=debug_mode,
                                 custom_entity_icon_list=custom_entity_icon_list,
                                 time_col_name=time_col_name,

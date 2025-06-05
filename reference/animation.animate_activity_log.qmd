@@ -21,9 +21,12 @@ animation.animate_activity_log(
     include_play_button=True,
     add_background_image=None,
     display_stage_labels=True,
-    icon_and_text_size=24,
+    entity_icon_size=24,
+    text_size=24,
+    resource_icon_size=24,
     gap_between_entities=10,
-    gap_between_rows=30,
+    gap_between_queue_rows=30,
+    gap_between_resource_rows=30,
     gap_between_resources=10,
     resource_opacity=0.8,
     custom_resource_icon=None,
@@ -67,9 +70,12 @@ an interactive Plotly animation representing patient movement through various st
 | include_play_button       | bool         | Whether to include a play button in the animation (default is True).                                                                                                                                                                                                      | `True`         |
 | add_background_image      | str          | Path to a background image file to add to the animation (default is None).                                                                                                                                                                                                | `None`         |
 | display_stage_labels      | bool         | Whether to display labels for each stage (default is True).                                                                                                                                                                                                               | `True`         |
-| icon_and_text_size        | int          | Size of icons and text in the animation (default is 24).                                                                                                                                                                                                                  | `24`           |
+| entity_icon_size          | int          | Size of entity icons in the animation (default is 24).                                                                                                                                                                                                                    | `24`           |
+| text_size                 | int          | Size of text labels in the animation (default is 24).                                                                                                                                                                                                                     | `24`           |
+| resource_icon_size        | int          | Size of resource icons in the animation (default is 24).                                                                                                                                                                                                                  | `24`           |
 | gap_between_entities      | int          | Horizontal spacing between entities in pixels (default is 10).                                                                                                                                                                                                            | `10`           |
-| gap_between_rows          | int          | Vertical spacing between rows in pixels (default is 30).                                                                                                                                                                                                                  | `30`           |
+| gap_between_queue_rows    | int          | Vertical spacing between rows in pixels (default is 30).                                                                                                                                                                                                                  | `30`           |
+| gap_between_resource_rows | int          | Vertical spacing between rows in pixels (default is 30).                                                                                                                                                                                                                  | `30`           |
 | gap_between_resources     | int          | Horizontal spacing between resources in pixels (default is 10).                                                                                                                                                                                                           | `10`           |
 | resource_opacity          | float        | Opacity of resource icons (default is 0.8).                                                                                                                                                                                                                               | `0.8`          |
 | custom_resource_icon      | str          | Custom icon to use for resources (default is None).                                                                                                                                                                                                                       | `None`         |

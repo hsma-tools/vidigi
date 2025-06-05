@@ -107,6 +107,8 @@ quartodoc:
 
 format:
   html:
+    execute:
+      freeze: auto
     theme:
       dark: [darkly, theme-dark.scss]
       light: [flatly, theme-light.scss]
