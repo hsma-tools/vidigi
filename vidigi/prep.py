@@ -130,12 +130,12 @@ def reshape_for_animations(event_log,
                 .values
                 )
             except KeyError:
-                current_entities_in_moment = None
+                current_entities_in_moment = [] # Use an empty list for consistency
 
             # If we do have any entities, they will have been passed as a list
             # so now just filter our event log down to the events these entities have been
             # involved in
-            if current_entities_in_moment is not None:
+            if len(current_entities_in_moment) > 0:
                 # Grab just those entities from the filtered log (the unpivoted version)
 
                 # Filter out any events that have taken place after the minute we are interested in
@@ -171,41 +171,83 @@ def reshape_for_animations(event_log,
                     )
 
                 # ----------------------------------------------------------------------------- #
-                # TODO - think this section might be the source of bug #53
-                most_recent_events_time_unit_ungrouped = most_recent_events_time_unit_ungrouped[
-                    most_recent_events_time_unit_ungrouped['rank'] <= (step_snapshot_max + 1)
-                    ].copy()
 
-                maximum_row_per_event_df = most_recent_events_time_unit_ungrouped[
-                    most_recent_events_time_unit_ungrouped['rank'] == float(step_snapshot_max + 1)
-                    ].copy()
+                # Exclude event types that should not be part of snapshot logic
+                excluded_types = ['resource_use', 'resource_use_end']
 
-                maximum_row_per_event_df['additional'] = ''
+                # Apply snapshot logic per event (assuming 'event_id' identifies each event)
+                def process_event_group(df):
+                    if df[event_type_col_name].iloc[0] in excluded_types:
+                        return df  # Return unchanged
+                    else:
+                        # Keep only top (step_snapshot_max + 1) ranks
+                        df = df[df['rank'] <= (step_snapshot_max + 1)].copy()
 
-                if len(maximum_row_per_event_df) > 0:
-                    maximum_row_per_event_df['additional'] = (
-                        maximum_row_per_event_df['max'] -
-                        maximum_row_per_event_df['rank']
-                        )
+                        # Identify max rank row (to possibly add 'additional' column)
+                        max_row = df[df['rank'] == float(step_snapshot_max + 1)].copy()
+                        if len(max_row) > 0:
+                            max_row['additional'] = max_row['max'] - max_row['rank']
+                            df = pd.concat([
+                                df[df['rank'] != float(step_snapshot_max + 1)],
+                                max_row
+                            ], ignore_index=True)
+                        return df
 
-                    most_recent_events_time_unit_ungrouped = pd.concat(
-                        [
-                        most_recent_events_time_unit_ungrouped[
-                            most_recent_events_time_unit_ungrouped['rank'] != float(step_snapshot_max + 1)
-                            ],
-                        maximum_row_per_event_df],
-                        ignore_index=True
-                    )
-                # ----------------------------------------------------------------------------- #
+                # Apply the per-event logic
+                most_recent_events_time_unit_ungrouped = (
+                    most_recent_events_time_unit_ungrouped
+                    .groupby(event_col_name, group_keys=False)
+                    .apply(process_event_group)
+                )
 
-                # Add this dataframe to our list of dataframes, and then return to the beginning
-                # of the loop and do this for the next minute of interest until we reach the end
-                # of the period of interest
+                # Clean up and store snapshot
                 entity_dfs.append(
                     most_recent_events_time_unit_ungrouped
-                    .drop(columns='max')
+                    .drop(columns='max', errors='ignore')
                     .assign(snapshot_time=time_unit)
-                    )
+                )
+
+            else:
+                # If no entities, append a DataFrame with just the snapshot_time
+                # This creates a row with NaN for all other columns, preserving the time step.
+                empty_df = pd.DataFrame([{'snapshot_time': time_unit}])
+                entity_dfs.append(empty_df)
+
+
+                # most_recent_events_time_unit_ungrouped = most_recent_events_time_unit_ungrouped[
+                #     most_recent_events_time_unit_ungrouped['rank'] <= (step_snapshot_max + 1)
+                #     ].copy()
+
+                # maximum_row_per_event_df = most_recent_events_time_unit_ungrouped[
+                #     most_recent_events_time_unit_ungrouped['rank'] == float(step_snapshot_max + 1)
+                #     ].copy()
+
+                # maximum_row_per_event_df['additional'] = ''
+
+                # if len(maximum_row_per_event_df) > 0:
+                #     maximum_row_per_event_df['additional'] = (
+                #         maximum_row_per_event_df['max'] -
+                #         maximum_row_per_event_df['rank']
+                #         )
+
+                #     most_recent_events_time_unit_ungrouped = pd.concat(
+                #         [
+                #         most_recent_events_time_unit_ungrouped[
+                #             most_recent_events_time_unit_ungrouped['rank'] != float(step_snapshot_max + 1)
+                #             ],
+                #         maximum_row_per_event_df],
+                #         ignore_index=True
+                #     )
+                # # ----------------------------------------------------------------------------- #
+
+                # # Add this dataframe to our list of dataframes, and then return to the beginning
+                # # of the loop and do this for the next minute of interest until we reach the end
+                # # of the period of interest
+                # entity_dfs.append(
+                #     most_recent_events_time_unit_ungrouped
+                #     .drop(columns='max')
+                #     .assign(snapshot_time=time_unit)
+                #     )
 
     if debug_mode:
         print(f'Iteration through time-unit-by-time-unit logs complete {time.strftime("%H:%M:%S", time.localtime())}')
@@ -340,9 +382,20 @@ def generate_animation_df(
         .sort_values([event_col_name, "snapshot_time", time_col_name])
         )
 
+    # Separate the empty snapshots from the entity data
+    # We can identify them as rows where the entity ID is null.
+    empty_snapshots = full_entity_df_plus_pos[
+        full_entity_df_plus_pos[entity_col_name].isnull()
+    ].copy()
+
+    entity_data = full_entity_df_plus_pos[
+        full_entity_df_plus_pos[entity_col_name].notnull()
+    ].copy()
+
+
     # Determine the position for any resource use steps
     resource_use = (
-        full_entity_df_plus_pos[full_entity_df_plus_pos[event_type_col_name] == "resource_use"]
+        entity_data[entity_data[event_type_col_name] == "resource_use"]
         .copy()
         )
     # resource_use['y_final'] =  resource_use['y']
@@ -366,7 +419,8 @@ def generate_animation_df(
         resource_use['y_final'] = resource_use['y_final'] + (resource_use['row'] * gap_between_resource_rows)
 
     # Determine the position for any queuing steps
-    queues = full_entity_df_plus_pos[full_entity_df_plus_pos['event_type']=='queue'].copy()
+    queues = entity_data[entity_data['event_type']=='queue'].copy()
+
     # queues['y_final'] =  queues['y']
     queues = queues.rename(columns={"y": "y_final"})
     queues['x_final'] = queues['x'] - queues['rank'] * gap_between_entities
@@ -392,11 +446,17 @@ def generate_animation_df(
         )
 
     if len(resource_use) > 0:
-        full_entity_df_plus_pos = pd.concat([queues, resource_use], ignore_index=True)
+        processed_entities_df = pd.concat([queues, resource_use], ignore_index=True)
         del resource_use, queues
     else:
-        full_entity_df_plus_pos = queues.copy()
+        processed_entities_df = queues.copy()
         del queues
+
+    # Add the empty snapshots back into the main dataframe
+    full_entity_df_plus_pos = pd.concat(
+        [processed_entities_df, empty_snapshots],
+        ignore_index=True
+    )
 
     if debug_mode:
         print(f'Placement dataframe finished construction at {time.strftime("%H:%M:%S", time.localtime())}')
@@ -443,9 +503,12 @@ def generate_animation_df(
     full_icon_list = full_icon_list[0:len(individual_entities)]
 
     full_entity_df_plus_pos = full_entity_df_plus_pos.merge(
-        pd.DataFrame({entity_col_name:list(individual_entities),
-                      'icon':full_icon_list}),
-        on=entity_col_name)
+        pd.DataFrame(
+            {entity_col_name:list(individual_entities),
+            'icon':full_icon_list}
+            ),
+        on=entity_col_name
+        )
 
     if 'additional' in full_entity_df_plus_pos.columns:
         exceeded_snapshot_limit = (
