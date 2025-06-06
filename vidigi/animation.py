@@ -379,11 +379,11 @@ def generate_animation(
             hoverinfo='none'
         ))
 
-    # Update the size of the icons and labels
-    # This is what determines the size of the individual emojis that
-    # represent our people!
-    # Update the text size for the LAST ADDED trace (stage labels)
-    fig.data[-1].textfont.size = text_size
+        # Update the size of the icons and labels
+        # This is what determines the size of the individual emojis that
+        # represent our people!
+        # Update the text size for the LAST ADDED trace (stage labels)
+        fig.data[-1].textfont.size = text_size
 
     #############################################
     # Add in icons to indicate the available resources
@@ -455,11 +455,11 @@ def generate_animation(
                 hoverinfo='none'
             ))
 
-    # Update the size of the icons and labels
-    # This is what determines the size of the individual emojis that
-    # represent our people!
-    fig.data[-1].textfont.size = resource_icon_size
-    # fig.data[-1].opacity = resource_opacity # Set opacity for the resource icon text
+        # Update the size of the icons and labels
+        # This is what determines the size of the individual emojis that
+        # represent our people!
+        fig.data[-1].textfont.size = resource_icon_size
+        # fig.data[-1].opacity = resource_opacity # Set opacity for the resource icon text
 
 
     #############################################
