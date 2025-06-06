@@ -89,8 +89,28 @@ def generate_animation(
         Override the maximum x-coordinate (default is None).
     override_y_max : int, optional
         Override the maximum y-coordinate (default is None).
-    time_display_units : str, optional
-        Units for displaying time. Options are 'dhm' (days, hours, minutes), 'd' (days), or None (default).
+        time_display_units : str, optional
+        Format for displaying time on the animation timeline. This affects how simulation time is
+        converted into human-readable dates or clock formats. If `None` (default), the raw simulation
+        time is used.
+
+        Predefined options:
+        - 'dhms' : Day Month Year + HH:MM:SS (e.g., "06 June 2025\n14:23:45")
+        - 'dhms_ampm' : Same as 'dhms', but in 12-hour format with AM/PM (e.g., "06 June 2025\n02:23:45 PM")
+        - 'dhm'  : Day Month Year + HH:MM (e.g., "06 June 2025\n14:23")
+        - 'dhm_ampm' : 12-hour format with AM/PM (e.g., "06 June 2025\n02:23 PM")
+        - 'dh'   : Day Month Year + HH (e.g., "06 June 2025\n14")
+        - 'dh_ampm' : 12-hour format with AM/PM (e.g., "06 June 2025\n02 PM")
+        - 'd'    : Full weekday and date (e.g., "Friday 06 June 2025")
+        - 'm'    : Month and year (e.g., "June 2025")
+        - 'y'    : Year only (e.g., "2025")
+        - 'day_clock' or 'simulation_day_clock':
+            Show simulation-relative day and time (e.g., "Simulation Day 3\n14:15")
+        - 'day_clock_ampm' or 'simulation_day_clock_ampm':
+            Same as above, but time is shown in 12-hour clock with AM/PM (e.g., "Simulation Day 3\n02:15 PM")
+
+        Alternatively, you can supply a custom [strftime](https://strftime.org/) format string
+        (e.g., '%Y-%m-%d %H') to control the display manually.
     start_date : str, optional
         Start date for the animation in 'YYYY-MM-DD' format. Only used when time_display_units is 'd' or 'dhm' (default is None).
     start_time : str, optional
@@ -130,6 +150,12 @@ def generate_animation(
     - Time can be displayed as actual dates or as model time units.
     - The animation supports customization of icon sizes, resource representation, and animation speed.
     - A background image can be added to provide context for the patient flow.
+    - If `time_display_units` is specified, the simulation time is converted into real-world
+      datetimes using the `simulation_time_unit` and optionally `start_date` and `start_time`.
+    - If `start_date` and/or `start_time` are not provided, a default offset from today's date
+      is used.
+    - The `snapshot_time` column is transformed to datetime strings, and a `snapshot_time_display`
+      column is created for visual display.
 
     Examples
     --------
@@ -217,29 +243,32 @@ def generate_animation(
                     )
 
         # https://strftime.org/
-        if time_display_units in ("dhms", "days hours minutes seconds", "days, hours and minutes"):
+        if time_display_units in ("dhms", "dhms_ampm"):
+            fmt = '%d %B %Y\n%I:%M:%S %p' if time_display_units.endswith("ampm") else '%d %B %Y\n%H:%M:%S'
             full_entity_df_plus_pos["snapshot_time_display"] = full_entity_df_plus_pos["snapshot_time"].apply(
-                lambda x: dt.datetime.strftime(x, '%d %B %Y\n%H:%M:%S')
-                )
+                lambda x: dt.datetime.strftime(x, fmt)
+            )
             full_entity_df_plus_pos["snapshot_time"] = full_entity_df_plus_pos["snapshot_time"].apply(
-                lambda x: dt.datetime.strftime(x, '%Y-%m-%d %H:%M:%S')
-                )
+                lambda x: dt.datetime.strftime(x, fmt)
+            )
 
-        elif time_display_units in ("dhm"):
+        elif time_display_units in ("dhm", "dhm_ampm"):
+            fmt = '%d %B %Y\n%I:%M %p' if time_display_units.endswith("ampm") else '%d %B %Y\n%H:%M'
             full_entity_df_plus_pos["snapshot_time_display"] = full_entity_df_plus_pos["snapshot_time"].apply(
-                lambda x: dt.datetime.strftime(x, '%d %B %Y\n%H:%M')
-                )
+                lambda x: dt.datetime.strftime(x, fmt)
+            )
             full_entity_df_plus_pos["snapshot_time"] = full_entity_df_plus_pos["snapshot_time"].apply(
-                lambda x: dt.datetime.strftime(x, '%Y-%m-%d %H:%M')
-                )
+                lambda x: dt.datetime.strftime(x, fmt)
+            )
 
-        elif time_display_units in ("dh"):
+        elif time_display_units in ("dh", "dh_ampm"):
+            fmt = '%d %B %Y\n%I %p' if time_display_units.endswith("ampm") else '%d %B %Y\n%H'
             full_entity_df_plus_pos["snapshot_time_display"] = full_entity_df_plus_pos["snapshot_time"].apply(
-                lambda x: dt.datetime.strftime(x, '%d %B %Y\n%H')
-                )
+                lambda x: dt.datetime.strftime(x, fmt)
+            )
             full_entity_df_plus_pos["snapshot_time"] = full_entity_df_plus_pos["snapshot_time"].apply(
-                lambda x: dt.datetime.strftime(x, '%Y-%m-%d %H')
-                )
+                lambda x: dt.datetime.strftime(x, fmt)
+            )
 
         elif time_display_units in ("d"):
             full_entity_df_plus_pos["snapshot_time_display"] = full_entity_df_plus_pos["snapshot_time"].apply(
@@ -264,6 +293,20 @@ def generate_animation(
             full_entity_df_plus_pos["snapshot_time"] = full_entity_df_plus_pos["snapshot_time"].apply(
                 lambda x: dt.datetime.strftime(x, '%Y')
                 )
+        elif time_display_units in ("day_clock", "simulation_day_clock", "day_clock_ampm", "simulation_day_clock_ampm"):
+            use_ampm = time_display_units.endswith("_ampm")
+            def format_day_clock(t):
+                delta = t - pd.Timestamp(t.date())
+                sim_day = (t.normalize() - full_entity_df_plus_pos["snapshot_time"].min().normalize()).days + 1
+                time_fmt = "%I:%M %p" if use_ampm else "%H:%M"
+                return f"Simulation Day {sim_day}\n{t.strftime(time_fmt)}"
+
+            full_entity_df_plus_pos["snapshot_time_display"] = full_entity_df_plus_pos["snapshot_time"].apply(
+                lambda x: format_day_clock(pd.to_datetime(x))
+            )
+            full_entity_df_plus_pos["snapshot_time"] = full_entity_df_plus_pos["snapshot_time"].apply(
+                lambda x: format_day_clock(pd.to_datetime(x))
+            )
         else:
             try:
                 full_entity_df_plus_pos["snapshot_time_display"] = full_entity_df_plus_pos["snapshot_time"].apply(
@@ -601,7 +644,27 @@ def animate_activity_log(
     override_y_max : int, optional
         Override the maximum y-coordinate of the plot (default is None).
     time_display_units : str, optional
-        Units for displaying time. Options are 'dhm' (days, hours, minutes), 'd' (days), or None (default).
+        Format for displaying time on the animation timeline. This affects how simulation time is
+        converted into human-readable dates or clock formats. If `None` (default), the raw simulation
+        time is used.
+
+        Predefined options:
+        - 'dhms' : Day Month Year + HH:MM:SS (e.g., "06 June 2025\n14:23:45")
+        - 'dhms_ampm' : Same as 'dhms', but in 12-hour format with AM/PM (e.g., "06 June 2025\n02:23:45 PM")
+        - 'dhm'  : Day Month Year + HH:MM (e.g., "06 June 2025\n14:23")
+        - 'dhm_ampm' : 12-hour format with AM/PM (e.g., "06 June 2025\n02:23 PM")
+        - 'dh'   : Day Month Year + HH (e.g., "06 June 2025\n14")
+        - 'dh_ampm' : 12-hour format with AM/PM (e.g., "06 June 2025\n02 PM")
+        - 'd'    : Full weekday and date (e.g., "Friday 06 June 2025")
+        - 'm'    : Month and year (e.g., "June 2025")
+        - 'y'    : Year only (e.g., "2025")
+        - 'day_clock' or 'simulation_day_clock':
+            Show simulation-relative day and time (e.g., "Simulation Day 3\n14:15")
+        - 'day_clock_ampm' or 'simulation_day_clock_ampm':
+            Same as above, but time is shown in 12-hour clock with AM/PM (e.g., "Simulation Day 3\n02:15 PM")
+
+        Alternatively, you can supply a custom [strftime](https://strftime.org/) format string
+        (e.g., '%Y-%m-%d %H') to control the display manually.
     setup_mode : bool, optional
         If True, display grid and tick marks for initial setup (default is False).
     frame_duration : int, optional
