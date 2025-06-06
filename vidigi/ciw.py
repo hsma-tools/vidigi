@@ -74,6 +74,9 @@ def event_log_from_ciw_recs(ciw_recs_obj, node_name_list):
     for entity_id in entity_ids:
         entity_tuples = [log for log in ciw_recs_obj if log.id_number==entity_id]
 
+        # Sort the events for this entity by service start time
+        entity_tuples.sort(key=lambda x: x.service_start_date)
+
         total_steps = len(entity_tuples)
 
         # If first entry, record the arrival time
