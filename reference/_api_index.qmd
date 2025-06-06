@@ -6,7 +6,7 @@
 
 | | |
 | --- | --- |
-| [animation.animate_activity_log](animation.animate_activity_log.qmd#vidigi.animation.animate_activity_log) | Generate an animated visualization of patient flow through a system. |
+| [animation.animate_activity_log](animation.animate_activity_log.qmd#vidigi.animation.animate_activity_log) |     Generate an animated visualization of patient flow through a system. |
 
 ## Step-By-Step Functions
 
@@ -16,7 +16,7 @@
 | --- | --- |
 | [prep.reshape_for_animations](prep.reshape_for_animations.qmd#vidigi.prep.reshape_for_animations) | Reshape event log data for animation purposes. |
 | [prep.generate_animation_df](prep.generate_animation_df.qmd#vidigi.prep.generate_animation_df) | Generate a DataFrame for animation purposes by adding position information to entity data. |
-| [animation.generate_animation](animation.generate_animation.qmd#vidigi.animation.generate_animation) | Generate an animated visualization of patient flow through a system. |
+| [animation.generate_animation](animation.generate_animation.qmd#vidigi.animation.generate_animation) |     Generate an animated visualization of patient flow through a system. |
 
 ## Simpy Resource Classes
 

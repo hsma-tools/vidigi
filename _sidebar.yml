@@ -51,6 +51,9 @@ website:
       - examples/example_7_simplest_case_priority_resource_storewrapper/ex_7_simplest_case_priority_resource.ipynb
       - examples/example_8_wide_resource_spacing/ex_8_model.ipynb
       - examples/example_9_wide_resource_spacing_multiple/ex_9_model.ipynb
+      - examples/example_11_resourceless_animation/ex_11_resourceless.ipynb
+      - examples/example_12_resourceless_with_back_and_forth/ex_12_resourceless_advanced.ipynb
+      - examples/example_13_additional_synchronised_traces_method_1/synchronised_traces.ipynb
       section: SimPy Examples
     - contents:
       - examples/example_4_ciw/ex_4_ciw.ipynb

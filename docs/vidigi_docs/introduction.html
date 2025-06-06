@@ -606,6 +606,24 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">Creative Layouts - Multiple Ward Example</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../examples/example_11_resourceless_animation/ex_11_resourceless.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Mental Health - Appointment Booking Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../examples/example_12_resourceless_with_back_and_forth/ex_12_resourceless_advanced.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">More Resourceless Queues - Community Service Repeat Appointment Booking Model with Variable Follow-ups</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../examples/example_13_additional_synchronised_traces_method_1/synchronised_traces.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Additional Synchronised Traces - Orthopaedic Ward - Hospital Efficiency Project</span></a>
+  </div>
+</li>
       </ul>
   </li>
         <li class="sidebar-item sidebar-item-section">
@@ -772,7 +790,7 @@ Click here for behind-the-scenes details on this
 </summary>
 <p>The easiest workaround which drops fairly painlessly into existing models is to use a simpy store with a custom resource class.</p>
 <p>The custom resource is setup as follows:</p>
-<div id="4691254e" class="cell" data-execution_count="1">
+<div id="f1819aee" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> CustomResource(simpy.Resource):</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, env, capacity, id_attribute<span class="op">=</span><span class="va">None</span>):</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>(env, capacity)</span>
@@ -787,7 +805,7 @@ Click here for behind-the-scenes details on this
 <span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="bu">super</span>().release(<span class="op">*</span>args, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>The creation of simpy resources is then replaced with the following pattern:</p>
-<div id="7e0ffabd" class="cell" data-execution_count="2">
+<div id="0b124d15" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>beds <span class="op">=</span> simpy.Store(environment)</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(number_of_beds):</span>
@@ -801,27 +819,27 @@ Click here for behind-the-scenes details on this
 </details>
 <p><code>vidigi.resources</code> provides a helper function for setting up simpy resources in the required manner.</p>
 <p>For a given resource that would have been created like this:</p>
-<div id="18a7c613" class="cell" data-execution_count="3">
+<div id="29832386" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>nurses <span class="op">=</span> simpy.Resource(simpy_environment, capacity<span class="op">=</span>number_of_nurses)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>You would use</p>
-<div id="35747a30" class="cell" data-execution_count="4">
+<div id="54e11d58" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> vidigi.resources <span class="im">import</span> populate_store</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>nurses <span class="op">=</span> simpy.Store(simpy_environment)</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>populate_store(num_resources<span class="op">=</span>number_of_nurses, simpy_store<span class="op">=</span>nurses, sim_env<span class="op">=</span>simpy_environment)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Instead of requesting a resource in the standard way, you instead use the .get() method.</p>
-<div id="26235e53" class="cell" data-execution_count="5">
+<div id="fe56c0ef" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>req <span class="op">=</span> beds.get()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>or</p>
-<div id="9daeb5fc" class="cell" data-execution_count="6">
+<div id="e8b2fb02" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> beds.get() <span class="im">as</span> req:</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  ...CODE HERE THAT USES THE RESOURCE...</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>At the end, it is important to put the resource back into the store, even if you used the ‘with’ notation, so it can be made available to the next requester:</p>
-<div id="7314e5c6" class="cell" data-execution_count="7">
+<div id="28e9b358" class="cell" data-execution_count="7">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>beds.put(req)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>This becomes slightly more complex with conditional requesting (for example, where a resource request is made but if it cannot be fulfilled in time, the requester will renege). This is demonstrated in example 3.</p>
@@ -901,7 +919,7 @@ Click here for behind-the-scenes details on this
 </tbody>
 </table>
 <p>One easy way to achieve this is by appending dictionaries to a list at each important point in the process. For example:</p>
-<div id="8d4e1b8c" class="cell" data-execution_count="8">
+<div id="b5d31182" class="cell" data-execution_count="8">
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>event_log <span class="op">=</span> []</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>...</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>...</span>
@@ -915,7 +933,7 @@ Click here for behind-the-scenes details on this
 <span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>The list of dictionaries can then be converted to a pandas dataframe using</p>
-<div id="3b3bf0c6" class="cell" data-execution_count="9">
+<div id="74a9b63d" class="cell" data-execution_count="9">
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>pd.DataFrame(event_log)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>and passed to the animation function where required.</p>
@@ -927,7 +945,7 @@ Click here for behind-the-scenes details on this
 <section id="arrival_departure" class="level5">
 <h5 class="anchored" data-anchor-id="arrival_departure">arrival_departure</h5>
 <p>Within this, a minimum of two ‘arrival_departure’ events per entity are mandatory - <code>arrival</code> and <code>depart</code>, both with an event_type of <code>arrival_departure</code>, as shown below.</p>
-<div id="5c9ba500" class="cell" data-execution_count="10">
+<div id="13dfb338" class="cell" data-execution_count="10">
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>event_log.append(</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>      {<span class="st">'patient'</span>: unique_entity_identifier,</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>      <span class="st">'pathway'</span>: <span class="st">'Revision'</span>,</span>
@@ -936,7 +954,7 @@ Click here for behind-the-scenes details on this
 <span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>      <span class="st">'time'</span>: env.now}</span>
 <span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div id="1d8cb282" class="cell" data-execution_count="11">
+<div id="56cc2f0e" class="cell" data-execution_count="11">
 <div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>event_log.append(</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>      {<span class="st">'patient'</span>: unique_entity_identifier,</span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>      <span class="st">'pathway'</span>: <span class="st">'Revision'</span>,</span>
@@ -953,7 +971,7 @@ Click here for behind-the-scenes details on this
 <p>It is possible to solely use queues and never make use of a simpy resource.</p>
 <p>By tracking each important step in the process as a ‘queue’ step, the movement of patients can be accurately tracked.</p>
 <p>Patients will be ordered by the point at which they are added to the queue, with the first entries appearing at the front (bottom-right) of the queue.</p>
-<div id="5693b981" class="cell" data-execution_count="12">
+<div id="89359356" class="cell" data-execution_count="12">
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>event_log.append(</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>            {<span class="st">'patient'</span>: unique_entity_identifier,</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>             <span class="st">'pathway'</span>: <span class="st">'High intensity'</span>,</span>
@@ -968,7 +986,7 @@ Click here for behind-the-scenes details on this
 <section id="resource_use-and-resource_use_end" class="level5">
 <h5 class="anchored" data-anchor-id="resource_use-and-resource_use_end">resource_use and resource_use_end</h5>
 <p>Resource use is more complex to include but comes with two key benefits over the queue: - it becomes easier to monitor the length of time a resource is in use by a single entity as users won’t ‘move through’ the resource use stage (which can also prove confusing to less experienced viewers) - it becomes possible to show the total number of resources that are available, making it easier to understand how well resources are being utilised at different stages</p>
-<div id="fedc65cf" class="cell" data-execution_count="13">
+<div id="670b386d" class="cell" data-execution_count="13">
 <div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> CustomResource(simpy.Resource):</span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, env, capacity, id_attribute<span class="op">=</span><span class="va">None</span>):</span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>(env, capacity)</span>
@@ -1026,7 +1044,7 @@ Click here for behind-the-scenes details on this
 <p>When providing your event position details, it then just requires you to include an identifier for the resource.</p>
 <p>NOTE: At present this requires you to be using an class to manage your resource counts (if following HSMA simpy structure, this will be your g class).</p>
 <p>This requirement is planned to be removed in a future version of the work, allowing more flexibility.</p>
-<div id="5035758f" class="cell" data-execution_count="14">
+<div id="63be4dce" class="cell" data-execution_count="14">
 <div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>{<span class="st">'event'</span>: <span class="st">'TRAUMA_stabilisation_begins'</span>,</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a> <span class="st">'x'</span>: <span class="dv">300</span>, <span class="st">'y'</span>: <span class="dv">500</span>, <span class="st">'resource'</span>:<span class="st">'n_trauma'</span>, <span class="st">'label'</span>: <span class="st">"Being&lt;br&gt;Stabilised"</span> }</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
@@ -1041,7 +1059,7 @@ Click here for behind-the-scenes details on this
 <p>Once the event log has been created, the positions of each queue and resource must be set up.</p>
 <p>An easy way to create this is passing a list of dictionaries to the <code>pd.DataFrame</code> function.</p>
 <p>The columns required are <code>event</code>: This must match the label used for the event in the event log <code>x</code>: The x coordinate of the event for the animation. This will correspond to the bottom-right hand corner of a queue, or the rightmost resource. <code>y</code>: The y coordinate of the event for the animaation. This will correspond to the lowest row of a queue, or the central point of the resources. <code>label</code>: A label for the stage. This can be hidden at a later step if you opt to use a background image with labels built-in. Note that line breaks in the label can be created using the HTML tag <code>&lt;br&gt;</code>. <code>resource</code> (OPTIONAL): Only required if the step is a resource_use step. This looks at the ‘scenario’ object passed to the <code>animate_activity_log()</code> function and pulls the attribute with the given name, which should give the number of available resources for that step.</p>
-<div id="7b47962f" class="cell" data-execution_count="15">
+<div id="4a57e26f" class="cell" data-execution_count="15">
 <div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>        event_position_df <span class="op">=</span> pd.DataFrame([</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>                <span class="co"># Triage</span></span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>                {<span class="st">'event'</span>: <span class="st">'triage_wait_begins'</span>,</span>
@@ -1060,7 +1078,7 @@ Click here for behind-the-scenes details on this
 <span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a>                {<span class="st">'event'</span>: <span class="st">'TRAUMA_treatment_begins'</span>,</span>
 <span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a>                 <span class="st">'x'</span>: <span class="dv">630</span>, <span class="st">'y'</span>: <span class="dv">500</span>, <span class="st">'resource'</span>:<span class="st">'n_cubicles'</span>, <span class="st">'label'</span>: <span class="st">"Being&lt;br&gt;Treated"</span> },</span>
 <span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a>                 {<span class="st">'event'</span>: <span class="st">'exit'</span>,</span>
+<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a>                 {<span class="st">'event'</span>: <span class="st">'depart'</span>,</span>
 <span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a>                 <span class="st">'x'</span>:  <span class="dv">670</span>, <span class="st">'y'</span>: <span class="dv">330</span>, <span class="st">'label'</span>: <span class="st">"Exit"</span>}</span>
 <span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a>            ])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>

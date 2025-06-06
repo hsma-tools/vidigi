@@ -604,6 +604,24 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">Creative Layouts - Multiple Ward Example</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../examples/example_11_resourceless_animation/ex_11_resourceless.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Mental Health - Appointment Booking Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../examples/example_12_resourceless_with_back_and_forth/ex_12_resourceless_advanced.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">More Resourceless Queues - Community Service Repeat Appointment Booking Model with Variable Follow-ups</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../examples/example_13_additional_synchronised_traces_method_1/synchronised_traces.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Additional Synchronised Traces - Orthopaedic Ward - Hospital Efficiency Project</span></a>
+  </div>
+</li>
       </ul>
   </li>
         <li class="sidebar-item sidebar-item-section">
@@ -702,274 +720,142 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    time_col_name<span class="op">=</span><span class="st">'time'</span>,</span>
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    entity_col_name<span class="op">=</span><span class="st">'entity_id'</span>,</span>
 <span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    event_col_name<span class="op">=</span><span class="st">'event'</span>,</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    pathway_col_name<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    simulation_time_unit<span class="op">=</span><span class="st">'minutes'</span>,</span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    plotly_height<span class="op">=</span><span class="dv">900</span>,</span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    plotly_width<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    include_play_button<span class="op">=</span><span class="va">True</span>,</span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    add_background_image<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    display_stage_labels<span class="op">=</span><span class="va">True</span>,</span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    entity_icon_size<span class="op">=</span><span class="dv">24</span>,</span>
-<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    text_size<span class="op">=</span><span class="dv">24</span>,</span>
-<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    resource_icon_size<span class="op">=</span><span class="dv">24</span>,</span>
-<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    override_x_max<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>    override_y_max<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>    time_display_units<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>    start_date<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>    start_time<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>    resource_opacity<span class="op">=</span><span class="fl">0.8</span>,</span>
-<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>    custom_resource_icon<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>    wrap_resources_at<span class="op">=</span><span class="dv">20</span>,</span>
-<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>    gap_between_resources<span class="op">=</span><span class="dv">10</span>,</span>
-<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>    gap_between_queue_rows<span class="op">=</span><span class="dv">30</span>,</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    resource_col_name<span class="op">=</span><span class="st">'resource_id'</span>,</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    pathway_col_name<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    simulation_time_unit<span class="op">=</span><span class="st">'minutes'</span>,</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    plotly_height<span class="op">=</span><span class="dv">900</span>,</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    plotly_width<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    include_play_button<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    add_background_image<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    display_stage_labels<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    entity_icon_size<span class="op">=</span><span class="dv">24</span>,</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    text_size<span class="op">=</span><span class="dv">24</span>,</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    resource_icon_size<span class="op">=</span><span class="dv">24</span>,</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>    override_x_max<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>    override_y_max<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>    time_display_units<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>    start_date<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>    start_time<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>    resource_opacity<span class="op">=</span><span class="fl">0.8</span>,</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>    custom_resource_icon<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>    wrap_resources_at<span class="op">=</span><span class="dv">20</span>,</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>    gap_between_resources<span class="op">=</span><span class="dv">10</span>,</span>
 <span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>    gap_between_resource_rows<span class="op">=</span><span class="dv">30</span>,</span>
 <span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>    setup_mode<span class="op">=</span><span class="va">False</span>,</span>
 <span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>    frame_duration<span class="op">=</span><span class="dv">400</span>,</span>
 <span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>    frame_transition_duration<span class="op">=</span><span class="dv">600</span>,</span>
 <span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>    debug_mode<span class="op">=</span><span class="va">False</span>,</span>
 <span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Generate an animated visualization of patient flow through a system.</p>
-<p>This function creates an interactive Plotly animation based on patient data and event positions.</p>
-<section id="parameters" class="level2 doc-section doc-section-parameters">
-<h2 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h2>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 8%">
-<col style="width: 4%">
-<col style="width: 82%">
-<col style="width: 4%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Name</th>
-<th>Type</th>
-<th>Description</th>
-<th>Default</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>full_entity_df_plus_pos</td>
-<td>pd.DataFrame</td>
-<td>DataFrame containing entity data with position information. This will be the output of passing an event log through the reshape_for_animations() and generate_animation_df() functions</td>
-<td><em>required</em></td>
-</tr>
-<tr class="even">
-<td>event_position_df</td>
-<td>pd.DataFrame</td>
-<td>DataFrame specifying the positions of different events.</td>
-<td><em>required</em></td>
-</tr>
-<tr class="odd">
-<td>scenario</td>
-<td>object</td>
-<td>Object containing attributes for resource counts at different steps. time_col_name : str, default=“time” Name of the column in <code>event_log</code> that contains the timestamp of each event. Timestamps should represent the number of time units since the simulation began.</td>
-<td><code>None</code></td>
-</tr>
-<tr class="even">
-<td>entity_col_name</td>
-<td>str</td>
-<td>Name of the column in <code>event_log</code> that contains the unique identifier for each entity (e.g., “entity_id”, “entity”, “patient”, “patient_id”, “customer”, “ID”).</td>
-<td><code>"entity_id"</code></td>
-</tr>
-<tr class="odd">
-<td>event_col_name</td>
-<td>str</td>
-<td>Name of the column in <code>event_log</code> that specifies the actual event that occurred.</td>
-<td><code>"event"</code></td>
-</tr>
-<tr class="even">
-<td>pathway_col_name</td>
-<td>str</td>
-<td>Name of the column in <code>event_log</code> that identifies the specific pathway or process flow the entity is following. If <code>None</code>, it is assumed that pathway information is not present.</td>
-<td><code>None</code></td>
-</tr>
-<tr class="odd">
-<td>simulation_time_unit</td>
-<td></td>
-<td>Time unit used within the simulation (default is minutes). Possible values are ‘seconds’, ‘minutes’, ‘hours’, ‘days’, ‘weeks’, ‘years’</td>
-<td><code>'minutes'</code></td>
-</tr>
-<tr class="even">
-<td>plotly_height</td>
-<td>int</td>
-<td>Height of the Plotly figure in pixels (default is 900).</td>
-<td><code>900</code></td>
-</tr>
-<tr class="odd">
-<td>plotly_width</td>
-<td>int</td>
-<td>Width of the Plotly figure in pixels (default is None).</td>
-<td><code>None</code></td>
-</tr>
-<tr class="even">
-<td>include_play_button</td>
-<td>bool</td>
-<td>Whether to include a play button in the animation (default is True).</td>
-<td><code>True</code></td>
-</tr>
-<tr class="odd">
-<td>add_background_image</td>
-<td>str</td>
-<td>Path to a background image file to add to the animation (default is None).</td>
-<td><code>None</code></td>
-</tr>
-<tr class="even">
-<td>display_stage_labels</td>
-<td>bool</td>
-<td>Whether to display labels for each stage (default is True).</td>
-<td><code>True</code></td>
-</tr>
-<tr class="odd">
-<td>entity_icon_size</td>
-<td>int</td>
-<td>Size of entity icons in the animation (default is 24).</td>
-<td><code>24</code></td>
-</tr>
-<tr class="even">
-<td>text_size</td>
-<td>int</td>
-<td>Size of text labels in the animation (default is 24).</td>
-<td><code>24</code></td>
-</tr>
-<tr class="odd">
-<td>resource_icon_size</td>
-<td>int</td>
-<td>Size of resource icons in the animation (default is 24).</td>
-<td><code>24</code></td>
-</tr>
-<tr class="even">
-<td>override_x_max</td>
-<td>int</td>
-<td>Override the maximum x-coordinate (default is None).</td>
-<td><code>None</code></td>
-</tr>
-<tr class="odd">
-<td>override_y_max</td>
-<td>int</td>
-<td>Override the maximum y-coordinate (default is None).</td>
-<td><code>None</code></td>
-</tr>
-<tr class="even">
-<td>time_display_units</td>
-<td>str</td>
-<td>Units for displaying time. Options are ‘dhm’ (days, hours, minutes), ‘d’ (days), or None (default).</td>
-<td><code>None</code></td>
-</tr>
-<tr class="odd">
-<td>start_date</td>
-<td>str</td>
-<td>Start date for the animation in ‘YYYY-MM-DD’ format. Only used when time_display_units is ‘d’ or ‘dhm’ (default is None).</td>
-<td><code>None</code></td>
-</tr>
-<tr class="even">
-<td>start_time</td>
-<td>str</td>
-<td>Start date for the animation in ‘HH:MM:SS’ format. Only used when time_display_units is ‘d’ or ‘dhm’ (default is None).</td>
-<td><code>None</code></td>
-</tr>
-<tr class="odd">
-<td>resource_opacity</td>
-<td>float</td>
-<td>Opacity of resource icons (default is 0.8).</td>
-<td><code>0.8</code></td>
-</tr>
-<tr class="even">
-<td>custom_resource_icon</td>
-<td>str</td>
-<td>Custom icon to use for resources (default is None).</td>
-<td><code>None</code></td>
-</tr>
-<tr class="odd">
-<td>wrap_resources_at</td>
-<td>int</td>
-<td>Number of resources to show before wrapping to a new row (default is 20). If this has been set elsewhere, it is also important to set it in this function to ensure the visual indicators of the resources wrap in the same way the entities using those resources do.</td>
-<td><code>20</code></td>
-</tr>
-<tr class="even">
-<td>gap_between_resources</td>
-<td>int</td>
-<td>Spacing between resources in pixels (default is 10).</td>
-<td><code>10</code></td>
-</tr>
-<tr class="odd">
-<td>gap_between_queue_rows</td>
-<td>int</td>
-<td>Vertical spacing between rows in pixels (default is 30).</td>
-<td><code>30</code></td>
-</tr>
-<tr class="even">
-<td>gap_between_resource_rows</td>
-<td>int</td>
-<td>Vertical spacing between rows in pixels (default is 30).</td>
-<td><code>30</code></td>
-</tr>
-<tr class="odd">
-<td>setup_mode</td>
-<td>bool</td>
-<td>Whether to run in setup mode, showing grid and tick marks (default is False).</td>
-<td><code>False</code></td>
-</tr>
-<tr class="even">
-<td>frame_duration</td>
-<td>int</td>
-<td>Duration of each frame in milliseconds (default is 400).</td>
-<td><code>400</code></td>
-</tr>
-<tr class="odd">
-<td>frame_transition_duration</td>
-<td>int</td>
-<td>Duration of transition between frames in milliseconds (default is 600).</td>
-<td><code>600</code></td>
-</tr>
-<tr class="even">
-<td>debug_mode</td>
-<td>bool</td>
-<td>Whether to run in debug mode with additional output (default is False).</td>
-<td><code>False</code></td>
-</tr>
-</tbody>
-</table>
+<pre><code>Generate an animated visualization of patient flow through a system.
+
+This function creates an interactive Plotly animation based on patient data and event positions.</code></pre>
+<section id="parameters" class="level2 doc-section doc-section-----parameters">
+<h2 class="doc-section doc-section-----parameters anchored" data-anchor-id="parameters">Parameters</h2>
+<pre><code>full_entity_df_plus_pos : pd.DataFrame
+    DataFrame containing entity data with position information.
+    This will be the output of passing an event log through the reshape_for_animations()
+    and generate_animation_df() functions
+event_position_df : pd.DataFrame
+    DataFrame specifying the positions of different events.
+scenario : object, optional
+    Object containing attributes for resource counts at different steps.
+    time_col_name : str, default="time"
+    Name of the column in `event_log` that contains the timestamp of each event.
+    Timestamps should represent the number of time units since the simulation began.
+entity_col_name : str, default="entity_id"
+    Name of the column in `event_log` that contains the unique identifier for each entity
+    (e.g., "entity_id", "entity", "patient", "patient_id", "customer", "ID").
+event_col_name : str, default="event"
+    Name of the column in `event_log` that specifies the actual event that occurred.
+pathway_col_name : str, optional, default=None
+    Name of the column in `event_log` that identifies the specific pathway or
+    process flow the entity is following. If `None`, it is assumed that pathway
+    information is not present.
+resource_col_name : str, default="resource_id"
+    Name of the column for the resource identifier. Used for 'resource_use' events.
+simulation_time_unit: string, optional
+    Time unit used within the simulation (default is minutes).
+    Possible values are 'seconds', 'minutes', 'hours', 'days', 'weeks', 'years'
+plotly_height : int, optional
+    Height of the Plotly figure in pixels (default is 900).
+plotly_width : int, optional
+    Width of the Plotly figure in pixels (default is None).
+include_play_button : bool, optional
+    Whether to include a play button in the animation (default is True).
+add_background_image : str, optional
+    Path to a background image file to add to the animation (default is None).
+display_stage_labels : bool, optional
+    Whether to display labels for each stage (default is True).
+entity_icon_size : int, optional
+    Size of entity icons in the animation (default is 24).
+text_size : int, optional
+    Size of text labels in the animation (default is 24).
+resource_icon_size : int, optional
+    Size of resource icons in the animation (default is 24).
+override_x_max : int, optional
+    Override the maximum x-coordinate (default is None).
+override_y_max : int, optional
+    Override the maximum y-coordinate (default is None).
+    time_display_units : str, optional
+    Format for displaying time on the animation timeline. This affects how simulation time is
+    converted into human-readable dates or clock formats. If `None` (default), the raw simulation
+    time is used.
+
+    Predefined options:
+    - 'dhms' : Day Month Year + HH:MM:SS (e.g., "06 June 2025</code></pre>
+<p>14:23:45”) - ‘dhms_ampm’ : Same as ‘dhms’, but in 12-hour format with AM/PM (e.g., “06 June 2025 02:23:45 PM”) - ‘dhm’ : Day Month Year + HH:MM (e.g., “06 June 2025 14:23”) - ‘dhm_ampm’ : 12-hour format with AM/PM (e.g., “06 June 2025 02:23 PM”) - ‘dh’ : Day Month Year + HH (e.g., “06 June 2025 14”) - ‘dh_ampm’ : 12-hour format with AM/PM (e.g., “06 June 2025 02 PM”) - ‘d’ : Full weekday and date (e.g., “Friday 06 June 2025”) - ‘m’ : Month and year (e.g., “June 2025”) - ‘y’ : Year only (e.g., “2025”) - ‘day_clock’ or ‘simulation_day_clock’: Show simulation-relative day and time (e.g., “Simulation Day 3 14:15”) - ‘day_clock_ampm’ or ‘simulation_day_clock_ampm’: Same as above, but time is shown in 12-hour clock with AM/PM (e.g., “Simulation Day 3 02:15 PM”)</p>
+<pre><code>    Alternatively, you can supply a custom [strftime](https://strftime.org/) format string
+    (e.g., '%Y-%m-%d %H') to control the display manually.
+start_date : str, optional
+    Start date for the animation in 'YYYY-MM-DD' format. Only used when time_display_units is 'd' or 'dhm' (default is None).
+start_time : str, optional
+    Start date for the animation in 'HH:MM:SS' format. Only used when time_display_units is 'd' or 'dhm' (default is None).
+resource_opacity : float, optional
+    Opacity of resource icons (default is 0.8).
+custom_resource_icon : str, optional
+    Custom icon to use for resources (default is None).
+wrap_resources_at : int, optional
+    Number of resources to show before wrapping to a new row (default is 20).
+    If this has been set elsewhere, it is also important to set it in this function to ensure
+    the visual indicators of the resources wrap in the same way the entities using those
+    resources do.
+gap_between_resources : int, optional
+    Spacing between resources in pixels (default is 10).
+gap_between_resource_rows : int, optional
+    Vertical spacing between rows in pixels (default is 30).
+setup_mode : bool, optional
+    Whether to run in setup mode, showing grid and tick marks (default is False).
+frame_duration : int, optional
+    Duration of each frame in milliseconds (default is 400).
+frame_transition_duration : int, optional
+    Duration of transition between frames in milliseconds (default is 600).
+debug_mode : bool, optional
+    Whether to run in debug mode with additional output (default is False).</code></pre>
 </section>
-<section id="returns" class="level2 doc-section doc-section-returns">
-<h2 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h2>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 7%">
-<col style="width: 31%">
-<col style="width: 60%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Name</th>
-<th>Type</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td></td>
-<td>plotly.graph_objs._figure.Figure</td>
-<td>An animated Plotly figure object representing the patient flow.</td>
-</tr>
-</tbody>
-</table>
+<section id="returns" class="level2 doc-section doc-section-----returns">
+<h2 class="doc-section doc-section-----returns anchored" data-anchor-id="returns">Returns</h2>
+<pre><code>plotly.graph_objs._figure.Figure
+    An animated Plotly figure object representing the patient flow.</code></pre>
 </section>
-<section id="notes" class="level2 doc-section doc-section-notes">
-<h2 class="doc-section doc-section-notes anchored" data-anchor-id="notes">Notes</h2>
-<ul>
-<li>The function uses Plotly Express to create an animated scatter plot.</li>
-<li>Time can be displayed as actual dates or as model time units.</li>
-<li>The animation supports customization of icon sizes, resource representation, and animation speed.</li>
-<li>A background image can be added to provide context for the patient flow.</li>
-</ul>
+<section id="notes" class="level2 doc-section doc-section-----notes">
+<h2 class="doc-section doc-section-----notes anchored" data-anchor-id="notes">Notes</h2>
+<pre><code>- The function uses Plotly Express to create an animated scatter plot.
+- Time can be displayed as actual dates or as model time units.
+- The animation supports customization of icon sizes, resource representation, and animation speed.
+- A background image can be added to provide context for the patient flow.
+- If `time_display_units` is specified, the simulation time is converted into real-world
+  datetimes using the `simulation_time_unit` and optionally `start_date` and `start_time`.
+- If `start_date` and/or `start_time` are not provided, a default offset from today's date
+  is used.
+- The `snapshot_time` column is transformed to datetime strings, and a `snapshot_time_display`
+  column is created for visual display.</code></pre>
 </section>
-<section id="examples" class="level2 doc-section doc-section-examples">
-<h2 class="doc-section doc-section-examples anchored" data-anchor-id="examples">Examples</h2>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> animation <span class="op">=</span> generate_animation(patient_df, event_positions, scenario,</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>...                                time_display_units<span class="op">=</span><span class="st">'dhm'</span>,</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>...                                add_background_image<span class="op">=</span><span class="st">'path/to/image.png'</span>)</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> animation.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<section id="examples" class="level2 doc-section doc-section-----examples">
+<h2 class="doc-section doc-section-----examples anchored" data-anchor-id="examples">Examples</h2>
+<pre><code>&gt;&gt;&gt; animation = generate_animation(patient_df, event_positions, scenario,
+...                                time_display_units='dhm',
+...                                add_background_image='path/to/image.png')
+&gt;&gt;&gt; animation.show()</code></pre>
 
 
 </section>
