@@ -889,7 +889,7 @@ event_position_df = pd.DataFrame([
                      'resource':'n_cubicles',
                      'label': "Being Treated"},
 
-                    {'event': 'exit',
+                    {'event': 'depart',
                      'x':  270, 'y': 70,
                      'label': "Exit"}
 

@@ -351,7 +351,7 @@ The columns required are
                 {'event': 'TRAUMA_treatment_begins',
                  'x': 630, 'y': 500, 'resource':'n_cubicles', 'label': "Being<br>Treated" },
 
-                 {'event': 'exit',
+                 {'event': 'depart',
                  'x':  670, 'y': 330, 'label': "Exit"}
             ])
 ```
