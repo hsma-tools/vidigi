@@ -101,7 +101,8 @@ def reshape_for_animations(event_log,
     # Iterate through every matching minute
     # and generate snapshot df of position of any entities present at that moment
     ################################################################################
-    for time_unit in range(limit_duration):
+    # Note that we want to do this for everything up to AND INCLUDING the duration
+    for time_unit in range(limit_duration+every_x_time_units):
         # print(minute)
         # Get entities who arrived before the current minute and who left the system after the current minute
         # (or arrived but didn't reach the point of being seen before the model run ended)
@@ -213,72 +214,51 @@ def reshape_for_animations(event_log,
                 empty_df = pd.DataFrame([{'snapshot_time': time_unit}])
                 entity_dfs.append(empty_df)
 
-
-                # most_recent_events_time_unit_ungrouped = most_recent_events_time_unit_ungrouped[
-                #     most_recent_events_time_unit_ungrouped['rank'] <= (step_snapshot_max + 1)
-                #     ].copy()
-
-                # maximum_row_per_event_df = most_recent_events_time_unit_ungrouped[
-                #     most_recent_events_time_unit_ungrouped['rank'] == float(step_snapshot_max + 1)
-                #     ].copy()
-
-                # maximum_row_per_event_df['additional'] = ''
-
-                # if len(maximum_row_per_event_df) > 0:
-                #     maximum_row_per_event_df['additional'] = (
-                #         maximum_row_per_event_df['max'] -
-                #         maximum_row_per_event_df['rank']
-                #         )
-
-                #     most_recent_events_time_unit_ungrouped = pd.concat(
-                #         [
-                #         most_recent_events_time_unit_ungrouped[
-                #             most_recent_events_time_unit_ungrouped['rank'] != float(step_snapshot_max + 1)
-                #             ],
-                #         maximum_row_per_event_df],
-                #         ignore_index=True
-                #     )
-                # # ----------------------------------------------------------------------------- #
-
-                # # Add this dataframe to our list of dataframes, and then return to the beginning
-                # # of the loop and do this for the next minute of interest until we reach the end
-                # # of the period of interest
-                # entity_dfs.append(
-                #     most_recent_events_time_unit_ungrouped
-                #     .drop(columns='max')
-                #     .assign(snapshot_time=time_unit)
-                #     )
-
     if debug_mode:
         print(f'Iteration through time-unit-by-time-unit logs complete {time.strftime("%H:%M:%S", time.localtime())}')
 
+    # Join together all entity dfs - so the dataframe created per time snapshot - are put into
+    # one large dataframe
     full_entity_df = (pd.concat(entity_dfs, ignore_index=True)).reset_index(drop=True)
 
     if debug_mode:
         print(f'Snapshot df concatenation complete at {time.strftime("%H:%M:%S", time.localtime())}')
 
+    # We no longer need to keep the individual dataframes in that list, so get rid of them
+    # to free up memory asap
     del entity_dfs
     gc.collect()
 
     # Add a final exit step for each client
+
     # This is helpful as it ensures all patients are visually seen to exit rather than
     # just disappearing after their final step
+
     # It makes it easier to track the split of people going on to an optional step when
     # this step is at the end of the pathway
-    # TODO: Fix so that everyone doesn't automatically exit at the end of the simulation run
-    final_step = full_entity_df.sort_values([entity_col_name, time_col_name], ascending=True) \
-                 .groupby([entity_col_name]) \
-                 .tail(1)
 
-    final_step[time_col_name] = final_step[time_col_name] + every_x_time_units
-    final_step[event_col_name] = "exit"
+    # First, get the last step for every single person
+    final_step = (
+        full_entity_df
+        .sort_values([entity_col_name, 'snapshot_time'], ascending=True)
+        .groupby(entity_col_name)
+        .tail(1)
+        .copy()
+    )
+
+    # Propose their 'exit' time
+    final_step['snapshot_time'] = final_step['snapshot_time'] + every_x_time_units
+    final_step[event_col_name] = "depart"
+
+    # Only keep rows for people whose exit step will happen *before* the simulation end
+    final_step = final_step[final_step["snapshot_time"] <= (limit_duration)]
 
     full_entity_df = pd.concat([full_entity_df, final_step], ignore_index=True)
 
     del final_step
     gc.collect()
 
-    return full_entity_df.sort_values([time_col_name, event_col_name]).reset_index(drop=True)
+    return full_entity_df.sort_values(['snapshot_time', event_col_name]).reset_index(drop=True)
 
 def generate_animation_df(
         full_entity_df,
