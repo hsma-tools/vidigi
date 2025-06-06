@@ -111,7 +111,7 @@ def event_log_from_ciw_recs(ciw_recs_obj, node_name_list):
             event_logs.append(
                 {'entity_id': entity_id,
                 'pathway': 'Model',
-                'event_type': 'resource_use',
+                'event_type': 'resource_use_end',
                 'event': f"{node_name_list[event.node-1]}_ends",
                 'time': event.service_end_date,
                 'resource_id': event.server_id}
