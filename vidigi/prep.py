@@ -372,7 +372,6 @@ def generate_animation_df(
         full_entity_df_plus_pos[entity_col_name].notnull()
     ].copy()
 
-
     # Determine the position for any resource use steps
     resource_use = (
         entity_data[entity_data[event_type_col_name] == "resource_use"]
@@ -384,19 +383,19 @@ def generate_animation_df(
         resource_use = resource_use.rename(columns={"y": "y_final"})
         resource_use['x_final'] = resource_use['x'] - resource_use['resource_id'] * gap_between_resources
 
-    # If we want resources to wrap at a certain queue length, do this here
-    # They'll wrap at the defined point and then the queue will start expanding upwards
-    # from the starting row
-    if wrap_resources_at is not None:
-        resource_use['row'] = np.floor((resource_use['resource_id'] - 1) / (wrap_resources_at))
+        # If we want resources to wrap at a certain queue length, do this here
+        # They'll wrap at the defined point and then the queue will start expanding upwards
+        # from the starting row
+        if wrap_resources_at is not None:
+            resource_use['row'] = np.floor((resource_use['resource_id'] - 1) / (wrap_resources_at))
 
-        resource_use['x_final'] = (
-            resource_use['x_final'] +
-            (wrap_resources_at * resource_use['row'] * gap_between_resources) +
-            gap_between_resources
-            )
+            resource_use['x_final'] = (
+                resource_use['x_final'] +
+                (wrap_resources_at * resource_use['row'] * gap_between_resources) +
+                gap_between_resources
+                )
 
-        resource_use['y_final'] = resource_use['y_final'] + (resource_use['row'] * gap_between_resource_rows)
+            resource_use['y_final'] = resource_use['y_final'] + (resource_use['row'] * gap_between_resource_rows)
 
     # Determine the position for any queuing steps
     queues = entity_data[entity_data['event_type']=='queue'].copy()
