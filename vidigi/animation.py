@@ -208,7 +208,15 @@ def generate_animation(
                     )
 
         # https://strftime.org/
-        if time_display_units in ("dhm", "minutes", "days hours minutes", "days, hours and minutes"):
+        if time_display_units in ("dhms", "days hours minutes seconds", "days, hours and minutes"):
+            full_entity_df_plus_pos["snapshot_time_display"] = full_entity_df_plus_pos["snapshot_time"].apply(
+                lambda x: dt.datetime.strftime(x, '%d %B %Y\n%H:%M:%S')
+                )
+            full_entity_df_plus_pos["snapshot_time"] = full_entity_df_plus_pos["snapshot_time"].apply(
+                lambda x: dt.datetime.strftime(x, '%Y-%m-%d %H:%M:%S')
+                )
+
+        elif time_display_units in ("dhm"):
             full_entity_df_plus_pos["snapshot_time_display"] = full_entity_df_plus_pos["snapshot_time"].apply(
                 lambda x: dt.datetime.strftime(x, '%d %B %Y\n%H:%M')
                 )
@@ -216,7 +224,7 @@ def generate_animation(
                 lambda x: dt.datetime.strftime(x, '%Y-%m-%d %H:%M')
                 )
 
-        if time_display_units in ("dh", "hours", "days and hours"):
+        elif time_display_units in ("dh"):
             full_entity_df_plus_pos["snapshot_time_display"] = full_entity_df_plus_pos["snapshot_time"].apply(
                 lambda x: dt.datetime.strftime(x, '%d %B %Y\n%H')
                 )
@@ -224,7 +232,7 @@ def generate_animation(
                 lambda x: dt.datetime.strftime(x, '%Y-%m-%d %H')
                 )
 
-        if time_display_units in ("d", "day", "days"):
+        elif time_display_units in ("d"):
             full_entity_df_plus_pos["snapshot_time_display"] = full_entity_df_plus_pos["snapshot_time"].apply(
                 lambda x: dt.datetime.strftime(x, '%A %d %B %Y')
                 )
@@ -232,7 +240,7 @@ def generate_animation(
                 lambda x: dt.datetime.strftime(x, '%Y-%m-%d')
                 )
 
-        if time_display_units in ("m", "my", "months", "months and years"):
+        elif time_display_units in ("m"):
             full_entity_df_plus_pos["snapshot_time_display"] = full_entity_df_plus_pos["snapshot_time"].apply(
                 lambda x: dt.datetime.strftime(x, '%B %Y')
                 )
@@ -240,13 +248,24 @@ def generate_animation(
                 lambda x: dt.datetime.strftime(x, '%B %Y')
                 )
 
-        if time_display_units in ("y", "years", "year"):
+        elif time_display_units in ("y"):
             full_entity_df_plus_pos["snapshot_time_display"] = full_entity_df_plus_pos["snapshot_time"].apply(
                 lambda x: dt.datetime.strftime(x, '%Y')
                 )
             full_entity_df_plus_pos["snapshot_time"] = full_entity_df_plus_pos["snapshot_time"].apply(
                 lambda x: dt.datetime.strftime(x, '%Y')
                 )
+        else:
+            try:
+                full_entity_df_plus_pos["snapshot_time_display"] = full_entity_df_plus_pos["snapshot_time"].apply(
+                    lambda x: dt.datetime.strftime(x, time_display_units)
+                    )
+                full_entity_df_plus_pos["snapshot_time"] = full_entity_df_plus_pos["snapshot_time"].apply(
+                    lambda x: dt.datetime.strftime(x, time_display_units)
+                    )
+            except:
+                raise "Invalid time_display_units option provided. Valid options are: dhms, dhm, dh, d, m, y. Alternatively, you can provide your own valid strftime format (e.g. '%Y-%m-%d %H'). See the strftime documentation for more details: https://strftime.org/"
+
 
     else:
         full_entity_df_plus_pos["snapshot_time_display"] = full_entity_df_plus_pos["snapshot_time"]
