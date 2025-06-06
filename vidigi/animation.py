@@ -13,6 +13,7 @@ def generate_animation(
         time_col_name="time",
         entity_col_name="entity_id",
         event_col_name="event",
+        resource_col_name="resource_id",
         pathway_col_name=None,
         simulation_time_unit="minutes",
         plotly_height=900,
@@ -32,7 +33,6 @@ def generate_animation(
         custom_resource_icon=None,
         wrap_resources_at=20,
         gap_between_resources=10,
-        gap_between_queue_rows=30,
         gap_between_resource_rows=30,
         setup_mode=False,
         frame_duration=400, #milliseconds
@@ -66,6 +66,8 @@ def generate_animation(
         Name of the column in `event_log` that identifies the specific pathway or
         process flow the entity is following. If `None`, it is assumed that pathway
         information is not present.
+    resource_col_name : str, default="resource_id"
+        Name of the column for the resource identifier. Used for 'resource_use' events.
     simulation_time_unit: string, optional
         Time unit used within the simulation (default is minutes).
         Possible values are 'seconds', 'minutes', 'hours', 'days', 'weeks', 'years'
@@ -126,8 +128,6 @@ def generate_animation(
         resources do.
     gap_between_resources : int, optional
         Spacing between resources in pixels (default is 10).
-    gap_between_queue_rows : int, optional
-        Vertical spacing between rows in pixels (default is 30).
     gap_between_resource_rows : int, optional
         Vertical spacing between rows in pixels (default is 30).
     setup_mode : bool, optional
@@ -329,9 +329,9 @@ def generate_animation(
     # people at each defined step of the process, and the scattergraph will move them
     if scenario is not None:
         if pathway_col_name is not None:
-            hovers = [entity_col_name, pathway_col_name, time_col_name, "snapshot_time", "resource_id"]
+            hovers = [entity_col_name, pathway_col_name, time_col_name, "snapshot_time", resource_col_name]
         else:
-            hovers = [entity_col_name, time_col_name, "snapshot_time", "resource_id"]
+            hovers = [entity_col_name, time_col_name, "snapshot_time", resource_col_name]
 
     else:
         if pathway_col_name is not None:
@@ -403,10 +403,10 @@ def generate_animation(
 
         # events_with_resources = events_with_resources.assign(resource_id=range(len(events_with_resources)))
         # After exploding
-        events_with_resources['resource_id'] = events_with_resources.groupby([event_col_name]).cumcount()
+        events_with_resources[resource_col_name] = events_with_resources.groupby([event_col_name]).cumcount()
 
         if wrap_resources_at is not None:
-            events_with_resources['row'] = np.floor((events_with_resources['resource_id']) / (wrap_resources_at))
+            events_with_resources['row'] = np.floor((events_with_resources[resource_col_name]) / (wrap_resources_at))
 
             events_with_resources['x_final'] = (
                 events_with_resources['x_final']
@@ -537,6 +537,7 @@ def animate_activity_log(
         event_type_col_name="event_type",
         event_col_name="event",
         pathway_col_name=None,
+        resource_col_name="resource_id",
         simulation_time_unit="minutes",
         every_x_time_units=10,
         wrap_queues_at=20,
@@ -598,6 +599,8 @@ def animate_activity_log(
         Name of the column in `event_log` that identifies the specific pathway or
         process flow the entity is following. If `None`, it is assumed that pathway
         information is not present.
+    resource_col_name : str, default="resource_id"
+        Name of the column for the resource identifier. Used for 'resource_use' events.
     simulation_time_unit: string, optional
         Time unit used within the simulation (default is minutes).
         Possible values are 'seconds', 'minutes', 'hours', 'days', 'weeks', 'years'
@@ -731,7 +734,7 @@ def animate_activity_log(
                                 time_col_name=time_col_name,
                                 entity_col_name=entity_col_name,
                                 event_type_col_name=event_type_col_name,
-                                event_col_name=event_col_name
+                                event_col_name=event_col_name,
                                 )
 
     animation = generate_animation(
@@ -764,7 +767,8 @@ def animate_activity_log(
         time_col_name=time_col_name,
         entity_col_name=entity_col_name,
         event_col_name=event_col_name,
-        pathway_col_name=pathway_col_name
+        pathway_col_name=pathway_col_name,
+        resource_col_name=resource_col_name
     )
 
     if debug_mode:
