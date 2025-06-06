@@ -178,29 +178,38 @@ def generate_animation(
             full_entity_df_plus_pos["snapshot_time"] *= 365
             unit = "d"
 
-        if start_date is None:
+        if start_date is None and start_time is None:
             full_entity_df_plus_pos["snapshot_time"] = (
                 dt.date.today() +
                 pd.DateOffset(days=165) +
                 pd.TimedeltaIndex(full_entity_df_plus_pos["snapshot_time"], unit=unit)
                 )
 
-        else:
-            if start_time is None:
+        elif start_date is not None and start_time is None:
 
+            full_entity_df_plus_pos["snapshot_time"] = (
+                dt.datetime.strptime(start_date, "%Y-%m-%d") +
+                pd.TimedeltaIndex(full_entity_df_plus_pos["snapshot_time"], unit=unit)
+                )
+
+        else:
+            start_time_dt = dt.datetime.strptime(start_time, "%H:%M:%S")
+
+            start_time_time_delta = dt.timedelta(
+                    hours=start_time_dt.hour,
+                    minutes=start_time_dt.minute,
+                    seconds=start_time_dt.second
+                )
+
+            if start_date is None:
                 full_entity_df_plus_pos["snapshot_time"] = (
-                    dt.datetime.strptime(start_date, "%Y-%m-%d") +
+                    dt.date.today() +
+                    pd.DateOffset(days=165) +
+                    start_time_time_delta +
                     pd.TimedeltaIndex(full_entity_df_plus_pos["snapshot_time"], unit=unit)
                     )
+
             else:
-                start_time_dt = dt.datetime.strptime(start_time, "%H:%M:%S")
-
-                start_time_time_delta = dt.timedelta(
-                        hours=start_time_dt.hour,
-                        minutes=start_time_dt.minute,
-                        seconds=start_time_dt.second
-                    )
-
                 full_entity_df_plus_pos["snapshot_time"] = (
                     dt.datetime.strptime(start_date, "%Y-%m-%d") +
                     start_time_time_delta +
