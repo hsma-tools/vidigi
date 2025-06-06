@@ -65,6 +65,7 @@ quartodoc:
         - examples/example_8_wide_resource_spacing/ex_8_model.ipynb
         - examples/example_9_wide_resource_spacing_multiple/ex_9_model.ipynb
         - examples/example_11_resourceless_animation/ex_11_resourceless.ipynb
+        - examples/example_12_resourceless_with_back_and_forth/ex_12_resourceless_advanced.ipynb
       - section: "Ciw Examples"
         contents:
         - examples/example_4_ciw/ex_4_ciw.ipynb
