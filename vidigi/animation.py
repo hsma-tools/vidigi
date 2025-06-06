@@ -164,6 +164,8 @@ def generate_animation(
     ...                                add_background_image='path/to/image.png')
     >>> animation.show()
     """
+    full_entity_df_plus_pos_copy = full_entity_df_plus_pos.copy()
+
     if override_x_max is not None:
         x_max = override_x_max
     else:
@@ -179,7 +181,7 @@ def generate_animation(
 
     # We need to keep the original snapshot time and exact time columns in existance because they're
     # important for sorting
-    full_entity_df_plus_pos["snapshot_time_base"] = full_entity_df_plus_pos["snapshot_time"]
+    full_entity_df_plus_pos_copy["snapshot_time_base"] = full_entity_df_plus_pos_copy["snapshot_time"]
 
     # Assuming time display units are set to something other
 
@@ -197,25 +199,25 @@ def generate_animation(
             unit = "w"
         elif simulation_time_unit in ("month", "months"):
             # Approximate 1 month as 30 days
-            full_entity_df_plus_pos["snapshot_time"] *= 30
+            full_entity_df_plus_pos_copy["snapshot_time"] *= 30
             unit = "d"
         elif simulation_time_unit in ("year", "years"):
             # Approximate 1 year as 365 days
-            full_entity_df_plus_pos["snapshot_time"] *= 365
+            full_entity_df_plus_pos_copy["snapshot_time"] *= 365
             unit = "d"
 
         if start_date is None and start_time is None:
-            full_entity_df_plus_pos["snapshot_time"] = (
+            full_entity_df_plus_pos_copy["snapshot_time"] = (
                 dt.date.today() +
                 pd.DateOffset(days=165) +
-                pd.TimedeltaIndex(full_entity_df_plus_pos["snapshot_time"], unit=unit)
+                pd.TimedeltaIndex(full_entity_df_plus_pos_copy["snapshot_time"], unit=unit)
                 )
 
         elif start_date is not None and start_time is None:
 
-            full_entity_df_plus_pos["snapshot_time"] = (
+            full_entity_df_plus_pos_copy["snapshot_time"] = (
                 dt.datetime.strptime(start_date, "%Y-%m-%d") +
-                pd.TimedeltaIndex(full_entity_df_plus_pos["snapshot_time"], unit=unit)
+                pd.TimedeltaIndex(full_entity_df_plus_pos_copy["snapshot_time"], unit=unit)
                 )
 
         else:
@@ -228,91 +230,91 @@ def generate_animation(
                 )
 
             if start_date is None:
-                full_entity_df_plus_pos["snapshot_time"] = (
+                full_entity_df_plus_pos_copy["snapshot_time"] = (
                     dt.date.today() +
                     pd.DateOffset(days=165) +
                     start_time_time_delta +
-                    pd.TimedeltaIndex(full_entity_df_plus_pos["snapshot_time"], unit=unit)
+                    pd.TimedeltaIndex(full_entity_df_plus_pos_copy["snapshot_time"], unit=unit)
                     )
 
             else:
-                full_entity_df_plus_pos["snapshot_time"] = (
+                full_entity_df_plus_pos_copy["snapshot_time"] = (
                     dt.datetime.strptime(start_date, "%Y-%m-%d") +
                     start_time_time_delta +
-                    pd.TimedeltaIndex(full_entity_df_plus_pos["snapshot_time"], unit=unit)
+                    pd.TimedeltaIndex(full_entity_df_plus_pos_copy["snapshot_time"], unit=unit)
                     )
 
         # https://strftime.org/
         if time_display_units in ("dhms", "dhms_ampm"):
             fmt = '%d %B %Y\n%I:%M:%S %p' if time_display_units.endswith("ampm") else '%d %B %Y\n%H:%M:%S'
-            full_entity_df_plus_pos["snapshot_time_display"] = full_entity_df_plus_pos["snapshot_time"].apply(
+            full_entity_df_plus_pos_copy["snapshot_time_display"] = full_entity_df_plus_pos_copy["snapshot_time"].apply(
                 lambda x: dt.datetime.strftime(x, fmt)
             )
-            full_entity_df_plus_pos["snapshot_time"] = full_entity_df_plus_pos["snapshot_time"].apply(
+            full_entity_df_plus_pos_copy["snapshot_time"] = full_entity_df_plus_pos_copy["snapshot_time"].apply(
                 lambda x: dt.datetime.strftime(x, fmt)
             )
 
         elif time_display_units in ("dhm", "dhm_ampm"):
             fmt = '%d %B %Y\n%I:%M %p' if time_display_units.endswith("ampm") else '%d %B %Y\n%H:%M'
-            full_entity_df_plus_pos["snapshot_time_display"] = full_entity_df_plus_pos["snapshot_time"].apply(
+            full_entity_df_plus_pos_copy["snapshot_time_display"] = full_entity_df_plus_pos_copy["snapshot_time"].apply(
                 lambda x: dt.datetime.strftime(x, fmt)
             )
-            full_entity_df_plus_pos["snapshot_time"] = full_entity_df_plus_pos["snapshot_time"].apply(
+            full_entity_df_plus_pos_copy["snapshot_time"] = full_entity_df_plus_pos_copy["snapshot_time"].apply(
                 lambda x: dt.datetime.strftime(x, fmt)
             )
 
         elif time_display_units in ("dh", "dh_ampm"):
             fmt = '%d %B %Y\n%I %p' if time_display_units.endswith("ampm") else '%d %B %Y\n%H'
-            full_entity_df_plus_pos["snapshot_time_display"] = full_entity_df_plus_pos["snapshot_time"].apply(
+            full_entity_df_plus_pos_copy["snapshot_time_display"] = full_entity_df_plus_pos_copy["snapshot_time"].apply(
                 lambda x: dt.datetime.strftime(x, fmt)
             )
-            full_entity_df_plus_pos["snapshot_time"] = full_entity_df_plus_pos["snapshot_time"].apply(
+            full_entity_df_plus_pos_copy["snapshot_time"] = full_entity_df_plus_pos_copy["snapshot_time"].apply(
                 lambda x: dt.datetime.strftime(x, fmt)
             )
 
         elif time_display_units in ("d"):
-            full_entity_df_plus_pos["snapshot_time_display"] = full_entity_df_plus_pos["snapshot_time"].apply(
+            full_entity_df_plus_pos_copy["snapshot_time_display"] = full_entity_df_plus_pos_copy["snapshot_time"].apply(
                 lambda x: dt.datetime.strftime(x, '%A %d %B %Y')
                 )
-            full_entity_df_plus_pos["snapshot_time"] = full_entity_df_plus_pos["snapshot_time"].apply(
+            full_entity_df_plus_pos_copy["snapshot_time"] = full_entity_df_plus_pos_copy["snapshot_time"].apply(
                 lambda x: dt.datetime.strftime(x, '%Y-%m-%d')
                 )
 
         elif time_display_units in ("m"):
-            full_entity_df_plus_pos["snapshot_time_display"] = full_entity_df_plus_pos["snapshot_time"].apply(
+            full_entity_df_plus_pos_copy["snapshot_time_display"] = full_entity_df_plus_pos_copy["snapshot_time"].apply(
                 lambda x: dt.datetime.strftime(x, '%B %Y')
                 )
-            full_entity_df_plus_pos["snapshot_time"] = full_entity_df_plus_pos["snapshot_time"].apply(
+            full_entity_df_plus_pos_copy["snapshot_time"] = full_entity_df_plus_pos_copy["snapshot_time"].apply(
                 lambda x: dt.datetime.strftime(x, '%B %Y')
                 )
 
         elif time_display_units in ("y"):
-            full_entity_df_plus_pos["snapshot_time_display"] = full_entity_df_plus_pos["snapshot_time"].apply(
+            full_entity_df_plus_pos_copy["snapshot_time_display"] = full_entity_df_plus_pos_copy["snapshot_time"].apply(
                 lambda x: dt.datetime.strftime(x, '%Y')
                 )
-            full_entity_df_plus_pos["snapshot_time"] = full_entity_df_plus_pos["snapshot_time"].apply(
+            full_entity_df_plus_pos_copy["snapshot_time"] = full_entity_df_plus_pos_copy["snapshot_time"].apply(
                 lambda x: dt.datetime.strftime(x, '%Y')
                 )
         elif time_display_units in ("day_clock", "simulation_day_clock", "day_clock_ampm", "simulation_day_clock_ampm"):
             use_ampm = time_display_units.endswith("_ampm")
             def format_day_clock(t):
                 delta = t - pd.Timestamp(t.date())
-                sim_day = (t.normalize() - full_entity_df_plus_pos["snapshot_time"].min().normalize()).days + 1
+                sim_day = (t.normalize() - full_entity_df_plus_pos_copy["snapshot_time"].min().normalize()).days + 1
                 time_fmt = "%I:%M %p" if use_ampm else "%H:%M"
                 return f"Simulation Day {sim_day}\n{t.strftime(time_fmt)}"
 
-            full_entity_df_plus_pos["snapshot_time_display"] = full_entity_df_plus_pos["snapshot_time"].apply(
+            full_entity_df_plus_pos_copy["snapshot_time_display"] = full_entity_df_plus_pos_copy["snapshot_time"].apply(
                 lambda x: format_day_clock(pd.to_datetime(x))
             )
-            full_entity_df_plus_pos["snapshot_time"] = full_entity_df_plus_pos["snapshot_time"].apply(
+            full_entity_df_plus_pos_copy["snapshot_time"] = full_entity_df_plus_pos_copy["snapshot_time"].apply(
                 lambda x: format_day_clock(pd.to_datetime(x))
             )
         else:
             try:
-                full_entity_df_plus_pos["snapshot_time_display"] = full_entity_df_plus_pos["snapshot_time"].apply(
+                full_entity_df_plus_pos_copy["snapshot_time_display"] = full_entity_df_plus_pos_copy["snapshot_time"].apply(
                     lambda x: dt.datetime.strftime(x, time_display_units)
                     )
-                full_entity_df_plus_pos["snapshot_time"] = full_entity_df_plus_pos["snapshot_time"].apply(
+                full_entity_df_plus_pos_copy["snapshot_time"] = full_entity_df_plus_pos_copy["snapshot_time"].apply(
                     lambda x: dt.datetime.strftime(x, time_display_units)
                     )
             except:
@@ -320,7 +322,7 @@ def generate_animation(
 
 
     else:
-        full_entity_df_plus_pos["snapshot_time_display"] = full_entity_df_plus_pos["snapshot_time"]
+        full_entity_df_plus_pos_copy["snapshot_time_display"] = full_entity_df_plus_pos_copy["snapshot_time"]
 
     # We are effectively making use of an animated plotly express scatterplot
     # to do all of the heavy lifting
@@ -340,7 +342,7 @@ def generate_animation(
             hovers = [entity_col_name, time_col_name, "snapshot_time"]
 
     fig = px.scatter(
-            full_entity_df_plus_pos.sort_values("snapshot_time_base"),
+            full_entity_df_plus_pos_copy.sort_values("snapshot_time_base"),
             x="x_final",
             y="y_final",
             # Each frame is one step of time, with the gap being determined
