@@ -6,11 +6,26 @@
 
 Welcome to vidigi - a package for visualising real or simulated pathways.
 
-Primarily developed for healthcare simulation and intended to allow easy integration with tools like Streamlit so users can see the impact of changes to simulation parameters in real-time, vidigi
+{{< video videos/vidigi.mp4 >}}
+
+Primarily developed for healthcare simulation and intended to allow easy integration with tools like Streamlit so users can see the impact of changes to simulation parameters in real-time, vidigi handles the conversion of your simulation event logs into engaging and flexible animations.
+
+With just a minimal set of logs - with helper functions provided to make that easier than ever to integrate into existing SimPy or Ciw simulations - you can start generating and customising your visualisations in minutes.
+
+## Getting Started
+
+
+## Useful Links
+
+**Spotted a bug? Or just have a new feature you'd like adding? Raise an issue [here](https://github.com/Bergam0t/vidigi/issues/new)**
+
+Vidigi is released under the MIT licence.
+
+The source code is available on GitHub: [github.com/Bergam0t/vidigi](https://github.com/Bergam0t/vidigi).
+
+
+## What does the name mean?
 
 vidigi is the [Esperanto](https://en.wikipedia.org/wiki/Esperanto) ![](Flag_of_Esperanto.svg.png){height=30px} for 'to show'
 
-
 (or it's the backronym 'Visual Interactive Dynamics and Integrated Graphical Insights' - whichever floats your boat)
-
-{{< video videos/vidigi.mp4 >}}

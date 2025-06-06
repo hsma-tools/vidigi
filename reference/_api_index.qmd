@@ -27,7 +27,6 @@
 | [resources.VidigiResource](resources.VidigiResource.qmd#vidigi.resources.VidigiResource) | A custom resource class that extends simpy.Resource with an additional ID attribute. |
 | [resources.VidigiStore](resources.VidigiStore.qmd#vidigi.resources.VidigiStore) | A wrapper around SimPy's Store that allows using a context manager pattern |
 | [resources.VidigiPriorityStore](resources.VidigiPriorityStore.qmd#vidigi.resources.VidigiPriorityStore) | An optimized SimPy priority store that eliminates delays between resource |
-| [resources.VidigiPriorityStoreLegacy](resources.VidigiPriorityStoreLegacy.qmd#vidigi.resources.VidigiPriorityStoreLegacy) | A SimPy store that processes requests with priority. |
 | [resources.populate_store](resources.populate_store.qmd#vidigi.resources.populate_store) | Populate a SimPy Store (or VidigiPriorityStore) with VidigiResource objects. |
 
 ## Event Logging Utility Functions and Classes
@@ -53,3 +52,11 @@
 | | |
 | --- | --- |
 | [ciw.event_log_from_ciw_recs](ciw.event_log_from_ciw_recs.qmd#vidigi.ciw.event_log_from_ciw_recs) | Given the ciw recs object, return a dataframe in the format expected by the vidigi |
+
+## legacy Functions
+
+
+
+| | |
+| --- | --- |
+| [resources.VidigiPriorityStoreLegacy](resources.VidigiPriorityStoreLegacy.qmd#vidigi.resources.VidigiPriorityStoreLegacy) | A SimPy store that processes requests with priority. |
