@@ -73,18 +73,6 @@ class Patient:
         self.total_time = -np.inf
         self.treat_duration = -np.inf
 
-class OvernightClosure:
-    def __init__(self, p_id):
-        '''
-        Constructor method
-
-        Params:
-        -----
-        identifier: int
-            a numeric identifier for the patient.
-        '''
-        self.identifier = "closure"
-
 # Class representing our model of the clinic.
 class Model:
     '''
@@ -115,14 +103,6 @@ class Model:
         # Store the passed in run number
         self.run_number = run_number
 
-        # Create a new Pandas DataFrame that will store some results against
-        # the patient ID (which we'll use as the index).
-        self.results_df = pd.DataFrame()
-        self.results_df["Patient ID"] = [1]
-        self.results_df["Queue Time Cubicle"] = [0.0]
-        self.results_df["Time with Nurse"] = [0.0]
-        self.results_df.set_index("Patient ID", inplace=True)
-
         # Create an attribute to store the mean queuing times across this run of
         # the model
         self.mean_q_time_cubicle = 0
@@ -143,38 +123,6 @@ class Model:
 
         '''
         self.treatment_cubicles = VidigiPriorityStore(self.env, num_resources=g.n_cubicles)
-
-    # Generator function to obstruct all resources at specified intervals
-    # for specified amounts of time
-    def close_clinic_overnight(self):
-        while True:
-            # Wait for the defined frequency period (e.g. 12 hours = 720 mins)
-            yield self.env.timeout(g.unav_freq)
-
-            closing_time = self.env.now
-
-            # Determine how far past the *ideal* closing time we are
-            ideal_closing_time = round(closing_time / g.unav_freq) * g.unav_freq
-            overrun = max(0, closing_time - ideal_closing_time)
-
-            adjusted_unav_time = max(0, g.unav_time - overrun)
-            print(f"Closing time: {closing_time}, Overrun: {overrun}, Adjusted unavailability: {adjusted_unav_time}")
-
-            # Grab the resource at priority -1 so it waits for any in-flight patients
-            with self.treatment_cubicles.request(priority=-1) as req:
-                treatment_resource = yield req
-
-                self.event_log.append({
-                    'patient': "overnight_closure",
-                    'pathway': 'Simplest',
-                    'event': 'treatment_begins',
-                    'event_type': 'resource_use',
-                    'time': self.env.now,
-                    'resource_id': treatment_resource.id_attribute
-                })
-
-                # Treatment bay remains unavailable for the adjusted unavailability period
-                yield self.env.timeout(adjusted_unav_time)
 
     # A generator function that represents the DES generator for patient arrivals
     def generator_patient_arrivals(self):
@@ -229,40 +177,49 @@ class Model:
              'time': self.env.now}
         )
 
-        with self.treatment_cubicles.request(priority=1) as req:
-            # Seize a treatment resource when available
-            current_time = self.env.now
-            time_since_last_closure = current_time % g.unav_freq
-            time_until_closing = g.unav_freq - time_since_last_closure
+        # Seize a treatment resource when available
+        current_time = self.env.now
+        time_since_last_closure = current_time % g.unav_freq
+        time_until_closing = g.unav_freq - time_since_last_closure
 
-            result_of_queue = (yield req | self.env.timeout(time_until_closing))
+        treatment_request_event = self.treatment_cubicles.get(priority=1)
 
-            if req in result_of_queue:
+        result_of_queue = yield treatment_request_event | self.env.timeout(time_until_closing)
 
-                # record the waiting time for registration
-                self.wait_treat = self.env.now - start_wait
-                self.event_log.append(
-                    {'patient': patient.identifier,
-                        'pathway': 'Simplest',
-                        'event': 'treatment_begins',
-                        'event_type': 'resource_use',
-                        'time': self.env.now,
-                        'resource_id': result_of_queue[req].id_attribute
-                        }
-                )
+        if treatment_request_event in result_of_queue:
+            cubicle = result_of_queue[treatment_request_event]
 
-                # sample treatment duration
-                self.treat_duration = self.treat_dist.sample()
-                yield self.env.timeout(self.treat_duration)
+            # record the waiting time
+            self.wait_treat = self.env.now - start_wait
 
-                self.event_log.append(
-                    {'patient': patient.identifier,
-                        'pathway': 'Simplest',
-                        'event': 'treatment_complete',
-                        'event_type': 'resource_use_end',
-                        'time': self.env.now,
-                        'resource_id': result_of_queue[req].id_attribute}
-                )
+            self.event_log.append(
+                {'patient': patient.identifier,
+                    'pathway': 'Simplest',
+                    'event': 'treatment_begins',
+                    'event_type': 'resource_use',
+                    'time': self.env.now,
+                    'resource_id': cubicle.id_attribute
+                    }
+            )
+
+            # sample treatment duration
+            self.treat_duration = self.treat_dist.sample()
+            yield self.env.timeout(self.treat_duration)
+
+            self.event_log.append(
+                {'patient': patient.identifier,
+                    'pathway': 'Simplest',
+                    'event': 'treatment_complete',
+                    'event_type': 'resource_use_end',
+                    'time': self.env.now,
+                    'resource_id': cubicle.id_attribute}
+            )
+
+            self.treatment_cubicles.return_item(cubicle)
+
+        else:
+
+            self.treatment_cubicles.cancel_get(treatment_request_event)
 
         # total time in system
         self.total_time = self.env.now - self.arrival
@@ -275,14 +232,6 @@ class Model:
             'time': self.env.now}
         )
 
-
-    # This method calculates results over a single run.  Here we just calculate
-    # a mean, but in real world models you'd probably want to calculate more.
-    def calculate_run_results(self):
-        # Take the mean of the queuing times across patients in this run of the
-        # model.
-        self.mean_q_time_cubicle = self.results_df["Queue Time Cubicle"].mean()
-
     # The run method starts up the DES entity generators, runs the simulation,
     # and in turns calls anything we need to generate results for the run
     def run(self):
@@ -291,33 +240,20 @@ class Model:
         # we had multiple generators.
         self.env.process(self.generator_patient_arrivals())
 
-        for i in range(g.n_cubicles):
-            self.env.process(self.close_clinic_overnight())
-
         # Run the model for the duration specified in g class
         self.env.run(until=g.sim_duration)
-
-        # Now the simulation run has finished, call the method that calculates
-        # run results
-        self.calculate_run_results()
 
         self.event_log = pd.DataFrame(self.event_log)
 
         self.event_log["run"] = self.run_number
 
-        return {'results': self.results_df, 'event_log': self.event_log}
+        return self.event_log
 
 # Class representing a Trial for our simulation - a batch of simulation runs.
 class Trial:
     # The constructor sets up a pandas dataframe that will store the key
     # results from each run against run number, with run number as the index.
     def  __init__(self):
-        self.df_trial_results = pd.DataFrame()
-        self.df_trial_results["Run Number"] = [0]
-        self.df_trial_results["Arrivals"] = [0]
-        self.df_trial_results["Mean Queue Time Cubicle"] = [0.0]
-        self.df_trial_results.set_index("Run Number", inplace=True)
-
         self.all_event_logs = []
 
     # Method to run a trial
@@ -335,16 +271,7 @@ class Trial:
             random.seed(run)
 
             my_model = Model(run)
-            model_outputs = my_model.run()
-            patient_level_results = model_outputs["results"]
-            event_log = model_outputs["event_log"]
-
-            self.df_trial_results.loc[run] = [
-                len(patient_level_results),
-                my_model.mean_q_time_cubicle,
-            ]
-
-            # print(event_log)
+            event_log = my_model.run()
 
             self.all_event_logs.append(event_log)
 
