@@ -184,7 +184,9 @@ class Model:
 
         treatment_request_event = self.treatment_cubicles.get(priority=1)
 
-        result_of_queue = yield treatment_request_event | self.env.timeout(time_until_closing)
+        # Patients will give up and leave up to an hour before the clinic closes if they think they're
+        # not going to get seen in time.
+        result_of_queue = yield treatment_request_event | self.env.timeout(time_until_closing - min([random.randint(0, 60), time_until_closing]))
 
         if treatment_request_event in result_of_queue:
             cubicle = result_of_queue[treatment_request_event]
