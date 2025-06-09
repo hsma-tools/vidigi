@@ -154,8 +154,8 @@ class VidigiStore:
     """
 
     def __init__(self, env,
+                 num_resources=None,
                  capacity=float('inf'),
-                 num_resources=None
                 #  , init_items=None
                  ):
         """
@@ -163,6 +163,7 @@ class VidigiStore:
 
         Args:
             env: SimPy environment
+            num_resources: Number of VidigiCustomResource objects to populate the store with
             capacity: Maximum capacity of the store
         """
         self.env = env
@@ -255,6 +256,22 @@ class VidigiStore:
             A get event that can be yielded
         """
         return self.get_direct()
+
+    def cancel_get(self, get_event):
+        """
+        Cancels a pending get request by removing it from the queue.
+        """
+        try:
+            # The get_event is the SimPy event object that was created
+            # and placed in the queue.
+            self.get_queue.remove(get_event)
+            # You might want to add a print statement for debugging:
+            # print(f"{self.env.now}: Successfully cancelled and removed a get request from the queue.")
+        except ValueError:
+            # This can happen if the request was already fulfilled between the
+            # timeout and the cancellation call. It's safe to ignore.
+            # print(f"{self.env.now}: Attempted to cancel a request that was no longer in the queue (likely already fulfilled).")
+            pass
 
     @property
     def items(self):
@@ -385,16 +402,18 @@ class VidigiPriorityStore:
     and tested by a human.
     """
 
-    def __init__(self, env,
-                 capacity=float('inf'),
-                 num_resources=None
-                #  , init_items=None
-                 ):
+    def __init__(
+            self, env,
+            num_resources=None,
+            capacity=float('inf')
+            #  , init_items=None
+            ):
         """
         Initialize the OptimizedVidigiPriorityStore.
 
         Args:
             env: The SimPy environment.
+            num_resources: Number of VidigiCustomResource objects to populate the store with
             capacity: Maximum capacity of the store (default: infinite).
 
         """
@@ -585,6 +604,22 @@ class VidigiPriorityStore:
             A get event that can be yielded
         """
         return self.get_direct(priority=priority)
+
+    def cancel_get(self, get_event):
+        """
+        Cancels a pending get request by removing it from the queue.
+        """
+        try:
+            # The get_event is the SimPy event object that was created
+            # and placed in the queue.
+            self.get_queue.remove(get_event)
+            # You might want to add a print statement for debugging:
+            # print(f"{self.env.now}: Successfully cancelled and removed a get request from the queue.")
+        except ValueError:
+            # This can happen if the request was already fulfilled between the
+            # timeout and the cancellation call. It's safe to ignore.
+            # print(f"{self.env.now}: Attempted to cancel a request that was no longer in the queue (likely already fulfilled).")
+            pass
 
 
 class _OptimizedStoreRequest:
