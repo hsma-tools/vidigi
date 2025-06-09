@@ -744,25 +744,21 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><p>displaying additional static information as part of the icon (in this case, whether the client’s discharge is delayed)</p></li>
 <li><p>displaying information that updates with each animation step as part of the icon (in this case, the LoS of the patient at each time point)</p></li>
 </ul>
-<div id="caaf6076" class="cell" data-execution_count="1">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> gc</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> time</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> datetime <span class="im">as</span> dt</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> streamlit <span class="im">as</span> st</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> plotly.express <span class="im">as</span> px</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> plotly.graph_objects <span class="im">as</span> go</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> examples.example_13_additional_synchronised_traces_method_1.simulation_execution_functions <span class="im">import</span> multiple_replications</span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> examples.example_13_additional_synchronised_traces_method_1.model_classes <span class="im">import</span> Scenario, Schedule</span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> vidigi.prep <span class="im">import</span> reshape_for_animations, generate_animation_df</span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> vidigi.animation <span class="im">import</span> generate_animation</span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> plotly.subplots <span class="im">import</span> make_subplots</span>
+<div id="caaf6076" class="cell" data-execution_count="54">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> time</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> plotly.express <span class="im">as</span> px</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> plotly.graph_objects <span class="im">as</span> go</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> examples.example_13_additional_synchronised_traces_method_1.simulation_execution_functions <span class="im">import</span> multiple_replications</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> examples.example_13_additional_synchronised_traces_method_1.model_classes <span class="im">import</span> Scenario, Schedule</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> vidigi.prep <span class="im">import</span> reshape_for_animations, generate_animation_df</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> vidigi.animation <span class="im">import</span> generate_animation</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> plotly.subplots <span class="im">import</span> make_subplots</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>TRACE <span class="op">=</span> <span class="va">True</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>debug_mode<span class="op">=</span><span class="va">True</span></span>
 <span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>TRACE <span class="op">=</span> <span class="va">True</span></span>
-<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>debug_mode<span class="op">=</span><span class="va">True</span></span>
-<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>schedule <span class="op">=</span> Schedule()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>schedule <span class="op">=</span> Schedule()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>4 theatres</p>
 <p>5 day/week</p>
@@ -771,7 +767,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Afternoon: 1 revision OR 2 primary</p>
 <p>Evening: 1 primary</p>
 <p>40 ring-fenced beds for recovery from these operations</p>
-<div id="bbefa5df" class="cell" data-execution_count="2">
+<div id="bbefa5df" class="cell" data-execution_count="55">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>(pd.DataFrame.from_dict(schedule.sessions_per_weekday, orient<span class="op">=</span><span class="st">"index"</span>)</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>        .rename(columns<span class="op">=</span>{<span class="dv">0</span>: <span class="st">"Sessions"</span>}).merge(</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -785,7 +781,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>        left_index<span class="op">=</span><span class="va">True</span>, right_index<span class="op">=</span><span class="va">True</span></span>
 <span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>        ))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display" data-execution_count="2">
+<div class="cell-output cell-output-display" data-execution_count="55">
 <div>
 
 
@@ -863,7 +859,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-<div id="5a45ef0c" class="cell" data-execution_count="3">
+<div id="5a45ef0c" class="cell" data-execution_count="56">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>n_beds <span class="op">=</span> <span class="dv">40</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>primary_hip_los <span class="op">=</span> <span class="fl">4.4</span></span>
@@ -934,61 +930,71 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb3-68"><a href="#cb3-68" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-69"><a href="#cb3-69" aria-hidden="true" tabindex="-1"></a>full_log_with_patient_details <span class="op">=</span> full_log_with_patient_details.merge(pid_table, how<span class="op">=</span><span class="st">'left'</span>, on<span class="op">=</span><span class="st">'patient'</span>).drop(columns<span class="op">=</span><span class="st">'patient'</span>).rename(columns<span class="op">=</span>{<span class="st">'pid'</span>:<span class="st">'patient'</span>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
-<pre><code>C:\Users\Sammi\AppData\Local\Temp\ipykernel_25884\3505082114.py:50: SettingWithCopyWarning: 
+<pre><code>C:\Users\Sammi\AppData\Local\Temp\ipykernel_50528\3505082114.py:50: SettingWithCopyWarning:
+
+
 A value is trying to be set on a copy of a slice from a DataFrame.
 Try using .loc[row_indexer,col_indexer] = value instead
 
 See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
-  event_log['patient'] = event_log['patient'].astype('str') + event_log['pathway']
-C:\Users\Sammi\AppData\Local\Temp\ipykernel_25884\3505082114.py:54: SettingWithCopyWarning: 
+
+C:\Users\Sammi\AppData\Local\Temp\ipykernel_50528\3505082114.py:54: SettingWithCopyWarning:
+
+
 A value is trying to be set on a copy of a slice from a DataFrame.
 Try using .loc[row_indexer,col_indexer] = value instead
 
 See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
-  primary_patients['patient class'] = primary_patients['patient class'].str.title()
-C:\Users\Sammi\AppData\Local\Temp\ipykernel_25884\3505082114.py:55: SettingWithCopyWarning: 
+
+C:\Users\Sammi\AppData\Local\Temp\ipykernel_50528\3505082114.py:55: SettingWithCopyWarning:
+
+
 A value is trying to be set on a copy of a slice from a DataFrame.
 Try using .loc[row_indexer,col_indexer] = value instead
 
 See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
-  primary_patients['ID'] = primary_patients['ID'].astype('str') + primary_patients['patient class']
-C:\Users\Sammi\AppData\Local\Temp\ipykernel_25884\3505082114.py:59: SettingWithCopyWarning: 
+
+C:\Users\Sammi\AppData\Local\Temp\ipykernel_50528\3505082114.py:59: SettingWithCopyWarning:
+
+
 A value is trying to be set on a copy of a slice from a DataFrame.
 Try using .loc[row_indexer,col_indexer] = value instead
 
 See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
-  revision_patients['patient class'] = revision_patients['patient class'].str.title()
-C:\Users\Sammi\AppData\Local\Temp\ipykernel_25884\3505082114.py:60: SettingWithCopyWarning: 
+
+C:\Users\Sammi\AppData\Local\Temp\ipykernel_50528\3505082114.py:60: SettingWithCopyWarning:
+
+
 A value is trying to be set on a copy of a slice from a DataFrame.
 Try using .loc[row_indexer,col_indexer] = value instead
 
 See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
-  revision_patients['ID'] = revision_patients['ID'].astype('str') + revision_patients['patient class']</code></pre>
+</code></pre>
 </div>
 </div>
-<div id="fd983309" class="cell" data-execution_count="4">
+<div id="fd983309" class="cell">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>event_position_df <span class="op">=</span> pd.DataFrame([</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>            <span class="co"># {'event': 'arrival', 'x':  10, 'y': 250, 'label': "Arrival" },</span></span>
 <span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Triage - minor and trauma</span></span>
 <span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>            {<span class="st">'event'</span>: <span class="st">'enter_queue_for_bed'</span>,</span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>                <span class="st">'x'</span>:  <span class="dv">200</span>, <span class="st">'y'</span>: <span class="dv">650</span>, <span class="st">'label'</span>: <span class="st">"Waiting for&lt;br&gt;Availability of&lt;br&gt;Bed to be Confirmed&lt;br&gt;Before Surgery"</span> },</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>                <span class="st">'x'</span>:  <span class="dv">300</span>, <span class="st">'y'</span>: <span class="dv">625</span>, <span class="st">'label'</span>: <span class="st">"Waiting for&lt;br&gt;Availability of&lt;br&gt;Bed to be Confirmed&lt;br&gt;Before Surgery"</span> },</span>
 <span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>            {<span class="st">'event'</span>: <span class="st">'no_bed_available'</span>,</span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>                <span class="st">'x'</span>:  <span class="dv">600</span>, <span class="st">'y'</span>: <span class="dv">650</span>, <span class="st">'label'</span>: <span class="st">"No Bed&lt;br&gt;Available:&lt;br&gt;Surgery Cancelled"</span> },</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>                <span class="st">'x'</span>:  <span class="dv">700</span>, <span class="st">'y'</span>: <span class="dv">625</span>, <span class="st">'label'</span>: <span class="st">"No Bed&lt;br&gt;Available:&lt;br&gt;Surgery Cancelled"</span> },</span>
 <span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>            {<span class="st">'event'</span>: <span class="st">'post_surgery_stay_begins'</span>,</span>
-<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>                <span class="st">'x'</span>:  <span class="dv">650</span>, <span class="st">'y'</span>: <span class="dv">220</span>, <span class="st">'resource'</span>:<span class="st">'n_beds'</span>, <span class="st">'label'</span>: <span class="st">"In Bed:&lt;br&gt;Recovering from&lt;br&gt;Surgery"</span> },</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>                <span class="st">'x'</span>:  <span class="dv">750</span>, <span class="st">'y'</span>: <span class="dv">220</span>, <span class="st">'resource'</span>:<span class="st">'n_beds'</span>, <span class="st">'label'</span>: <span class="st">"In Bed:&lt;br&gt;Recovering from&lt;br&gt;Surgery"</span> },</span>
 <span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>            {<span class="st">'event'</span>: <span class="st">'discharged_after_stay'</span>,</span>
-<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>                <span class="st">'x'</span>:  <span class="dv">670</span>, <span class="st">'y'</span>: <span class="dv">50</span>, <span class="st">'label'</span>: <span class="st">"Discharged from Hospital&lt;br&gt;After Recovery"</span>}</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>                <span class="st">'x'</span>:  <span class="dv">770</span>, <span class="st">'y'</span>: <span class="dv">50</span>, <span class="st">'label'</span>: <span class="st">"Discharged from Hospital&lt;br&gt;After Recovery"</span>}</span>
 <span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>            <span class="co"># {'event': 'exit',</span></span>
 <span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>            <span class="co">#  'x':  670, 'y': 100, 'label': "Exit"}</span></span>
 <span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>            ])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div id="64a6154f" class="cell" data-execution_count="5">
+<div id="64a6154f" class="cell" data-execution_count="58">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>full_patient_df <span class="op">=</span> reshape_for_animations(full_log_with_patient_details,</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>                                         entity_col_name<span class="op">=</span><span class="st">"patient"</span>,</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>                                            every_x_time_units<span class="op">=</span><span class="dv">1</span>,</span>
@@ -1000,12 +1006,12 @@ See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stab
 <span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> debug_mode:</span>
 <span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f'Reshaped animation dataframe finished construction at </span><span class="sc">{</span>time<span class="sc">.</span>strftime(<span class="st">"%H:%M:%S"</span>, time.localtime())<span class="sc">}</span><span class="ss">'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Iteration through time-unit-by-time-unit logs complete 17:02:53
-Snapshot df concatenation complete at 17:02:53
-Reshaped animation dataframe finished construction at 17:02:53</code></pre>
+<pre><code>Iteration through time-unit-by-time-unit logs complete 13:21:53
+Snapshot df concatenation complete at 13:21:53
+Reshaped animation dataframe finished construction at 13:21:53</code></pre>
 </div>
 </div>
-<div id="84e8849a" class="cell" data-execution_count="6">
+<div id="84e8849a" class="cell" data-execution_count="59">
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>full_patient_df_plus_pos <span class="op">=</span> generate_animation_df(</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>                            full_entity_df<span class="op">=</span>full_patient_df,</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>                            entity_col_name<span class="op">=</span><span class="st">"patient"</span>,</span>
@@ -1013,17 +1019,17 @@ Reshaped animation dataframe finished construction at 17:02:53</code></pre>
 <span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>                            wrap_queues_at<span class="op">=</span><span class="dv">20</span>,</span>
 <span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>                            wrap_resources_at<span class="op">=</span><span class="dv">40</span>,</span>
 <span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>                            step_snapshot_max<span class="op">=</span><span class="dv">50</span>,</span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>                            gap_between_entities<span class="op">=</span><span class="dv">15</span>,</span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>                            gap_between_resources<span class="op">=</span><span class="dv">15</span>,</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>                            gap_between_entities<span class="op">=</span><span class="dv">20</span>,</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>                            gap_between_resources<span class="op">=</span><span class="dv">20</span>,</span>
 <span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>                            gap_between_queue_rows<span class="op">=</span><span class="dv">175</span>,</span>
 <span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>                            gap_between_resource_rows<span class="op">=</span><span class="dv">175</span>,</span>
 <span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>                            debug_mode<span class="op">=</span>debug_mode</span>
 <span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>                    )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Placement dataframe finished construction at 17:02:53</code></pre>
+<pre><code>Placement dataframe finished construction at 13:21:54</code></pre>
 </div>
 </div>
-<div id="8371ebeb" class="cell" data-execution_count="7">
+<div id="8371ebeb" class="cell" data-execution_count="60">
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> set_icon(row):</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> row[<span class="st">"surgery type"</span>] <span class="op">==</span> <span class="st">"p_knee"</span>:</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="st">"🦵&lt;br&gt;1️⃣&lt;br&gt; "</span></span>
@@ -1044,7 +1050,7 @@ Reshaped animation dataframe finished construction at 17:02:53</code></pre>
 <span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a><span class="co"># step. e.g. 194Primary is discharged on 28th July showing a LOS of 1 but prior to this shows a LOS of 9.</span></span>
 <span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> add_los_to_icon(row):</span>
 <span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> row[<span class="st">"event"</span>] <span class="op">==</span> <span class="st">"post_surgery_stay_begins"</span>:</span>
-<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="ss">f'</span><span class="sc">{</span>row[<span class="st">"icon"</span>]<span class="sc">}</span><span class="ss">&lt;br&gt;</span><span class="sc">{</span>row[<span class="st">"snapshot_time"</span>]<span class="op">-</span>row[<span class="st">"time"</span>]<span class="sc">:.0f}</span><span class="ss">'</span></span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="ss">f'</span><span class="sc">{</span>row[<span class="st">"icon"</span>]<span class="sc">}</span><span class="ss">&lt;br&gt;&lt;br&gt;</span><span class="sc">{</span>row[<span class="st">"snapshot_time"</span>]<span class="op">-</span>row[<span class="st">"time"</span>]<span class="sc">:.0f}</span><span class="ss">'</span></span>
 <span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> row[<span class="st">"event"</span>] <span class="op">==</span> <span class="st">"discharged_after_stay"</span>:</span>
 <span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="ss">f'</span><span class="sc">{</span>row[<span class="st">"icon"</span>]<span class="sc">}</span><span class="ss">&lt;br&gt;</span><span class="sc">{</span>row[<span class="st">"los"</span>]<span class="sc">:.0f}</span><span class="ss">'</span></span>
 <span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
@@ -1092,204 +1098,694 @@ Reshaped animation dataframe finished construction at 17:02:53</code></pre>
 <span id="cb10-66"><a href="#cb10-66" aria-hidden="true" tabindex="-1"></a><span class="co">#     """</span></span>
 <span id="cb10-67"><a href="#cb10-67" aria-hidden="true" tabindex="-1"></a><span class="co"># )</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div id="8dc2a2c8" class="cell" data-execution_count="8">
-<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> generate_animation(</span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>        full_entity_df_plus_pos<span class="op">=</span>full_patient_df_plus_pos,</span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>        entity_col_name<span class="op">=</span><span class="st">"patient"</span>,</span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>        event_position_df<span class="op">=</span>event_position_df,</span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>        scenario<span class="op">=</span>args,</span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>        plotly_height<span class="op">=</span><span class="dv">950</span>,</span>
-<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>        plotly_width<span class="op">=</span><span class="dv">1000</span>,</span>
-<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>        override_x_max<span class="op">=</span><span class="dv">800</span>,</span>
-<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>        override_y_max<span class="op">=</span><span class="dv">1000</span>,</span>
-<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>        entity_icon_size<span class="op">=</span><span class="dv">14</span>,</span>
-<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>        text_size<span class="op">=</span><span class="dv">14</span>,</span>
-<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>        wrap_resources_at<span class="op">=</span><span class="dv">40</span>,</span>
-<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>        gap_between_resources<span class="op">=</span><span class="dv">15</span>,</span>
-<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>        include_play_button<span class="op">=</span><span class="va">True</span>,</span>
-<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>        add_background_image<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>        <span class="co"># we want the stage labels, but due to a bug</span></span>
-<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>        <span class="co"># when we add in additional animated traces later,</span></span>
-<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a>        <span class="co"># they will disappear - so better to leave them out here</span></span>
-<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a>        <span class="co"># and then re-add them manually</span></span>
-<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a>        display_stage_labels<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb11-21"><a href="#cb11-21" aria-hidden="true" tabindex="-1"></a>        custom_resource_icon<span class="op">=</span><span class="st">"🛏️"</span>,</span>
-<span id="cb11-22"><a href="#cb11-22" aria-hidden="true" tabindex="-1"></a>        time_display_units<span class="op">=</span><span class="st">"d"</span>,</span>
-<span id="cb11-23"><a href="#cb11-23" aria-hidden="true" tabindex="-1"></a>        simulation_time_unit<span class="op">=</span><span class="st">"days"</span>,</span>
-<span id="cb11-24"><a href="#cb11-24" aria-hidden="true" tabindex="-1"></a>        start_date<span class="op">=</span><span class="st">"2022-06-27"</span>,</span>
-<span id="cb11-25"><a href="#cb11-25" aria-hidden="true" tabindex="-1"></a>        setup_mode<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb11-26"><a href="#cb11-26" aria-hidden="true" tabindex="-1"></a>        frame_duration<span class="op">=</span><span class="dv">1500</span>, <span class="co">#milliseconds</span></span>
-<span id="cb11-27"><a href="#cb11-27" aria-hidden="true" tabindex="-1"></a>        frame_transition_duration<span class="op">=</span><span class="dv">1000</span>, <span class="co">#milliseconds</span></span>
-<span id="cb11-28"><a href="#cb11-28" aria-hidden="true" tabindex="-1"></a>        debug_mode<span class="op">=</span><span class="va">False</span></span>
-<span id="cb11-29"><a href="#cb11-29" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb11-30"><a href="#cb11-30" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-31"><a href="#cb11-31" aria-hidden="true" tabindex="-1"></a>fig</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="4693ad61" class="cell" data-execution_count="61">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>counts_not_avail <span class="op">=</span> full_patient_df_plus_pos[full_patient_df_plus_pos[<span class="st">'event'</span>]<span class="op">==</span><span class="st">'no_bed_available'</span>][[<span class="st">'snapshot_time'</span>,<span class="st">'patient'</span>]].groupby(<span class="st">'snapshot_time'</span>).agg(<span class="st">'count'</span>)</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>counts_not_avail <span class="op">=</span> counts_not_avail.reset_index().merge(full_patient_df_plus_pos[[<span class="st">'snapshot_time'</span>]].drop_duplicates(), how<span class="op">=</span><span class="st">'right'</span>).sort_values(<span class="st">'snapshot_time'</span>)</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>counts_not_avail[<span class="st">'patient'</span>] <span class="op">=</span> counts_not_avail[<span class="st">'patient'</span>].fillna(<span class="dv">0</span>)</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>counts_not_avail[<span class="st">'running_total'</span>] <span class="op">=</span> counts_not_avail[<span class="st">'patient'</span>].cumsum()</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>counts_not_avail <span class="op">=</span> counts_not_avail.reset_index(drop<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>counts_not_avail</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="61">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">snapshot_time</th>
+<th data-quarto-table-cell-role="th">patient</th>
+<th data-quarto-table-cell-role="th">running_total</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td>0</td>
+<td>0.0</td>
+<td>0.0</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>1</td>
+<td>0.0</td>
+<td>0.0</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td>2</td>
+<td>0.0</td>
+<td>0.0</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">3</td>
+<td>3</td>
+<td>5.0</td>
+<td>5.0</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">4</td>
+<td>4</td>
+<td>5.0</td>
+<td>10.0</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">56</td>
+<td>56</td>
+<td>0.0</td>
+<td>244.0</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">57</td>
+<td>57</td>
+<td>0.0</td>
+<td>244.0</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">58</td>
+<td>58</td>
+<td>8.0</td>
+<td>252.0</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">59</td>
+<td>59</td>
+<td>2.0</td>
+<td>254.0</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">60</td>
+<td>60</td>
+<td>11.0</td>
+<td>265.0</td>
+</tr>
+</tbody>
+</table>
+
+<p>61 rows × 3 columns</p>
+</div>
+</div>
+</div>
+<div id="ed249e15" class="cell" data-execution_count="62">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>counts_ops_completed <span class="op">=</span> full_patient_df_plus_pos[full_patient_df_plus_pos[<span class="st">'event'</span>]<span class="op">==</span><span class="st">'post_surgery_stay_begins'</span>][[<span class="st">'snapshot_time'</span>,<span class="st">'patient'</span>]].drop_duplicates(<span class="st">'patient'</span>).groupby(<span class="st">'snapshot_time'</span>).agg(<span class="st">'count'</span>)</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>counts_ops_completed <span class="op">=</span> counts_ops_completed.reset_index().merge(full_patient_df_plus_pos[[<span class="st">'snapshot_time'</span>]].drop_duplicates(), how<span class="op">=</span><span class="st">'right'</span>).sort_values(<span class="st">'snapshot_time'</span>)</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>counts_ops_completed[<span class="st">'patient'</span>] <span class="op">=</span> counts_ops_completed[<span class="st">'patient'</span>].fillna(<span class="dv">0</span>)</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>counts_ops_completed[<span class="st">'running_total'</span>] <span class="op">=</span> counts_ops_completed[<span class="st">'patient'</span>].cumsum()</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>counts_ops_completed <span class="op">=</span> counts_ops_completed.reset_index(drop<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>counts_ops_completed</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="62">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">snapshot_time</th>
+<th data-quarto-table-cell-role="th">patient</th>
+<th data-quarto-table-cell-role="th">running_total</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td>0</td>
+<td>16.0</td>
+<td>16.0</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>1</td>
+<td>16.0</td>
+<td>32.0</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td>2</td>
+<td>9.0</td>
+<td>41.0</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">3</td>
+<td>3</td>
+<td>4.0</td>
+<td>45.0</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">4</td>
+<td>4</td>
+<td>10.0</td>
+<td>55.0</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">56</td>
+<td>56</td>
+<td>12.0</td>
+<td>390.0</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">57</td>
+<td>57</td>
+<td>5.0</td>
+<td>395.0</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">58</td>
+<td>58</td>
+<td>6.0</td>
+<td>401.0</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">59</td>
+<td>59</td>
+<td>13.0</td>
+<td>414.0</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">60</td>
+<td>60</td>
+<td>4.0</td>
+<td>418.0</td>
+</tr>
+</tbody>
+</table>
+
+<p>61 rows × 3 columns</p>
+</div>
+</div>
+</div>
+<div id="0f320678" class="cell" data-execution_count="63">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>counts_not_avail <span class="op">=</span> counts_not_avail.merge(counts_ops_completed.rename(columns<span class="op">=</span>{<span class="st">'running_total'</span>:<span class="st">'completed'</span>}), how<span class="op">=</span><span class="st">"left"</span>, on<span class="op">=</span><span class="st">"snapshot_time"</span>)</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>counts_not_avail[<span class="st">'perc_slots_lost'</span>] <span class="op">=</span> counts_not_avail[<span class="st">'running_total'</span>] <span class="op">/</span> (counts_not_avail[<span class="st">'running_total'</span>] <span class="op">+</span> counts_not_avail[<span class="st">'completed'</span>])</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>counts_not_avail <span class="op">=</span> counts_not_avail.reset_index(drop<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>counts_not_avail</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="63">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">snapshot_time</th>
+<th data-quarto-table-cell-role="th">patient_x</th>
+<th data-quarto-table-cell-role="th">running_total</th>
+<th data-quarto-table-cell-role="th">patient_y</th>
+<th data-quarto-table-cell-role="th">completed</th>
+<th data-quarto-table-cell-role="th">perc_slots_lost</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td>0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>16.0</td>
+<td>16.0</td>
+<td>0.000000</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>1</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>16.0</td>
+<td>32.0</td>
+<td>0.000000</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td>2</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>9.0</td>
+<td>41.0</td>
+<td>0.000000</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">3</td>
+<td>3</td>
+<td>5.0</td>
+<td>5.0</td>
+<td>4.0</td>
+<td>45.0</td>
+<td>0.100000</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">4</td>
+<td>4</td>
+<td>5.0</td>
+<td>10.0</td>
+<td>10.0</td>
+<td>55.0</td>
+<td>0.153846</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">56</td>
+<td>56</td>
+<td>0.0</td>
+<td>244.0</td>
+<td>12.0</td>
+<td>390.0</td>
+<td>0.384858</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">57</td>
+<td>57</td>
+<td>0.0</td>
+<td>244.0</td>
+<td>5.0</td>
+<td>395.0</td>
+<td>0.381847</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">58</td>
+<td>58</td>
+<td>8.0</td>
+<td>252.0</td>
+<td>6.0</td>
+<td>401.0</td>
+<td>0.385911</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">59</td>
+<td>59</td>
+<td>2.0</td>
+<td>254.0</td>
+<td>13.0</td>
+<td>414.0</td>
+<td>0.380240</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">60</td>
+<td>60</td>
+<td>11.0</td>
+<td>265.0</td>
+<td>4.0</td>
+<td>418.0</td>
+<td>0.387994</td>
+</tr>
+</tbody>
+</table>
+
+<p>61 rows × 6 columns</p>
+</div>
+</div>
+</div>
+<div id="8dc2a2c8" class="cell" data-execution_count="64">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> generate_animation(</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>        full_entity_df_plus_pos<span class="op">=</span>full_patient_df_plus_pos,</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>        entity_col_name<span class="op">=</span><span class="st">"patient"</span>,</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>        event_position_df<span class="op">=</span>event_position_df,</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>        scenario<span class="op">=</span>args,</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>        plotly_height<span class="op">=</span><span class="dv">950</span>,</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>        plotly_width<span class="op">=</span><span class="dv">1400</span>,</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>        override_x_max<span class="op">=</span><span class="dv">1000</span>,</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>        override_y_max<span class="op">=</span><span class="dv">700</span>,</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>        entity_icon_size<span class="op">=</span><span class="dv">14</span>,</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>        text_size<span class="op">=</span><span class="dv">14</span>,</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>        wrap_resources_at<span class="op">=</span><span class="dv">40</span>,</span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>        gap_between_resources<span class="op">=</span><span class="dv">20</span>,</span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>        include_play_button<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>        add_background_image<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>        <span class="co"># we want the stage labels, but due to a bug</span></span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>        <span class="co"># when we add in additional animated traces later,</span></span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a>        <span class="co"># they will disappear - so better to leave them out here</span></span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a>        <span class="co"># and then re-add them manually</span></span>
+<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a>        display_stage_labels<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a>        custom_resource_icon<span class="op">=</span><span class="st">"🛏️"</span>,</span>
+<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a>        time_display_units<span class="op">=</span><span class="st">"d"</span>,</span>
+<span id="cb14-23"><a href="#cb14-23" aria-hidden="true" tabindex="-1"></a>        simulation_time_unit<span class="op">=</span><span class="st">"days"</span>,</span>
+<span id="cb14-24"><a href="#cb14-24" aria-hidden="true" tabindex="-1"></a>        start_date<span class="op">=</span><span class="st">"2022-06-27"</span>,</span>
+<span id="cb14-25"><a href="#cb14-25" aria-hidden="true" tabindex="-1"></a>        setup_mode<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb14-26"><a href="#cb14-26" aria-hidden="true" tabindex="-1"></a>        frame_duration<span class="op">=</span><span class="dv">1500</span>, <span class="co">#milliseconds</span></span>
+<span id="cb14-27"><a href="#cb14-27" aria-hidden="true" tabindex="-1"></a>        frame_transition_duration<span class="op">=</span><span class="dv">1000</span>, <span class="co">#milliseconds</span></span>
+<span id="cb14-28"><a href="#cb14-28" aria-hidden="true" tabindex="-1"></a>        debug_mode<span class="op">=</span><span class="va">False</span></span>
+<span id="cb14-29"><a href="#cb14-29" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb14-30"><a href="#cb14-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-31"><a href="#cb14-31" aria-hidden="true" tabindex="-1"></a>fig</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <pre><code>Unable to display output for mime type(s): application/vnd.plotly.v1+json</code></pre>
 </div>
 </div>
-<div id="f8d503e3" class="cell">
-<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>counts_not_avail <span class="op">=</span> full_patient_df_plus_pos[full_patient_df_plus_pos[<span class="st">'event'</span>]<span class="op">==</span><span class="st">'no_bed_available'</span>][[<span class="st">'snapshot_time'</span>,<span class="st">'patient'</span>]].groupby(<span class="st">'snapshot_time'</span>).agg(<span class="st">'count'</span>)</span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>counts_not_avail <span class="op">=</span> counts_not_avail.reset_index().merge(full_patient_df_plus_pos[[<span class="st">'snapshot_time'</span>]].drop_duplicates(), how<span class="op">=</span><span class="st">'right'</span>).sort_values(<span class="st">'snapshot_time'</span>)</span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>counts_not_avail[<span class="st">'patient'</span>] <span class="op">=</span> counts_not_avail[<span class="st">'patient'</span>].fillna(<span class="dv">0</span>)</span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>counts_not_avail[<span class="st">'running_total'</span>] <span class="op">=</span> counts_not_avail[<span class="st">'patient'</span>].cumsum()</span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>counts_ops_completed <span class="op">=</span> full_patient_df_plus_pos[full_patient_df_plus_pos[<span class="st">'event'</span>]<span class="op">==</span><span class="st">'post_surgery_stay_begins'</span>][[<span class="st">'snapshot_time'</span>,<span class="st">'patient'</span>]].drop_duplicates(<span class="st">'patient'</span>).groupby(<span class="st">'snapshot_time'</span>).agg(<span class="st">'count'</span>)</span>
-<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>counts_ops_completed <span class="op">=</span> counts_ops_completed.reset_index().merge(full_patient_df_plus_pos[[<span class="st">'snapshot_time'</span>]].drop_duplicates(), how<span class="op">=</span><span class="st">'right'</span>).sort_values(<span class="st">'snapshot_time'</span>)</span>
-<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>counts_ops_completed[<span class="st">'patient'</span>] <span class="op">=</span> counts_ops_completed[<span class="st">'patient'</span>].fillna(<span class="dv">0</span>)</span>
-<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>counts_ops_completed[<span class="st">'running_total'</span>] <span class="op">=</span> counts_ops_completed[<span class="st">'patient'</span>].cumsum()</span>
-<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>counts_not_avail <span class="op">=</span> counts_not_avail.merge(counts_ops_completed.rename(columns<span class="op">=</span>{<span class="st">'running_total'</span>:<span class="st">'completed'</span>}), how<span class="op">=</span><span class="st">"left"</span>, on<span class="op">=</span><span class="st">"snapshot_time"</span>)</span>
-<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>counts_not_avail[<span class="st">'perc_slots_lost'</span>] <span class="op">=</span> counts_not_avail[<span class="st">'running_total'</span>] <span class="op">/</span> (counts_not_avail[<span class="st">'running_total'</span>] <span class="op">+</span> counts_not_avail[<span class="st">'completed'</span>])</span>
-<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a><span class="co">#####################################################</span></span>
-<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Adding additional animation traces</span></span>
-<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a><span class="co">#####################################################</span></span>
-<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a><span class="co">## First, add each trace so it will show up initialls</span></span>
-<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a><span class="co"># Due to issues detailed in the following SO threads, it's essential to initialize the traces</span></span>
-<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a><span class="co"># outside of the frames argument else they will not show up at all (or show up intermittently)</span></span>
-<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a><span class="co"># https://stackoverflow.com/questions/69867334/multiple-traces-per-animation-frame-in-plotly</span></span>
-<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a><span class="co"># https://stackoverflow.com/questions/69367344/plotly-animating-a-variable-number-of-traces-in-each-frame-in-r</span></span>
-<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a><span class="co"># </span><span class="al">TODO</span><span class="co">: More explanation and investigation needed of why sometimes traces do and don't show up after being added in</span></span>
-<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a><span class="co"># via this method. Behaviour seems very inconsistent and not always logical (e.g. order you put traces in to the later</span></span>
-<span id="cb13-26"><a href="#cb13-26" aria-hidden="true" tabindex="-1"></a><span class="co"># loop sometimes seems to make a difference but sometimes doesn't; making initial trace transparent sometimes seems to</span></span>
-<span id="cb13-27"><a href="#cb13-27" aria-hidden="true" tabindex="-1"></a><span class="co"># stop it showing up when added in the frames but not always; sometimes the initial trace doesn't disappear).</span></span>
-<span id="cb13-28"><a href="#cb13-28" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-29"><a href="#cb13-29" aria-hidden="true" tabindex="-1"></a><span class="co"># ==============================================================================</span></span>
-<span id="cb13-30"><a href="#cb13-30" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. ADD ALL TRACES (STATIC AND DYNAMIC) TO THE FIGURE</span></span>
-<span id="cb13-31"><a href="#cb13-31" aria-hidden="true" tabindex="-1"></a><span class="co"># We will add them in order: first all dynamic traces, then all static ones.</span></span>
-<span id="cb13-32"><a href="#cb13-32" aria-hidden="true" tabindex="-1"></a><span class="co"># This makes indexing easier to manage.</span></span>
-<span id="cb13-33"><a href="#cb13-33" aria-hidden="true" tabindex="-1"></a><span class="co"># ==============================================================================</span></span>
-<span id="cb13-34"><a href="#cb13-34" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-35"><a href="#cb13-35" aria-hidden="true" tabindex="-1"></a><span class="co"># Let's assume your original figure 'fig' has 2 dynamic traces already.</span></span>
-<span id="cb13-36"><a href="#cb13-36" aria-hidden="true" tabindex="-1"></a><span class="co"># These will be at index 0 and 1.</span></span>
-<span id="cb13-37"><a href="#cb13-37" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-38"><a href="#cb13-38" aria-hidden="true" tabindex="-1"></a><span class="co"># --- Add Placeholders for NEW DYNAMIC Traces ---</span></span>
-<span id="cb13-39"><a href="#cb13-39" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-40"><a href="#cb13-40" aria-hidden="true" tabindex="-1"></a><span class="co"># DYNAMIC TRACE: Operations Completed (will be at index 2)</span></span>
-<span id="cb13-41"><a href="#cb13-41" aria-hidden="true" tabindex="-1"></a><span class="co"># We add its initial state. It's invisible (opacity=0) until the animation starts.</span></span>
-<span id="cb13-42"><a href="#cb13-42" aria-hidden="true" tabindex="-1"></a>fig.add_trace(go.Scatter(</span>
-<span id="cb13-43"><a href="#cb13-43" aria-hidden="true" tabindex="-1"></a>    x<span class="op">=</span>[<span class="dv">100</span>], y<span class="op">=</span>[<span class="dv">30</span>],</span>
-<span id="cb13-44"><a href="#cb13-44" aria-hidden="true" tabindex="-1"></a>    text<span class="op">=</span><span class="ss">f"Operations Completed: </span><span class="sc">{</span><span class="bu">int</span>(counts_ops_completed[<span class="st">'running_total'</span>][<span class="dv">0</span>])<span class="sc">}</span><span class="ss">"</span>,</span>
-<span id="cb13-45"><a href="#cb13-45" aria-hidden="true" tabindex="-1"></a>    mode<span class="op">=</span><span class="st">'text'</span>, textfont<span class="op">=</span><span class="bu">dict</span>(size<span class="op">=</span><span class="dv">20</span>),</span>
-<span id="cb13-46"><a href="#cb13-46" aria-hidden="true" tabindex="-1"></a>    opacity<span class="op">=</span><span class="dv">0</span>, <span class="co"># Start invisible</span></span>
-<span id="cb13-47"><a href="#cb13-47" aria-hidden="true" tabindex="-1"></a>    showlegend<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb13-48"><a href="#cb13-48" aria-hidden="true" tabindex="-1"></a>))</span>
-<span id="cb13-49"><a href="#cb13-49" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-50"><a href="#cb13-50" aria-hidden="true" tabindex="-1"></a><span class="co"># DYNAMIC TRACE: Slots Lost (will be at index 3)</span></span>
-<span id="cb13-51"><a href="#cb13-51" aria-hidden="true" tabindex="-1"></a>fig.add_trace(go.Scatter(</span>
-<span id="cb13-52"><a href="#cb13-52" aria-hidden="true" tabindex="-1"></a>    x<span class="op">=</span>[<span class="dv">600</span>], y<span class="op">=</span>[<span class="dv">850</span>],</span>
-<span id="cb13-53"><a href="#cb13-53" aria-hidden="true" tabindex="-1"></a>    text<span class="op">=</span><span class="st">""</span>,</span>
-<span id="cb13-54"><a href="#cb13-54" aria-hidden="true" tabindex="-1"></a>    mode<span class="op">=</span><span class="st">'text'</span>, textfont<span class="op">=</span><span class="bu">dict</span>(size<span class="op">=</span><span class="dv">20</span>),</span>
-<span id="cb13-55"><a href="#cb13-55" aria-hidden="true" tabindex="-1"></a>    showlegend<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb13-56"><a href="#cb13-56" aria-hidden="true" tabindex="-1"></a>))</span>
-<span id="cb13-57"><a href="#cb13-57" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-58"><a href="#cb13-58" aria-hidden="true" tabindex="-1"></a><span class="co"># DYNAMIC TRACE: Animated Subplot Line (will be at index 4)</span></span>
-<span id="cb13-59"><a href="#cb13-59" aria-hidden="true" tabindex="-1"></a><span class="co"># Add an empty trace as a placeholder. It will be populated by the animation frames.</span></span>
-<span id="cb13-60"><a href="#cb13-60" aria-hidden="true" tabindex="-1"></a>fig.add_trace(go.Scatter(</span>
-<span id="cb13-61"><a href="#cb13-61" aria-hidden="true" tabindex="-1"></a>    x<span class="op">=</span>[], y<span class="op">=</span>[],</span>
-<span id="cb13-62"><a href="#cb13-62" aria-hidden="true" tabindex="-1"></a>    mode<span class="op">=</span><span class="st">"lines"</span>, showlegend<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb13-63"><a href="#cb13-63" aria-hidden="true" tabindex="-1"></a>    name<span class="op">=</span><span class="st">"line_subplot"</span>,</span>
-<span id="cb13-64"><a href="#cb13-64" aria-hidden="true" tabindex="-1"></a>    xaxis<span class="op">=</span><span class="st">'x2'</span>, yaxis<span class="op">=</span><span class="st">'y2'</span></span>
-<span id="cb13-65"><a href="#cb13-65" aria-hidden="true" tabindex="-1"></a>))</span>
-<span id="cb13-66"><a href="#cb13-66" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-67"><a href="#cb13-67" aria-hidden="true" tabindex="-1"></a><span class="co"># --- Add STATIC Traces ---</span></span>
-<span id="cb13-68"><a href="#cb13-68" aria-hidden="true" tabindex="-1"></a><span class="co"># These are added once and will not be included in the animation frames.</span></span>
-<span id="cb13-69"><a href="#cb13-69" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-70"><a href="#cb13-70" aria-hidden="true" tabindex="-1"></a><span class="co"># STATIC TRACE: Bed Icons (will be at index 5)</span></span>
-<span id="cb13-71"><a href="#cb13-71" aria-hidden="true" tabindex="-1"></a><span class="co"># Note: Replaced the confusing fig.add_trace(fig.data[1]) with an explicit definition.</span></span>
-<span id="cb13-72"><a href="#cb13-72" aria-hidden="true" tabindex="-1"></a><span class="co"># You should replace the x and y with the actual coordinates of your bed icons.</span></span>
-<span id="cb13-73"><a href="#cb13-73" aria-hidden="true" tabindex="-1"></a>fig.add_trace(go.Scatter(</span>
-<span id="cb13-74"><a href="#cb13-74" aria-hidden="true" tabindex="-1"></a>    x<span class="op">=</span>[...], <span class="co"># &lt;-- Add your bed icon X coordinates here</span></span>
-<span id="cb13-75"><a href="#cb13-75" aria-hidden="true" tabindex="-1"></a>    y<span class="op">=</span>[...], <span class="co"># &lt;-- Add your bed icon Y coordinates here</span></span>
-<span id="cb13-76"><a href="#cb13-76" aria-hidden="true" tabindex="-1"></a>    mode<span class="op">=</span><span class="st">'markers'</span>, <span class="co"># Or whatever mode you used for the beds</span></span>
-<span id="cb13-77"><a href="#cb13-77" aria-hidden="true" tabindex="-1"></a>    showlegend<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb13-78"><a href="#cb13-78" aria-hidden="true" tabindex="-1"></a>    <span class="co"># ... other styling for bed icons</span></span>
-<span id="cb13-79"><a href="#cb13-79" aria-hidden="true" tabindex="-1"></a>))</span>
-<span id="cb13-80"><a href="#cb13-80" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-81"><a href="#cb13-81" aria-hidden="true" tabindex="-1"></a><span class="co"># STATIC TRACE: Event Labels (will be at index 6)</span></span>
-<span id="cb13-82"><a href="#cb13-82" aria-hidden="true" tabindex="-1"></a><span class="co"># This is now added only once and will persist through the animation.</span></span>
-<span id="cb13-83"><a href="#cb13-83" aria-hidden="true" tabindex="-1"></a>fig.add_trace(go.Scatter(</span>
-<span id="cb13-84"><a href="#cb13-84" aria-hidden="true" tabindex="-1"></a>    x<span class="op">=</span>[pos<span class="op">+</span><span class="dv">10</span> <span class="cf">for</span> pos <span class="kw">in</span> event_position_df[<span class="st">'x'</span>].to_list()],</span>
-<span id="cb13-85"><a href="#cb13-85" aria-hidden="true" tabindex="-1"></a>    y<span class="op">=</span>event_position_df[<span class="st">'y'</span>].to_list(),</span>
-<span id="cb13-86"><a href="#cb13-86" aria-hidden="true" tabindex="-1"></a>    mode<span class="op">=</span><span class="st">"text"</span>, name<span class="op">=</span><span class="st">""</span>,</span>
-<span id="cb13-87"><a href="#cb13-87" aria-hidden="true" tabindex="-1"></a>    text<span class="op">=</span>event_position_df[<span class="st">'label'</span>].to_list(),</span>
-<span id="cb13-88"><a href="#cb13-88" aria-hidden="true" tabindex="-1"></a>    textposition<span class="op">=</span><span class="st">"middle right"</span>,</span>
-<span id="cb13-89"><a href="#cb13-89" aria-hidden="true" tabindex="-1"></a>    hoverinfo<span class="op">=</span><span class="st">'none'</span>,</span>
-<span id="cb13-90"><a href="#cb13-90" aria-hidden="true" tabindex="-1"></a>    showlegend<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb13-91"><a href="#cb13-91" aria-hidden="true" tabindex="-1"></a>))</span>
-<span id="cb13-92"><a href="#cb13-92" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-93"><a href="#cb13-93" aria-hidden="true" tabindex="-1"></a><span class="co"># STATIC TRACE: Subplot Background Line (will be at index 7)</span></span>
-<span id="cb13-94"><a href="#cb13-94" aria-hidden="true" tabindex="-1"></a>fig.add_trace(go.Scatter(</span>
-<span id="cb13-95"><a href="#cb13-95" aria-hidden="true" tabindex="-1"></a>    x<span class="op">=</span>counts_not_avail[<span class="st">'snapshot_time'</span>],</span>
-<span id="cb13-96"><a href="#cb13-96" aria-hidden="true" tabindex="-1"></a>    y<span class="op">=</span>counts_not_avail[<span class="st">'patient_x'</span>],</span>
-<span id="cb13-97"><a href="#cb13-97" aria-hidden="true" tabindex="-1"></a>    mode<span class="op">=</span><span class="st">'lines'</span>, showlegend<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb13-98"><a href="#cb13-98" aria-hidden="true" tabindex="-1"></a>    line<span class="op">=</span><span class="bu">dict</span>(color<span class="op">=</span><span class="st">'lightgrey'</span>), <span class="co"># Use a color to distinguish it</span></span>
-<span id="cb13-99"><a href="#cb13-99" aria-hidden="true" tabindex="-1"></a>    opacity<span class="op">=</span><span class="fl">0.4</span>,</span>
-<span id="cb13-100"><a href="#cb13-100" aria-hidden="true" tabindex="-1"></a>    xaxis<span class="op">=</span><span class="st">"x2"</span>, yaxis<span class="op">=</span><span class="st">"y2"</span></span>
-<span id="cb13-101"><a href="#cb13-101" aria-hidden="true" tabindex="-1"></a>), row<span class="op">=</span><span class="dv">2</span>, col<span class="op">=</span><span class="dv">1</span>)</span>
-<span id="cb13-102"><a href="#cb13-102" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-103"><a href="#cb13-103" aria-hidden="true" tabindex="-1"></a><span class="co"># Ensure text sizes are correct</span></span>
-<span id="cb13-104"><a href="#cb13-104" aria-hidden="true" tabindex="-1"></a>fig.update_traces(textfont_size<span class="op">=</span><span class="dv">14</span>)</span>
-<span id="cb13-105"><a href="#cb13-105" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-106"><a href="#cb13-106" aria-hidden="true" tabindex="-1"></a><span class="co"># (Your subplot setup code for layout and axes remains the same...)</span></span>
-<span id="cb13-107"><a href="#cb13-107" aria-hidden="true" tabindex="-1"></a><span class="co"># Now set up the desired subplot layout</span></span>
-<span id="cb13-108"><a href="#cb13-108" aria-hidden="true" tabindex="-1"></a>sp <span class="op">=</span> make_subplots(rows<span class="op">=</span><span class="dv">2</span>, cols<span class="op">=</span><span class="dv">1</span>, row_heights<span class="op">=</span>[<span class="fl">0.85</span>, <span class="fl">0.15</span>], subplot_titles<span class="op">=</span>(<span class="st">""</span>, <span class="st">"Daily lost slots"</span>))</span>
-<span id="cb13-109"><a href="#cb13-109" aria-hidden="true" tabindex="-1"></a>fig.layout[<span class="st">'xaxis'</span>][<span class="st">'domain'</span>] <span class="op">=</span> sp.layout[<span class="st">'xaxis'</span>][<span class="st">'domain'</span>]</span>
-<span id="cb13-110"><a href="#cb13-110" aria-hidden="true" tabindex="-1"></a>fig.layout[<span class="st">'yaxis'</span>][<span class="st">'domain'</span>] <span class="op">=</span> sp.layout[<span class="st">'yaxis'</span>][<span class="st">'domain'</span>]</span>
-<span id="cb13-111"><a href="#cb13-111" aria-hidden="true" tabindex="-1"></a>fig.layout[<span class="st">'xaxis2'</span>] <span class="op">=</span> sp.layout[<span class="st">'xaxis2'</span>]</span>
-<span id="cb13-112"><a href="#cb13-112" aria-hidden="true" tabindex="-1"></a>fig.layout[<span class="st">'yaxis2'</span>] <span class="op">=</span> sp.layout[<span class="st">'yaxis2'</span>]</span>
-<span id="cb13-113"><a href="#cb13-113" aria-hidden="true" tabindex="-1"></a>fig._grid_ref <span class="op">=</span> sp._grid_ref</span>
-<span id="cb13-114"><a href="#cb13-114" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-115"><a href="#cb13-115" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-116"><a href="#cb13-116" aria-hidden="true" tabindex="-1"></a><span class="co"># ==============================================================================</span></span>
-<span id="cb13-117"><a href="#cb13-117" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. BUILD THE ANIMATION FRAMES</span></span>
-<span id="cb13-118"><a href="#cb13-118" aria-hidden="true" tabindex="-1"></a><span class="co"># The frames will now ONLY contain data for the DYNAMIC traces.</span></span>
-<span id="cb13-119"><a href="#cb13-119" aria-hidden="true" tabindex="-1"></a><span class="co"># ==============================================================================</span></span>
-<span id="cb13-120"><a href="#cb13-120" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-121"><a href="#cb13-121" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, frame <span class="kw">in</span> <span class="bu">enumerate</span>(fig.frames):</span>
-<span id="cb13-122"><a href="#cb13-122" aria-hidden="true" tabindex="-1"></a>    <span class="co"># This is the data for the original 2 animated traces</span></span>
-<span id="cb13-123"><a href="#cb13-123" aria-hidden="true" tabindex="-1"></a>    original_data <span class="op">=</span> frame.data</span>
-<span id="cb13-124"><a href="#cb13-124" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-125"><a href="#cb13-125" aria-hidden="true" tabindex="-1"></a>    <span class="co"># This tuple contains the data for the NEW dynamic traces we added,</span></span>
-<span id="cb13-126"><a href="#cb13-126" aria-hidden="true" tabindex="-1"></a>    <span class="co"># in the same order we added them (Ops Completed, Slots Lost, Subplot Line).</span></span>
-<span id="cb13-127"><a href="#cb13-127" aria-hidden="true" tabindex="-1"></a>    new_dynamic_data <span class="op">=</span> (</span>
-<span id="cb13-128"><a href="#cb13-128" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Data for "Operations Completed" text (updates trace 2)</span></span>
-<span id="cb13-129"><a href="#cb13-129" aria-hidden="true" tabindex="-1"></a>        go.Scatter(</span>
-<span id="cb13-130"><a href="#cb13-130" aria-hidden="true" tabindex="-1"></a>            text<span class="op">=</span><span class="ss">f"Operations Completed: </span><span class="sc">{</span><span class="bu">int</span>(counts_ops_completed[<span class="st">'running_total'</span>][i])<span class="sc">}</span><span class="ss">"</span>,</span>
-<span id="cb13-131"><a href="#cb13-131" aria-hidden="true" tabindex="-1"></a>            opacity<span class="op">=</span><span class="dv">1</span> <span class="co"># Make it visible</span></span>
-<span id="cb13-132"><a href="#cb13-132" aria-hidden="true" tabindex="-1"></a>        ),</span>
-<span id="cb13-133"><a href="#cb13-133" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Data for "Slots Lost" text (updates trace 3)</span></span>
-<span id="cb13-134"><a href="#cb13-134" aria-hidden="true" tabindex="-1"></a>        go.Scatter(</span>
-<span id="cb13-135"><a href="#cb13-135" aria-hidden="true" tabindex="-1"></a>            text<span class="op">=</span><span class="ss">f"Total slots lost: </span><span class="sc">{</span><span class="bu">int</span>(counts_not_avail[<span class="st">'running_total'</span>][i])<span class="sc">}</span><span class="ss">&lt;br&gt;(</span><span class="sc">{</span>counts_not_avail[<span class="st">'perc_slots_lost'</span>][i]<span class="sc">:.1%}</span><span class="ss">)"</span></span>
-<span id="cb13-136"><a href="#cb13-136" aria-hidden="true" tabindex="-1"></a>        ),</span>
-<span id="cb13-137"><a href="#cb13-137" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Data for animated subplot line (updates trace 4)</span></span>
-<span id="cb13-138"><a href="#cb13-138" aria-hidden="true" tabindex="-1"></a>        go.Scatter(</span>
-<span id="cb13-139"><a href="#cb13-139" aria-hidden="true" tabindex="-1"></a>            x<span class="op">=</span>counts_not_avail[<span class="st">'snapshot_time'</span>][<span class="dv">0</span>: i<span class="op">+</span><span class="dv">1</span>].values,</span>
-<span id="cb13-140"><a href="#cb13-140" aria-hidden="true" tabindex="-1"></a>            y<span class="op">=</span>counts_not_avail[<span class="st">'patient_x'</span>][<span class="dv">0</span>: i<span class="op">+</span><span class="dv">1</span>].values,</span>
-<span id="cb13-141"><a href="#cb13-141" aria-hidden="true" tabindex="-1"></a>        ),</span>
-<span id="cb13-142"><a href="#cb13-142" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb13-143"><a href="#cb13-143" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-144"><a href="#cb13-144" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Combine the original animation data with the new dynamic data</span></span>
-<span id="cb13-145"><a href="#cb13-145" aria-hidden="true" tabindex="-1"></a>    frame.data <span class="op">=</span> original_data <span class="op">+</span> new_dynamic_data</span>
-<span id="cb13-146"><a href="#cb13-146" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-147"><a href="#cb13-147" aria-hidden="true" tabindex="-1"></a><span class="co"># ==============================================================================</span></span>
-<span id="cb13-148"><a href="#cb13-148" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. SET THE TRACES TO ANIMATE</span></span>
-<span id="cb13-149"><a href="#cb13-149" aria-hidden="true" tabindex="-1"></a><span class="co"># This list now ONLY contains the indices of our dynamic traces.</span></span>
-<span id="cb13-150"><a href="#cb13-150" aria-hidden="true" tabindex="-1"></a><span class="co"># ==============================================================================</span></span>
-<span id="cb13-151"><a href="#cb13-151" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-152"><a href="#cb13-152" aria-hidden="true" tabindex="-1"></a><span class="co"># Original traces (0, 1) + New dynamic traces (2, 3, 4)</span></span>
-<span id="cb13-153"><a href="#cb13-153" aria-hidden="true" tabindex="-1"></a>dynamic_trace_indices <span class="op">=</span> [<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>]</span>
-<span id="cb13-154"><a href="#cb13-154" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-155"><a href="#cb13-155" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> frame <span class="kw">in</span> fig.frames:</span>
-<span id="cb13-156"><a href="#cb13-156" aria-hidden="true" tabindex="-1"></a>    frame.traces <span class="op">=</span> dynamic_trace_indices</span>
-<span id="cb13-157"><a href="#cb13-157" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-158"><a href="#cb13-158" aria-hidden="true" tabindex="-1"></a><span class="co"># The static traces (5, 6, 7) are NOT listed here, so the animation</span></span>
-<span id="cb13-159"><a href="#cb13-159" aria-hidden="true" tabindex="-1"></a><span class="co"># will leave them untouched.</span></span>
-<span id="cb13-160"><a href="#cb13-160" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-161"><a href="#cb13-161" aria-hidden="true" tabindex="-1"></a>fig</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="b95bce53" class="cell" data-execution_count="65">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Set up the desired subplot layout</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>ROWS <span class="op">=</span> <span class="dv">4</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>sp <span class="op">=</span> make_subplots(</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>    rows<span class="op">=</span>ROWS,</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>    cols<span class="op">=</span><span class="dv">1</span>,</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>    row_heights<span class="op">=</span>[<span class="fl">0.75</span>, <span class="fl">0.05</span>, <span class="fl">0.05</span>, <span class="fl">0.15</span>],</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>    vertical_spacing<span class="op">=</span><span class="fl">0.05</span>,</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>    subplot_titles<span class="op">=</span>(</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>        <span class="st">""</span>, <span class="co"># Original Animation</span></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>        <span class="st">""</span>, <span class="co"># Completed Operations</span></span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>        <span class="st">""</span>, <span class="co"># Lost Slot Cumulative Counts</span></span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>        <span class="st">""</span> <span class="co"># Daily Lost Slots Plot</span></span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Overwrite the domain of our original x and y axis with domain from the new axis</span></span>
+<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a>fig.layout[<span class="st">'xaxis'</span>][<span class="st">'domain'</span>] <span class="op">=</span> sp.layout[<span class="st">'xaxis'</span>][<span class="st">'domain'</span>]</span>
+<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a>fig.layout[<span class="st">'yaxis'</span>][<span class="st">'domain'</span>] <span class="op">=</span> sp.layout[<span class="st">'yaxis'</span>][<span class="st">'domain'</span>]</span>
+<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">2</span>, ROWS<span class="op">+</span><span class="dv">1</span>):</span>
+<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Add in the attributes for the secondary axis from our subplot</span></span>
+<span id="cb16-24"><a href="#cb16-24" aria-hidden="true" tabindex="-1"></a>    fig.layout[<span class="ss">f'xaxis</span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">'</span>] <span class="op">=</span> sp.layout[<span class="ss">f'xaxis</span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">'</span>]</span>
+<span id="cb16-25"><a href="#cb16-25" aria-hidden="true" tabindex="-1"></a>    fig.layout[<span class="ss">f'yaxis</span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">'</span>] <span class="op">=</span> sp.layout[<span class="ss">f'yaxis</span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">'</span>]</span>
+<span id="cb16-26"><a href="#cb16-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-27"><a href="#cb16-27" aria-hidden="true" tabindex="-1"></a><span class="co"># Final key step - copy over the _grid_ref attribute</span></span>
+<span id="cb16-28"><a href="#cb16-28" aria-hidden="true" tabindex="-1"></a><span class="co"># This isn't meant to be something we modify but it's an essential</span></span>
+<span id="cb16-29"><a href="#cb16-29" aria-hidden="true" tabindex="-1"></a><span class="co"># part of the subplot code because otherwise plotly doesn't truly know</span></span>
+<span id="cb16-30"><a href="#cb16-30" aria-hidden="true" tabindex="-1"></a><span class="co"># how the different subplots are arranged and referenced</span></span>
+<span id="cb16-31"><a href="#cb16-31" aria-hidden="true" tabindex="-1"></a>fig._grid_ref <span class="op">=</span> sp._grid_ref</span>
+<span id="cb16-32"><a href="#cb16-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-33"><a href="#cb16-33" aria-hidden="true" tabindex="-1"></a>fig.update_layout(</span>
+<span id="cb16-34"><a href="#cb16-34" aria-hidden="true" tabindex="-1"></a>    xaxis2<span class="op">=</span><span class="bu">dict</span>(</span>
+<span id="cb16-35"><a href="#cb16-35" aria-hidden="true" tabindex="-1"></a>        showgrid<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb16-36"><a href="#cb16-36" aria-hidden="true" tabindex="-1"></a>        zeroline<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb16-37"><a href="#cb16-37" aria-hidden="true" tabindex="-1"></a>        showline<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb16-38"><a href="#cb16-38" aria-hidden="true" tabindex="-1"></a>        showticklabels<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb16-39"><a href="#cb16-39" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb16-40"><a href="#cb16-40" aria-hidden="true" tabindex="-1"></a>    yaxis2<span class="op">=</span><span class="bu">dict</span>(</span>
+<span id="cb16-41"><a href="#cb16-41" aria-hidden="true" tabindex="-1"></a>        showgrid<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb16-42"><a href="#cb16-42" aria-hidden="true" tabindex="-1"></a>        zeroline<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb16-43"><a href="#cb16-43" aria-hidden="true" tabindex="-1"></a>        showline<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb16-44"><a href="#cb16-44" aria-hidden="true" tabindex="-1"></a>        showticklabels<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb16-45"><a href="#cb16-45" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb16-46"><a href="#cb16-46" aria-hidden="true" tabindex="-1"></a>    xaxis3<span class="op">=</span><span class="bu">dict</span>(</span>
+<span id="cb16-47"><a href="#cb16-47" aria-hidden="true" tabindex="-1"></a>        showgrid<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb16-48"><a href="#cb16-48" aria-hidden="true" tabindex="-1"></a>        zeroline<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb16-49"><a href="#cb16-49" aria-hidden="true" tabindex="-1"></a>        showline<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb16-50"><a href="#cb16-50" aria-hidden="true" tabindex="-1"></a>        showticklabels<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb16-51"><a href="#cb16-51" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb16-52"><a href="#cb16-52" aria-hidden="true" tabindex="-1"></a>    yaxis3<span class="op">=</span><span class="bu">dict</span>(</span>
+<span id="cb16-53"><a href="#cb16-53" aria-hidden="true" tabindex="-1"></a>        showgrid<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb16-54"><a href="#cb16-54" aria-hidden="true" tabindex="-1"></a>        zeroline<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb16-55"><a href="#cb16-55" aria-hidden="true" tabindex="-1"></a>        showline<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb16-56"><a href="#cb16-56" aria-hidden="true" tabindex="-1"></a>        showticklabels<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb16-57"><a href="#cb16-57" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb16-58"><a href="#cb16-58" aria-hidden="true" tabindex="-1"></a>    xaxis4<span class="op">=</span><span class="bu">dict</span>(</span>
+<span id="cb16-59"><a href="#cb16-59" aria-hidden="true" tabindex="-1"></a>        showticklabels<span class="op">=</span><span class="va">False</span></span>
+<span id="cb16-60"><a href="#cb16-60" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb16-61"><a href="#cb16-61" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>Unable to display output for mime type(s): application/vnd.plotly.v1+json</code></pre>
+</div>
+</div>
+<div id="5ea6a756" class="cell" data-execution_count="66">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="bu">len</span>(fig.data))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>3</code></pre>
+</div>
+</div>
+<div id="f8d503e3" class="cell" data-execution_count="67">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co">#####################################################</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Adding additional animation traces</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="co">#####################################################</span></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a><span class="co">#####################################################</span></span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Initialize static and animated traces</span></span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a><span class="co">#####################################################</span></span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a><span class="co">## First, add each trace so it will show up initially</span></span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Plotly requires that all traces that will appear in animation frames are first</span></span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a><span class="co"># defined in `fig.data`. Otherwise, they appear to "fly in" from undefined positions,</span></span>
+<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a><span class="co"># or exhibit flickering due to missing interpolation references.</span></span>
+<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a><span class="co"># We add each trace in order, with placeholder data and correct styling,</span></span>
+<span id="cb20-16"><a href="#cb20-16" aria-hidden="true" tabindex="-1"></a><span class="co"># so the animation engine has full knowledge of the traces from the outset.</span></span>
+<span id="cb20-17"><a href="#cb20-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-18"><a href="#cb20-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Due to issues detailed in the following SO threads, it's essential to initialize the traces</span></span>
+<span id="cb20-19"><a href="#cb20-19" aria-hidden="true" tabindex="-1"></a><span class="co"># outside of the frames argument else they will not show up at all (or show up intermittently)</span></span>
+<span id="cb20-20"><a href="#cb20-20" aria-hidden="true" tabindex="-1"></a><span class="co"># https://stackoverflow.com/questions/69867334/multiple-traces-per-animation-frame-in-plotly</span></span>
+<span id="cb20-21"><a href="#cb20-21" aria-hidden="true" tabindex="-1"></a><span class="co"># https://stackoverflow.com/questions/69367344/plotly-animating-a-variable-number-of-traces-in-each-frame-in-r</span></span>
+<span id="cb20-22"><a href="#cb20-22" aria-hidden="true" tabindex="-1"></a><span class="co"># </span><span class="al">TODO</span><span class="co">: More explanation and investigation needed of why sometimes traces do and don't show up after being added in</span></span>
+<span id="cb20-23"><a href="#cb20-23" aria-hidden="true" tabindex="-1"></a><span class="co"># via this method. Behaviour seems very inconsistent and not always logical (e.g. order you put traces in to the later</span></span>
+<span id="cb20-24"><a href="#cb20-24" aria-hidden="true" tabindex="-1"></a><span class="co"># loop sometimes seems to make a difference but sometimes doesn't; making initial trace transparent sometimes seems to</span></span>
+<span id="cb20-25"><a href="#cb20-25" aria-hidden="true" tabindex="-1"></a><span class="co"># stop it showing up when added in the frames but not always; sometimes the initial trace doesn't disappear).</span></span>
+<span id="cb20-26"><a href="#cb20-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-27"><a href="#cb20-27" aria-hidden="true" tabindex="-1"></a><span class="co"># First, extract the trace containing the resource icons</span></span>
+<span id="cb20-28"><a href="#cb20-28" aria-hidden="true" tabindex="-1"></a>position_label_trace <span class="op">=</span> fig.data[<span class="dv">1</span>]</span>
+<span id="cb20-29"><a href="#cb20-29" aria-hidden="true" tabindex="-1"></a>icon_trace <span class="op">=</span> fig.data[<span class="dv">2</span>]</span>
+<span id="cb20-30"><a href="#cb20-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-31"><a href="#cb20-31" aria-hidden="true" tabindex="-1"></a><span class="co"># Now keep our figure data as just the initial trace.</span></span>
+<span id="cb20-32"><a href="#cb20-32" aria-hidden="true" tabindex="-1"></a>fig.data <span class="op">=</span> (fig.data[<span class="dv">0</span>],)</span>
+<span id="cb20-33"><a href="#cb20-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-34"><a href="#cb20-34" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. BED ICONS TRACE</span></span>
+<span id="cb20-35"><a href="#cb20-35" aria-hidden="true" tabindex="-1"></a><span class="co"># Readd the bed icons trace in a consistent manner</span></span>
+<span id="cb20-36"><a href="#cb20-36" aria-hidden="true" tabindex="-1"></a><span class="co"># Confusingly, when we start messing with the naimation frames, we lose the bed/resource icon trace</span></span>
+<span id="cb20-37"><a href="#cb20-37" aria-hidden="true" tabindex="-1"></a><span class="co"># even though it appeared fine until this point - so we have to handle it here</span></span>
+<span id="cb20-38"><a href="#cb20-38" aria-hidden="true" tabindex="-1"></a>fig.add_trace(icon_trace)</span>
+<span id="cb20-39"><a href="#cb20-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-40"><a href="#cb20-40" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Length after adding bed trace: </span><span class="sc">{</span><span class="bu">len</span>(fig.data)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb20-41"><a href="#cb20-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-42"><a href="#cb20-42" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. EVENT LABELS (static position text, but added dynamically per frame to avoid disappearing)</span></span>
+<span id="cb20-43"><a href="#cb20-43" aria-hidden="true" tabindex="-1"></a><span class="co"># This is a similar thing to the fig labels - except we never added them in the first place!</span></span>
+<span id="cb20-44"><a href="#cb20-44" aria-hidden="true" tabindex="-1"></a><span class="co"># Add trace for the event labels (as these get lost from the animation once we start trying to add other things in,</span></span>
+<span id="cb20-45"><a href="#cb20-45" aria-hidden="true" tabindex="-1"></a><span class="co"># so need manually re-adding)</span></span>
+<span id="cb20-46"><a href="#cb20-46" aria-hidden="true" tabindex="-1"></a><span class="co"># fig.add_trace(go.Scatter(</span></span>
+<span id="cb20-47"><a href="#cb20-47" aria-hidden="true" tabindex="-1"></a><span class="co">#         x=[pos+10 for pos in event_position_df['x'].to_list()],</span></span>
+<span id="cb20-48"><a href="#cb20-48" aria-hidden="true" tabindex="-1"></a><span class="co">#         y=event_position_df['y'].to_list(),</span></span>
+<span id="cb20-49"><a href="#cb20-49" aria-hidden="true" tabindex="-1"></a><span class="co">#         mode="text",</span></span>
+<span id="cb20-50"><a href="#cb20-50" aria-hidden="true" tabindex="-1"></a><span class="co">#         name="",</span></span>
+<span id="cb20-51"><a href="#cb20-51" aria-hidden="true" tabindex="-1"></a><span class="co">#         text=event_position_df['label'].to_list(),</span></span>
+<span id="cb20-52"><a href="#cb20-52" aria-hidden="true" tabindex="-1"></a><span class="co">#         textposition="middle right",</span></span>
+<span id="cb20-53"><a href="#cb20-53" aria-hidden="true" tabindex="-1"></a><span class="co">#         hoverinfo='none'</span></span>
+<span id="cb20-54"><a href="#cb20-54" aria-hidden="true" tabindex="-1"></a><span class="co">#     ))</span></span>
+<span id="cb20-55"><a href="#cb20-55" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-56"><a href="#cb20-56" aria-hidden="true" tabindex="-1"></a>fig.add_trace(position_label_trace)</span>
+<span id="cb20-57"><a href="#cb20-57" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-58"><a href="#cb20-58" aria-hidden="true" tabindex="-1"></a><span class="co"># Finally, match the font size for the position labels</span></span>
+<span id="cb20-59"><a href="#cb20-59" aria-hidden="true" tabindex="-1"></a>fig.data[<span class="op">-</span><span class="dv">1</span>].textfont.size</span>
+<span id="cb20-60"><a href="#cb20-60" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-61"><a href="#cb20-61" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Length after adding 'position labels:' trace: </span><span class="sc">{</span><span class="bu">len</span>(fig.data)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb20-62"><a href="#cb20-62" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-63"><a href="#cb20-63" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. OPERATIONS COMPLETED TEXT (animated text annotation)</span></span>
+<span id="cb20-64"><a href="#cb20-64" aria-hidden="true" tabindex="-1"></a><span class="co"># Add animated text trace that gives running total of operations completed</span></span>
+<span id="cb20-65"><a href="#cb20-65" aria-hidden="true" tabindex="-1"></a>fig.add_trace(go.Scatter(</span>
+<span id="cb20-66"><a href="#cb20-66" aria-hidden="true" tabindex="-1"></a>                x<span class="op">=</span>[<span class="dv">5</span>],</span>
+<span id="cb20-67"><a href="#cb20-67" aria-hidden="true" tabindex="-1"></a>                y<span class="op">=</span>[<span class="dv">10</span>],</span>
+<span id="cb20-68"><a href="#cb20-68" aria-hidden="true" tabindex="-1"></a>                <span class="co"># text="",</span></span>
+<span id="cb20-69"><a href="#cb20-69" aria-hidden="true" tabindex="-1"></a>                text<span class="op">=</span><span class="ss">f"Operations Completed: </span><span class="sc">{</span><span class="bu">int</span>(counts_ops_completed[<span class="st">'running_total'</span>][<span class="dv">0</span>])<span class="sc">}</span><span class="ss">"</span>,</span>
+<span id="cb20-70"><a href="#cb20-70" aria-hidden="true" tabindex="-1"></a>                mode<span class="op">=</span><span class="st">'text'</span>,</span>
+<span id="cb20-71"><a href="#cb20-71" aria-hidden="true" tabindex="-1"></a>                textposition<span class="op">=</span><span class="st">"middle left"</span>,</span>
+<span id="cb20-72"><a href="#cb20-72" aria-hidden="true" tabindex="-1"></a>                textfont<span class="op">=</span><span class="bu">dict</span>(size<span class="op">=</span><span class="dv">20</span>),</span>
+<span id="cb20-73"><a href="#cb20-73" aria-hidden="true" tabindex="-1"></a>                <span class="co"># opacity=0,</span></span>
+<span id="cb20-74"><a href="#cb20-74" aria-hidden="true" tabindex="-1"></a>                showlegend<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb20-75"><a href="#cb20-75" aria-hidden="true" tabindex="-1"></a>                xaxis<span class="op">=</span><span class="st">"x2"</span>,</span>
+<span id="cb20-76"><a href="#cb20-76" aria-hidden="true" tabindex="-1"></a>                yaxis<span class="op">=</span><span class="st">"y2"</span></span>
+<span id="cb20-77"><a href="#cb20-77" aria-hidden="true" tabindex="-1"></a>        ), row<span class="op">=</span><span class="dv">2</span>, col<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb20-78"><a href="#cb20-78" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-79"><a href="#cb20-79" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Length after adding 'operations completed:' trace: </span><span class="sc">{</span><span class="bu">len</span>(fig.data)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb20-80"><a href="#cb20-80" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-81"><a href="#cb20-81" aria-hidden="true" tabindex="-1"></a><span class="co"># 4. SLOTS LOST TEXT (animated text annotation)</span></span>
+<span id="cb20-82"><a href="#cb20-82" aria-hidden="true" tabindex="-1"></a><span class="co"># Add animated trace giving running total of slots lost and percentage of total slots this represents</span></span>
+<span id="cb20-83"><a href="#cb20-83" aria-hidden="true" tabindex="-1"></a>fig.add_trace(go.Scatter(</span>
+<span id="cb20-84"><a href="#cb20-84" aria-hidden="true" tabindex="-1"></a>    x<span class="op">=</span>[<span class="dv">5</span>],</span>
+<span id="cb20-85"><a href="#cb20-85" aria-hidden="true" tabindex="-1"></a>    y<span class="op">=</span>[<span class="dv">10</span>],</span>
+<span id="cb20-86"><a href="#cb20-86" aria-hidden="true" tabindex="-1"></a>    <span class="co"># text="",</span></span>
+<span id="cb20-87"><a href="#cb20-87" aria-hidden="true" tabindex="-1"></a>    text<span class="op">=</span><span class="ss">f"Total slots lost: </span><span class="sc">{</span><span class="bu">int</span>(counts_not_avail[<span class="st">'running_total'</span>][<span class="dv">0</span>])<span class="sc">}</span><span class="ss"> (</span><span class="sc">{</span>counts_not_avail[<span class="st">'perc_slots_lost'</span>][<span class="dv">0</span>]<span class="sc">:.1%}</span><span class="ss">)"</span>,</span>
+<span id="cb20-88"><a href="#cb20-88" aria-hidden="true" tabindex="-1"></a>    mode<span class="op">=</span><span class="st">'text'</span>,</span>
+<span id="cb20-89"><a href="#cb20-89" aria-hidden="true" tabindex="-1"></a>    textfont<span class="op">=</span><span class="bu">dict</span>(size<span class="op">=</span><span class="dv">20</span>),</span>
+<span id="cb20-90"><a href="#cb20-90" aria-hidden="true" tabindex="-1"></a>    <span class="co"># opacity=0,</span></span>
+<span id="cb20-91"><a href="#cb20-91" aria-hidden="true" tabindex="-1"></a>    showlegend<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb20-92"><a href="#cb20-92" aria-hidden="true" tabindex="-1"></a>    textposition<span class="op">=</span><span class="st">"middle left"</span>,</span>
+<span id="cb20-93"><a href="#cb20-93" aria-hidden="true" tabindex="-1"></a>    xaxis<span class="op">=</span><span class="st">"x3"</span>,</span>
+<span id="cb20-94"><a href="#cb20-94" aria-hidden="true" tabindex="-1"></a>    yaxis<span class="op">=</span><span class="st">"y3"</span></span>
+<span id="cb20-95"><a href="#cb20-95" aria-hidden="true" tabindex="-1"></a>), row<span class="op">=</span><span class="dv">3</span>, col<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb20-96"><a href="#cb20-96" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-97"><a href="#cb20-97" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Length after adding 'slots lost:' trace: </span><span class="sc">{</span><span class="bu">len</span>(fig.data)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb20-98"><a href="#cb20-98" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-99"><a href="#cb20-99" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-100"><a href="#cb20-100" aria-hidden="true" tabindex="-1"></a><span class="co"># # 5. LINE PLOT ON SECONDARY AXIS (animated line in subplot)</span></span>
+<span id="cb20-101"><a href="#cb20-101" aria-hidden="true" tabindex="-1"></a><span class="co"># Initialize with a single point and assign it to subplot axes (x2/y2)</span></span>
+<span id="cb20-102"><a href="#cb20-102" aria-hidden="true" tabindex="-1"></a>fig.add_trace(go.Scatter(</span>
+<span id="cb20-103"><a href="#cb20-103" aria-hidden="true" tabindex="-1"></a>    x<span class="op">=</span>[counts_not_avail[<span class="st">'snapshot_time'</span>].iloc[<span class="dv">0</span>]],</span>
+<span id="cb20-104"><a href="#cb20-104" aria-hidden="true" tabindex="-1"></a>    y<span class="op">=</span>[counts_not_avail[<span class="st">'patient_x'</span>].iloc[<span class="dv">0</span>]],</span>
+<span id="cb20-105"><a href="#cb20-105" aria-hidden="true" tabindex="-1"></a>    mode<span class="op">=</span><span class="st">"lines"</span>,</span>
+<span id="cb20-106"><a href="#cb20-106" aria-hidden="true" tabindex="-1"></a>    line<span class="op">=</span><span class="bu">dict</span>(color<span class="op">=</span><span class="st">"rgba(255,0,0,1)"</span>),  <span class="co"># semi-transparent initial</span></span>
+<span id="cb20-107"><a href="#cb20-107" aria-hidden="true" tabindex="-1"></a>    showlegend<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb20-108"><a href="#cb20-108" aria-hidden="true" tabindex="-1"></a>    name<span class="op">=</span><span class="st">"slots_lost_line"</span>,</span>
+<span id="cb20-109"><a href="#cb20-109" aria-hidden="true" tabindex="-1"></a>    xaxis<span class="op">=</span><span class="st">"x4"</span>,</span>
+<span id="cb20-110"><a href="#cb20-110" aria-hidden="true" tabindex="-1"></a>    yaxis<span class="op">=</span><span class="st">"y4"</span></span>
+<span id="cb20-111"><a href="#cb20-111" aria-hidden="true" tabindex="-1"></a>    <span class="co"># We place it in our new subplot using the following line</span></span>
+<span id="cb20-112"><a href="#cb20-112" aria-hidden="true" tabindex="-1"></a>), row<span class="op">=</span><span class="dv">4</span>, col<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb20-113"><a href="#cb20-113" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-114"><a href="#cb20-114" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-115"><a href="#cb20-115" aria-hidden="true" tabindex="-1"></a><span class="co"># Add an initial trace to our secondary line chart</span></span>
+<span id="cb20-116"><a href="#cb20-116" aria-hidden="true" tabindex="-1"></a>fig.add_trace(go.Scatter(</span>
+<span id="cb20-117"><a href="#cb20-117" aria-hidden="true" tabindex="-1"></a>    x<span class="op">=</span>counts_not_avail[<span class="st">'snapshot_time'</span>],</span>
+<span id="cb20-118"><a href="#cb20-118" aria-hidden="true" tabindex="-1"></a>    y<span class="op">=</span>counts_not_avail[<span class="st">'patient_x'</span>],</span>
+<span id="cb20-119"><a href="#cb20-119" aria-hidden="true" tabindex="-1"></a>    mode<span class="op">=</span><span class="st">'lines'</span>,</span>
+<span id="cb20-120"><a href="#cb20-120" aria-hidden="true" tabindex="-1"></a>    showlegend<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb20-121"><a href="#cb20-121" aria-hidden="true" tabindex="-1"></a>    <span class="co"># name='line',</span></span>
+<span id="cb20-122"><a href="#cb20-122" aria-hidden="true" tabindex="-1"></a>    opacity<span class="op">=</span><span class="fl">0.2</span>,</span>
+<span id="cb20-123"><a href="#cb20-123" aria-hidden="true" tabindex="-1"></a>    xaxis<span class="op">=</span><span class="st">"x4"</span>,</span>
+<span id="cb20-124"><a href="#cb20-124" aria-hidden="true" tabindex="-1"></a>    yaxis<span class="op">=</span><span class="st">"y4"</span></span>
+<span id="cb20-125"><a href="#cb20-125" aria-hidden="true" tabindex="-1"></a>    <span class="co"># We place it in our new subplot using the following line</span></span>
+<span id="cb20-126"><a href="#cb20-126" aria-hidden="true" tabindex="-1"></a>), row<span class="op">=</span><span class="dv">4</span>, col<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb20-127"><a href="#cb20-127" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-128"><a href="#cb20-128" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Length after adding additional line plot trace: </span><span class="sc">{</span><span class="bu">len</span>(fig.data)<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Length after adding bed trace: 2
+Length after adding 'position labels:' trace: 3
+Length after adding 'operations completed:' trace: 4
+Length after adding 'slots lost:' trace: 5
+Length after adding additional line plot trace: 7</code></pre>
+</div>
+</div>
+<div id="905c23a5" class="cell" data-execution_count="68">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="co">##########################################################</span></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Define animation frames: one per simulation time step</span></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a><span class="co">##########################################################</span></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a><span class="co">##########################################################</span></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Now we need to add our traces to each individual frame</span></span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a><span class="co">##########################################################</span></span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a><span class="co"># IMPORTANT: To work correctly, these need to be provided in the same order as the traces above</span></span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a><span class="co"># This includes:</span></span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a><span class="co"># 0: bed icons</span></span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a><span class="co"># 1: event labels</span></span>
+<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a><span class="co"># 2: operations completed text</span></span>
+<span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a><span class="co"># 3: slots lost text</span></span>
+<span id="cb22-16"><a href="#cb22-16" aria-hidden="true" tabindex="-1"></a><span class="co"># 4: time series line in subplot</span></span>
+<span id="cb22-17"><a href="#cb22-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-18"><a href="#cb22-18" aria-hidden="true" tabindex="-1"></a><span class="co"># # Now ensure we tell it which traces we are animating</span></span>
+<span id="cb22-19"><a href="#cb22-19" aria-hidden="true" tabindex="-1"></a><span class="co"># # (as per https://chart-studio.plotly.com/~empet/15243/animating-traces-in-subplotsbr/#/)</span></span>
+<span id="cb22-20"><a href="#cb22-20" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, frame <span class="kw">in</span> <span class="bu">enumerate</span>(fig.frames):</span>
+<span id="cb22-21"><a href="#cb22-21" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Your original frame.data</span></span>
+<span id="cb22-22"><a href="#cb22-22" aria-hidden="true" tabindex="-1"></a>    <span class="co"># This will be a tuple</span></span>
+<span id="cb22-23"><a href="#cb22-23" aria-hidden="true" tabindex="-1"></a>    <span class="co"># We'll ensure we only take the first entry</span></span>
+<span id="cb22-24"><a href="#cb22-24" aria-hidden="true" tabindex="-1"></a>    <span class="co"># original_data = (frame.data[0], )</span></span>
+<span id="cb22-25"><a href="#cb22-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-26"><a href="#cb22-26" aria-hidden="true" tabindex="-1"></a>    original_data <span class="op">=</span> frame.data</span>
+<span id="cb22-27"><a href="#cb22-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-28"><a href="#cb22-28" aria-hidden="true" tabindex="-1"></a>    <span class="co"># if i == 5:</span></span>
+<span id="cb22-29"><a href="#cb22-29" aria-hidden="true" tabindex="-1"></a>    <span class="co">#     print(original_data)</span></span>
+<span id="cb22-30"><a href="#cb22-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-31"><a href="#cb22-31" aria-hidden="true" tabindex="-1"></a>    <span class="co"># The new data you want to add for this specific frame</span></span>
+<span id="cb22-32"><a href="#cb22-32" aria-hidden="true" tabindex="-1"></a>    new_data <span class="op">=</span> (</span>
+<span id="cb22-33"><a href="#cb22-33" aria-hidden="true" tabindex="-1"></a>        <span class="co"># 0: bed icons</span></span>
+<span id="cb22-34"><a href="#cb22-34" aria-hidden="true" tabindex="-1"></a>        icon_trace,</span>
+<span id="cb22-35"><a href="#cb22-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-36"><a href="#cb22-36" aria-hidden="true" tabindex="-1"></a>        <span class="co"># 1: Position labels</span></span>
+<span id="cb22-37"><a href="#cb22-37" aria-hidden="true" tabindex="-1"></a>        go.Scatter(</span>
+<span id="cb22-38"><a href="#cb22-38" aria-hidden="true" tabindex="-1"></a>            x<span class="op">=</span>[pos<span class="op">+</span><span class="dv">10</span> <span class="cf">for</span> pos <span class="kw">in</span> event_position_df[<span class="st">'x'</span>].to_list()],</span>
+<span id="cb22-39"><a href="#cb22-39" aria-hidden="true" tabindex="-1"></a>            y<span class="op">=</span>event_position_df[<span class="st">'y'</span>].to_list(),</span>
+<span id="cb22-40"><a href="#cb22-40" aria-hidden="true" tabindex="-1"></a>            mode<span class="op">=</span><span class="st">"text"</span>,</span>
+<span id="cb22-41"><a href="#cb22-41" aria-hidden="true" tabindex="-1"></a>            text<span class="op">=</span>event_position_df[<span class="st">'label'</span>].to_list(),</span>
+<span id="cb22-42"><a href="#cb22-42" aria-hidden="true" tabindex="-1"></a>            textposition<span class="op">=</span><span class="st">"middle right"</span>,</span>
+<span id="cb22-43"><a href="#cb22-43" aria-hidden="true" tabindex="-1"></a>            hoverinfo<span class="op">=</span><span class="st">'none'</span>,</span>
+<span id="cb22-44"><a href="#cb22-44" aria-hidden="true" tabindex="-1"></a>            showlegend<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb22-45"><a href="#cb22-45" aria-hidden="true" tabindex="-1"></a>        ),</span>
+<span id="cb22-46"><a href="#cb22-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-47"><a href="#cb22-47" aria-hidden="true" tabindex="-1"></a>        <span class="co"># 2: Slots used/operations occurred</span></span>
+<span id="cb22-48"><a href="#cb22-48" aria-hidden="true" tabindex="-1"></a>        go.Scatter(</span>
+<span id="cb22-49"><a href="#cb22-49" aria-hidden="true" tabindex="-1"></a>            x<span class="op">=</span>[<span class="dv">5</span>],</span>
+<span id="cb22-50"><a href="#cb22-50" aria-hidden="true" tabindex="-1"></a>            y<span class="op">=</span>[<span class="dv">10</span>],</span>
+<span id="cb22-51"><a href="#cb22-51" aria-hidden="true" tabindex="-1"></a>            text<span class="op">=</span><span class="ss">f"Operations Completed: </span><span class="sc">{</span><span class="bu">int</span>(counts_ops_completed.sort_values(<span class="st">'snapshot_time'</span>)[<span class="st">'running_total'</span>][i])<span class="sc">}</span><span class="ss">"</span>,</span>
+<span id="cb22-52"><a href="#cb22-52" aria-hidden="true" tabindex="-1"></a>            mode<span class="op">=</span><span class="st">'text'</span>,</span>
+<span id="cb22-53"><a href="#cb22-53" aria-hidden="true" tabindex="-1"></a>            textposition<span class="op">=</span><span class="st">"middle left"</span>,</span>
+<span id="cb22-54"><a href="#cb22-54" aria-hidden="true" tabindex="-1"></a>            textfont<span class="op">=</span><span class="bu">dict</span>(size<span class="op">=</span><span class="dv">20</span>),</span>
+<span id="cb22-55"><a href="#cb22-55" aria-hidden="true" tabindex="-1"></a>            showlegend<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb22-56"><a href="#cb22-56" aria-hidden="true" tabindex="-1"></a>            xaxis<span class="op">=</span><span class="st">'x2'</span>,</span>
+<span id="cb22-57"><a href="#cb22-57" aria-hidden="true" tabindex="-1"></a>            yaxis<span class="op">=</span><span class="st">'y2'</span></span>
+<span id="cb22-58"><a href="#cb22-58" aria-hidden="true" tabindex="-1"></a>        ),</span>
+<span id="cb22-59"><a href="#cb22-59" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-60"><a href="#cb22-60" aria-hidden="true" tabindex="-1"></a>        <span class="co"># 3: Slots lost</span></span>
+<span id="cb22-61"><a href="#cb22-61" aria-hidden="true" tabindex="-1"></a>        go.Scatter(</span>
+<span id="cb22-62"><a href="#cb22-62" aria-hidden="true" tabindex="-1"></a>            x<span class="op">=</span>[<span class="dv">5</span>],</span>
+<span id="cb22-63"><a href="#cb22-63" aria-hidden="true" tabindex="-1"></a>            y<span class="op">=</span>[<span class="dv">10</span>],</span>
+<span id="cb22-64"><a href="#cb22-64" aria-hidden="true" tabindex="-1"></a>            text<span class="op">=</span><span class="ss">f"Total slots lost: </span><span class="sc">{</span><span class="bu">int</span>(counts_not_avail.sort_values(<span class="st">'snapshot_time'</span>)[<span class="st">'running_total'</span>][i])<span class="sc">}</span><span class="ss"> (</span><span class="sc">{</span>counts_not_avail<span class="sc">.</span>sort_values(<span class="st">'snapshot_time'</span>)[<span class="st">'perc_slots_lost'</span>][i]<span class="sc">:.1%}</span><span class="ss">)"</span>,</span>
+<span id="cb22-65"><a href="#cb22-65" aria-hidden="true" tabindex="-1"></a>            mode<span class="op">=</span><span class="st">'text'</span>,</span>
+<span id="cb22-66"><a href="#cb22-66" aria-hidden="true" tabindex="-1"></a>            textfont<span class="op">=</span><span class="bu">dict</span>(size<span class="op">=</span><span class="dv">20</span>),</span>
+<span id="cb22-67"><a href="#cb22-67" aria-hidden="true" tabindex="-1"></a>            textposition<span class="op">=</span><span class="st">"middle left"</span>,</span>
+<span id="cb22-68"><a href="#cb22-68" aria-hidden="true" tabindex="-1"></a>            showlegend<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb22-69"><a href="#cb22-69" aria-hidden="true" tabindex="-1"></a>            xaxis<span class="op">=</span><span class="st">'x3'</span>,</span>
+<span id="cb22-70"><a href="#cb22-70" aria-hidden="true" tabindex="-1"></a>            yaxis<span class="op">=</span><span class="st">'y3'</span></span>
+<span id="cb22-71"><a href="#cb22-71" aria-hidden="true" tabindex="-1"></a>        ),</span>
+<span id="cb22-72"><a href="#cb22-72" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-73"><a href="#cb22-73" aria-hidden="true" tabindex="-1"></a>        <span class="co"># 4: Line subplot</span></span>
+<span id="cb22-74"><a href="#cb22-74" aria-hidden="true" tabindex="-1"></a>        go.Scatter(</span>
+<span id="cb22-75"><a href="#cb22-75" aria-hidden="true" tabindex="-1"></a>            x<span class="op">=</span>counts_not_avail.sort_values(<span class="st">'snapshot_time'</span>)[<span class="st">'snapshot_time'</span>][<span class="dv">0</span>: i<span class="op">+</span><span class="dv">1</span>].values,</span>
+<span id="cb22-76"><a href="#cb22-76" aria-hidden="true" tabindex="-1"></a>            y<span class="op">=</span>counts_not_avail.sort_values(<span class="st">'snapshot_time'</span>)[<span class="st">'patient_x'</span>][<span class="dv">0</span>: i<span class="op">+</span><span class="dv">1</span>].values,</span>
+<span id="cb22-77"><a href="#cb22-77" aria-hidden="true" tabindex="-1"></a>            mode<span class="op">=</span><span class="st">"lines"</span>,</span>
+<span id="cb22-78"><a href="#cb22-78" aria-hidden="true" tabindex="-1"></a>            showlegend<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb22-79"><a href="#cb22-79" aria-hidden="true" tabindex="-1"></a>            name<span class="op">=</span><span class="st">"line_subplot"</span>,</span>
+<span id="cb22-80"><a href="#cb22-80" aria-hidden="true" tabindex="-1"></a>            line<span class="op">=</span><span class="bu">dict</span>(color<span class="op">=</span><span class="st">"rgba(255,0,0,1)"</span>),  <span class="co"># semi-transparent initial</span></span>
+<span id="cb22-81"><a href="#cb22-81" aria-hidden="true" tabindex="-1"></a>            xaxis<span class="op">=</span><span class="st">'x4'</span>,</span>
+<span id="cb22-82"><a href="#cb22-82" aria-hidden="true" tabindex="-1"></a>            yaxis<span class="op">=</span><span class="st">'y4'</span></span>
+<span id="cb22-83"><a href="#cb22-83" aria-hidden="true" tabindex="-1"></a>        ),</span>
+<span id="cb22-84"><a href="#cb22-84" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb22-85"><a href="#cb22-85" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-86"><a href="#cb22-86" aria-hidden="true" tabindex="-1"></a>    <span class="co"># print(f"Type of new data: {type(new_data)}")</span></span>
+<span id="cb22-87"><a href="#cb22-87" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-88"><a href="#cb22-88" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Combine the original frame data with your new data</span></span>
+<span id="cb22-89"><a href="#cb22-89" aria-hidden="true" tabindex="-1"></a>    frame.data <span class="op">=</span> original_data <span class="op">+</span> new_data</span>
+<span id="cb22-90"><a href="#cb22-90" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-91"><a href="#cb22-91" aria-hidden="true" tabindex="-1"></a>    <span class="co"># if i == 5:</span></span>
+<span id="cb22-92"><a href="#cb22-92" aria-hidden="true" tabindex="-1"></a>    <span class="co">#     print(frame.data)</span></span>
+<span id="cb22-93"><a href="#cb22-93" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-94"><a href="#cb22-94" aria-hidden="true" tabindex="-1"></a>    <span class="co"># print(f"Type of final frame data: {type(frame.data)}")</span></span>
+<span id="cb22-95"><a href="#cb22-95" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-96"><a href="#cb22-96" aria-hidden="true" tabindex="-1"></a><span class="co"># Finally, match the font size for the position labels</span></span>
+<span id="cb22-97"><a href="#cb22-97" aria-hidden="true" tabindex="-1"></a>fig.data[<span class="dv">2</span>].textfont.size</span>
+<span id="cb22-98"><a href="#cb22-98" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-99"><a href="#cb22-99" aria-hidden="true" tabindex="-1"></a>fig</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>Unable to display output for mime type(s): application/vnd.plotly.v1+json</code></pre>
+</div>
+</div>
+<div id="42d53643" class="cell" data-execution_count="69">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co"># After modifying the data in all frames, now correctly set the 'traces' property.</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Get the total number of animated traces from the first (now updated) frame.</span></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>num_total_traces <span class="op">=</span> <span class="bu">len</span>(fig.frames[<span class="dv">0</span>].data)</span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Create the list of indices that all traces will be mapped to.</span></span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a><span class="co"># This should be [0, 1, 2, ..., n-1] where n is the total number of animated traces.</span></span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>trace_indices <span class="op">=</span> <span class="bu">list</span>(<span class="bu">range</span>(num_total_traces))</span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Apply this correct list of indices to every frame.</span></span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> frame <span class="kw">in</span> fig.frames:</span>
+<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a>    frame.traces <span class="op">=</span> trace_indices</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="7a686f2e" class="cell" data-execution_count="70">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>fig</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <pre><code>Unable to display output for mime type(s): application/vnd.plotly.v1+json</code></pre>
 </div>
