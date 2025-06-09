@@ -11,3 +11,5 @@ tests/outputs/simple_funcs_run/*test*
 htmlcov/
 *.coverage
 .cache/
+examples/example_13_additional_synchronised_traces_method_1/synchronised_traces_BROKEN.ipynb
+examples/example_13_additional_synchronised_traces_method_1/synchronised_traces copy 2.ipynb
