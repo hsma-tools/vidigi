@@ -797,11 +797,99 @@ def add_repeating_overlay(
     rect_color: str = 'grey',
     rect_opacity: float = 0.5,
     text_size: int = 40,
-    text_font_color: str = 'white'
+    text_font_color: str = 'white',
+    relative_text_position_x: int = 0.5,
+    relative_text_position_y: int = 0.5
 ) -> go.Figure:
     """
-    Adds a repeating overlay using additional traces instead of shapes/annotations.
-    This approach works without requiring redraw=True.
+    Add a repeating overlay (rectangle and text) to an animated Plotly figure using traces.
+
+    This function adds overlay elements as additional traces rather than layout shapes/annotations,
+    which enables the overlay to work without requiring redraw=True during animation. The overlay
+    follows a repeating on/off pattern starting from a specified frame.
+
+    Parameters
+    ----------
+    fig : plotly.graph_objects.Figure
+        The animated Plotly figure object to modify.
+    overlay_text : str
+        The text to display in the overlay.
+    first_start_frame : int
+        The frame index where the overlay first appears. Must be >= 0.
+    on_duration_frames : float
+        The number of frames the overlay remains visible. Will be converted to int.
+    off_duration_frames : float
+        The number of frames the overlay is hidden between appearances. Will be converted to int.
+    rect_color : str, default 'grey'
+        The background color of the overlay rectangle. Accepts any valid CSS color string
+        (e.g., 'red', '#FF0000', 'rgba(255,0,0,0.5)').
+    rect_opacity : float, default 0.5
+        The opacity of the overlay rectangle. Must be between 0 (transparent) and 1 (opaque).
+    text_size : int, default 40
+        The font size of the overlay text in points.
+    text_font_color : str, default 'white'
+        The color of the overlay text. Accepts any valid CSS color string.
+    relative_text_position_x : float, default 0.5
+        The horizontal position of the text within the overlay rectangle.
+        0.0 = left edge, 0.5 = center, 1.0 = right edge.
+    relative_text_position_y : float, default 0.5
+        The vertical position of the text within the overlay rectangle.
+        0.0 = bottom edge, 0.5 = center, 1.0 = top edge.
+
+    Returns
+    -------
+    plotly.graph_objects.Figure
+        The modified Plotly figure object with the repeating overlay added as traces.
+        The original figure is modified in-place and also returned.
+
+    Warns
+    -----
+    UserWarning
+        If the figure has no frames, a warning is printed and the figure is returned unchanged.
+    UserWarning
+        If the sum of on_duration_frames and off_duration_frames is not positive,
+        a warning is printed and the figure is returned unchanged.
+
+    Notes
+    -----
+    - The overlay uses secondary axes (x2, y2) to position elements in paper coordinates
+      (0 to 1 range) independent of the main plot's data coordinates.
+    - The overlay pattern repeats with a cycle length of (on_duration_frames + off_duration_frames).
+    - Frame indexing is 0-based, so first_start_frame=0 means the overlay starts from the first frame.
+    - The condition `i > start_frame` ensures the overlay doesn't appear on the initial frame
+      unless explicitly specified.
+    - This implementation works without requiring redraw=True in animation configurations,
+      making it more efficient for complex animated plots.
+
+    Examples
+    --------
+    Add a warning overlay that appears every 10 frames for 3 frames duration:
+
+    >>> fig = create_animated_figure()  # Your animated figure
+    >>> fig = add_repeating_overlay_as_traces(
+    ...     fig=fig,
+    ...     overlay_text="WARNING",
+    ...     first_start_frame=5,
+    ...     on_duration_frames=3,
+    ...     off_duration_frames=7,
+    ...     rect_color='red',
+    ...     rect_opacity=0.7,
+    ...     text_size=50,
+    ...     text_font_color='white'
+    ... )
+
+    Add a subtle notification with custom text positioning:
+
+    >>> fig = add_repeating_overlay_as_traces(
+    ...     fig=fig,
+    ...     overlay_text="Processing...",
+    ...     first_start_frame=10,
+    ...     on_duration_frames=2.5,
+    ...     off_duration_frames=5.0,
+    ...     rect_color='rgba(0,0,0,0.3)',
+    ...     relative_text_position_x=0.8,
+    ...     relative_text_position_y=0.2
+    ... )
     """
     on_frames = int(on_duration_frames)
     off_frames = int(off_duration_frames)
@@ -817,6 +905,7 @@ def add_repeating_overlay(
         print("⚠️ Warning: Sum of on/off duration is not positive. Cannot create pattern.")
         return fig
 
+
     # Create visibility pattern for each frame
     overlay_visibility = []
     for i in range(num_frames):
@@ -827,10 +916,20 @@ def add_repeating_overlay(
                 is_on = True
         overlay_visibility.append(is_on)
 
-    # Add rectangle trace (using scatter with fill)
+    # Determine what frame 0 should show
+    frame_0_visible = overlay_visibility[0] if overlay_visibility else False
+
+    # Add rectangle trace - match frame 0 visibility
+    if frame_0_visible:
+        rect_x = [0, 1, 1, 0, 0]
+        rect_y = [0, 0, 1, 1, 0]
+    else:
+        rect_x = []
+        rect_y = []
+
     fig.add_trace(go.Scatter(
-        x=[0, 1, 1, 0, 0],  # Rectangle corners in paper coordinates
-        y=[0, 0, 1, 1, 0],
+        x=rect_x,
+        y=rect_y,
         mode='lines',
         fill='toself',
         fillcolor=rect_color,
@@ -843,12 +942,21 @@ def add_repeating_overlay(
         name='overlay_rect'
     ))
 
-    # Add text trace
+    # Add text trace - match frame 0 visibility
+    if frame_0_visible:
+        text_x = [relative_text_position_x]
+        text_y = [relative_text_position_y]
+        text_content = [overlay_text]
+    else:
+        text_x = []
+        text_y = []
+        text_content = []
+
     fig.add_trace(go.Scatter(
-        x=[0.5],  # Center of overlay
-        y=[0.5],
+        x=text_x,
+        y=text_y,
         mode='text',
-        text=[overlay_text],
+        text=text_content,
         textfont=dict(size=text_size, color=text_font_color),
         xaxis='x2',
         yaxis='y2',
@@ -895,8 +1003,8 @@ def add_repeating_overlay(
                 yaxis='y2'
             )
             text_data = go.Scatter(
-                x=[0.5],
-                y=[0.5],
+                x=[relative_text_position_x],
+                y=[relative_text_position_y],
                 mode='text',
                 text=[overlay_text],
                 textfont=dict(size=text_size, color=text_font_color),
