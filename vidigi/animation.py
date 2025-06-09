@@ -5,6 +5,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 from vidigi.prep import reshape_for_animations, generate_animation_df
 import numpy as np
+from copy import deepcopy
+
 
 def generate_animation(
         full_entity_df_plus_pos,
@@ -569,7 +571,8 @@ def animate_activity_log(
         frame_duration=400, #milliseconds
         frame_transition_duration=600, #milliseconds
         debug_mode=False,
-        custom_entity_icon_list=None
+        custom_entity_icon_list=None,
+        debug_write_intermediate_objects=False
         ):
     """
     Generate an animated visualization of patient flow through a system.
@@ -718,6 +721,9 @@ def animate_activity_log(
         pathway_col_name=pathway_col_name
         )
 
+    if debug_write_intermediate_objects:
+        full_entity_df.to_csv("output_reshape_for_animations.csv")
+
     if debug_mode:
         print(f'Reshaped animation dataframe finished construction at {time.strftime("%H:%M:%S", time.localtime())}')
 
@@ -738,6 +744,9 @@ def animate_activity_log(
                                 event_type_col_name=event_type_col_name,
                                 event_col_name=event_col_name,
                                 )
+
+    if debug_write_intermediate_objects:
+        full_entity_df_plus_pos.to_csv("output_generate_animation_df.csv")
 
     animation = generate_animation(
         full_entity_df_plus_pos=full_entity_df_plus_pos,
@@ -778,3 +787,139 @@ def animate_activity_log(
         print(f'Total Time Elapsed: {(end_time_function - start_time_function):.2f} seconds')
 
     return animation
+
+def add_repeating_overlay(
+    fig: go.Figure,
+    overlay_text: str,
+    first_start_frame: int,
+    on_duration_frames: float,
+    off_duration_frames: float,
+    rect_color: str = 'grey',
+    rect_opacity: float = 0.5,
+    text_size: int = 40,
+    text_font_color: str = 'white'
+) -> go.Figure:
+    """
+    Adds a repeating overlay using additional traces instead of shapes/annotations.
+    This approach works without requiring redraw=True.
+    """
+    on_frames = int(on_duration_frames)
+    off_frames = int(off_duration_frames)
+    start_frame = int(first_start_frame)
+
+    num_frames = len(fig.frames)
+    if num_frames == 0:
+        print("⚠️ Warning: Figure has no frames. Overlay will not be animated.")
+        return fig
+
+    cycle_length = on_frames + off_frames
+    if cycle_length <= 0:
+        print("⚠️ Warning: Sum of on/off duration is not positive. Cannot create pattern.")
+        return fig
+
+    # Create visibility pattern for each frame
+    overlay_visibility = []
+    for i in range(num_frames):
+        is_on = False
+        if i > start_frame:
+            cycle_pos = (i - start_frame) % cycle_length
+            if cycle_pos < on_frames:
+                is_on = True
+        overlay_visibility.append(is_on)
+
+    # Add rectangle trace (using scatter with fill)
+    fig.add_trace(go.Scatter(
+        x=[0, 1, 1, 0, 0],  # Rectangle corners in paper coordinates
+        y=[0, 0, 1, 1, 0],
+        mode='lines',
+        fill='toself',
+        fillcolor=rect_color,
+        opacity=rect_opacity,
+        line=dict(width=0),
+        xaxis='x2',  # Use secondary axis for paper coordinates
+        yaxis='y2',
+        showlegend=False,
+        hoverinfo='skip',
+        name='overlay_rect'
+    ))
+
+    # Add text trace
+    fig.add_trace(go.Scatter(
+        x=[0.5],  # Center of overlay
+        y=[0.5],
+        mode='text',
+        text=[overlay_text],
+        textfont=dict(size=text_size, color=text_font_color),
+        xaxis='x2',
+        yaxis='y2',
+        showlegend=False,
+        hoverinfo='skip',
+        name='overlay_text'
+    ))
+
+    # Configure secondary axes to match paper coordinates
+    fig.update_layout(
+        xaxis2=dict(
+            overlaying='x',
+            range=[0, 1],
+            showgrid=False,
+            showticklabels=False,
+            zeroline=False
+        ),
+        yaxis2=dict(
+            overlaying='y',
+            range=[0, 1],
+            showgrid=False,
+            showticklabels=False,
+            zeroline=False
+        )
+    )
+
+    # Update frame data to include overlay traces
+    rect_trace_idx = len(fig.data) - 2  # Rectangle trace index
+    text_trace_idx = len(fig.data) - 1  # Text trace index
+
+    for i, frame in enumerate(fig.frames):
+        # Add overlay trace data to each frame
+        if overlay_visibility[i]:
+            # Overlay should be visible
+            rect_data = go.Scatter(
+                x=[0, 1, 1, 0, 0],
+                y=[0, 0, 1, 1, 0],
+                mode='lines',
+                fill='toself',
+                fillcolor=rect_color,
+                opacity=rect_opacity,
+                line=dict(width=0),
+                xaxis='x2',
+                yaxis='y2'
+            )
+            text_data = go.Scatter(
+                x=[0.5],
+                y=[0.5],
+                mode='text',
+                text=[overlay_text],
+                textfont=dict(size=text_size, color=text_font_color),
+                xaxis='x2',
+                yaxis='y2'
+            )
+        else:
+            # Overlay should be hidden (empty data)
+            rect_data = go.Scatter(x=[], y=[], xaxis='x2', yaxis='y2')
+            text_data = go.Scatter(x=[], y=[], mode='text', xaxis='x2', yaxis='y2')
+
+        # Extend frame data to include overlay traces
+        frame_data = list(frame.data) if frame.data else []
+
+        # Ensure we have the right number of traces
+        while len(frame_data) <= text_trace_idx:
+            frame_data.append(go.Scatter(x=[], y=[]))
+
+        # Update overlay traces
+        frame_data[rect_trace_idx] = rect_data
+        frame_data[text_trace_idx] = text_data
+
+        # Update frame
+        frame.data = frame_data
+
+    return fig
