@@ -41,6 +41,7 @@ animation.animate_activity_log(
     frame_transition_duration=600,
     debug_mode=False,
     custom_entity_icon_list=None,
+    debug_write_intermediate_objects=False,
 )
 ```
 

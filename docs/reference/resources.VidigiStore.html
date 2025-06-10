@@ -662,6 +662,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">Feature Breakdown: Changing how the date and time are displayed</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../examples/feat_repeating_overlay/feat_repeating_overlay.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Showing different behaviour overnight</span></a>
+  </div>
+</li>
       </ul>
   </li>
         <li class="sidebar-item sidebar-item-section">
@@ -713,7 +719,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <section id="vidigi.resources.VidigiStore" class="level1">
 <h1>resources.VidigiStore</h1>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>resources.VidigiStore(<span class="va">self</span>, env, capacity<span class="op">=</span><span class="bu">float</span>(<span class="st">'inf'</span>), num_resources<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>resources.VidigiStore(<span class="va">self</span>, env, num_resources<span class="op">=</span><span class="va">None</span>, capacity<span class="op">=</span><span class="bu">float</span>(<span class="st">'inf'</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>A wrapper around SimPy’s Store that allows using a context manager pattern similar to resource requests.</p>
 <p>This allows code like:</p>
 <p>with store.request() as req: yield req # Use the item that was obtained yield env.timeout(10) # Item is automatically returned when exiting the context</p>
@@ -750,46 +756,55 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
+<td><a href="#vidigi.resources.VidigiStore.cancel_get">cancel_get</a></td>
+<td>Cancels a pending get request by removing it from the queue.</td>
+</tr>
+<tr class="even">
 <td><a href="#vidigi.resources.VidigiStore.get">get</a></td>
 <td>Alias for request() to maintain compatibility with both patterns.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#vidigi.resources.VidigiStore.get_direct">get_direct</a></td>
 <td>Get an item from the store without the context manager.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#vidigi.resources.VidigiStore.populate">populate</a></td>
 <td>Populate this VidigiStore with VidigiResource objects.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#vidigi.resources.VidigiStore.put">put</a></td>
 <td>Put an item into the store.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#vidigi.resources.VidigiStore.request">request</a></td>
 <td>Request context manager for getting an item from the store.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#vidigi.resources.VidigiStore.request_direct">request_direct</a></td>
 <td>Alias for get_direct() to maintain consistent API with SimPy resources.</td>
 </tr>
 </tbody>
 </table>
+<section id="vidigi.resources.VidigiStore.cancel_get" class="level3">
+<h3 class="anchored" data-anchor-id="vidigi.resources.VidigiStore.cancel_get">cancel_get</h3>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>resources.VidigiStore.cancel_get(get_event)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Cancels a pending get request by removing it from the queue.</p>
+</section>
 <section id="vidigi.resources.VidigiStore.get" class="level3">
 <h3 class="anchored" data-anchor-id="vidigi.resources.VidigiStore.get">get</h3>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>resources.VidigiStore.get()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>resources.VidigiStore.get()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Alias for request() to maintain compatibility with both patterns.</p>
 <p>Returns: A context manager for getting an item</p>
 </section>
 <section id="vidigi.resources.VidigiStore.get_direct" class="level3">
 <h3 class="anchored" data-anchor-id="vidigi.resources.VidigiStore.get_direct">get_direct</h3>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>resources.VidigiStore.get_direct()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>resources.VidigiStore.get_direct()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Get an item from the store without the context manager. Use this if you don’t want to automatically return the item.</p>
 <p>Returns: A get event that can be yielded</p>
 </section>
 <section id="vidigi.resources.VidigiStore.populate" class="level3">
 <h3 class="anchored" data-anchor-id="vidigi.resources.VidigiStore.populate">populate</h3>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>resources.VidigiStore.populate(num_resources)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>resources.VidigiStore.populate(num_resources)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Populate this VidigiStore with VidigiResource objects.</p>
 <p>Creates <code>num_resources</code> VidigiResource objects and adds them to this store.</p>
 <p>Each VidigiResource is initialized with a capacity of 1 and a unique ID starting at 1.</p>
@@ -842,20 +857,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="vidigi.resources.VidigiStore.put" class="level3">
 <h3 class="anchored" data-anchor-id="vidigi.resources.VidigiStore.put">put</h3>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>resources.VidigiStore.put(item)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>resources.VidigiStore.put(item)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Put an item into the store.</p>
 <p>Args: item: The item to put in the store</p>
 </section>
 <section id="vidigi.resources.VidigiStore.request" class="level3">
 <h3 class="anchored" data-anchor-id="vidigi.resources.VidigiStore.request">request</h3>
-<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>resources.VidigiStore.request()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>resources.VidigiStore.request()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Request context manager for getting an item from the store. The item is automatically returned when exiting the context.</p>
 <p>Usage: with store.request() as req: yield req # This yields the get event # Now we have the item from the store yield env.timeout(10) # Item is automatically returned when exiting the context</p>
 <p>Returns: A context manager that returns the get event and handles returning the item</p>
 </section>
 <section id="vidigi.resources.VidigiStore.request_direct" class="level3">
 <h3 class="anchored" data-anchor-id="vidigi.resources.VidigiStore.request_direct">request_direct</h3>
-<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>resources.VidigiStore.request_direct()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>resources.VidigiStore.request_direct()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Alias for get_direct() to maintain consistent API with SimPy resources.</p>
 <p>Returns: A get event that can be yielded</p>
 

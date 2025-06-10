@@ -74,6 +74,7 @@ quartodoc:
       - section: "Feature Breakdowns"
         contents:
         - examples/feat_changing_sim_time/feat_changing_sim_time.ipynb
+        - examples/feat_repeating_overlay/feat_repeating_overlay.ipynb
       - section: "Miscellaneous"
         contents:
         - vidigi_docs/vidigi_vs_bupar.qmd

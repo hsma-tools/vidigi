@@ -1,7 +1,7 @@
 # resources.VidigiStore { #vidigi.resources.VidigiStore }
 
 ```python
-resources.VidigiStore(self, env, capacity=float('inf'), num_resources=None)
+resources.VidigiStore(self, env, num_resources=None, capacity=float('inf'))
 ```
 
 A wrapper around SimPy's Store that allows using a context manager pattern
@@ -29,12 +29,21 @@ and tested by a human.
 
 | Name | Description |
 | --- | --- |
+| [cancel_get](#vidigi.resources.VidigiStore.cancel_get) | Cancels a pending get request by removing it from the queue. |
 | [get](#vidigi.resources.VidigiStore.get) | Alias for request() to maintain compatibility with both patterns. |
 | [get_direct](#vidigi.resources.VidigiStore.get_direct) | Get an item from the store without the context manager. |
 | [populate](#vidigi.resources.VidigiStore.populate) | Populate this VidigiStore with VidigiResource objects. |
 | [put](#vidigi.resources.VidigiStore.put) | Put an item into the store. |
 | [request](#vidigi.resources.VidigiStore.request) | Request context manager for getting an item from the store. |
 | [request_direct](#vidigi.resources.VidigiStore.request_direct) | Alias for get_direct() to maintain consistent API with SimPy resources. |
+
+### cancel_get { #vidigi.resources.VidigiStore.cancel_get }
+
+```python
+resources.VidigiStore.cancel_get(get_event)
+```
+
+Cancels a pending get request by removing it from the queue.
 
 ### get { #vidigi.resources.VidigiStore.get }
 

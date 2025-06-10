@@ -4,8 +4,8 @@
 resources.VidigiPriorityStore(
     self,
     env,
-    capacity=float('inf'),
     num_resources=None,
+    capacity=float('inf'),
 )
 ```
 
@@ -22,6 +22,7 @@ and tested by a human.
 
 | Name | Description |
 | --- | --- |
+| [cancel_get](#vidigi.resources.VidigiPriorityStore.cancel_get) | Cancels a pending get request by removing it from the queue. |
 | [get](#vidigi.resources.VidigiPriorityStore.get) | Create an event to get an item from the store. |
 | [get_direct](#vidigi.resources.VidigiPriorityStore.get_direct) | Get an item from the store without the context manager. |
 | [populate](#vidigi.resources.VidigiPriorityStore.populate) | Populate this VidigiPriorityStore with VidigiResource objects. |
@@ -29,6 +30,14 @@ and tested by a human.
 | [request](#vidigi.resources.VidigiPriorityStore.request) | Request context manager for getting an item from the store. |
 | [request_direct](#vidigi.resources.VidigiPriorityStore.request_direct) | Alias for get_direct() to maintain consistent API. |
 | [return_item](#vidigi.resources.VidigiPriorityStore.return_item) | Return an item to the store and immediately process any waiting get requests. |
+
+### cancel_get { #vidigi.resources.VidigiPriorityStore.cancel_get }
+
+```python
+resources.VidigiPriorityStore.cancel_get(get_event)
+```
+
+Cancels a pending get request by removing it from the queue.
 
 ### get { #vidigi.resources.VidigiPriorityStore.get }
 
