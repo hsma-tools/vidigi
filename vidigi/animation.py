@@ -743,6 +743,7 @@ def animate_activity_log(
                                 entity_col_name=entity_col_name,
                                 event_type_col_name=event_type_col_name,
                                 event_col_name=event_col_name,
+                                resource_col_name=resource_col_name
                                 )
 
     if debug_write_intermediate_objects:

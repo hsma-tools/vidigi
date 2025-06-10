@@ -274,6 +274,7 @@ def generate_animation_df(
         entity_col_name="entity_id",
         event_type_col_name="event_type",
         event_col_name="event",
+        resource_col_name="resource_id",
         debug_mode=False,
         custom_entity_icon_list=None,
         include_fun_emojis=False
@@ -314,6 +315,8 @@ def generate_animation_df(
         Name of the column in `event_log` that specifies the category of the event.
         Supported event types include 'arrival_departure', 'resource_use',
         'resource_use_end', and 'queue'.
+    resource_col_name : str, default="resource_id"
+        Name of the column for the resource identifier. Used for 'resource_use' events.
     event_col_name : str, default="event"
         Name of the column in `event_log` that specifies the actual event that occurred.
     debug_mode : bool, optional
@@ -381,13 +384,13 @@ def generate_animation_df(
 
     if len(resource_use) > 0:
         resource_use = resource_use.rename(columns={"y": "y_final"})
-        resource_use['x_final'] = resource_use['x'] - resource_use['resource_id'] * gap_between_resources
+        resource_use['x_final'] = resource_use['x'] - resource_use[resource_col_name] * gap_between_resources
 
         # If we want resources to wrap at a certain queue length, do this here
         # They'll wrap at the defined point and then the queue will start expanding upwards
         # from the starting row
         if wrap_resources_at is not None:
-            resource_use['row'] = np.floor((resource_use['resource_id'] - 1) / (wrap_resources_at))
+            resource_use['row'] = np.floor((resource_use[resource_col_name] - 1) / (wrap_resources_at))
 
             resource_use['x_final'] = (
                 resource_use['x_final'] +
