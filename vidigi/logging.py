@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, field_validator, model_validator, ValidationInfo
-from typing import Optional, Any, List
+from typing import Optional, Any, List, ClassVar, Set
 import json
 import pandas as pd
 from pathlib import Path
@@ -11,6 +11,8 @@ import warnings
 RECOGNIZED_EVENT_TYPES = {'arrival_departure', 'resource_use', 'resource_use_end', 'queue'}
 
 class BaseEvent(BaseModel):
+    _warned_unrecognized_event_types: ClassVar[Set[str]] = set()
+
     entity_id: Any = Field(
         ...,
         description="Identifier for the entity related to this event (e.g. patient ID, customer ID). Can be any type."
@@ -51,12 +53,18 @@ class BaseEvent(BaseModel):
     @field_validator("event_type", mode="before")
     @classmethod
     def warn_if_unrecognized_event_type(cls, v: str, info: ValidationInfo):
-        if v not in RECOGNIZED_EVENT_TYPES:
+        """
+        Warns if the event_type is not in the set of recognized types.
+
+        A warning for each unrecognized type is issued only once.
+        """
+        if v not in RECOGNIZED_EVENT_TYPES and v not in cls._warned_unrecognized_event_types:
             warnings.warn(
                 f"Unrecognized event_type '{v}'. Recommended values are: {', '.join(RECOGNIZED_EVENT_TYPES)}.",
                 UserWarning,
-                stacklevel=3
+                stacklevel=4,  # Adjusted stacklevel for better error reporting
             )
+            cls._warned_unrecognized_event_types.add(v)
         return v
 
     @field_validator("resource_id", mode="before")
