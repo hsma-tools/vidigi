@@ -843,14 +843,6 @@ def add_repeating_overlay(
         The modified Plotly figure object with the repeating overlay added as traces.
         The original figure is modified in-place and also returned.
 
-    Warns
-    -----
-    UserWarning
-        If the figure has no frames, a warning is printed and the figure is returned unchanged.
-    UserWarning
-        If the sum of on_duration_frames and off_duration_frames is not positive,
-        a warning is printed and the figure is returned unchanged.
-
     Notes
     -----
     - The overlay uses secondary axes (x2, y2) to position elements in paper coordinates
@@ -861,6 +853,11 @@ def add_repeating_overlay(
       unless explicitly specified.
     - This implementation works without requiring redraw=True in animation configurations,
       making it more efficient for complex animated plots.
+   - returns UserWarning
+        If the figure has no frames, a warning is printed and the figure is returned unchanged.
+    - returns UserWarning
+        If the sum of on_duration_frames and off_duration_frames is not positive,
+        a warning is printed and the figure is returned unchanged.
 
     Examples
     --------
