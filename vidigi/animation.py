@@ -367,7 +367,11 @@ def generate_animation(
     # Update the size of the icons and labels
     # This is what determines the size of the individual emojis that
     # represent our people!
-    fig.data[0].textfont.size = entity_icon_size
+    # fig.data[0].textfont.size = entity_icon_size
+    # Apply entity_icon_size to all traces that represent entities
+    for trace in fig.data:
+        if "marker" in trace:
+            trace.textfont.size = entity_icon_size
 
     # Now add labels identifying each stage (optional - can either be used
     # in conjunction with a background image or as a way to see stage names
