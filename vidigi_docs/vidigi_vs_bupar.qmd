@@ -2,6 +2,7 @@
 title: Vidigi vs BupaR
 execute:
   echo: true
+engine: knitr
 format:
   html:
     toc: true
@@ -38,7 +39,7 @@ bupaR outputs could form part of a verification and validation strategy. They ca
 
 We will begin in Python, working to add a couple of columns to our vidigi event log to prepare it for use in bupaR.
 
-{{< embed vidigi_vs_bupar.ipynb >}}
+{{< embed prep_vidigi_outputs_for_bupar_processing.ipynb >}}
 
 Now, it's time to move to R (as bupaR and the bupaverse is only implemented in R).
 
@@ -353,13 +354,14 @@ animate_activity_log(
         every_x_time_units=5,
         include_play_button=True,
         gap_between_entities=10,
+        gap_between_resources=20,
         gap_between_queue_rows=20,
-        plotly_height=900,
-        plotly_width=1600,
+        plotly_height=600,
+        plotly_width=1000,
         override_x_max=700,
         override_y_max=675,
-        entity_icon_size=20,
-        resource_icon_size=20,
+        entity_icon_size=12,
+        resource_icon_size=15,
         wrap_queues_at=10,
         step_snapshot_max=50,
         limit_duration=3000,
@@ -386,14 +388,14 @@ animate_activity_log(
         every_x_time_units=5,
         include_play_button=True,
         gap_between_entities=10,
-        gap_between_resource_rows=20,
+        gap_between_resources=20,
         gap_between_queue_rows=20,
-        plotly_height=900,
-        plotly_width=1600,
+        plotly_height=600,
+        plotly_width=1000,
         override_x_max=700,
         override_y_max=675,
-        entity_icon_size=20,
-        resource_icon_size=20,
+        entity_icon_size=12,
+        resource_icon_size=15,
         wrap_queues_at=10,
         step_snapshot_max=50,
         limit_duration=3000,

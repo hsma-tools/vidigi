@@ -107,8 +107,6 @@ class Patient:
 
 Our model class is more complex.
 
-:::
-
 #### the init method {.unlisted}
 
 First, we set up a series of attributes

@@ -24,6 +24,9 @@ website:
         - reference/animation.generate_animation.qmd
         section: Step-By-Step Functions
       - contents:
+        - reference/animation.add_repeating_overlay.qmd
+        section: Animation Enhancers
+      - contents:
         - reference/resources.VidigiResource.qmd
         - reference/resources.VidigiStore.qmd
         - reference/resources.VidigiPriorityStore.qmd
@@ -32,6 +35,10 @@ website:
       - contents:
         - reference/logging.EventLogger.qmd
         section: Event Logging Utility Functions and Classes
+      - contents:
+        - reference/utils.EventPosition.qmd
+        - reference/utils.create_event_position_df.qmd
+        section: Event Positioning Utility Functions and Classes
       - contents:
         - reference/utils.streamlit_play_all.qmd
         section: Streamlit Utility Functions

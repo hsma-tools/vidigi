@@ -95,6 +95,10 @@ quartodoc:
         - prep.reshape_for_animations
         - prep.generate_animation_df
         - animation.generate_animation
+    - title: Animation Enhancers
+      desc: ""
+      contents:
+        - animation.add_repeating_overlay
     - title: Simpy Resource Classes
       desc: ""
       contents:
@@ -106,6 +110,11 @@ quartodoc:
       desc: ""
       contents:
         - logging.EventLogger
+    - title: Event Positioning Utility Functions and Classes
+      desc: ""
+      contents:
+        - utils.EventPosition
+        - utils.create_event_position_df
     - title: Streamlit Utility Functions
       desc: ""
       contents:
@@ -121,11 +130,13 @@ quartodoc:
 
 format:
   html:
+    grid:
+      sidebar-width: 325px
+      body-width: 1200px
+      margin-width: 250px
+      gutter-width: 1.5rem
     execute:
       freeze: auto
     theme:
       dark: [darkly, theme-dark.scss]
       light: [flatly, theme-light.scss]
-
-    grid:
-      sidebar-width: 325px

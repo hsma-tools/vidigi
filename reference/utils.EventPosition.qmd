@@ -1,0 +1,14 @@
+# utils.EventPosition { #vidigi.utils.EventPosition }
+
+```python
+utils.EventPosition()
+```
+
+Pydantic model for a single event position.
+
+Attributes:
+    event (str): The name of the event. These must match the event names as they appear in your event log.
+    x (int): The x-coordinate for the event. This coordinate represents the bottom-right hand corner of the queue or resources.
+    y (int): The y-coordinate. This coordinate represents the bottom-right hand corner of the queue or resources.
+    label (str): The display label for the event. Used if display_stage_labels = True. This allows you to set a more display-friendly version of your event name (e.g. you might want to display start_queue_till as 'Queuing for Till').
+    resource (Optional[str]): The optional resource associated with the event. This must match one of the resource names provided in your scenario object.
