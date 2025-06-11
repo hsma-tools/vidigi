@@ -26,7 +26,7 @@ However, the core concepts of adding vidigi to your models will be the same acro
 
 
 :::{.callout-important}
-#### Test, test, and test!
+#### Test, test, and test again!
 
 Before you start trying to incorporate vidigi into your model, make sure you take a backup of your model as it currently is.
 
@@ -41,7 +41,7 @@ ciw is quite different - we will not be able to add logging steps in the way we 
 
 However, in the utils module, the `event_log_from_ciw_recs` function provides a simple way to get the required logs out of your ciw model without any additional logging being added in manually.
 
-You can view examples with ciw [here](examples/example_4_ciw/ex_4_ciw.ipynb) and [here](examples/example_10_advanced_ciw/ex_10_ciw.ipynb)
+You can view examples with ciw [here](../examples/example_4_ciw/ex_4_ciw.ipynb) and [here](../examples/example_10_advanced_ciw/ex_10_ciw.ipynb)
 
 :::
 
@@ -465,7 +465,7 @@ Vidigi needs to know *which* resource a user made use of so that we can ensure i
 
 The standard simpy Resource does not have a way of tracking that, so we need to use a special store type provided by Vidigi that allows us to track resource IDs - without having to change our code as much as we would with a standard Simpy store.
 
-If you are using priority resources, this step will be a little different - see [Example 3 in the documents](examples/example_3_simplest_case_priority_resource/ex_3_simplest_case_priority_resource.ipynb) if you need to use Resources that prioritise some entities over others. Vidigi also provides a class for that - the `VidigiPriorityStore`.
+If you are using priority resources, this step will be a little different - see [Example 3 in the documents](../examples/example_3_simplest_case_priority_resource/ex_3_simplest_case_priority_resource.ipynb) if you need to use Resources that prioritise some entities over others. Vidigi also provides a class for that - the `VidigiPriorityStore`.
 
 :::: {.columns}
 

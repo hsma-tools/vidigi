@@ -44,6 +44,8 @@ quartodoc:
         text: Welcome
       - text: "Introduction"
         href: vidigi_docs/introduction.qmd
+      - text: "Changelog"
+        href: HISTORY.md
       - section: "Walkthroughs"
         contents:
         - vidigi_docs/adding_vidigi_to_a_simple_simpy_model_hsma_structure.qmd

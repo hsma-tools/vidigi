@@ -308,6 +308,12 @@ ul.task-list li input[type="checkbox"] {
  <span class="menu-text">Introduction</span></a>
   </div>
 </li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../HISTORY.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Changelog</span></a>
+  </div>
+</li>
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
             <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true">
@@ -320,7 +326,7 @@ ul.task-list li input[type="checkbox"] {
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../vidigi_docs/adding_vidigi_to_a_simple_simpy_model_hsma_structure.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Adding Vidigi to a Simple simpy Model (HSMA Structure) - vidigi 0.0.5 and above</span></a>
+ <span class="menu-text">Adding Vidigi to a Simple simpy Model (HSMA Structure) - vidigi 1.0.0 and above</span></a>
   </div>
 </li>
       </ul>
@@ -334,12 +340,6 @@ ul.task-list li input[type="checkbox"] {
           </a> 
       </div>
       <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../vidigi_docs/populating_event_logs.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Populating Event Logs</span></a>
-  </div>
-</li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../examples/feat_vidigi_logging_class/feat_example_logging_class.html" class="sidebar-item-text sidebar-link">
@@ -672,7 +672,7 @@ ul.task-list li input[type="checkbox"] {
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../examples/feat_repeating_overlay/feat_repeating_overlay.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Showing different behaviour overnight</span></a>
+ <span class="menu-text">Highlighting different periods with a repeating overlay</span></a>
   </div>
 </li>
       </ul>
@@ -709,6 +709,12 @@ ul.task-list li input[type="checkbox"] {
  <span class="menu-text">Adding Vidigi to a Simple simpy Model (HSMA Structure) - vidigi 0.0.4 and below</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../vidigi_docs/populating_event_logs.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Populating Event Logs - vidigi 0.0.4 and below</span></a>
+  </div>
+</li>
       </ul>
   </li>
     </ul>
@@ -726,7 +732,7 @@ ul.task-list li input[type="checkbox"] {
 
 <section id="vidigi-visual-interactive-dynamics-and-integrated-graphical-insights" class="level1">
 <h1>vidigi (Visual Interactive Dynamics and Integrated Graphical Insights)</h1>
-<p><a href="https://pypi.org/project/vidigi/"><img src="https://img.shields.io/pypi/v/vidigi?label=pypi%20package"></a></p>
+<p><a href="https://pypi.org/project/vidigi/"><img src="https://img.shields.io/pypi/v/vidigi?label=pypi%20package"></a> <a href="https://doi.org/10.5281/zenodo.14635602"><img src="https://zenodo.org/badge/888169040.svg" class="img-fluid" alt="DOI"></a></p>
 <hr>
 <p>Welcome to vidigi - a package for visualising real or simulated pathways.</p>
 <div class="quarto-video"><video id="video_shortcode_videojs_video1" class="video-js vjs-default-skin vjs-fluid" controls="" preload="auto" data-setup="{}" title=""><source src="videos/vidigi.mp4"></video></div>
@@ -734,17 +740,38 @@ ul.task-list li input[type="checkbox"] {
 <p>With just a minimal set of logs - with helper functions provided to make that easier than ever to integrate into existing SimPy or Ciw simulations - you can start generating and customising your visualisations in minutes.</p>
 <section id="getting-started" class="level2">
 <h2 class="anchored" data-anchor-id="getting-started">Getting Started</h2>
+<ul>
+<li>Install vidigi from PyPi with the command <code>pip install vidigi</code></li>
+<li>Read the <a href="../vidigi_docs/introduction.html">introduction</a> to get an overview of the core vidigi concepts</li>
+<li>Read a step-by-step walkthrough of <a href="../vidigi_docs/adding_vidigi_to_a_simple_simpy_model_hsma_structure.html">adding vidigi to an existing SimPy model</a></li>
+</ul>
 </section>
 <section id="useful-links" class="level2">
 <h2 class="anchored" data-anchor-id="useful-links">Useful Links</h2>
-<p><strong>Spotted a bug? Or just have a new feature you’d like adding? Raise an issue <a href="https://github.com/Bergam0t/vidigi/issues/new">here</a></strong></p>
-<p>Vidigi is released under the MIT licence.</p>
 <p>The source code is available on GitHub: <a href="https://github.com/Bergam0t/vidigi">github.com/Bergam0t/vidigi</a>.</p>
+<p><strong>Spotted a bug? Or just have a new feature you’d like to suggest? Raise an issue <a href="https://github.com/Bergam0t/vidigi/issues/new">here</a></strong></p>
 </section>
 <section id="what-does-the-name-mean" class="level2">
 <h2 class="anchored" data-anchor-id="what-does-the-name-mean">What does the name mean?</h2>
 <p>vidigi is the <a href="https://en.wikipedia.org/wiki/Esperanto">Esperanto</a> <img src="Flag_of_Esperanto.svg.png" height="30"> for ‘to show’</p>
 <p>(or it’s the backronym ‘Visual Interactive Dynamics and Integrated Graphical Insights’ - whichever floats your boat)</p>
+</section>
+<section id="acknowledgements" class="level2">
+<h2 class="anchored" data-anchor-id="acknowledgements">Acknowledgements</h2>
+<p>Thanks are due to</p>
+<ul>
+<li><a href="https://github.com/hsma-chief-elf">Dr Daniel Chalk</a> for support and SimPy training on the HSMA programme</li>
+<li><a href="https://github.com/TomMonks">Professor Tom Monks</a> for his extensive materials and teaching on the use of simpy in healthcare and his <a href="https://www.pythonhealthdatascience.com/content/03_mgt/03_mgt_front_page.html">material on converting code into packages</a></li>
+<li><a href="https://github.com/helenajr">Helena Robinson</a> and Rey Tan for testing, suggestions and bugfinding</li>
+</ul>
+</section>
+<section id="licence" class="level2">
+<h2 class="anchored" data-anchor-id="licence">Licence</h2>
+<p>Vidigi is released under the MIT licence.</p>
+<p>Copyright 2024 Sammi Rosser</p>
+<p>Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:</p>
+<p>The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.</p>
+<p>THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</p>
 
 
 </section>
