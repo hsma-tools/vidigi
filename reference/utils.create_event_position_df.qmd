@@ -1,0 +1,16 @@
+# utils.create_event_position_df { #vidigi.utils.create_event_position_df }
+
+```python
+utils.create_event_position_df(event_positions)
+```
+
+Creates a DataFrame for event positions from a list of EventPosition objects.
+
+Args:
+    event_positions (List[EventPosition]): A list of EventPoisitions.
+
+Returns:
+    pd.DataFrame: A DataFrame with the specified columns and data types.
+
+Raises:
+    ValidationError: If the input data does not match the EventPosition model.

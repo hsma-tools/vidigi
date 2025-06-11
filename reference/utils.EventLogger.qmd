@@ -1,0 +1,66 @@
+# utils.EventLogger { #vidigi.utils.EventLogger }
+
+```python
+utils.EventLogger(self, event_model=BaseEvent, env=None)
+```
+
+
+
+## Methods
+
+| Name | Description |
+| --- | --- |
+| [get_events_by_entity](#vidigi.utils.EventLogger.get_events_by_entity) | Return all events associated with a specific entity_id. |
+| [get_events_by_type](#vidigi.utils.EventLogger.get_events_by_type) | Return all events of a specific event_type. |
+| [to_csv](#vidigi.utils.EventLogger.to_csv) | Write the log to a CSV file. |
+| [to_dataframe](#vidigi.utils.EventLogger.to_dataframe) | Convert the event log to a pandas DataFrame. |
+| [to_json](#vidigi.utils.EventLogger.to_json) | Write the event log to a JSON file or file-like buffer. |
+| [to_json_string](#vidigi.utils.EventLogger.to_json_string) | Return the event log as a pretty JSON string. |
+
+### get_events_by_entity { #vidigi.utils.EventLogger.get_events_by_entity }
+
+```python
+utils.EventLogger.get_events_by_entity(entity_id, as_dataframe=True)
+```
+
+Return all events associated with a specific entity_id.
+
+### get_events_by_type { #vidigi.utils.EventLogger.get_events_by_type }
+
+```python
+utils.EventLogger.get_events_by_type(event_type, as_dataframe=True)
+```
+
+Return all events of a specific event_type.
+
+### to_csv { #vidigi.utils.EventLogger.to_csv }
+
+```python
+utils.EventLogger.to_csv(path_or_buffer)
+```
+
+Write the log to a CSV file.
+
+### to_dataframe { #vidigi.utils.EventLogger.to_dataframe }
+
+```python
+utils.EventLogger.to_dataframe()
+```
+
+Convert the event log to a pandas DataFrame.
+
+### to_json { #vidigi.utils.EventLogger.to_json }
+
+```python
+utils.EventLogger.to_json(path_or_buffer, indent=2)
+```
+
+Write the event log to a JSON file or file-like buffer.
+
+### to_json_string { #vidigi.utils.EventLogger.to_json_string }
+
+```python
+utils.EventLogger.to_json_string(indent=2)
+```
+
+Return the event log as a pretty JSON string.

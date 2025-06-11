@@ -6,8 +6,9 @@ animation.generate_animation(
     event_position_df,
     scenario=None,
     time_col_name='time',
-    entity_col_name='patient',
+    entity_col_name='entity_id',
     event_col_name='event',
+    resource_col_name='resource_id',
     pathway_col_name=None,
     simulation_time_unit='minutes',
     plotly_height=900,
@@ -15,7 +16,9 @@ animation.generate_animation(
     include_play_button=True,
     add_background_image=None,
     display_stage_labels=True,
-    icon_and_text_size=24,
+    entity_icon_size=24,
+    text_size=24,
+    resource_icon_size=24,
     override_x_max=None,
     override_y_max=None,
     time_display_units=None,
@@ -25,7 +28,7 @@ animation.generate_animation(
     custom_resource_icon=None,
     wrap_resources_at=20,
     gap_between_resources=10,
-    gap_between_rows=30,
+    gap_between_resource_rows=30,
     setup_mode=False,
     frame_duration=400,
     frame_transition_duration=600,
@@ -33,60 +36,134 @@ animation.generate_animation(
 )
 ```
 
-Generate an animated visualization of patient flow through a system.
+    Generate an animated visualization of patient flow through a system.
 
-This function creates an interactive Plotly animation based on patient data and event positions.
+    This function creates an interactive Plotly animation based on patient data and event positions.
 
-## Parameters {.doc-section .doc-section-parameters}
+##     Parameters {.doc-section .doc-section-----parameters}
 
-| Name                      | Type         | Description                                                                                                                                                                                                                                                            | Default     |
-|---------------------------|--------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------|
-| full_entity_df_plus_pos   | pd.DataFrame | DataFrame containing entity data with position information. This will be the output of passing an event log through the reshape_for_animations() and generate_animation_df() functions                                                                                 | _required_  |
-| event_position_df         | pd.DataFrame | DataFrame specifying the positions of different events.                                                                                                                                                                                                                | _required_  |
-| scenario                  | object       | Object containing attributes for resource counts at different steps. time_col_name : str, default="time" Name of the column in `event_log` that contains the timestamp of each event. Timestamps should represent the number of time units since the simulation began. | `None`      |
-| entity_col_name           | str          | Name of the column in `event_log` that contains the unique identifier for each entity (e.g., "patient", "patient_id", "customer", "ID").                                                                                                                               | `"patient"` |
-| event_col_name            | str          | Name of the column in `event_log` that specifies the actual event that occurred.                                                                                                                                                                                       | `"event"`   |
-| pathway_col_name          | str          | Name of the column in `event_log` that identifies the specific pathway or process flow the entity is following. If `None`, it is assumed that pathway information is not present.                                                                                      | `None`      |
-| simulation_time_unit      |              | Time unit used within the simulation (default is minutes). Possible values are 'seconds', 'minutes', 'hours', 'days', 'weeks', 'years'                                                                                                                                 | `'minutes'` |
-| plotly_height             | int          | Height of the Plotly figure in pixels (default is 900).                                                                                                                                                                                                                | `900`       |
-| plotly_width              | int          | Width of the Plotly figure in pixels (default is None).                                                                                                                                                                                                                | `None`      |
-| include_play_button       | bool         | Whether to include a play button in the animation (default is True).                                                                                                                                                                                                   | `True`      |
-| add_background_image      | str          | Path to a background image file to add to the animation (default is None).                                                                                                                                                                                             | `None`      |
-| display_stage_labels      | bool         | Whether to display labels for each stage (default is True).                                                                                                                                                                                                            | `True`      |
-| icon_and_text_size        | int          | Size of icons and text in the animation (default is 24).                                                                                                                                                                                                               | `24`        |
-| override_x_max            | int          | Override the maximum x-coordinate (default is None).                                                                                                                                                                                                                   | `None`      |
-| override_y_max            | int          | Override the maximum y-coordinate (default is None).                                                                                                                                                                                                                   | `None`      |
-| time_display_units        | str          | Units for displaying time. Options are 'dhm' (days, hours, minutes), 'd' (days), or None (default).                                                                                                                                                                    | `None`      |
-| start_date                | str          | Start date for the animation in 'YYYY-MM-DD' format. Only used when time_display_units is 'd' or 'dhm' (default is None).                                                                                                                                              | `None`      |
-| start_time                | str          | Start date for the animation in 'HH:MM:SS' format. Only used when time_display_units is 'd' or 'dhm' (default is None).                                                                                                                                                | `None`      |
-| resource_opacity          | float        | Opacity of resource icons (default is 0.8).                                                                                                                                                                                                                            | `0.8`       |
-| custom_resource_icon      | str          | Custom icon to use for resources (default is None).                                                                                                                                                                                                                    | `None`      |
-| wrap_resources_at         | int          | Number of resources to show before wrapping to a new row (default is 20). If this has been set elsewhere, it is also important to set it in this function to ensure the visual indicators of the resources wrap in the same way the entities using those resources do. | `20`        |
-| gap_between_resources     | int          | Spacing between resources in pixels (default is 10).                                                                                                                                                                                                                   | `10`        |
-| gap_between_rows          | int          | Vertical spacing between rows in pixels (default is 30).                                                                                                                                                                                                               | `30`        |
-| setup_mode                | bool         | Whether to run in setup mode, showing grid and tick marks (default is False).                                                                                                                                                                                          | `False`     |
-| frame_duration            | int          | Duration of each frame in milliseconds (default is 400).                                                                                                                                                                                                               | `400`       |
-| frame_transition_duration | int          | Duration of transition between frames in milliseconds (default is 600).                                                                                                                                                                                                | `600`       |
-| debug_mode                | bool         | Whether to run in debug mode with additional output (default is False).                                                                                                                                                                                                | `False`     |
+    full_entity_df_plus_pos : pd.DataFrame
+        DataFrame containing entity data with position information.
+        This will be the output of passing an event log through the reshape_for_animations()
+        and generate_animation_df() functions
+    event_position_df : pd.DataFrame
+        DataFrame specifying the positions of different events.
+    scenario : object, optional
+        Object containing attributes for resource counts at different steps.
+        time_col_name : str, default="time"
+        Name of the column in `event_log` that contains the timestamp of each event.
+        Timestamps should represent the number of time units since the simulation began.
+    entity_col_name : str, default="entity_id"
+        Name of the column in `event_log` that contains the unique identifier for each entity
+        (e.g., "entity_id", "entity", "patient", "patient_id", "customer", "ID").
+    event_col_name : str, default="event"
+        Name of the column in `event_log` that specifies the actual event that occurred.
+    pathway_col_name : str, optional, default=None
+        Name of the column in `event_log` that identifies the specific pathway or
+        process flow the entity is following. If `None`, it is assumed that pathway
+        information is not present.
+    resource_col_name : str, default="resource_id"
+        Name of the column for the resource identifier. Used for 'resource_use' events.
+    simulation_time_unit: string, optional
+        Time unit used within the simulation (default is minutes).
+        Possible values are 'seconds', 'minutes', 'hours', 'days', 'weeks', 'years'
+    plotly_height : int, optional
+        Height of the Plotly figure in pixels (default is 900).
+    plotly_width : int, optional
+        Width of the Plotly figure in pixels (default is None).
+    include_play_button : bool, optional
+        Whether to include a play button in the animation (default is True).
+    add_background_image : str, optional
+        Path to a background image file to add to the animation (default is None).
+    display_stage_labels : bool, optional
+        Whether to display labels for each stage (default is True).
+    entity_icon_size : int, optional
+        Size of entity icons in the animation (default is 24).
+    text_size : int, optional
+        Size of text labels in the animation (default is 24).
+    resource_icon_size : int, optional
+        Size of resource icons in the animation (default is 24).
+    override_x_max : int, optional
+        Override the maximum x-coordinate (default is None).
+    override_y_max : int, optional
+        Override the maximum y-coordinate (default is None).
+        time_display_units : str, optional
+        Format for displaying time on the animation timeline. This affects how simulation time is
+        converted into human-readable dates or clock formats. If `None` (default), the raw simulation
+        time is used.
 
-## Returns {.doc-section .doc-section-returns}
+        Predefined options:
+        - 'dhms' : Day Month Year + HH:MM:SS (e.g., "06 June 2025
+14:23:45")
+        - 'dhms_ampm' : Same as 'dhms', but in 12-hour format with AM/PM (e.g., "06 June 2025
+02:23:45 PM")
+        - 'dhm'  : Day Month Year + HH:MM (e.g., "06 June 2025
+14:23")
+        - 'dhm_ampm' : 12-hour format with AM/PM (e.g., "06 June 2025
+02:23 PM")
+        - 'dh'   : Day Month Year + HH (e.g., "06 June 2025
+14")
+        - 'dh_ampm' : 12-hour format with AM/PM (e.g., "06 June 2025
+02 PM")
+        - 'd'    : Full weekday and date (e.g., "Friday 06 June 2025")
+        - 'm'    : Month and year (e.g., "June 2025")
+        - 'y'    : Year only (e.g., "2025")
+        - 'day_clock' or 'simulation_day_clock':
+            Show simulation-relative day and time (e.g., "Simulation Day 3
+14:15")
+        - 'day_clock_ampm' or 'simulation_day_clock_ampm':
+            Same as above, but time is shown in 12-hour clock with AM/PM (e.g., "Simulation Day 3
+02:15 PM")
 
-| Name   | Type                             | Description                                                     |
-|--------|----------------------------------|-----------------------------------------------------------------|
-|        | plotly.graph_objs._figure.Figure | An animated Plotly figure object representing the patient flow. |
+        Alternatively, you can supply a custom [strftime](https://strftime.org/) format string
+        (e.g., '%Y-%m-%d %H') to control the display manually.
+    start_date : str, optional
+        Start date for the animation in 'YYYY-MM-DD' format. Only used when time_display_units is 'd' or 'dhm' (default is None).
+    start_time : str, optional
+        Start date for the animation in 'HH:MM:SS' format. Only used when time_display_units is 'd' or 'dhm' (default is None).
+    resource_opacity : float, optional
+        Opacity of resource icons (default is 0.8).
+    custom_resource_icon : str, optional
+        Custom icon to use for resources (default is None).
+    wrap_resources_at : int, optional
+        Number of resources to show before wrapping to a new row (default is 20).
+        If this has been set elsewhere, it is also important to set it in this function to ensure
+        the visual indicators of the resources wrap in the same way the entities using those
+        resources do.
+    gap_between_resources : int, optional
+        Spacing between resources in pixels (default is 10).
+    gap_between_resource_rows : int, optional
+        Vertical spacing between rows in pixels (default is 30).
+    setup_mode : bool, optional
+        Whether to run in setup mode, showing grid and tick marks (default is False).
+    frame_duration : int, optional
+        Duration of each frame in milliseconds (default is 400).
+    frame_transition_duration : int, optional
+        Duration of transition between frames in milliseconds (default is 600).
+    debug_mode : bool, optional
+        Whether to run in debug mode with additional output (default is False).
 
-## Notes {.doc-section .doc-section-notes}
+##     Returns {.doc-section .doc-section-----returns}
 
-- The function uses Plotly Express to create an animated scatter plot.
-- Time can be displayed as actual dates or as model time units.
-- The animation supports customization of icon sizes, resource representation, and animation speed.
-- A background image can be added to provide context for the patient flow.
+    plotly.graph_objs._figure.Figure
+        An animated Plotly figure object representing the patient flow.
 
-## Examples {.doc-section .doc-section-examples}
+##     Notes {.doc-section .doc-section-----notes}
 
-```python
->>> animation = generate_animation(patient_df, event_positions, scenario,
-...                                time_display_units='dhm',
-...                                add_background_image='path/to/image.png')
->>> animation.show()
-```
+    - The function uses Plotly Express to create an animated scatter plot.
+    - Time can be displayed as actual dates or as model time units.
+    - The animation supports customization of icon sizes, resource representation, and animation speed.
+    - A background image can be added to provide context for the patient flow.
+    - If `time_display_units` is specified, the simulation time is converted into real-world
+      datetimes using the `simulation_time_unit` and optionally `start_date` and `start_time`.
+    - If `start_date` and/or `start_time` are not provided, a default offset from today's date
+      is used.
+    - The `snapshot_time` column is transformed to datetime strings, and a `snapshot_time_display`
+      column is created for visual display.
+
+##     Examples {.doc-section .doc-section-----examples}
+
+    >>> animation = generate_animation(patient_df, event_positions, scenario,
+    ...                                time_display_units='dhm',
+    ...                                add_background_image='path/to/image.png')
+    >>> animation.show()

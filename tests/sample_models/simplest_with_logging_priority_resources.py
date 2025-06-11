@@ -99,7 +99,7 @@ class Model:
     def attend_clinic(self, patient):
         self.arrival = self.env.now
         self.event_log.append(
-            {'patient': patient.identifier,
+            {'entity_id': patient.identifier,
              'pathway': 'Simplest',
              'event_type': 'arrival_departure',
              'event': 'arrival',
@@ -109,7 +109,7 @@ class Model:
         # request examination resource
         start_wait = self.env.now
         self.event_log.append(
-            {'patient': patient.identifier,
+            {'entity_id': patient.identifier,
              'pathway': 'Simplest',
              'event': 'treatment_wait_begins',
              'event_type': 'queue',
@@ -123,7 +123,7 @@ class Model:
             # record the waiting time for registration
             self.wait_treat = self.env.now - start_wait
             self.event_log.append(
-                {'patient': patient.identifier,
+                {'entity_id': patient.identifier,
                     'pathway': 'Simplest',
                     'event': 'treatment_begins',
                     'event_type': 'resource_use',
@@ -136,7 +136,7 @@ class Model:
             yield self.env.timeout(self.treat_duration)
 
             self.event_log.append(
-                {'patient': patient.identifier,
+                {'entity_id': patient.identifier,
                     'pathway': 'Simplest',
                     'event': 'treatment_complete',
                     'event_type': 'resource_use_end',
@@ -148,7 +148,7 @@ class Model:
         # total time in system
         self.total_time = self.env.now - self.arrival
         self.event_log.append(
-            {'patient': patient.identifier,
+            {'entity_id': patient.identifier,
             'pathway': 'Simplest',
             'event': 'depart',
             'event_type': 'arrival_departure',

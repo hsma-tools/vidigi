@@ -2,6 +2,7 @@
 title: Vidigi vs BupaR
 execute:
   echo: true
+engine: knitr
 format:
   html:
     toc: true
@@ -38,7 +39,7 @@ bupaR outputs could form part of a verification and validation strategy. They ca
 
 We will begin in Python, working to add a couple of columns to our vidigi event log to prepare it for use in bupaR.
 
-{{< embed vidigi_vs_bupar.ipynb >}}
+{{< embed prep_vidigi_outputs_for_bupar_processing.ipynb >}}
 
 Now, it's time to move to R (as bupaR and the bupaverse is only implemented in R).
 
@@ -333,7 +334,7 @@ event_position_df = pd.DataFrame([
                 {'event': 'TRAUMA_treatment_begins',
                  'x': 630, 'y': 490, 'resource':'n_cubicles_trauma_treat', 'label': "Being<br>Treated" },
 
-                 {'event': 'exit',
+                 {'event': 'depart',
                  'x':  670, 'y': 330, 'label': "Exit"}
             ])
 ```
@@ -347,17 +348,20 @@ animate_activity_log(
         event_log=my_trial.all_event_logs[my_trial.all_event_logs['run']==0],
         event_position_df=event_position_df,
         scenario=g(),
+        entity_col_name="patient",
         debug_mode=False,
         setup_mode=False,
         every_x_time_units=5,
         include_play_button=True,
         gap_between_entities=10,
-        gap_between_rows=20,
-        plotly_height=900,
-        plotly_width=1600,
+        gap_between_resources=20,
+        gap_between_queue_rows=20,
+        plotly_height=600,
+        plotly_width=1000,
         override_x_max=700,
         override_y_max=675,
-        icon_and_text_size=20,
+        entity_icon_size=12,
+        resource_icon_size=15,
         wrap_queues_at=10,
         step_snapshot_max=50,
         limit_duration=3000,
@@ -378,17 +382,20 @@ animate_activity_log(
         event_log=my_trial.all_event_logs[my_trial.all_event_logs['run']==1],
         event_position_df= event_position_df,
         scenario=g(),
+        entity_col_name="patient",
         debug_mode=False,
         setup_mode=False,
         every_x_time_units=5,
         include_play_button=True,
         gap_between_entities=10,
-        gap_between_rows=20,
-        plotly_height=900,
-        plotly_width=1600,
+        gap_between_resources=20,
+        gap_between_queue_rows=20,
+        plotly_height=600,
+        plotly_width=1000,
         override_x_max=700,
         override_y_max=675,
-        icon_and_text_size=20,
+        entity_icon_size=12,
+        resource_icon_size=15,
         wrap_queues_at=10,
         step_snapshot_max=50,
         limit_duration=3000,

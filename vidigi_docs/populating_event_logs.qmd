@@ -1,5 +1,5 @@
 ---
-title: Populating Event Logs
+title: Populating Event Logs - vidigi 0.0.4 and below
 execute:
   eval: false
 format:

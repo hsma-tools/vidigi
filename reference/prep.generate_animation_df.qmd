@@ -9,13 +9,16 @@ prep.generate_animation_df(
     step_snapshot_max=50,
     gap_between_entities=10,
     gap_between_resources=10,
-    gap_between_rows=30,
+    gap_between_resource_rows=30,
+    gap_between_queue_rows=30,
     time_col_name='time',
-    entity_col_name='patient',
+    entity_col_name='entity_id',
     event_type_col_name='event_type',
     event_col_name='event',
+    resource_col_name='resource_id',
     debug_mode=False,
     custom_entity_icon_list=None,
+    include_fun_emojis=False,
 )
 ```
 
@@ -26,21 +29,25 @@ handling both queuing and resource use events.
 
 ## Parameters {.doc-section .doc-section-parameters}
 
-| Name                  | Type         | Description                                                                                                                                                                     | Default        |
-|-----------------------|--------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------|
-| full_entity_df        | pd.DataFrame | Output of reshape_for_animation(), containing entity event data.                                                                                                                | _required_     |
-| event_position_df     | pd.DataFrame | DataFrame with columns 'event', 'x', and 'y', specifying initial positions for each event type.                                                                                 | _required_     |
-| wrap_queues_at        | int          | Number of entities in a queue before wrapping to a new row (default is 20).                                                                                                     | `20`           |
-| wrap_resources_at     | int          | Number of resources to show before wrapping to a new row (default is 20).                                                                                                       | `20`           |
-| step_snapshot_max     | int          | Maximum number of patients to show in each snapshot (default is 50).                                                                                                            | `50`           |
-| gap_between_entities  | int          | Horizontal spacing between entities in pixels (default is 10).                                                                                                                  | `10`           |
-| gap_between_resources | int          | Horizontal spacing between resources in pixels (default is 10).                                                                                                                 | `10`           |
-| gap_between_rows      | int          | Vertical spacing between rows in pixels (default is 30).                                                                                                                        | `30`           |
-| time_col_name         | str          | Name of the column in `event_log` that contains the timestamp of each event. Timestamps should represent the number of time units since the simulation began.                   | `"time"`       |
-| entity_col_name       | str          | Name of the column in `event_log` that contains the unique identifier for each entity (e.g., "patient", "patient_id", "customer", "ID").                                        | `"patient"`    |
-| event_type_col_name   | str          | Name of the column in `event_log` that specifies the category of the event. Supported event types include 'arrival_departure', 'resource_use', 'resource_use_end', and 'queue'. | `"event_type"` |
-| event_col_name        | str          | Name of the column in `event_log` that specifies the actual event that occurred.                                                                                                | `"event"`      |
-| debug_mode            | bool         | If True, print debug information during processing (default is False).                                                                                                          | `False`        |
+| Name                      | Type         | Description                                                                                                                                                                                                                                                                                           | Default         |
+|---------------------------|--------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------|
+| full_entity_df            | pd.DataFrame | Output of reshape_for_animation(), containing entity event data.                                                                                                                                                                                                                                      | _required_      |
+| event_position_df         | pd.DataFrame | DataFrame with columns 'event', 'x', and 'y', specifying initial positions for each event type.                                                                                                                                                                                                       | _required_      |
+| wrap_queues_at            | int          | Number of entities in a queue before wrapping to a new row (default is 20).                                                                                                                                                                                                                           | `20`            |
+| wrap_resources_at         | int          | Number of resources to show before wrapping to a new row (default is 20).                                                                                                                                                                                                                             | `20`            |
+| step_snapshot_max         | int          | Maximum number of patients to show in each snapshot (default is 50).                                                                                                                                                                                                                                  | `50`            |
+| gap_between_entities      | int          | Horizontal spacing between entities in pixels (default is 10).                                                                                                                                                                                                                                        | `10`            |
+| gap_between_resources     | int          | Horizontal spacing between resources in pixels (default is 10).                                                                                                                                                                                                                                       | `10`            |
+| gap_between_queue_rows    | int          | Vertical spacing between rows in pixels (default is 30).                                                                                                                                                                                                                                              | `30`            |
+| gap_between_resource_rows | int          | Vertical spacing between rows in pixels (default is 30).                                                                                                                                                                                                                                              | `30`            |
+| time_col_name             | str          | Name of the column in `event_log` that contains the timestamp of each event. Timestamps should represent the number of time units since the simulation began.                                                                                                                                         | `"time"`        |
+| entity_col_name           | str          | Name of the column in `event_log` that contains the unique identifier for each entity (e.g., "entity_id", "entity", "patient", "patient_id", "customer", "ID").                                                                                                                                       | `"entity_id"`   |
+| event_type_col_name       | str          | Name of the column in `event_log` that specifies the category of the event. Supported event types include 'arrival_departure', 'resource_use', 'resource_use_end', and 'queue'.                                                                                                                       | `"event_type"`  |
+| resource_col_name         | str          | Name of the column for the resource identifier. Used for 'resource_use' events.                                                                                                                                                                                                                       | `"resource_id"` |
+| event_col_name            | str          | Name of the column in `event_log` that specifies the actual event that occurred.                                                                                                                                                                                                                      | `"event"`       |
+| debug_mode                | bool         | If True, print debug information during processing (default is False).                                                                                                                                                                                                                                | `False`         |
+| custom_entity_icon_list   | list         | If provided, will be used as the list for entity icons. Once the end of the list is reached, it will loop back around to the beginning (so e.g. if a list of 8 icons is provided, entities 1 to 8 will use the provided emoji list, and then entity 9 will use the same icon as entity 1, and so on.) | `None`          |
+| include_fun_emojis        | bool         | If True, include the more 'fun' emojis, such as Santa Claus. Ignored if a custom entity icon list is passed.                                                                                                                                                                                          | `False`         |
 
 ## Returns {.doc-section .doc-section-returns}
 

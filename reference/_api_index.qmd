@@ -6,7 +6,7 @@
 
 | | |
 | --- | --- |
-| [animation.animate_activity_log](animation.animate_activity_log.qmd#vidigi.animation.animate_activity_log) | Generate an animated visualization of patient flow through a system. |
+| [animation.animate_activity_log](animation.animate_activity_log.qmd#vidigi.animation.animate_activity_log) |     Generate an animated visualization of patient flow through a system. |
 
 ## Step-By-Step Functions
 
@@ -16,19 +16,43 @@
 | --- | --- |
 | [prep.reshape_for_animations](prep.reshape_for_animations.qmd#vidigi.prep.reshape_for_animations) | Reshape event log data for animation purposes. |
 | [prep.generate_animation_df](prep.generate_animation_df.qmd#vidigi.prep.generate_animation_df) | Generate a DataFrame for animation purposes by adding position information to entity data. |
-| [animation.generate_animation](animation.generate_animation.qmd#vidigi.animation.generate_animation) | Generate an animated visualization of patient flow through a system. |
+| [animation.generate_animation](animation.generate_animation.qmd#vidigi.animation.generate_animation) |     Generate an animated visualization of patient flow through a system. |
 
-## Simpy Utility Functions and Classes
+## Animation Enhancers
 
 
 
 | | |
 | --- | --- |
-| [utils.populate_store](utils.populate_store.qmd#vidigi.utils.populate_store) | Populate a SimPy Store (or VidigiPriorityStore) with CustomResource objects. |
-| [utils.CustomResource](utils.CustomResource.qmd#vidigi.utils.CustomResource) | A custom resource class that extends simpy.Resource with an additional ID attribute. |
-| [utils.VidigiStore](utils.VidigiStore.qmd#vidigi.utils.VidigiStore) | A wrapper around SimPy's Store that allows using a context manager pattern |
-| [utils.VidigiPriorityStore](utils.VidigiPriorityStore.qmd#vidigi.utils.VidigiPriorityStore) | An optimized SimPy priority store that eliminates delays between resource |
-| [utils.VidigiPriorityStoreLegacy](utils.VidigiPriorityStoreLegacy.qmd#vidigi.utils.VidigiPriorityStoreLegacy) | A SimPy store that processes requests with priority. |
+| [animation.add_repeating_overlay](animation.add_repeating_overlay.qmd#vidigi.animation.add_repeating_overlay) |  Add a repeating overlay (rectangle and text) to an animated Plotly figure using traces. |
+
+## Simpy Resource Classes
+
+
+
+| | |
+| --- | --- |
+| [resources.VidigiResource](resources.VidigiResource.qmd#vidigi.resources.VidigiResource) | A custom resource class that extends simpy.Resource with an additional ID attribute. |
+| [resources.VidigiStore](resources.VidigiStore.qmd#vidigi.resources.VidigiStore) | A wrapper around SimPy's Store that allows using a context manager pattern |
+| [resources.VidigiPriorityStore](resources.VidigiPriorityStore.qmd#vidigi.resources.VidigiPriorityStore) | An optimized SimPy priority store that eliminates delays between resource |
+| [resources.populate_store](resources.populate_store.qmd#vidigi.resources.populate_store) | Populate a SimPy Store (or VidigiPriorityStore) with VidigiResource objects. |
+
+## Event Logging Utility Functions and Classes
+
+
+
+| | |
+| --- | --- |
+| [logging.EventLogger](logging.EventLogger.qmd#vidigi.logging.EventLogger) |  |
+
+## Event Positioning Utility Functions and Classes
+
+
+
+| | |
+| --- | --- |
+| [utils.EventPosition](utils.EventPosition.qmd#vidigi.utils.EventPosition) | Pydantic model for a single event position. |
+| [utils.create_event_position_df](utils.create_event_position_df.qmd#vidigi.utils.create_event_position_df) | Creates a DataFrame for event positions from a list of EventPosition objects. |
 
 ## Streamlit Utility Functions
 
@@ -45,3 +69,11 @@
 | | |
 | --- | --- |
 | [ciw.event_log_from_ciw_recs](ciw.event_log_from_ciw_recs.qmd#vidigi.ciw.event_log_from_ciw_recs) | Given the ciw recs object, return a dataframe in the format expected by the vidigi |
+
+## legacy Functions
+
+
+
+| | |
+| --- | --- |
+| [resources.VidigiPriorityStoreLegacy](resources.VidigiPriorityStoreLegacy.qmd#vidigi.resources.VidigiPriorityStoreLegacy) | A SimPy store that processes requests with priority. |

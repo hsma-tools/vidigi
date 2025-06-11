@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import simpy
 from sim_tools.distributions import Exponential, Lognormal
-from vidigi.utils import populate_store
+from vidigi.resources import populate_store
 
 
 # Class to store global parameter values.  We don't create an instance of this
@@ -130,14 +130,6 @@ class Model:
         populate_store(num_resources=g.n_cubicles,
                        simpy_store=self.treatment_cubicles,
                        sim_env=self.env)
-
-        # for i in range(g.n_cubicles):
-        #     self.treatment_cubicles.put(
-        #         CustomResource(
-        #             self.env,
-        #             capacity=1,
-        #             id_attribute = i+1)
-        #         )
 
     # A generator function that represents the DES generator for patient
     # arrivals

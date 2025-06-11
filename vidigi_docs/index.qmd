@@ -1,16 +1,53 @@
 # vidigi (Visual Interactive Dynamics and Integrated Graphical Insights)
 
 [<img src="https://img.shields.io/pypi/v/vidigi?label=pypi%20package">](https://pypi.org/project/vidigi/)
+[![DOI](https://zenodo.org/badge/888169040.svg)](https://doi.org/10.5281/zenodo.14635602)
 
 ---
 
 Welcome to vidigi - a package for visualising real or simulated pathways.
 
-Primarily developed for healthcare simulation and intended to allow easy integration with tools like Streamlit so users can see the impact of changes to simulation parameters in real-time, vidigi
+{{< video videos/vidigi.mp4 >}}
+
+Primarily developed for healthcare simulation and intended to allow easy integration with tools like Streamlit so users can see the impact of changes to simulation parameters in real-time, vidigi handles the conversion of your simulation event logs into engaging and flexible animations.
+
+With just a minimal set of logs - with helper functions provided to make that easier than ever to integrate into existing SimPy or Ciw simulations - you can start generating and customising your visualisations in minutes.
+
+## Getting Started
+
+- Install vidigi from PyPi with the command `pip install vidigi`
+- Read the [introduction](introduction.qmd) to get an overview of the core vidigi concepts
+- Read a step-by-step walkthrough of [adding vidigi to an existing SimPy model](adding_vidigi_to_a_simple_simpy_model_hsma_structure.qmd)
+
+## Useful Links
+
+The source code is available on GitHub: [github.com/Bergam0t/vidigi](https://github.com/Bergam0t/vidigi).
+
+**Spotted a bug? Or just have a new feature you'd like to suggest? Raise an issue [here](https://github.com/Bergam0t/vidigi/issues/new)**
+
+
+## What does the name mean?
 
 vidigi is the [Esperanto](https://en.wikipedia.org/wiki/Esperanto) ![](Flag_of_Esperanto.svg.png){height=30px} for 'to show'
 
-
 (or it's the backronym 'Visual Interactive Dynamics and Integrated Graphical Insights' - whichever floats your boat)
 
-{{< video videos/vidigi.mp4 >}}
+## Acknowledgements
+
+Thanks are due to
+
+- [Dr Daniel Chalk](https://github.com/hsma-chief-elf) for support and SimPy training on the HSMA programme
+- [Professor Tom Monks](https://github.com/TomMonks) for his extensive materials and teaching on the use of simpy in healthcare and his [material on converting code into packages](https://www.pythonhealthdatascience.com/content/03_mgt/03_mgt_front_page.html)
+- [Helena Robinson](https://github.com/helenajr) and Rey Tan for testing, suggestions and bugfinding
+
+## Licence
+
+Vidigi is released under the MIT licence.
+
+Copyright 2024 Sammi Rosser
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
