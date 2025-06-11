@@ -1,4 +1,4 @@
-__version__ = '0.0.4'
+__version__ = '1.0.0'
 __author__ = 'Sammi Rosser'
 
-from . import animation, prep, utils
+from . import animation, ciw, prep, utils, logging, resources

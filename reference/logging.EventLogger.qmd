@@ -1,0 +1,171 @@
+# logging.EventLogger { #vidigi.logging.EventLogger }
+
+```python
+logging.EventLogger(self, event_model=BaseEvent, env=None, run_number=None)
+```
+
+
+
+## Methods
+
+| Name | Description |
+| --- | --- |
+| [get_events_by_entity](#vidigi.logging.EventLogger.get_events_by_entity) | Return all events associated with a specific entity_id. |
+| [get_events_by_event_name](#vidigi.logging.EventLogger.get_events_by_event_name) | Return all events of a specific event_type. |
+| [get_events_by_event_type](#vidigi.logging.EventLogger.get_events_by_event_type) | Return all events of a specific event_type. |
+| [get_events_by_run](#vidigi.logging.EventLogger.get_events_by_run) | Return all events associated with a specific entity_id. |
+| [log_arrival](#vidigi.logging.EventLogger.log_arrival) | Helper to log an arrival event with the correct event_type and event fields. |
+| [log_departure](#vidigi.logging.EventLogger.log_departure) | Helper to log a departure event with the correct event_type and event fields. |
+| [log_queue](#vidigi.logging.EventLogger.log_queue) | Log a queue event. The 'event' here can be any string describing the queue event. |
+| [log_resource_use_end](#vidigi.logging.EventLogger.log_resource_use_end) | Log the end of resource use. Requires resource_id. |
+| [log_resource_use_start](#vidigi.logging.EventLogger.log_resource_use_start) | Log the start of resource use. Requires resource_id. |
+| [plot_entity_timeline](#vidigi.logging.EventLogger.plot_entity_timeline) | Plot a timeline of events for a specific entity_id. |
+| [to_csv](#vidigi.logging.EventLogger.to_csv) | Write the log to a CSV file. |
+| [to_dataframe](#vidigi.logging.EventLogger.to_dataframe) | Convert the event log to a pandas DataFrame. |
+| [to_json](#vidigi.logging.EventLogger.to_json) | Write the event log to a JSON file or file-like buffer. |
+| [to_json_string](#vidigi.logging.EventLogger.to_json_string) | Return the event log as a pretty JSON string. |
+
+### get_events_by_entity { #vidigi.logging.EventLogger.get_events_by_entity }
+
+```python
+logging.EventLogger.get_events_by_entity(entity_id, as_dataframe=True)
+```
+
+Return all events associated with a specific entity_id.
+
+### get_events_by_event_name { #vidigi.logging.EventLogger.get_events_by_event_name }
+
+```python
+logging.EventLogger.get_events_by_event_name(event, as_dataframe=True)
+```
+
+Return all events of a specific event_type.
+
+### get_events_by_event_type { #vidigi.logging.EventLogger.get_events_by_event_type }
+
+```python
+logging.EventLogger.get_events_by_event_type(event_type, as_dataframe=True)
+```
+
+Return all events of a specific event_type.
+
+### get_events_by_run { #vidigi.logging.EventLogger.get_events_by_run }
+
+```python
+logging.EventLogger.get_events_by_run(run_number, as_dataframe=True)
+```
+
+Return all events associated with a specific entity_id.
+
+### log_arrival { #vidigi.logging.EventLogger.log_arrival }
+
+```python
+logging.EventLogger.log_arrival(
+    entity_id,
+    time=None,
+    pathway=None,
+    run_number=None,
+    **extra_fields,
+)
+```
+
+Helper to log an arrival event with the correct event_type and event fields.
+
+### log_departure { #vidigi.logging.EventLogger.log_departure }
+
+```python
+logging.EventLogger.log_departure(
+    entity_id,
+    time=None,
+    pathway=None,
+    run_number=None,
+    **extra_fields,
+)
+```
+
+Helper to log a departure event with the correct event_type and event fields.
+
+### log_queue { #vidigi.logging.EventLogger.log_queue }
+
+```python
+logging.EventLogger.log_queue(
+    entity_id,
+    event,
+    time=None,
+    pathway=None,
+    run_number=None,
+    **extra_fields,
+)
+```
+
+Log a queue event. The 'event' here can be any string describing the queue event.
+
+### log_resource_use_end { #vidigi.logging.EventLogger.log_resource_use_end }
+
+```python
+logging.EventLogger.log_resource_use_end(
+    entity_id,
+    resource_id,
+    time=None,
+    pathway=None,
+    run_number=None,
+    **extra_fields,
+)
+```
+
+Log the end of resource use. Requires resource_id.
+
+### log_resource_use_start { #vidigi.logging.EventLogger.log_resource_use_start }
+
+```python
+logging.EventLogger.log_resource_use_start(
+    entity_id,
+    resource_id,
+    time=None,
+    pathway=None,
+    run_number=None,
+    **extra_fields,
+)
+```
+
+Log the start of resource use. Requires resource_id.
+
+### plot_entity_timeline { #vidigi.logging.EventLogger.plot_entity_timeline }
+
+```python
+logging.EventLogger.plot_entity_timeline(entity_id)
+```
+
+Plot a timeline of events for a specific entity_id.
+
+### to_csv { #vidigi.logging.EventLogger.to_csv }
+
+```python
+logging.EventLogger.to_csv(path_or_buffer)
+```
+
+Write the log to a CSV file.
+
+### to_dataframe { #vidigi.logging.EventLogger.to_dataframe }
+
+```python
+logging.EventLogger.to_dataframe()
+```
+
+Convert the event log to a pandas DataFrame.
+
+### to_json { #vidigi.logging.EventLogger.to_json }
+
+```python
+logging.EventLogger.to_json(path_or_buffer, indent=2)
+```
+
+Write the event log to a JSON file or file-like buffer.
+
+### to_json_string { #vidigi.logging.EventLogger.to_json_string }
+
+```python
+logging.EventLogger.to_json_string(indent=2)
+```
+
+Return the event log as a pretty JSON string.

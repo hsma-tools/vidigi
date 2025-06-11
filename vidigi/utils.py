@@ -1,332 +1,55 @@
-import simpy
 import pandas as pd
-from simpy.core import BoundClass
+from pydantic import BaseModel, ValidationError
+from typing import List, Optional
 
-class CustomResource(simpy.Resource):
+class EventPosition(BaseModel):
     """
-    A custom resource class that extends simpy.Resource with an additional ID attribute.
-
-    This class allows for more detailed tracking and management of resources in a simulation
-    by adding an ID attribute to each resource instance.
-
-    Parameters
-    ----------
-    env : simpy.Environment
-        The SimPy environment in which this resource exists.
-    capacity : int
-        The capacity of the resource (how many units can be in use simultaneously).
-    id_attribute : any, optional
-        An identifier for the resource (default is None).
-
-    Attributes
-    ----------
-    id_attribute : any
-        An identifier for the resource, which can be used for custom tracking or logic.
-
-    Notes
-    -----
-    This class inherits from simpy.Resource and overrides the request and release methods
-    to allow for custom handling of the id_attribute. The actual implementation of ID
-    assignment or reset logic should be added by the user as needed.
-
-    Examples
-    --------
-    ```
-    env = simpy.Environment()
-    custom_resource = CustomResource(env, capacity=1, id_attribute="Resource_1")
-    def process(env, resource):
-        with resource.request() as req:
-            yield req
-            print(f"Using resource with ID: {resource.id_attribute}")
-            yield env.timeout(1)
-    env.process(process(env, custom_resource))
-    env.run()
-    ```
-    Using resource with ID: Resource_1
-    """
-    def __init__(self, env, capacity, id_attribute=None):
-        super().__init__(env, capacity)
-        self.id_attribute = id_attribute
-
-    def request(self, *args, **kwargs):
-        """
-        Request the resource.
-
-        This method can be customized to handle the ID attribute when a request is made.
-        Currently, it simply calls the parent class's request method.
-
-        Returns
-        -------
-        simpy.events.Request
-            A SimPy request event.
-        """
-        # Add logic to handle the ID attribute when a request is made
-        # For example, you can assign an ID to the requester
-        # self.id_attribute = assign_id_logic()
-        return super().request(*args, **kwargs)
-
-    def release(self, *args, **kwargs):
-        """
-        Release the resource.
-
-        This method can be customized to handle the ID attribute when a release is made.
-        Currently, it simply calls the parent class's release method.
-
-        Returns
-        -------
-        None
-        """
-        # Add logic to handle the ID attribute when a release is made
-        # For example, you can reset the ID attribute
-        # reset_id_logic(self.id_attribute)
-        return super().release(*args, **kwargs)
-
-class PriorityGet(simpy.resources.base.Get):
-    """
-    A priority-aware request for resources in a SimPy environment.
-
-    This class extends the SimPy `Get` class to allow prioritization of
-    resource requests. Requests with a smaller `priority` value are
-    served first. The request time and preemption flag are also considered
-    when determining the request's order.
+    Pydantic model for a single event position.
 
     Attributes:
-        priority (int): The priority of the request. Lower values indicate
-            higher priority. Defaults to 999.
-        preempt (bool): Indicates whether the request should preempt
-            another resource user. Defaults to True.
-            (Ignored by `PriorityResource`.)
-        time (float): The simulation time when the request was made.
-        usage_since (float or None): The simulation time when the
-            request succeeded, or `None` if not yet fulfilled.
-        key (tuple): A tuple `(priority, time, not preempt)` used for
-            sorting requests.
-            Consists of
-            - the priority (lower value is more important)
-            - the time at which the request was made (earlier requests are more important)
-            - and finally the preemption flag (preempt requests are more important)
-
-    Notes
-    -----
-    Credit to arabinelli
-    # https://stackoverflow.com/questions/58603000/how-do-i-make-a-priority-get-request-from-resource-store
+        event (str): The name of the event. These must match the event names as they appear in your event log.
+        x (int): The x-coordinate for the event. This coordinate represents the bottom-right hand corner of the queue or resources.
+        y (int): The y-coordinate. This coordinate represents the bottom-right hand corner of the queue or resources.
+        label (str): The display label for the event. Used if display_stage_labels = True. This allows you to set a more display-friendly version of your event name (e.g. you might want to display start_queue_till as 'Queuing for Till').
+        resource (Optional[str]): The optional resource associated with the event. This must match one of the resource names provided in your scenario object.
     """
-    def __init__(self, resource, priority=999, preempt=True):
-        self.priority = priority
+    event: str
+    x: int
+    y: int
+    label: str
+    resource: Optional[str] = None
 
-        self.preempt = preempt
-
-        self.time = resource._env.now
-
-        self.usage_since = None
-
-        self.key = (self.priority, self.time, not self.preempt)
-
-        super().__init__(resource)
-
-class VidigiPriorityStore(simpy.resources.store.Store):
+def create_event_position_df(event_positions: List[EventPosition]) -> pd.DataFrame:
     """
-    A SimPy store that processes requests with priority.
+    Creates a DataFrame for event positions from a list of EventPosition objects.
 
-    This class extends the SimPy `Store` to include a priority queue for
-    handling requests. Requests are processed based on their priority,
-    submission time, and preemption flag.
+    Args:
+        event_positions (List[EventPosition]): A list of EventPoisitions.
 
-    Attributes:
-        GetQueue (class): A reference to the sorted queue implementation
-            used for handling prioritized requests.
-        get (class): A reference to the `PriorityGet` class, which handles
-            the creation of prioritized requests.
+    Returns:
+        pd.DataFrame: A DataFrame with the specified columns and data types.
 
-    Notes
-    -----
-    Credit to arabinelli
-    # https://stackoverflow.com/questions/58603000/how-do-i-make-a-priority-get-request-from-resource-store
-
+    Raises:
+        ValidationError: If the input data does not match the EventPosition model.
     """
-    GetQueue = simpy.resources.resource.SortedQueue
+    try:
+        # Convert the list of Pydantic models to a list of dictionaries
+        validated_data = [event.model_dump() for event in event_positions]
 
-    get = BoundClass(PriorityGet)
+        # Create the DataFrame
+        df = pd.DataFrame(validated_data)
 
-def populate_store(num_resources, simpy_store, sim_env):
-    """
-    Populate a SimPy Store (or VidigiPriorityStore) with CustomResource objects.
+        # Reorder columns to match the desired output
+        df = df[['event', 'x', 'y', 'label', 'resource']]
 
-    This function creates a specified number of CustomResource objects and adds them to
-    a SimPy Store or VidigiPriorityStore.
+        return df
+    except ValidationError as e:
+        print(f"Error validating event position data: {e}")
+        raise
 
-    Each CustomResource is initialized with a capacity of 1 and a unique ID attribute,
-    which is crucial for animation functions where you wish to show an individual entity
-    consistently using the same resource.
-
-    If using VidigiPriorityStore, you will need to pass the relevant priority in to the
-    .get() argument when pulling a resource out of the store.
-
-    Parameters
-    ----------
-    num_resources : int
-        The number of CustomResource objects to create and add to the store.
-    simpy_store : simpy.Store or vidigi.utils.VidigiPriorityStore
-        The SimPy Store object to populate with resources.
-    sim_env : simpy.Environment
-        The SimPy environment in which the resources and store exist.
-
-    Returns
-    -------
-    None
-
-    Notes
-    -----
-    - Each CustomResource is created with a capacity of 1.
-    - The ID attribute of each CustomResource is set to its index in the creation loop plus one,
-      ensuring unique IDs starting from 1.
-    - This function is typically used to initialize a pool of resources at the start of a simulation.
-
-    Examples
-    --------
-    >>> import simpy
-    >>> env = simpy.Environment()
-    >>> resource_store = simpy.Store(env)
-    >>> populate_store(5, resource_store, env)
-    >>> len(resource_store.items)  # The store now contains 5 CustomResource objects
-    5
-    """
-    for i in range(num_resources):
-
-        simpy_store.put(
-            CustomResource(
-                sim_env,
-                capacity=1,
-                id_attribute = i+1)
-            )
-
-
-def event_log_from_ciw_recs(ciw_recs_obj, node_name_list):
-    """
-    Given the ciw recs object, return a dataframe in the format expected by the vidigi
-    functions
-    - reshape_for_animation
-    OR
-    - animate_activity_log
-
-    Parameters
-    ----------
-    ciw_recs_obj: list of tuples
-        The output of the .get_all_records() method run on the ciw simulation object.
-        This is a list of named tuples.
-        See https://ciw.readthedocs.io/en/latest/Tutorial/GettingStarted/part_3.html
-        and https://ciw.readthedocs.io/en/latest/Reference/results.html for more details.
-
-
-    node_name_list: list of strings
-        User-defined list of strings where each string relates to the resource or activity
-        that will take place at that ciw node
-
-    Returns
-    -------
-    pd.DataFrame
-
-    Notes
-    -----
-    Given the ciw recs object, if we know the nodes and what they relate to,
-    we can build up a picture  the arrival date for the first tuple
-    for a given user ID is the arrival
-
-    Then, for each node:
-    - the arrival date for a given node is when they start queueing
-    - the service start date is when they stop queueing
-    - the service start date is when they begin using the resource
-    - the service end date is when the resource use ends
-    - the server ID is the equivalent of a simpy resource use ID
-
-    A more complex multi-node example can be found in https://github.com/Bergam0t/ciw-example-animation
-    in the files
-    - **ciw_model.py**
-    - **vidigi_experiments.py**
-
-    Examples
-    ------
-    # Example taken from https://ciw.readthedocs.io/en/latest/Tutorial/GettingStarted/part_3.html
-    # Let us interpret the servers as workers at aa bank, who can see one customer at a time
-
-    import ciw
-
-    N = ciw.create_network(
-        arrival_distributions=[ciw.dists.Exponential(rate=0.2)],
-        service_distributions=[ciw.dists.Exponential(rate=0.1)],
-        number_of_servers=[3]
-    )
-
-    ciw.seed(1)
-
-    Q = ciw.Simulation(N)
-
-    Q.simulate_until_max_time(1440)
-
-    recs = Q.get_all_records()
-
-    event_log_from_ciw_recs(ciw_recs_obj=recs, node_name_list=["bank_server"])
-
-    """
-    entity_ids = list(set([log.id_number for log in ciw_recs_obj]))
-
-    event_logs = []
-
-    for entity_id in entity_ids:
-        entity_tuples = [log for log in ciw_recs_obj if log.id_number==entity_id]
-
-        total_steps = len(entity_tuples)
-
-        # If first entry, record the arrival time
-        for i, event in enumerate(entity_tuples):
-            if i==0:
-                event_logs.append(
-                    {'patient': entity_id,
-                    'pathway': 'Model',
-                    'event_type': 'arrival_departure',
-                    'event': 'arrival',
-                    'time': event.arrival_date}
-                )
-
-            event_logs.append(
-            {'patient': entity_id,
-             'pathway': 'Model',
-             'event_type': 'queue',
-             'event': f"{node_name_list[event.node-1]}_wait_begins",
-             'time': event.arrival_date
-                }
-            )
-
-            event_logs.append(
-                {'patient': entity_id,
-                'pathway': 'Model',
-                'event_type': 'resource_use',
-                'event': f"{node_name_list[event.node-1]}_begins",
-                'time': event.service_start_date,
-                'resource_id': event.server_id}
-            )
-
-            event_logs.append(
-                {'patient': entity_id,
-                'pathway': 'Model',
-                'event_type': 'resource_use',
-                'event': f"{node_name_list[event.node-1]}_ends",
-                'time': event.service_end_date,
-                'resource_id': event.server_id}
-            )
-
-
-            if i==total_steps-1:
-                event_logs.append(
-                    {'patient': entity_id,
-                    'pathway': 'Model',
-                    'event_type': 'arrival_departure',
-                    'event': 'depart',
-                    'time': event.exit_date}
-                )
-
-    return pd.DataFrame(event_logs)
-
+#'''''''''''''''''''''''''''''''''''''#
+# Webdev + visualisation helpers
+#'''''''''''''''''''''''''''''''''''''#
 def streamlit_play_all():
     try:
         from streamlit_javascript import st_javascript

@@ -6,6 +6,11 @@ prep.reshape_for_animations(
     every_x_time_units=10,
     limit_duration=10 * 60 * 24,
     step_snapshot_max=50,
+    time_col_name='time',
+    entity_col_name='entity_id',
+    event_type_col_name='event_type',
+    event_col_name='event',
+    pathway_col_name=None,
     debug_mode=False,
 )
 ```
@@ -17,28 +22,33 @@ suitable for creating animations of patient flow through a system.
 
 ## Parameters {.doc-section .doc-section-parameters}
 
-| Name               | Type         | Description                                                                                | Default        |
-|--------------------|--------------|--------------------------------------------------------------------------------------------|----------------|
-| event_log          | pd.DataFrame | The input event log containing patient events and timestamps.                              | _required_     |
-| every_x_time_units | int          | The time interval between snapshots in minutes (default is 10).                            | `10`           |
-| limit_duration     | int          | The maximum duration to consider in minutes (default is 10 days).                          | `10 * 60 * 24` |
-| step_snapshot_max  | int          | The maximum number of patients to include in each snapshot for each event (default is 50). | `50`           |
-| debug_mode         | bool         | If True, print debug information during processing (default is False).                     | `False`        |
+| Name                | Type         | Description                                                                                                                                                                       | Default        |
+|---------------------|--------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------|
+| event_log           | pd.DataFrame | The input event log containing entity events and timestamps in the form of a number of time units since the simulation began.                                                     | _required_     |
+| every_x_time_units  | int          | The time interval between snapshots in preferred time units (default is 10).                                                                                                      | `10`           |
+| limit_duration      | int          | The maximum duration to consider in preferred time units (default is 10 days).                                                                                                    | `10 * 60 * 24` |
+| step_snapshot_max   | int          | The maximum number of entities to include in each snapshot for each event (default is 50).                                                                                        | `50`           |
+| time_col_name       | str          | Name of the column in `event_log` that contains the timestamp of each event. Timestamps should represent the number of time units since the simulation began.                     | `"time"`       |
+| entity_col_name     | str          | Name of the column in `event_log` that contains the unique identifier for each entity (e.g., "entity_id", "entity", "patient", "patient_id", "customer", "ID").                   | `"entity_id"`  |
+| event_type_col_name | str          | Name of the column in `event_log` that specifies the category of the event. Supported event types include 'arrival_departure', 'resource_use', 'resource_use_end', and 'queue'.   | `"event_type"` |
+| event_col_name      | str          | Name of the column in `event_log` that specifies the actual event that occurred.                                                                                                  | `"event"`      |
+| pathway_col_name    | str          | Name of the column in `event_log` that identifies the specific pathway or process flow the entity is following. If `None`, it is assumed that pathway information is not present. | `None`         |
+| debug_mode          | bool         | If True, print debug information during processing (default is False).                                                                                                            | `False`        |
 
 ## Returns {.doc-section .doc-section-returns}
 
-| Name   | Type      | Description                                                                                                           |
-|--------|-----------|-----------------------------------------------------------------------------------------------------------------------|
-|        | DataFrame | A reshaped DataFrame containing snapshots of patient positions at regular time intervals, sorted by minute and event. |
+| Name   | Type      | Description                                                                                                          |
+|--------|-----------|----------------------------------------------------------------------------------------------------------------------|
+|        | DataFrame | A reshaped DataFrame containing snapshots of entity positions at regular time intervals, sorted by minute and event. |
 
 ## Notes {.doc-section .doc-section-notes}
 
-- The function creates snapshots of patient positions at specified time intervals.
-- It handles patients who are present in the system at each snapshot time.
-- Patients are ranked within each event based on their arrival order.
-- A maximum number of patients per event can be set to limit the number of patients who will be
+- The function creates snapshots of entity positions at specified time intervals.
+- It handles entities who are present in the system at each snapshot time.
+- Entities are ranked within each event based on their arrival order.
+- A maximum number of patients per event can be set to limit the number of entities who will be
   displayed on screen within any one event type at a time.
-- An 'exit' event is added for each patient at the end of their journey.
+- An 'exit' event is added for each entity at the end of their journey.
 - The function uses memory management techniques (del and gc.collect()) to handle large datasets.
 
 ## TODO {.doc-section .doc-section-todo}
@@ -46,4 +56,4 @@ suitable for creating animations of patient flow through a system.
 - Add behavior for when limit_duration is None.
 - Consider adding 'first step' and 'last step' parameters.
 - Implement pathway order and precedence columns.
-- Fix the automatic exit at the end of the simulation run for all patients.
+- Fix the automatic exit at the end of the simulation run for all entities.
