@@ -49,6 +49,16 @@ To develop and demonstrate the concept, it has so far been used to incorporate v
 
 # Usage Instructions with SimPy
 
+:::{.callout-important}
+#### Test, test, and test again!
+
+Before you start trying to incorporate vidigi into your model, make sure you take a backup of your model as it currently is.
+
+While vidigi has been tested to ensure that it's special resource classes work the same as existing simpy resource classes, it's still possible to accidentally change your model. There's also a chance that the vidigi classes don't work identically to simpy classes in more complex scenarios with reneging, baulking, or other conditional logic around resource allocation.
+
+Therefore, it's highly advisable to check the key output metrics from your model before and after incorporating vidigi!
+:::
+
 ## Creating a visualisation from an existing model
 
 Two key things need to happen to existing models to work with the visualisation code:
