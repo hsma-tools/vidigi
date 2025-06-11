@@ -49,7 +49,6 @@ quartodoc:
         - vidigi_docs/adding_vidigi_to_a_simple_simpy_model_hsma_structure.qmd
       - section: "Details"
         contents:
-        - vidigi_docs/populating_event_logs.qmd
         - examples/feat_vidigi_logging_class/feat_example_logging_class.ipynb
       - section: "vidigi Function Reference"
         contents:
@@ -81,6 +80,7 @@ quartodoc:
       - section: "Working with older versions of vidigi"
         contents:
         - vidigi_docs/adding_vidigi_to_a_simple_simpy_model_hsma_structure_old.qmd
+        - vidigi_docs/populating_event_logs.qmd
 
   sections:
     - title: All-In-One Animation Functions
