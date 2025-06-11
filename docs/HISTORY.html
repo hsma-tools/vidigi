@@ -794,6 +794,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </ul></li>
 <li>CustomResource is now called VidigiResource. This generally should not cause problems as you are likely to only be accessing it indirectly through use of VidigiStore or VidigiPriorityStore.</li>
 <li><code>init_items</code> argument for VidigiStore and VidigiPriorityStore has been replaced with <code>num_resources</code>. Defaulting to none, this functions identically to the <code>populate_stores</code> function, but instead allows you to initialise the resource on start.</li>
+<li>the dataframe expected by <code>generate_animation_df</code> is now <code>full_entity_df</code>, not <code>full_patient_df</code>. Only the parameter name needs updating.</li>
+<li>the dataframe expected by <code>generate_animation</code> is now <code>full_entity_df_plus_pos</code>, not <code>full_patient_df_plus_pos</code>. Only the parameter name needs updating.</li>
 </ul>
 <p>NEW FEATURES:</p>
 <p>Adds</p>
@@ -912,13 +914,20 @@ animate_activity_log(event_log,  event_position_df, entity_col_name="patient")</
 </ul>
 <hr>
 </section>
+<section id="parameter-names-for-main-dataframes-in-step-by-step-functions" class="level4">
+<h4 class="anchored" data-anchor-id="parameter-names-for-main-dataframes-in-step-by-step-functions">4. Parameter names for main dataframes in step-by-step functions</h4>
+<ul>
+<li>the dataframe expected by <code>generate_animation_df</code> is now <code>full_entity_df</code>, not <code>full_patient_df</code>. Only the parameter name needs updating.</li>
+<li>the dataframe expected by <code>generate_animation</code> is now <code>full_entity_df_plus_pos</code>, not <code>full_patient_df_plus_pos</code>. Only the parameter name needs updating.</li>
+</ul>
+</section>
 <section id="customresource-renamed" class="level4">
-<h4 class="anchored" data-anchor-id="customresource-renamed">4. <code>CustomResource</code> Renamed</h4>
+<h4 class="anchored" data-anchor-id="customresource-renamed">5. <code>CustomResource</code> Renamed</h4>
 <p><code>CustomResource</code> is now <code>VidigiResource</code>. This is typically used indirectly through <code>VidigiStore</code> or <code>VidigiPriorityStore</code>, so minimal changes may be needed unless you were using it directly.</p>
 <hr>
 </section>
 <section id="resource-initialization-parameter" class="level4">
-<h4 class="anchored" data-anchor-id="resource-initialization-parameter">5. Resource Initialization Parameter</h4>
+<h4 class="anchored" data-anchor-id="resource-initialization-parameter">6. Resource Initialization Parameter</h4>
 <p><code>init_items</code> has been <strong>replaced</strong> with <code>num_resources</code> in <code>VidigiStore</code> and <code>VidigiPriorityStore</code>.</p>
 <p>Example:</p>
 <section id="before" class="level5">
@@ -965,6 +974,7 @@ animate_activity_log(event_log,  event_position_df, entity_col_name="patient")</
 <ul class="task-list">
 <li><label><input type="checkbox">Update your column name to ‘entity_id’ instead of ‘patient’ or pass overrides in the form of ’entity_col_name=“patient”`</label></li>
 <li><label><input type="checkbox">Update import paths</label></li>
+<li><label><input type="checkbox">Update parameter names for the main dataframe in <code>generate_animation_df</code> and <code>generation_animation</code> (if using the step-by-step animation functions instead of the all-in-one)</label></li>
 <li><label><input type="checkbox">Switch from VidigiPriorityStore to VidigiPriorityStoreLegacy if you don’t want to have to make any changes to how you request resources</label></li>
 <li><label><input type="checkbox">Replace removed sizing and spacing parameters with new ones</label></li>
 <li><label><input type="checkbox">Explore new features and examples - the new resource types, event logging helpers and event positioning helpers may make your life easier!</label></li>

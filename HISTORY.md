@@ -21,6 +21,8 @@ Migration guide below!
     - `gap_between_resource_rows`
 - CustomResource is now called VidigiResource. This generally should not cause problems as you are likely to only be accessing it indirectly through use of VidigiStore or VidigiPriorityStore.
 - `init_items` argument for VidigiStore and VidigiPriorityStore has been replaced with `num_resources`. Defaulting to none, this functions identically to the `populate_stores` function, but instead allows you to initialise the resource on start.
+- the dataframe expected by `generate_animation_df` is now `full_entity_df`, not `full_patient_df`. Only the parameter name needs updating.
+- the dataframe expected by `generate_animation` is now `full_entity_df_plus_pos`, not `full_patient_df_plus_pos`. Only the parameter name needs updating.
 
 NEW FEATURES:
 
@@ -139,14 +141,19 @@ Update your import statements accordingly.
 
 ---
 
-#### 4. `CustomResource` Renamed
+#### 4. Parameter names for main dataframes in step-by-step functions
+
+- the dataframe expected by `generate_animation_df` is now `full_entity_df`, not `full_patient_df`. Only the parameter name needs updating.
+- the dataframe expected by `generate_animation` is now `full_entity_df_plus_pos`, not `full_patient_df_plus_pos`. Only the parameter name needs updating.
+
+#### 5. `CustomResource` Renamed
 
 `CustomResource` is now `VidigiResource`.
 This is typically used indirectly through `VidigiStore` or `VidigiPriorityStore`, so minimal changes may be needed unless you were using it directly.
 
 ---
 
-#### 5. Resource Initialization Parameter
+#### 6. Resource Initialization Parameter
 
 `init_items` has been **replaced** with `num_resources` in `VidigiStore` and `VidigiPriorityStore`.
 
@@ -197,6 +204,7 @@ Defaults are
 
 - [ ] Update your column name to 'entity_id' instead of 'patient' or pass overrides in the form of 'entity_col_name="patient"`
 - [ ] Update import paths
+- [ ] Update parameter names for the main dataframe in `generate_animation_df` and `generation_animation` (if using the step-by-step animation functions instead of the all-in-one)
 - [ ] Switch from VidigiPriorityStore to VidigiPriorityStoreLegacy if you don't want to have to make any changes to how you request resources
 - [ ] Replace removed sizing and spacing parameters with new ones
 - [ ] Explore new features and examples - the new resource types, event logging helpers and event positioning helpers may make your life easier!
