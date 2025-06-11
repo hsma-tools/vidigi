@@ -1032,4 +1032,22 @@ def add_repeating_overlay(
         # Update frame
         frame.data = frame_data
 
+    if rect_opacity > 0:
+        for updatemenu in fig.layout.updatemenus:
+            if 'buttons' in updatemenu and updatemenu['type'] == 'buttons':
+                for button in updatemenu['buttons']:
+                    if 'args' in button and len(button['args']) > 1:
+                        # args is [None, {frame: {...}, ...}]
+                        # Set redraw=True in the frame dict
+                        if 'frame' in button['args'][1]:
+                            button['args'][1]['frame']['redraw'] = True
+
+        for slider in fig.layout.sliders:
+            for step in slider['steps']:
+                if 'args' in step and len(step['args']) > 1:
+                    # args is [ [frame_name], {frame: {...}, ...} ]
+                    # Set redraw=True in the frame dict
+                    if 'frame' in step['args'][1]:
+                        step['args'][1]['frame']['redraw'] = True
+
     return fig
