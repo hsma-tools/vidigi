@@ -2,6 +2,8 @@
 title: Vidigi vs BupaR
 execute:
   echo: true
+filters:
+   - include-code-files
 engine: knitr
 format:
   html:
@@ -37,9 +39,129 @@ As an additional bonus, the process of creating the logs you require for a vidig
 
 bupaR outputs could form part of a verification and validation strategy. They can also perform part of your communications strategy, helping to provide a talking point for meetings with stakeholders in much the same way as a screenshot of your Simul8 or Anylogic model would. In the absence of a graphical interface for building a model, the bupar outputs can help you - and your stakeholders - to ensure that linkages between different model steps are sensible and appropriate.
 
+## The Python Preprocesing
+
 We will begin in Python, working to add a couple of columns to our vidigi event log to prepare it for use in bupaR.
 
-{{< embed prep_vidigi_outputs_for_bupar_processing.ipynb >}}
+```{python}
+#| echo: true
+
+from examples.example_2_branching_multistep.ex_2_model_classes import Trial, g
+import pandas as pd
+import os
+
+#| echo: true
+
+g.sim_duration = 3000
+g.number_of_runs = 1
+```
+
+:::{.callout-note collapse="true"}
+### View Imported Code, which has had logging steps added at the appropriate points in the 'model' class
+
+```{.python include="../examples/example_2_branching_multistep/ex_2_model_classes.py"}
+```
+
+:::
+
+```{python}
+#| echo: true
+
+my_trial = Trial()
+
+my_trial.run_trial()
+
+my_trial.all_event_logs.head(10)
+```
+
+```{python}
+my_trial.all_event_logs.event_type.value_counts()
+```
+
+```{python}
+my_trial.all_event_logs.event.value_counts()
+```
+
+```{python}
+#| echo: true
+
+# First, identify all patients who have a 'depart' event
+# patients_with_depart = my_trial.all_event_logs[my_trial.all_event_logs['event'].str.contains('depart')]['patient'].unique()
+
+# Then filter the original DataFrame to only include those patients
+# filtered_df = my_trial.all_event_logs[my_trial.all_event_logs['patient'].isin(patients_with_depart)]
+
+logs_transformed = my_trial.all_event_logs[~my_trial.all_event_logs['event'].str.contains('wait')].copy()
+# logs_transformed = filtered_df[~filtered_df['event'].str.contains('wait')].copy()
+logs_transformed = logs_transformed[logs_transformed['event_type'].isin(['resource_use', 'resource_use_end'])].copy()
+logs_transformed['event_stage'] = logs_transformed['event_type'].apply(lambda x: 'complete' if 'end' in x else 'start')
+logs_transformed['event_name'] = logs_transformed['event'].str.replace('_begins|_complete', '', regex=True)
+logs_transformed['resource_id_full'] = logs_transformed.apply(lambda x: f"{x['event_name']}_{x['resource_id']:.0f}", axis=1)
+logs_transformed = logs_transformed.sort_values(['run', 'time'], ascending=True)
+# logs_transformed["activity_id"] = (
+#     logs_transformed.groupby(["run", "patient", "event_name"]).ngroup() + 1
+# )
+
+# logs_transformed = logs_transformed.sort_values(["run", "patient", "activity_id", "event_stage"], ascending=[True, True, True, False])
+
+# Sort the data by run, patient, time, and event_name to handle tied start times
+logs_transformed = logs_transformed.sort_values(["run", "patient", "time", "event_name"])
+
+# Get the first occurrence of each activity (the start event)
+first_occurrences = (
+    logs_transformed[logs_transformed["event_stage"] == "start"]
+    .drop_duplicates(["run", "patient", "event_name"])
+    .copy()
+)
+
+# Sort by time within each run to determine the proper sequence
+first_occurrences = first_occurrences.sort_values(["run", "time", "event_name"])
+
+# Assign sequential activity_id within each run
+first_occurrences["activity_id"] = first_occurrences.groupby("run").cumcount() + 1
+
+# Merge the activity_id back to the main DataFrame
+logs_transformed = logs_transformed.merge(
+    first_occurrences[["run", "patient", "event_name", "activity_id"]],
+    on=["run", "patient", "event_name"],
+    how="left"
+)
+
+# Sort for final ordering
+logs_transformed = logs_transformed.sort_values(
+    ["run", "patient", "activity_id", "event_stage"],
+    ascending=[True, True, True, False]
+)
+logs_transformed.head(50)
+```
+
+```{python}
+logs_transformed[logs_transformed["activity_id"]==26].sort_values('run').head(30)
+```
+
+```{python}
+logs_transformed.sort_values('activity_id').head(20)
+```
+
+```{python}
+logs_transformed[["event_name", "event_stage", "event_type"]].value_counts()
+```
+
+```{python}
+logs_transformed.event.value_counts()
+```
+
+For ease, now let's save these results as a file that we can load into R.
+
+We could use a csv for easy interoperability. Alternatively, we could use something like Feather or Parquet, which are usable by both R and Python while retaining data types.
+
+For ease of use and long-term readbility, we will use csv in this case.
+
+```{python}
+logs_transformed.to_csv('simulation_logs_for_bupar.csv', index=False)
+```
+
+## Moving to R - Exploring the bupaR package
 
 Now, it's time to move to R (as bupaR and the bupaverse is only implemented in R).
 
@@ -103,7 +225,6 @@ activity_log <- data_processed  %>%
 activity_log
 ```
 
-
 ## Creating outputs
 
 ### Process Maps
@@ -130,13 +251,13 @@ activity_log %>%
 ```{r}
 activity_log %>%
     process_map(frequency("relative-case"),
-              render_options = list(edge_label_color = "white"))
+                render_options = list(edge_label_color = "white"))
 ```
 
 ```{r}
 activity_log %>%
     process_map(frequency("relative-consequent"),
-              render_options = list(edge_label_color = "white"))
+                render_options = list(edge_label_color = "white"))
 ```
 
 ### Performance Maps
@@ -299,44 +420,44 @@ my_trial = Trial()
 my_trial.run_trial()
 
 event_position_df = pd.DataFrame([
-                # {'event': 'arrival', 'x':  10, 'y': 250, 'label': "Arrival" },
+    # {'event': 'arrival', 'x':  10, 'y': 250, 'label': "Arrival" },
 
-                # Triage - minor and trauma
-                {'event': 'triage_wait_begins',
-                 'x':  160, 'y': 375, 'label': "Waiting for<br>Triage"  },
-                {'event': 'triage_begins',
-                 'x':  160, 'y': 315, 'resource':'n_triage', 'label': "Being Triaged" },
+    # Triage - minor and trauma
+    {'event': 'triage_wait_begins',
+        'x':  160, 'y': 375, 'label': "Waiting for<br>Triage"  },
+    {'event': 'triage_begins',
+        'x':  160, 'y': 315, 'resource':'n_triage', 'label': "Being Triaged" },
 
-                # Minors (non-trauma) pathway
-                {'event': 'MINORS_registration_wait_begins',
-                 'x':  300, 'y': 145, 'label': "Waiting for<br>Registration"  },
-                {'event': 'MINORS_registration_begins',
-                 'x':  300, 'y': 85, 'resource':'n_reg', 'label':'Being<br>Registered'  },
+    # Minors (non-trauma) pathway
+    {'event': 'MINORS_registration_wait_begins',
+        'x':  300, 'y': 145, 'label': "Waiting for<br>Registration"  },
+    {'event': 'MINORS_registration_begins',
+        'x':  300, 'y': 85, 'resource':'n_reg', 'label':'Being<br>Registered'  },
 
-                {'event': 'MINORS_examination_wait_begins',
-                 'x':  465, 'y': 145, 'label': "Waiting for<br>Examination"  },
-                {'event': 'MINORS_examination_begins',
-                 'x':  465, 'y': 85, 'resource':'n_exam', 'label': "Being<br>Examined" },
+    {'event': 'MINORS_examination_wait_begins',
+        'x':  465, 'y': 145, 'label': "Waiting for<br>Examination"  },
+    {'event': 'MINORS_examination_begins',
+        'x':  465, 'y': 85, 'resource':'n_exam', 'label': "Being<br>Examined" },
 
-                {'event': 'MINORS_treatment_wait_begins',
-                 'x':  630, 'y': 145, 'label': "Waiting for<br>Treatment"  },
-                {'event': 'MINORS_treatment_begins',
-                 'x':  630, 'y': 85, 'resource':'n_cubicles_non_trauma_treat', 'label': "Being<br>Treated" },
+    {'event': 'MINORS_treatment_wait_begins',
+        'x':  630, 'y': 145, 'label': "Waiting for<br>Treatment"  },
+    {'event': 'MINORS_treatment_begins',
+        'x':  630, 'y': 85, 'resource':'n_cubicles_non_trauma_treat', 'label': "Being<br>Treated" },
 
-                # Trauma pathway
-                {'event': 'TRAUMA_stabilisation_wait_begins',
-                 'x': 300, 'y': 560, 'label': "Waiting for<br>Stabilisation" },
-                {'event': 'TRAUMA_stabilisation_begins',
-                 'x': 300, 'y': 490, 'resource':'n_trauma', 'label': "Being<br>Stabilised" },
+    # Trauma pathway
+    {'event': 'TRAUMA_stabilisation_wait_begins',
+        'x': 300, 'y': 560, 'label': "Waiting for<br>Stabilisation" },
+    {'event': 'TRAUMA_stabilisation_begins',
+        'x': 300, 'y': 490, 'resource':'n_trauma', 'label': "Being<br>Stabilised" },
 
-                {'event': 'TRAUMA_treatment_wait_begins',
-                 'x': 630, 'y': 560, 'label': "Waiting for<br>Treatment" },
-                {'event': 'TRAUMA_treatment_begins',
-                 'x': 630, 'y': 490, 'resource':'n_cubicles_trauma_treat', 'label': "Being<br>Treated" },
+    {'event': 'TRAUMA_treatment_wait_begins',
+        'x': 630, 'y': 560, 'label': "Waiting for<br>Treatment" },
+    {'event': 'TRAUMA_treatment_begins',
+        'x': 630, 'y': 490, 'resource':'n_cubicles_trauma_treat', 'label': "Being<br>Treated" },
 
-                 {'event': 'depart',
-                 'x':  670, 'y': 330, 'label': "Exit"}
-            ])
+    {'event': 'depart',
+    'x':  670, 'y': 330, 'label': "Exit"}
+    ])
 ```
 
 ```{python}

@@ -126,24 +126,18 @@ animation.animate_activity_log(
         converted into human-readable dates or clock formats. If `None` (default), the raw simulation
         time is used.
         Predefined options:
-        - 'dhms' : Day Month Year + HH:MM:SS (e.g., "06 June 2025
-14:23:45")
-        - 'dhms_ampm' : Same as 'dhms', but in 12-hour format with AM/PM (e.g., "06 June 2025
-02:23:45 PM")
-        - 'dhm'  : Day Month Year + HH:MM (e.g., "06 June 2025
-14:23")
-        - 'dhm_ampm' : 12-hour format with AM/PM (e.g., "06 June 2025
-02:23 PM")
-        - 'dh'   : Day Month Year + HH (e.g., "06 June 2025
-14")
-        - 'dh_ampm' : 12-hour format with AM/PM (e.g., "06 June 2025
-02 PM")
-        - 'd'    : Full weekday and date (e.g., "Friday 06 June 2025")
-        - 'm'    : Month and year (e.g., "June 2025")
-        - 'y'    : Year only (e.g., "2025")
-        - 'day_clock' or 'simulation_day_clock': Show simulation-relative day and time (e.g., "Simulation Day 3
+        'dhms' : Day Month Year + HH:MM:SS (e.g., "06 June 2025 14:23:45")
+        'dhms_ampm' : Same as 'dhms', but in 12-hour format with AM/PM (e.g., "06 June 2025 02:23:45 PM")
+        'dhm'  : Day Month Year + HH:MM (e.g., "06 June 2025 14:23")
+        'dhm_ampm' : 12-hour format with AM/PM (e.g., "06 June 2025 02:23 PM")
+        'dh'   : Day Month Year + HH (e.g., "06 June 2025 14")
+        'dh_ampm' : 12-hour format with AM/PM (e.g., "06 June 2025 02 PM")
+        'd'    : Full weekday and date (e.g., "Friday 06 June 2025")
+        'm'    : Month and year (e.g., "June 2025")
+        'y'    : Year only (e.g., "2025")
+        'day_clock' or 'simulation_day_clock': Show simulation-relative day and time (e.g., "Simulation Day 3
 14:15")
-        - 'day_clock_ampm' or 'simulation_day_clock_ampm': Same as above, but time is shown in 12-hour clock with AM/PM (e.g., "Simulation Day 3
+        'day_clock_ampm' or 'simulation_day_clock_ampm': Same as above, but time is shown in 12-hour clock with AM/PM (e.g., "Simulation Day 3
 02:15 PM")
         Alternatively, you can supply a custom [strftime](https://strftime.org/) format string
         (e.g., '%Y-%m-%d %H') to control the display manually.
