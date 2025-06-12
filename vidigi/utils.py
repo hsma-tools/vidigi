@@ -51,6 +51,29 @@ def create_event_position_df(event_positions: List[EventPosition]) -> pd.DataFra
 # Webdev + visualisation helpers
 #'''''''''''''''''''''''''''''''''''''#
 def streamlit_play_all():
+    """
+    Programmatically triggers all 'Play' buttons in Plotly animations embedded in Streamlit using JavaScript.
+
+    This function uses the `streamlit_javascript` package to inject JavaScript that simulates user interaction
+    with Plotly animation controls (specifically the ▶ buttons) in a Streamlit app. It searches the parent document
+    for all elements that resemble play buttons and simulates click events on them.
+
+    The function is useful when you have Plotly charts with animation frames and want to automatically start all
+    animations without requiring manual user clicks.
+
+    Raises
+    ------
+    ImportError
+        If the `streamlit_javascript` package is not installed. The package is required to run JavaScript within
+        the Streamlit environment. It can be installed with: `pip install vidigi[helper]`
+
+    Notes
+    -----
+    - There is often some small lag in triggering multiple buttons. At present, there seems to be no way to avoid this!
+    - The JavaScript is injected as a promise that logs progress to the browser console.
+    - If no play buttons are found, an error is logged to the console.
+    - This function assumes the presence of Plotly figures with updatemenu buttons in the DOM.
+    """
     try:
         from streamlit_javascript import st_javascript
 
