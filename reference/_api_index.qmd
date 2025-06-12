@@ -32,7 +32,7 @@
 
 | | |
 | --- | --- |
-| [resources.VidigiResource](resources.VidigiResource.qmd#vidigi.resources.VidigiResource) | A custom resource class that extends simpy.Resource with an additional ID attribute. |
+| [resources.VidigiResource](resources.VidigiResource.qmd#vidigi.resources.VidigiResource) | A simple resource class with an ID attribute for use in VidigiStore and VidigiPriorityStore. |
 | [resources.VidigiStore](resources.VidigiStore.qmd#vidigi.resources.VidigiStore) | A wrapper around SimPy's Store that allows using a context manager pattern |
 | [resources.VidigiPriorityStore](resources.VidigiPriorityStore.qmd#vidigi.resources.VidigiPriorityStore) | An optimized SimPy priority store that eliminates delays between resource |
 | [resources.populate_store](resources.populate_store.qmd#vidigi.resources.populate_store) | Populate a SimPy Store (or VidigiPriorityStore) with VidigiResource objects. |
@@ -60,7 +60,7 @@
 
 | | |
 | --- | --- |
-| [utils.streamlit_play_all](utils.streamlit_play_all.qmd#vidigi.utils.streamlit_play_all) |  |
+| [utils.streamlit_play_all](utils.streamlit_play_all.qmd#vidigi.utils.streamlit_play_all) | Programmatically triggers all 'Play' buttons in Plotly animations embedded in Streamlit using JavaScript. |
 
 ## ciw Utility Functions
 

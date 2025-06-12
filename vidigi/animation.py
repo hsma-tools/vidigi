@@ -97,7 +97,6 @@ def generate_animation(
         Format for displaying time on the animation timeline. This affects how simulation time is
         converted into human-readable dates or clock formats. If `None` (default), the raw simulation
         time is used.
-
         Predefined options:
         - 'dhms' : Day Month Year + HH:MM:SS (e.g., "06 June 2025\n14:23:45")
         - 'dhms_ampm' : Same as 'dhms', but in 12-hour format with AM/PM (e.g., "06 June 2025\n02:23:45 PM")
@@ -108,11 +107,8 @@ def generate_animation(
         - 'd'    : Full weekday and date (e.g., "Friday 06 June 2025")
         - 'm'    : Month and year (e.g., "June 2025")
         - 'y'    : Year only (e.g., "2025")
-        - 'day_clock' or 'simulation_day_clock':
-            Show simulation-relative day and time (e.g., "Simulation Day 3\n14:15")
-        - 'day_clock_ampm' or 'simulation_day_clock_ampm':
-            Same as above, but time is shown in 12-hour clock with AM/PM (e.g., "Simulation Day 3\n02:15 PM")
-
+        - 'day_clock' or 'simulation_day_clock': Show simulation-relative day and time (e.g., "Simulation Day 3\n14:15")
+        - 'day_clock_ampm' or 'simulation_day_clock_ampm': Same as above, but time is shown in 12-hour clock with AM/PM (e.g., "Simulation Day 3\n02:15 PM")
         Alternatively, you can supply a custom [strftime](https://strftime.org/) format string
         (e.g., '%Y-%m-%d %H') to control the display manually.
     start_date : str, optional
@@ -158,13 +154,6 @@ def generate_animation(
       is used.
     - The `snapshot_time` column is transformed to datetime strings, and a `snapshot_time_display`
       column is created for visual display.
-
-    Examples
-    --------
-    >>> animation = generate_animation(patient_df, event_positions, scenario,
-    ...                                time_display_units='dhm',
-    ...                                add_background_image='path/to/image.png')
-    >>> animation.show()
     """
     full_entity_df_plus_pos_copy = full_entity_df_plus_pos.copy()
 
@@ -659,7 +648,6 @@ def animate_activity_log(
         Format for displaying time on the animation timeline. This affects how simulation time is
         converted into human-readable dates or clock formats. If `None` (default), the raw simulation
         time is used.
-
         Predefined options:
         - 'dhms' : Day Month Year + HH:MM:SS (e.g., "06 June 2025\n14:23:45")
         - 'dhms_ampm' : Same as 'dhms', but in 12-hour format with AM/PM (e.g., "06 June 2025\n02:23:45 PM")
@@ -670,11 +658,8 @@ def animate_activity_log(
         - 'd'    : Full weekday and date (e.g., "Friday 06 June 2025")
         - 'm'    : Month and year (e.g., "June 2025")
         - 'y'    : Year only (e.g., "2025")
-        - 'day_clock' or 'simulation_day_clock':
-            Show simulation-relative day and time (e.g., "Simulation Day 3\n14:15")
-        - 'day_clock_ampm' or 'simulation_day_clock_ampm':
-            Same as above, but time is shown in 12-hour clock with AM/PM (e.g., "Simulation Day 3\n02:15 PM")
-
+        - 'day_clock' or 'simulation_day_clock': Show simulation-relative day and time (e.g., "Simulation Day 3\n14:15")
+        - 'day_clock_ampm' or 'simulation_day_clock_ampm': Same as above, but time is shown in 12-hour clock with AM/PM (e.g., "Simulation Day 3\n02:15 PM")
         Alternatively, you can supply a custom [strftime](https://strftime.org/) format string
         (e.g., '%Y-%m-%d %H') to control the display manually.
     setup_mode : bool, optional
@@ -700,13 +685,6 @@ def animate_activity_log(
     - Time can be displayed as actual dates or as model time units.
     - A background image can be added to provide context for the patient flow.
     - The function handles both queuing and resource use events.
-
-    Examples
-    --------
-    >>> animation = animate_activity_log(event_log, event_positions, scenario,
-    ...                                  time_display_units='dhm',
-    ...                                  add_background_image='path/to/image.png')
-    >>> animation.show()
     """
     if debug_mode:
         start_time_function = time.perf_counter()
@@ -862,36 +840,6 @@ def add_repeating_overlay(
     - returns UserWarning
         If the sum of on_duration_frames and off_duration_frames is not positive,
         a warning is printed and the figure is returned unchanged.
-
-    Examples
-    --------
-    Add a warning overlay that appears every 10 frames for 3 frames duration:
-
-    >>> fig = create_animated_figure()  # Your animated figure
-    >>> fig = add_repeating_overlay_as_traces(
-    ...     fig=fig,
-    ...     overlay_text="WARNING",
-    ...     first_start_frame=5,
-    ...     on_duration_frames=3,
-    ...     off_duration_frames=7,
-    ...     rect_color='red',
-    ...     rect_opacity=0.7,
-    ...     text_size=50,
-    ...     text_font_color='white'
-    ... )
-
-    Add a subtle notification with custom text positioning:
-
-    >>> fig = add_repeating_overlay_as_traces(
-    ...     fig=fig,
-    ...     overlay_text="Processing...",
-    ...     first_start_frame=10,
-    ...     on_duration_frames=2.5,
-    ...     off_duration_frames=5.0,
-    ...     rect_color='rgba(0,0,0,0.3)',
-    ...     relative_text_position_x=0.8,
-    ...     relative_text_position_y=0.2
-    ... )
     """
     on_frames = int(on_duration_frames)
     off_frames = int(off_duration_frames)

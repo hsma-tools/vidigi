@@ -91,7 +91,6 @@ animation.generate_animation(
         Format for displaying time on the animation timeline. This affects how simulation time is
         converted into human-readable dates or clock formats. If `None` (default), the raw simulation
         time is used.
-
         Predefined options:
         - 'dhms' : Day Month Year + HH:MM:SS (e.g., "06 June 2025
 14:23:45")
@@ -108,13 +107,10 @@ animation.generate_animation(
         - 'd'    : Full weekday and date (e.g., "Friday 06 June 2025")
         - 'm'    : Month and year (e.g., "June 2025")
         - 'y'    : Year only (e.g., "2025")
-        - 'day_clock' or 'simulation_day_clock':
-            Show simulation-relative day and time (e.g., "Simulation Day 3
+        - 'day_clock' or 'simulation_day_clock': Show simulation-relative day and time (e.g., "Simulation Day 3
 14:15")
-        - 'day_clock_ampm' or 'simulation_day_clock_ampm':
-            Same as above, but time is shown in 12-hour clock with AM/PM (e.g., "Simulation Day 3
+        - 'day_clock_ampm' or 'simulation_day_clock_ampm': Same as above, but time is shown in 12-hour clock with AM/PM (e.g., "Simulation Day 3
 02:15 PM")
-
         Alternatively, you can supply a custom [strftime](https://strftime.org/) format string
         (e.g., '%Y-%m-%d %H') to control the display manually.
     start_date : str, optional
@@ -160,10 +156,3 @@ animation.generate_animation(
       is used.
     - The `snapshot_time` column is transformed to datetime strings, and a `snapshot_time_display`
       column is created for visual display.
-
-##     Examples {.doc-section .doc-section-----examples}
-
-    >>> animation = generate_animation(patient_df, event_positions, scenario,
-    ...                                time_display_units='dhm',
-    ...                                add_background_image='path/to/image.png')
-    >>> animation.show()

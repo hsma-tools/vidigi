@@ -767,9 +767,53 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h1>utils.EventPosition</h1>
 <div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>utils.EventPosition()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Pydantic model for a single event position.</p>
-<p>Attributes: event (str): The name of the event. These must match the event names as they appear in your event log. x (int): The x-coordinate for the event. This coordinate represents the bottom-right hand corner of the queue or resources. y (int): The y-coordinate. This coordinate represents the bottom-right hand corner of the queue or resources. label (str): The display label for the event. Used if display_stage_labels = True. This allows you to set a more display-friendly version of your event name (e.g.&nbsp;you might want to display start_queue_till as ‘Queuing for Till’). resource (Optional[str]): The optional resource associated with the event. This must match one of the resource names provided in your scenario object.</p>
+<p>This model defines the position and label of an event within a visual layout. Coordinates represent the bottom-right corner of a queue or resource, and an optional label or resource can be associated with the event.</p>
+<section id="attributes" class="level2 doc-section doc-section-attributes">
+<h2 class="doc-section doc-section-attributes anchored" data-anchor-id="attributes">Attributes</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 5%">
+<col style="width: 9%">
+<col style="width: 85%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>event</td>
+<td>str</td>
+<td>The name of the event. Must match the event names as they appear in your event log.</td>
+</tr>
+<tr class="even">
+<td>x</td>
+<td>int</td>
+<td>The x-coordinate for the event. Represents the bottom-right corner of the queue or resource.</td>
+</tr>
+<tr class="odd">
+<td>y</td>
+<td>int</td>
+<td>The y-coordinate for the event. Represents the bottom-right corner of the queue or resource.</td>
+</tr>
+<tr class="even">
+<td>label</td>
+<td>str</td>
+<td>The display label for the event. Used if <code>display_stage_labels=True</code>. Allows for a more user-friendly version of the event name (e.g., ‘Queuing for Till’).</td>
+</tr>
+<tr class="odd">
+<td>resource</td>
+<td>Optional[str]</td>
+<td>The optional resource associated with the event. Must match a resource name provided in your scenario object.</td>
+</tr>
+</tbody>
+</table>
 
 
+</section>
 </section>
 
 </main> <!-- /main -->

@@ -766,8 +766,44 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="vidigi.utils.streamlit_play_all" class="level1">
 <h1>utils.streamlit_play_all</h1>
 <div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>utils.streamlit_play_all()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Programmatically triggers all ‘Play’ buttons in Plotly animations embedded in Streamlit using JavaScript.</p>
+<p>This function uses the <code>streamlit_javascript</code> package to inject JavaScript that simulates user interaction with Plotly animation controls (specifically the play buttons) in a Streamlit app. It searches the parent document for all elements that resemble play buttons and simulates click events on them.</p>
+<p>The function is useful when you have Plotly charts with animation frames and want to automatically start all animations without requiring manual user clicks.</p>
+<section id="raises" class="level2 doc-section doc-section-raises">
+<h2 class="doc-section doc-section-raises anchored" data-anchor-id="raises">Raises</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 3%">
+<col style="width: 6%">
+<col style="width: 89%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>ImportError</td>
+<td>If the <code>streamlit_javascript</code> package is not installed. The package is required to run JavaScript within the Streamlit environment. It can be installed with: <code>pip install vidigi[helper]</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="notes" class="level2 doc-section doc-section-notes">
+<h2 class="doc-section doc-section-notes anchored" data-anchor-id="notes">Notes</h2>
+<ul>
+<li>There is often some small lag in triggering multiple buttons. At present, there seems to be no way to avoid this!</li>
+<li>The JavaScript is injected as a promise that logs progress to the browser console.</li>
+<li>If no play buttons are found, an error is logged to the console.</li>
+<li>This function assumes the presence of Plotly figures with updatemenu buttons in the DOM.</li>
+</ul>
 
 
+</section>
 </section>
 
 </main> <!-- /main -->
