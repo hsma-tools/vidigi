@@ -1,0 +1,207 @@
+---
+filters:
+  - quarto
+  - line-highlight
+---
+# A slightly more complex example with multiple servers
+
+When dealing with multiple servers, we need to have a way to monitor which resource is in use. This is where vidigi's custom resource classes come in, such as VidigiStore.
+
+VidigiStore is designed to mimic the Resource class in Simpy - so you can continue to use the same patterns of resource requesting you are familiar with.
+
+## Step 1. Import required libraries
+
+* `vidigi`
+* `simpy` - for simulation model (or see the *Ciw* functions and examples elsewhere in this documentation)
+* `random` - for generating random arrivals
+* `pandas` - for managing dataframes
+
+```{python}
+import simpy
+import pandas as pd
+import random
+from vidigi.animation import animate_activity_log
+from vidigi.logging import EventLogger
+from vidigi.utils import EventPosition, create_event_position_df
+from vidigi.resources import VidigiStore
+```
+
+## Step 2. Set up simulation parameters
+
+```{python}
+# Simple simulation parameters
+SIM_DURATION = 50
+NUM_SERVERS = 3
+ARRIVAL_RATE = 4.0
+SERVICE_TIME = 3.0
+```
+
+## Step 3. Write model code with event logs
+
+Create a simple simulation model using `simpy`.
+
+On the left is a basic `simpy` model. If not familiar check out `simpy` documentation for intro to simpy.
+
+On the right is how we incorporate `vidigi`. Information for `vidigi` collected in a list of dictionaries which we will convert into a dataframe. You need a `arrival_departure` event.
+
+:::: {.columns}
+
+::: {.column width="47.5%"}
+
+##### Simple SimPy Model
+
+```{.python}
+
+def patient_generator(env, server, event_log):
+    """Generate patients arriving at the shop"""
+    patient_id = 0
+
+    while True:
+        patient_id += 1
+
+        # Start the patient process
+        env.process(patient_process(env, patient_id, server, event_log))
+
+        # Wait for next arrival
+        yield env.timeout(random.expovariate(ARRIVAL_RATE))
+
+def patient_process(env, patient_id, server, event_log):
+    """Process a single patient through the system"""
+
+    # Request server
+    with server.request() as request:
+        yield request
+
+        # Service time
+        service_duration = random.expovariate(1.0/SERVICE_TIME)
+        yield env.timeout(service_duration)
+
+# Run the simulation
+def run_simulation():
+    env = simpy.Environment()
+    server = simpy.Resource(env, capacity=NUM_SERVERS)
+    event_log = []
+
+    # Start patient generator
+    env.process(patient_generator(env, server, event_log))
+
+    # Run simulation
+    env.run(until=SIM_DURATION)
+```
+:::
+
+::: {.column width="5%"}
+
+:::
+
+::: {.column width="47.5%"}
+
+##### With Vidigi Modifications
+
+```{python}
+class Params: #<<
+    def __init__(self): #<<
+        self.num_servers = 3 #<<
+
+def patient_generator(env, servers, logger):
+    """Generate patients arriving at the shop"""
+    patient_id = 0
+
+    while True:
+        patient_id += 1
+
+        # Log arrival
+        logger.log_arrival(entity_id=patient_id) #<<
+
+        # Start the patient process
+        env.process(patient_process(env, patient_id, servers, logger))
+
+        # Wait for next arrival
+        yield env.timeout(random.expovariate(ARRIVAL_RATE))
+
+def patient_process(env, patient_id, servers, logger):
+    """Process a single patient through the system"""
+
+    # Log start of queue wait #<<
+    logger.log_queue(entity_id=patient_id, event='queue_wait_begins') #<<
+
+    # Request server
+    with servers.request() as request:
+        server = yield request  #<<
+
+        # Log service start
+        logger.log_resource_use_start(entity_id=patient_id, event="service_begins", resource_id=server.id_attribute) #<<
+
+        # Service time
+        service_duration = random.expovariate(1.0/SERVICE_TIME)
+        yield env.timeout(service_duration)
+
+        # Log service start
+        logger.log_resource_use_end(entity_id=patient_id, event="service_complete", resource_id=server.id_attribute) #<<
+
+    # Log departure #<<
+    logger.log_departure(entity_id=patient_id)  #<<
+
+# Run the simulation
+def run_simulation():
+    params = Params()
+    env = simpy.Environment()
+    servers = VidigiStore(env=env, num_resources=params.num_servers) #<<
+    logger = EventLogger(env=env) #<<
+
+    # Start patient generator
+    env.process(patient_generator(env, servers, logger))
+
+    # Run simulation
+    env.run(until=SIM_DURATION)
+
+    return logger.to_dataframe() #<<
+```
+
+:::
+
+::::
+
+## Step 4. Run simulation
+
+```{python}
+# Run simulation and get event log
+event_log_df = run_simulation()
+print(f"Generated {len(event_log_df)} events")
+```
+
+## Step 5. Create event positions dataframe
+
+```{python}
+# Define positions for animation
+event_positions = create_event_position_df([
+    EventPosition(event='arrival', x=0, y=350, label="Entrance"),
+    EventPosition(event='queue_wait_begins', x=250, y=250, label="Queue"),
+    EventPosition(event='service_begins', x=250, y=150, resource='num_servers', label="Being Served"),
+    EventPosition(event='depart', x=250, y=50, label="Exit")
+])
+```
+
+## Step 6. Create animation
+
+Explaining:
+
+* `plotly_height` and `plotly_width`
+* `override_x_max` and `override_y_max`
+* `setup_mode`
+* `every_x_time_units`
+
+We pass our Params() class in so that vidigi knows the number of resource icons it needs to generate.
+
+```{python}
+# Create animation
+animate_activity_log(
+    event_log=event_log_df,
+    event_position_df=event_positions,
+    scenario=Params(),
+    every_x_time_units=1,
+    plotly_height=600,
+    override_x_max=360,
+    limit_duration=SIM_DURATION
+)
+```

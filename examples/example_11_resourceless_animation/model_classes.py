@@ -14,6 +14,7 @@ import math
 
 from sim_tools.distributions import Bernoulli, Poisson
 
+# MARK: Distributions 
 class Discrete:
     """
     Encapsulates a discrete distribution
@@ -200,6 +201,7 @@ class Scenario():
         bookings.index.rename('day', inplace=True)
         return bookings
 
+# MARK: Booking Classes
 class LowPriorityPooledBooker():
     '''
     Low prioity booking process for POOLED clinics.
@@ -504,6 +506,7 @@ class HighPriorityPooledBooker():
         #one more booking...
         self.args.bookings.iat[booking_t, clinic_id] += 1
 
+# MARK: Patient Class
 class PatientReferral(object):
     '''
     Patient referral process

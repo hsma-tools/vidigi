@@ -4,14 +4,15 @@ filters:
   - line-highlight
 ---
 
-# Very basic example
+# A very simple example with one server - avoiding the vidigi logger class
 
-It would be great to have a bare-minimum example which walks through someone using `vidigi` with `simpy`. This is function-based, but could be switched to classes to be more similar to how the complex examples are structured.
+If you would prefer to implement your own approach to logging, you can avoid the use of the EventLogger class,
+and instead manually build your event logs, as shown in this example.
 
 ## Step 1. Import required libraries
 
 * `vidigi`
-* `simpy` - for simulation model
+* `simpy` - for simulation model (or see the *Ciw* functions and examples elsewhere in this documentation)
 * `random` - for generating random arrivals
 * `pandas` - for managing dataframes
 
@@ -51,13 +52,13 @@ On the right is how we incorporate `vidigi`. Information for `vidigi` collected 
 def patient_generator(env, server, event_log):
     """Generate patients arriving at the shop"""
     patient_id = 0
-    
+
     while True:
         patient_id += 1
-        
+
         # Start the patient process
         env.process(patient_process(env, patient_id, server, event_log))
-        
+
         # Wait for next arrival
         yield env.timeout(random.expovariate(ARRIVAL_RATE))
 
@@ -77,10 +78,10 @@ def run_simulation():
     env = simpy.Environment()
     server = simpy.Resource(env, capacity=NUM_SERVERS)
     event_log = []
-    
+
     # Start patient generator
     env.process(patient_generator(env, server, event_log))
-    
+
     # Run simulation
     env.run(until=SIM_DURATION)
 ```
@@ -98,10 +99,10 @@ def run_simulation():
 def patient_generator(env, server, event_log):
     """Generate patients arriving at the shop"""
     patient_id = 0
-    
+
     while True:
         patient_id += 1
-        
+
         # Log arrival
         event_log.append({ #<<
             'patient': patient_id, #<<
@@ -109,16 +110,16 @@ def patient_generator(env, server, event_log):
             'event_type': 'arrival_departure',  #<<
             'time': env.now #<<
         }) #<<
-        
+
         # Start the patient process
         env.process(patient_process(env, patient_id, server, event_log))
-        
+
         # Wait for next arrival
         yield env.timeout(random.expovariate(ARRIVAL_RATE))
 
 def patient_process(env, patient_id, server, event_log):
     """Process a single patient through the system"""
-    
+
     # Log start of queue wait #<<
     event_log.append({ #<<
         'patient': patient_id, #<<
@@ -126,11 +127,11 @@ def patient_process(env, patient_id, server, event_log):
         'event_type': 'queue', #<<
         'time': env.now #<<
     }) #<<
-    
+
     # Request server
     with server.request() as request:
         yield request
-        
+
         # Log service start
         event_log.append({ #<<
             'patient': patient_id, #<<
@@ -139,11 +140,11 @@ def patient_process(env, patient_id, server, event_log):
             'time': env.now, #<<
             'resource_id': 1 #<<
         }) #<<
-        
+
         # Service time
         service_duration = random.expovariate(1.0/SERVICE_TIME)
         yield env.timeout(service_duration)
-        
+
         # Log service end #<<
         event_log.append({ #<<
             'patient': patient_id, #<<
@@ -152,7 +153,7 @@ def patient_process(env, patient_id, server, event_log):
             'time': env.now, #<<
             'resource_id': 1 #<<
         }) #<<
-    
+
     # Log departure #<<
     event_log.append({ #<<
         'patient': patient_id, #<<
@@ -166,13 +167,13 @@ def run_simulation():
     env = simpy.Environment()
     server = simpy.Resource(env, capacity=NUM_SERVERS)
     event_log = []
-    
+
     # Start patient generator
     env.process(patient_generator(env, server, event_log))
-    
+
     # Run simulation
     env.run(until=SIM_DURATION)
-    
+
     return pd.DataFrame(event_log) #<<
 ```
 
@@ -193,8 +194,8 @@ print(f"Generated {len(event_log_df)} events")
 ```{python}
 # Define positions for animation
 event_positions = create_event_position_df([
-    EventPosition(event='arrival', x=0, y=350, label="Entrance"), 
-    EventPosition(event='queue_wait_begins', x=250, y=250, label="Queue"), 
+    EventPosition(event='arrival', x=0, y=350, label="Entrance"),
+    EventPosition(event='queue_wait_begins', x=250, y=250, label="Queue"),
     EventPosition(event='service_begins', x=250, y=150, resource='server', label="Being Served"),
     EventPosition(event='depart', x=250, y=50, label="Exit")
 ])

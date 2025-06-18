@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.29">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>basic_example_with_vidigi_logger_helpers – vidigi</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script><script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-0815c480559380816a4d1ea211a47e91.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-dark-748b535e376f14d4692bf2b2e5fd6380.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-118ef196ea5a522dd56ba8aec161d365.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-dark-2f16ea7a84ed9ca618c0e06b6872dad0.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../site_libs/quarto-contrib/line-highlight-1.0.0/line-highlight.css" rel="stylesheet">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" integrity="sha512-c3Nl8+7g4LMSTdrm621y7kf9v3SDPnhxLNhcjFJbKECVnmZHTdo+IRO05sNLTH/D3vA6u1X32ehoLC7WFVdheg==" crossorigin="anonymous"></script>
+
+
+
+<script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
+
+
+
+</head>
+
+<body class="fullcontent quarto-dark"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = true;
+    const darkModeDefault = authorPrefersDark;
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">A very simple example with one server</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="step-1.-import-required-libraries" class="level2">
+<h2 class="anchored" data-anchor-id="step-1.-import-required-libraries">Step 1. Import required libraries</h2>
+<ul>
+<li><code>vidigi</code></li>
+<li><code>simpy</code> - for simulation model (or see the <em>Ciw</em> functions and examples elsewhere in this documentation)</li>
+<li><code>random</code> - for generating random arrivals</li>
+<li><code>pandas</code> - for managing dataframes</li>
+</ul>
+<div id="f6152d7c" class="cell" data-execution_count="1">
+<div class="sourceCode cell-code" id="cb1" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> simpy</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> random</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> vidigi.animation <span class="im">import</span> animate_activity_log</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> vidigi.logging <span class="im">import</span> EventLogger</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> vidigi.utils <span class="im">import</span> EventPosition, create_event_position_df</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="step-2.-set-up-simulation-parameters" class="level2">
+<h2 class="anchored" data-anchor-id="step-2.-set-up-simulation-parameters">Step 2. Set up simulation parameters</h2>
+<div id="06e86ea4" class="cell" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb2" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Simple simulation parameters</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>SIM_DURATION <span class="op">=</span> <span class="dv">50</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>NUM_SERVERS <span class="op">=</span> <span class="dv">1</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>ARRIVAL_RATE <span class="op">=</span> <span class="fl">1.0</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>SERVICE_TIME <span class="op">=</span> <span class="fl">3.0</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="step-3.-write-model-code-with-event-logs" class="level2">
+<h2 class="anchored" data-anchor-id="step-3.-write-model-code-with-event-logs">Step 3. Write model code with event logs</h2>
+<p>Create a simple simulation model using <code>simpy</code>.</p>
+<p>On the left is a basic <code>simpy</code> model. If not familiar check out <code>simpy</code> documentation for intro to simpy.</p>
+<p>On the right is how we incorporate <code>vidigi</code>. Information for <code>vidigi</code> collected in a list of dictionaries which we will convert into a dataframe. You need a <code>arrival_departure</code> event.</p>
+<div class="columns">
+<div class="column" style="width:47.5%;">
+<section id="simple-simpy-model" class="level5">
+<h5 class="anchored" data-anchor-id="simple-simpy-model">Simple SimPy Model</h5>
+<div class="sourceCode" id="cb3" data-code-line-numbers=""><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> patient_generator(env, server, event_log):</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Generate patients arriving at the shop"""</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    patient_id <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> <span class="va">True</span>:</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>        patient_id <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Start the patient process</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>        env.process(patient_process(env, patient_id, server, event_log))</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Wait for next arrival</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">yield</span> env.timeout(random.expovariate(ARRIVAL_RATE))</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> patient_process(env, patient_id, server, event_log):</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Process a single patient through the system"""</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Request server</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> server.request() <span class="im">as</span> request:</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>        <span class="cf">yield</span> request</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Service time</span></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>        service_duration <span class="op">=</span> random.expovariate(<span class="fl">1.0</span><span class="op">/</span>SERVICE_TIME)</span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>        <span class="cf">yield</span> env.timeout(service_duration)</span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a><span class="co"># Run the simulation</span></span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> run_simulation():</span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>    env <span class="op">=</span> simpy.Environment()</span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>    server <span class="op">=</span> simpy.Resource(env, capacity<span class="op">=</span>NUM_SERVERS)</span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>    event_log <span class="op">=</span> []</span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Start patient generator</span></span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>    env.process(patient_generator(env, server, event_log))</span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Run simulation</span></span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>    env.run(until<span class="op">=</span>SIM_DURATION)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+</div><div class="column" style="width:5%;">
+
+</div><div class="column" style="width:47.5%;">
+<section id="with-vidigi-modifications" class="level5">
+<h5 class="anchored" data-anchor-id="with-vidigi-modifications">With Vidigi Modifications</h5>
+<div id="e4000911" class="cell" data-execution_count="3">
+<div class="sourceCode cell-code" id="cb4" data-source-line-numbers="nil" data-code-line-numbers="9,20,21,28,35,37,38,44,52"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> patient_generator(env, server, logger):</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Generate patients arriving at the shop"""</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    patient_id <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> <span class="va">True</span>:</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>        patient_id <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Log arrival</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>        logger.log_arrival(entity_id<span class="op">=</span>patient_id) </span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Start the patient process</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>        env.process(patient_process(env, patient_id, server, logger))</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Wait for next arrival</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>        <span class="cf">yield</span> env.timeout(random.expovariate(ARRIVAL_RATE))</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> patient_process(env, patient_id, server, logger):</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Process a single patient through the system"""</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Log start of queue wait </span></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>    logger.log_queue(entity_id<span class="op">=</span>patient_id, event<span class="op">=</span><span class="st">'queue_wait_begins'</span>) </span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Request server</span></span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> server.request() <span class="im">as</span> request:</span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>        <span class="cf">yield</span> request</span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Log service start</span></span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>        logger.log_resource_use_start(entity_id<span class="op">=</span>patient_id, event<span class="op">=</span><span class="st">"service_begins"</span>, resource_id<span class="op">=</span><span class="dv">1</span>) </span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Service time</span></span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a>        service_duration <span class="op">=</span> random.expovariate(<span class="fl">1.0</span><span class="op">/</span>SERVICE_TIME)</span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a>        <span class="cf">yield</span> env.timeout(service_duration)</span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Log service start</span></span>
+<span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a>        logger.log_resource_use_end(entity_id<span class="op">=</span>patient_id, event<span class="op">=</span><span class="st">"service_complete"</span>, resource_id<span class="op">=</span><span class="dv">1</span>) </span>
+<span id="cb4-36"><a href="#cb4-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-37"><a href="#cb4-37" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Log departure </span></span>
+<span id="cb4-38"><a href="#cb4-38" aria-hidden="true" tabindex="-1"></a>    logger.log_departure(entity_id<span class="op">=</span>patient_id)  </span>
+<span id="cb4-39"><a href="#cb4-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-40"><a href="#cb4-40" aria-hidden="true" tabindex="-1"></a><span class="co"># Run the simulation</span></span>
+<span id="cb4-41"><a href="#cb4-41" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> run_simulation():</span>
+<span id="cb4-42"><a href="#cb4-42" aria-hidden="true" tabindex="-1"></a>    env <span class="op">=</span> simpy.Environment()</span>
+<span id="cb4-43"><a href="#cb4-43" aria-hidden="true" tabindex="-1"></a>    server <span class="op">=</span> simpy.Resource(env, capacity<span class="op">=</span>NUM_SERVERS)</span>
+<span id="cb4-44"><a href="#cb4-44" aria-hidden="true" tabindex="-1"></a>    logger <span class="op">=</span> EventLogger(env<span class="op">=</span>env) </span>
+<span id="cb4-45"><a href="#cb4-45" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-46"><a href="#cb4-46" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Start patient generator</span></span>
+<span id="cb4-47"><a href="#cb4-47" aria-hidden="true" tabindex="-1"></a>    env.process(patient_generator(env, server, logger))</span>
+<span id="cb4-48"><a href="#cb4-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-49"><a href="#cb4-49" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Run simulation</span></span>
+<span id="cb4-50"><a href="#cb4-50" aria-hidden="true" tabindex="-1"></a>    env.run(until<span class="op">=</span>SIM_DURATION)</span>
+<span id="cb4-51"><a href="#cb4-51" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-52"><a href="#cb4-52" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> logger.to_dataframe() </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+</div>
+</div>
+</section>
+<section id="step-4.-run-simulation" class="level2">
+<h2 class="anchored" data-anchor-id="step-4.-run-simulation">Step 4. Run simulation</h2>
+<div id="09cbadcf" class="cell" data-execution_count="4">
+<div class="sourceCode cell-code" id="cb5" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Run simulation and get event log</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>event_log_df <span class="op">=</span> run_simulation()</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Generated </span><span class="sc">{</span><span class="bu">len</span>(event_log_df)<span class="sc">}</span><span class="ss"> events"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre data-code-line-numbers=""><code>Generated 148 events</code></pre>
+</div>
+</div>
+</section>
+<section id="step-5.-create-event-positions-dataframe" class="level2">
+<h2 class="anchored" data-anchor-id="step-5.-create-event-positions-dataframe">Step 5. Create event positions dataframe</h2>
+<div id="d6dfe5f8" class="cell" data-execution_count="5">
+<div class="sourceCode cell-code" id="cb7" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Define positions for animation</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>event_positions <span class="op">=</span> create_event_position_df([</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    EventPosition(event<span class="op">=</span><span class="st">'arrival'</span>, x<span class="op">=</span><span class="dv">0</span>, y<span class="op">=</span><span class="dv">350</span>, label<span class="op">=</span><span class="st">"Entrance"</span>),</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    EventPosition(event<span class="op">=</span><span class="st">'queue_wait_begins'</span>, x<span class="op">=</span><span class="dv">250</span>, y<span class="op">=</span><span class="dv">250</span>, label<span class="op">=</span><span class="st">"Queue"</span>),</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    EventPosition(event<span class="op">=</span><span class="st">'service_begins'</span>, x<span class="op">=</span><span class="dv">250</span>, y<span class="op">=</span><span class="dv">150</span>, resource<span class="op">=</span><span class="st">'server'</span>, label<span class="op">=</span><span class="st">"Being Served"</span>),</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    EventPosition(event<span class="op">=</span><span class="st">'depart'</span>, x<span class="op">=</span><span class="dv">250</span>, y<span class="op">=</span><span class="dv">50</span>, label<span class="op">=</span><span class="st">"Exit"</span>)</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="step-6.-create-animation" class="level2">
+<h2 class="anchored" data-anchor-id="step-6.-create-animation">Step 6. Create animation</h2>
+<p>Explaining:</p>
+<ul>
+<li><code>plotly_height</code> and <code>plotly_width</code></li>
+<li><code>override_x_max</code> and <code>override_y_max</code></li>
+<li><code>setup_mode</code></li>
+<li><code>every_x_time_units</code></li>
+</ul>
+<div id="bc6e8f51" class="cell" data-execution_count="6">
+<div class="sourceCode cell-code" id="cb8" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create animation</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>animate_activity_log(</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    event_log<span class="op">=</span>event_log_df,</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    event_position_df<span class="op">=</span>event_positions,</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    every_x_time_units<span class="op">=</span><span class="dv">1</span>,</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    plotly_height<span class="op">=</span><span class="dv">600</span>,</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    override_x_max<span class="op">=</span><span class="dv">360</span>,</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    limit_duration<span class="op">=</span>SIM_DURATION</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+        <script type="text/javascript">
+        window.PlotlyConfig = {MathJaxConfig: 'local'};
+        if (window.MathJax && window.MathJax.Hub && window.MathJax.Hub.Config) {window.MathJax.Hub.Config({SVG: {font: "STIX-Web"}});}
+        </script>
+        <script type="module">import "https://cdn.plot.ly/plotly-3.0.1.min"</script>
+        
+</div>
+<div class="cell-output cell-output-display">
+<div>            <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_SVG"></script><script type="text/javascript">if (window.MathJax && window.MathJax.Hub && window.MathJax.Hub.Config) {window.MathJax.Hub.Config({SVG: {font: "STIX-Web"}});}</script>                <script type="text/javascript">window.PlotlyConfig = {MathJaxConfig: 'local'};</script>
+        <script charset="utf-8" src="https://cdn.plot.ly/plotly-3.0.1.min.js"></script>                <div id="8d9658a2-484b-4054-bb38-ec8950ef5ea5" class="plotly-graph-div" style="height:600px; width:100%;"></div>            <script type="text/javascript">                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("8d9658a2-484b-4054-bb38-ec8950ef5ea5")) {                    Plotly.newPlot(                        "8d9658a2-484b-4054-bb38-ec8950ef5ea5",                        [{"customdata":{"dtype":"f8","bdata":"AAAAAAAA8D8AAAAAAAAAAAAAAAAAAAAA","shape":"1, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=0\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["service_begins"],"ids":{"dtype":"i1","bdata":"AQ=="},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83e\uddd4\ud83c\udffc"],"x":{"dtype":"f8","bdata":"AAAAAABAb0A="},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAADAYkA="},"yaxis":"y","type":"scatter","textfont":{"size":24}},{"hoverinfo":"none","mode":"text","name":"","text":["Entrance","Queue","Being Served","Exit"],"textposition":"middle right","x":[10,260,260,260],"y":[350,250,150,50],"type":"scatter","textfont":{"size":24}}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"},"margin":{"b":0,"l":0,"r":0,"t":30}}},"xaxis":{"anchor":"y","domain":[0.0,1.0],"title":{},"range":[0,360],"showticklabels":false,"showgrid":false,"zeroline":false,"fixedrange":true},"yaxis":{"anchor":"x","domain":[0.0,1.0],"title":{},"range":[0,385.00000000000006],"showticklabels":false,"showgrid":false,"zeroline":false,"fixedrange":true},"legend":{"tracegroupgap":0},"height":600,"updatemenus":[{"buttons":[{"args":[null,{"frame":{"duration":400,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":600,"easing":"linear"}}],"label":"&#9654;","method":"animate"},{"args":[[null],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"&#9724;","method":"animate"}],"direction":"left","pad":{"r":10,"t":70},"showactive":false,"type":"buttons","x":0.1,"xanchor":"right","y":0,"yanchor":"top"}],"sliders":[{"active":0,"currentvalue":{"prefix":"","font":{"size":35}},"len":0.9,"pad":{"b":10,"t":60},"steps":[{"args":[["0"],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"0","method":"animate"},{"args":[["1"],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"1","method":"animate"},{"args":[["2"],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"2","method":"animate"},{"args":[["3"],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"3","method":"animate"},{"args":[["4"],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"4","method":"animate"},{"args":[["5"],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"5","method":"animate"},{"args":[["6"],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"6","method":"animate"},{"args":[["7"],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"7","method":"animate"},{"args":[["8"],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"8","method":"animate"},{"args":[["9"],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"9","method":"animate"},{"args":[["10"],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"10","method":"animate"},{"args":[["11"],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"11","method":"animate"},{"args":[["12"],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"12","method":"animate"},{"args":[["13"],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"13","method":"animate"},{"args":[["14"],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"14","method":"animate"},{"args":[["15"],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"15","method":"animate"},{"args":[["16"],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"16","method":"animate"},{"args":[["17"],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"17","method":"animate"},{"args":[["18"],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"18","method":"animate"},{"args":[["19"],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"19","method":"animate"},{"args":[["20"],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"20","method":"animate"},{"args":[["21"],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"21","method":"animate"},{"args":[["22"],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"22","method":"animate"},{"args":[["23"],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"23","method":"animate"},{"args":[["24"],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"24","method":"animate"},{"args":[["25"],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"25","method":"animate"},{"args":[["26"],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"26","method":"animate"},{"args":[["27"],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"27","method":"animate"},{"args":[["28"],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"28","method":"animate"},{"args":[["29"],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"29","method":"animate"},{"args":[["30"],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"30","method":"animate"},{"args":[["31"],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"31","method":"animate"},{"args":[["32"],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"32","method":"animate"},{"args":[["33"],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"33","method":"animate"},{"args":[["34"],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"34","method":"animate"},{"args":[["35"],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"35","method":"animate"},{"args":[["36"],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"36","method":"animate"},{"args":[["37"],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"37","method":"animate"},{"args":[["38"],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"38","method":"animate"},{"args":[["39"],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"39","method":"animate"},{"args":[["40"],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"40","method":"animate"},{"args":[["41"],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"41","method":"animate"},{"args":[["42"],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"42","method":"animate"},{"args":[["43"],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"43","method":"animate"},{"args":[["44"],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"44","method":"animate"},{"args":[["45"],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"45","method":"animate"},{"args":[["46"],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"46","method":"animate"},{"args":[["47"],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"47","method":"animate"},{"args":[["48"],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"48","method":"animate"},{"args":[["49"],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"49","method":"animate"},{"args":[["50"],{"frame":{"duration":0,"redraw":false},"mode":"immediate","fromcurrent":true,"transition":{"duration":0,"easing":"linear"}}],"label":"50","method":"animate"}],"x":0.1,"xanchor":"left","y":0,"yanchor":"top"}],"showlegend":false},                        {"responsive": true}                    ).then(function(){
+                            Plotly.addFrames('8d9658a2-484b-4054-bb38-ec8950ef5ea5', [{"data":[{"customdata":{"dtype":"f8","bdata":"AAAAAAAA8D8AAAAAAAAAAAAAAAAAAAAA","shape":"1, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=0\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["service_begins"],"ids":{"dtype":"i1","bdata":"AQ=="},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83e\uddd4\ud83c\udffc"],"x":{"dtype":"f8","bdata":"AAAAAABAb0A="},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAADAYkA="},"yaxis":"y","type":"scatter"}],"name":"0"},{"data":[{"customdata":{"dtype":"f8","bdata":"AAAAAAAA8D8AAAAAAAAAAAAAAAAAAPA\u002fAAAAAAAAAEDgFAyXSpHXPwAAAAAAAPA\u002f","shape":"2, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=1\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["depart","service_begins"],"ids":{"dtype":"i1","bdata":"AQI="},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83e\uddd4\ud83c\udffc","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddaf"],"x":{"dtype":"f8","bdata":"AAAAAABAb0AAAAAAAEBvQA=="},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAAAASUAAAAAAAMBiQA=="},"yaxis":"y","type":"scatter"}],"name":"1"},{"data":[{"customdata":{"dtype":"f8","bdata":"AAAAAAAAAEDgFAyXSpHXPwAAAAAAAABA","shape":"1, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=2\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["service_begins"],"ids":{"dtype":"i1","bdata":"Ag=="},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddaf"],"x":{"dtype":"f8","bdata":"AAAAAABAb0A="},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAADAYkA="},"yaxis":"y","type":"scatter"}],"name":"2"},{"data":[{"customdata":{"dtype":"f8","bdata":"AAAAAAAAAEDgFAyXSpHXPwAAAAAAAAhA","shape":"1, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=3\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["service_begins"],"ids":{"dtype":"i1","bdata":"Ag=="},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddaf"],"x":{"dtype":"f8","bdata":"AAAAAABAb0A="},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAADAYkA="},"yaxis":"y","type":"scatter"}],"name":"3"},{"data":[{"customdata":{"dtype":"f8","bdata":"AAAAAAAACEAWa3wpcEkJQAAAAAAAABBAAAAAAAAAAEDgFAyXSpHXPwAAAAAAABBA","shape":"2, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=4\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["queue_wait_begins","service_begins"],"ids":{"dtype":"i1","bdata":"AwI="},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83d\udc68\ud83c\udffb\u200d\ud83e\uddb0","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddaf"],"x":{"dtype":"f8","bdata":"AAAAAABAb0AAAAAAAEBvQA=="},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAABAb0AAAAAAAMBiQA=="},"yaxis":"y","type":"scatter"}],"name":"4"},{"data":[{"customdata":{"dtype":"f8","bdata":"AAAAAAAAAEDgFAyXSpHXPwAAAAAAABRAAAAAAAAACEAWa3wpcEkJQAAAAAAAABRAAAAAAAAAEEB0i12CGEQQQAAAAAAAABRAAAAAAAAAFEDISM7oIX0SQAAAAAAAABRA","shape":"4, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=5\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["service_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins"],"ids":{"dtype":"i1","bdata":"AgMEBQ=="},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddaf","\ud83d\udc68\ud83c\udffb\u200d\ud83e\uddb0","\ud83e\uddd1\ud83c\udffb","\ud83d\udc69\ud83c\udfff\u200d\ud83e\uddb1"],"x":{"dtype":"f8","bdata":"AAAAAABAb0AAAAAAAEBvQAAAAAAAAG5AAAAAAADAbEA="},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAADAYkAAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0A="},"yaxis":"y","type":"scatter"}],"name":"5"},{"data":[{"customdata":{"dtype":"f8","bdata":"AAAAAAAAAEDgFAyXSpHXPwAAAAAAABhAAAAAAAAAEEB0i12CGEQQQAAAAAAAABhAAAAAAAAAFEDISM7oIX0SQAAAAAAAABhAAAAAAAAAGEDUschbmPgVQAAAAAAAABhAAAAAAAAACEAf\u002fLZNhHoXQAAAAAAAABhAAAAAAAAAHEC6Y5XgLIQWQAAAAAAAABhAAAAAAAAAIECvLdAOtcoXQAAAAAAAABhA","shape":"7, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=6\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["depart","queue_wait_begins","queue_wait_begins","queue_wait_begins","service_begins","queue_wait_begins","queue_wait_begins"],"ids":{"dtype":"i1","bdata":"AgQFBgMHCA=="},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddaf","\ud83e\uddd1\ud83c\udffb","\ud83d\udc69\ud83c\udfff\u200d\ud83e\uddb1","\ud83e\udd30","\ud83d\udc68\ud83c\udffb\u200d\ud83e\uddb0","\ud83d\udc73\ud83c\udffd","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb3"],"x":{"dtype":"f8","bdata":"AAAAAABAb0AAAAAAAEBvQAAAAAAAAG5AAAAAAADAbEAAAAAAAEBvQAAAAAAAgGtAAAAAAABAakA="},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAAAASUAAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAMBiQAAAAAAAQG9AAAAAAABAb0A="},"yaxis":"y","type":"scatter"}],"name":"6"},{"data":[{"customdata":{"dtype":"f8","bdata":"AAAAAAAAFEDISM7oIX0SQAAAAAAAABxAAAAAAAAAHEC6Y5XgLIQWQAAAAAAAABxAAAAAAAAACEAf\u002fLZNhHoXQAAAAAAAABxAAAAAAAAAIECvLdAOtcoXQAAAAAAAABxAAAAAAAAAEEB0i12CGEQQQAAAAAAAABxAAAAAAAAAIkDYpwNgSzQZQAAAAAAAABxAAAAAAAAAGEDUschbmPgVQAAAAAAAABxA","shape":"7, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=7\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["queue_wait_begins","queue_wait_begins","service_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins"],"ids":{"dtype":"i1","bdata":"BQcDCAQJBg=="},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83d\udc69\ud83c\udfff\u200d\ud83e\uddb1","\ud83d\udc73\ud83c\udffd","\ud83d\udc68\ud83c\udffb\u200d\ud83e\uddb0","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb3","\ud83e\uddd1\ud83c\udffb","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddb3","\ud83e\udd30"],"x":{"dtype":"f8","bdata":"AAAAAAAAbkAAAAAAAIBrQAAAAAAAQG9AAAAAAABAakAAAAAAAEBvQAAAAAAAAGlAAAAAAADAbEA="},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAABAb0AAAAAAAEBvQAAAAAAAwGJAAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0A="},"yaxis":"y","type":"scatter"}],"name":"7"},{"data":[{"customdata":{"dtype":"f8","bdata":"AAAAAAAAHEC6Y5XgLIQWQAAAAAAAACBAAAAAAAAAJED0kia6kjwdQAAAAAAAACBAAAAAAAAAIkDYpwNgSzQZQAAAAAAAACBAAAAAAAAAGEDUschbmPgVQAAAAAAAACBAAAAAAAAAIECvLdAOtcoXQAAAAAAAACBAAAAAAAAAEEB0i12CGEQQQAAAAAAAACBAAAAAAAAAFEDISM7oIX0SQAAAAAAAACBAAAAAAAAACEAf\u002fLZNhHoXQAAAAAAAACBA","shape":"8, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=8\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","service_begins"],"ids":{"dtype":"i1","bdata":"BwoJBggEBQM="},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83d\udc73\ud83c\udffd","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb1","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddb3","\ud83e\udd30","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb3","\ud83e\uddd1\ud83c\udffb","\ud83d\udc69\ud83c\udfff\u200d\ud83e\uddb1","\ud83d\udc68\ud83c\udffb\u200d\ud83e\uddb0"],"x":{"dtype":"f8","bdata":"AAAAAACAa0AAAAAAAMBnQAAAAAAAAGlAAAAAAADAbEAAAAAAAEBqQAAAAAAAQG9AAAAAAAAAbkAAAAAAAEBvQA=="},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAMBiQA=="},"yaxis":"y","type":"scatter"}],"name":"8"},{"data":[{"customdata":{"dtype":"f8","bdata":"AAAAAAAAIECvLdAOtcoXQAAAAAAAACJAAAAAAAAAIkDYpwNgSzQZQAAAAAAAACJAAAAAAAAAJED0kia6kjwdQAAAAAAAACJAAAAAAAAAEEB0i12CGEQQQAAAAAAAACJAAAAAAAAAFEDISM7oIX0SQAAAAAAAACJAAAAAAAAACEAf\u002fLZNhHoXQAAAAAAAACJAAAAAAAAAGEDUschbmPgVQAAAAAAAACJAAAAAAAAAJkAWrhNfn4UhQAAAAAAAACJAAAAAAAAAHEC6Y5XgLIQWQAAAAAAAACJA","shape":"9, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=9\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","service_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins"],"ids":{"dtype":"i1","bdata":"CAkKBAUDBgsH"},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb3","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddb3","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb1","\ud83e\uddd1\ud83c\udffb","\ud83d\udc69\ud83c\udfff\u200d\ud83e\uddb1","\ud83d\udc68\ud83c\udffb\u200d\ud83e\uddb0","\ud83e\udd30","\ud83e\uddcd\ud83c\udffd\u200d\u2640\ufe0f","\ud83d\udc73\ud83c\udffd"],"x":{"dtype":"f8","bdata":"AAAAAABAakAAAAAAAABpQAAAAAAAwGdAAAAAAABAb0AAAAAAAABuQAAAAAAAQG9AAAAAAADAbEAAAAAAAIBmQAAAAAAAgGtA"},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAwGJAAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9A"},"yaxis":"y","type":"scatter"}],"name":"9"},{"data":[{"customdata":{"dtype":"f8","bdata":"AAAAAAAAGEDUschbmPgVQAAAAAAAACRAAAAAAAAACEAf\u002fLZNhHoXQAAAAAAAACRAAAAAAAAAHEC6Y5XgLIQWQAAAAAAAACRAAAAAAAAAFEDISM7oIX0SQAAAAAAAACRAAAAAAAAAIECvLdAOtcoXQAAAAAAAACRAAAAAAAAAJED0kia6kjwdQAAAAAAAACRAAAAAAAAAEEB0i12CGEQQQAAAAAAAACRAAAAAAAAAJkAWrhNfn4UhQAAAAAAAACRAAAAAAAAAIkDYpwNgSzQZQAAAAAAAACRA","shape":"9, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=10\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["queue_wait_begins","service_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins"],"ids":{"dtype":"i1","bdata":"BgMHBQgKBAsJ"},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83e\udd30","\ud83d\udc68\ud83c\udffb\u200d\ud83e\uddb0","\ud83d\udc73\ud83c\udffd","\ud83d\udc69\ud83c\udfff\u200d\ud83e\uddb1","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb3","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb1","\ud83e\uddd1\ud83c\udffb","\ud83e\uddcd\ud83c\udffd\u200d\u2640\ufe0f","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddb3"],"x":{"dtype":"f8","bdata":"AAAAAADAbEAAAAAAAEBvQAAAAAAAgGtAAAAAAAAAbkAAAAAAAEBqQAAAAAAAwGdAAAAAAABAb0AAAAAAAIBmQAAAAAAAAGlA"},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAABAb0AAAAAAAMBiQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9A"},"yaxis":"y","type":"scatter"}],"name":"10"},{"data":[{"customdata":{"dtype":"f8","bdata":"AAAAAAAAGEDUschbmPgVQAAAAAAAACZAAAAAAAAAFEDISM7oIX0SQAAAAAAAACZAAAAAAAAAIkDYpwNgSzQZQAAAAAAAACZAAAAAAAAAHEC6Y5XgLIQWQAAAAAAAACZAAAAAAAAAJkAWrhNfn4UhQAAAAAAAACZAAAAAAAAAEEB0i12CGEQQQAAAAAAAACZAAAAAAAAAIECvLdAOtcoXQAAAAAAAACZAAAAAAAAACEAf\u002fLZNhHoXQAAAAAAAACZAAAAAAAAAJED0kia6kjwdQAAAAAAAACZA","shape":"9, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=11\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","service_begins","queue_wait_begins"],"ids":{"dtype":"i1","bdata":"BgUJBwsECAMK"},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83e\udd30","\ud83d\udc69\ud83c\udfff\u200d\ud83e\uddb1","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddb3","\ud83d\udc73\ud83c\udffd","\ud83e\uddcd\ud83c\udffd\u200d\u2640\ufe0f","\ud83e\uddd1\ud83c\udffb","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb3","\ud83d\udc68\ud83c\udffb\u200d\ud83e\uddb0","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb1"],"x":{"dtype":"f8","bdata":"AAAAAADAbEAAAAAAAABuQAAAAAAAAGlAAAAAAACAa0AAAAAAAIBmQAAAAAAAQG9AAAAAAABAakAAAAAAAEBvQAAAAAAAwGdA"},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAMBiQAAAAAAAQG9A"},"yaxis":"y","type":"scatter"}],"name":"11"},{"data":[{"customdata":{"dtype":"f8","bdata":"AAAAAAAAIkDYpwNgSzQZQAAAAAAAAChAAAAAAAAAJED0kia6kjwdQAAAAAAAAChAAAAAAAAAFEDISM7oIX0SQAAAAAAAAChAAAAAAAAAGEDUschbmPgVQAAAAAAAAChAAAAAAAAAHEC6Y5XgLIQWQAAAAAAAAChAAAAAAAAACEAf\u002fLZNhHoXQAAAAAAAAChAAAAAAAAAIECvLdAOtcoXQAAAAAAAAChAAAAAAAAAJkAWrhNfn4UhQAAAAAAAAChAAAAAAAAAEEDHU72tY2InQAAAAAAAAChA","shape":"9, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=12\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","depart","queue_wait_begins","queue_wait_begins","service_begins"],"ids":{"dtype":"i1","bdata":"CQoFBgcDCAsE"},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddb3","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb1","\ud83d\udc69\ud83c\udfff\u200d\ud83e\uddb1","\ud83e\udd30","\ud83d\udc73\ud83c\udffd","\ud83d\udc68\ud83c\udffb\u200d\ud83e\uddb0","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb3","\ud83e\uddcd\ud83c\udffd\u200d\u2640\ufe0f","\ud83e\uddd1\ud83c\udffb"],"x":{"dtype":"f8","bdata":"AAAAAABAakAAAAAAAABpQAAAAAAAQG9AAAAAAAAAbkAAAAAAAMBsQAAAAAAAQG9AAAAAAACAa0AAAAAAAMBnQAAAAAAAQG9A"},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAAElAAAAAAABAb0AAAAAAAEBvQAAAAAAAwGJA"},"yaxis":"y","type":"scatter"}],"name":"12"},{"data":[{"customdata":{"dtype":"f8","bdata":"AAAAAAAAJkAWrhNfn4UhQAAAAAAAACpAAAAAAAAAGEDUschbmPgVQAAAAAAAACpAAAAAAAAAKEBhdaA\u002fslkpQAAAAAAAACpAAAAAAAAAHEC6Y5XgLIQWQAAAAAAAACpAAAAAAAAAIkDYpwNgSzQZQAAAAAAAACpAAAAAAAAAEEDHU72tY2InQAAAAAAAACpAAAAAAAAAFEDISM7oIX0SQAAAAAAAACpAAAAAAAAAJED0kia6kjwdQAAAAAAAACpAAAAAAAAAIECvLdAOtcoXQAAAAAAAACpA","shape":"9, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=13\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","service_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins"],"ids":{"dtype":"i1","bdata":"CwYMBwkEBQoI"},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83e\uddcd\ud83c\udffd\u200d\u2640\ufe0f","\ud83e\udd30","\ud83d\udc68\ud83c\udffc\u200d\ud83d\udd2c","\ud83d\udc73\ud83c\udffd","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddb3","\ud83e\uddd1\ud83c\udffb","\ud83d\udc69\ud83c\udfff\u200d\ud83e\uddb1","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb1","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb3"],"x":{"dtype":"f8","bdata":"AAAAAADAZ0AAAAAAAABuQAAAAAAAgGZAAAAAAADAbEAAAAAAAEBqQAAAAAAAQG9AAAAAAABAb0AAAAAAAABpQAAAAAAAgGtA"},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAwGJAAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9A"},"yaxis":"y","type":"scatter"}],"name":"13"},{"data":[{"customdata":{"dtype":"f8","bdata":"AAAAAAAAHEC6Y5XgLIQWQAAAAAAAACxAAAAAAAAAIkDYpwNgSzQZQAAAAAAAACxAAAAAAAAAGEDUschbmPgVQAAAAAAAACxAAAAAAAAAJED0kia6kjwdQAAAAAAAACxAAAAAAAAAEEDHU72tY2InQAAAAAAAACxAAAAAAAAAIECvLdAOtcoXQAAAAAAAACxAAAAAAAAAKEBhdaA\u002fslkpQAAAAAAAACxAAAAAAAAAFEDISM7oIX0SQAAAAAAAACxAAAAAAAAAJkAWrhNfn4UhQAAAAAAAACxA","shape":"9, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=14\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","service_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins"],"ids":{"dtype":"i1","bdata":"BwkGCgQIDAUL"},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83d\udc73\ud83c\udffd","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddb3","\ud83e\udd30","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb1","\ud83e\uddd1\ud83c\udffb","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb3","\ud83d\udc68\ud83c\udffc\u200d\ud83d\udd2c","\ud83d\udc69\ud83c\udfff\u200d\ud83e\uddb1","\ud83e\uddcd\ud83c\udffd\u200d\u2640\ufe0f"],"x":{"dtype":"f8","bdata":"AAAAAADAbEAAAAAAAEBqQAAAAAAAAG5AAAAAAAAAaUAAAAAAAEBvQAAAAAAAgGtAAAAAAACAZkAAAAAAAEBvQAAAAAAAwGdA"},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAMBiQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9A"},"yaxis":"y","type":"scatter"}],"name":"14"},{"data":[{"customdata":{"dtype":"f8","bdata":"AAAAAAAAKEBhdaA\u002fslkpQAAAAAAAAC5AAAAAAAAAJkAWrhNfn4UhQAAAAAAAAC5AAAAAAAAAHEC6Y5XgLIQWQAAAAAAAAC5AAAAAAAAAIECvLdAOtcoXQAAAAAAAAC5AAAAAAAAAEEDHU72tY2InQAAAAAAAAC5AAAAAAAAAJED0kia6kjwdQAAAAAAAAC5AAAAAAAAAFEDISM7oIX0SQAAAAAAAAC5AAAAAAAAAGEDUschbmPgVQAAAAAAAAC5AAAAAAAAAIkDYpwNgSzQZQAAAAAAAAC5A","shape":"9, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=15\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","service_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins"],"ids":{"dtype":"i1","bdata":"DAsHCAQKBQYJ"},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83d\udc68\ud83c\udffc\u200d\ud83d\udd2c","\ud83e\uddcd\ud83c\udffd\u200d\u2640\ufe0f","\ud83d\udc73\ud83c\udffd","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb3","\ud83e\uddd1\ud83c\udffb","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb1","\ud83d\udc69\ud83c\udfff\u200d\ud83e\uddb1","\ud83e\udd30","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddb3"],"x":{"dtype":"f8","bdata":"AAAAAACAZkAAAAAAAMBnQAAAAAAAwGxAAAAAAACAa0AAAAAAAEBvQAAAAAAAAGlAAAAAAABAb0AAAAAAAABuQAAAAAAAQGpA"},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAMBiQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9A"},"yaxis":"y","type":"scatter"}],"name":"15"},{"data":[{"customdata":{"dtype":"f8","bdata":"AAAAAAAALEDWWlY2ivcvQAAAAAAAADBAAAAAAAAAJED0kia6kjwdQAAAAAAAADBAAAAAAAAAKEBhdaA\u002fslkpQAAAAAAAADBAAAAAAAAAIkDYpwNgSzQZQAAAAAAAADBAAAAAAAAAKkDVjRxOe1AuQAAAAAAAADBAAAAAAAAAJkAWrhNfn4UhQAAAAAAAADBAAAAAAAAAEEDHU72tY2InQAAAAAAAADBAAAAAAAAAGEDUschbmPgVQAAAAAAAADBAAAAAAAAAFEDISM7oIX0SQAAAAAAAADBAAAAAAAAAHEC6Y5XgLIQWQAAAAAAAADBAAAAAAAAAIECvLdAOtcoXQAAAAAAAADBA","shape":"11, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=16\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","service_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins"],"ids":{"dtype":"i1","bdata":"DgoMCQ0LBAYFBwg="},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83e\uddd5\ud83c\udfff","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb1","\ud83d\udc68\ud83c\udffc\u200d\ud83d\udd2c","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddb3","\ud83d\udc69\ud83c\udffb\u200d\ud83e\uddb0","\ud83e\uddcd\ud83c\udffd\u200d\u2640\ufe0f","\ud83e\uddd1\ud83c\udffb","\ud83e\udd30","\ud83d\udc69\ud83c\udfff\u200d\ud83e\uddb1","\ud83d\udc73\ud83c\udffd","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb3"],"x":{"dtype":"f8","bdata":"AAAAAAAAZEAAAAAAAABpQAAAAAAAgGZAAAAAAABAakAAAAAAAEBlQAAAAAAAwGdAAAAAAABAb0AAAAAAAABuQAAAAAAAQG9AAAAAAADAbEAAAAAAAIBrQA=="},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAADAYkAAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQA=="},"yaxis":"y","type":"scatter"}],"name":"16"},{"data":[{"customdata":{"dtype":"f8","bdata":"AAAAAAAAKkDVjRxOe1AuQAAAAAAAADFAAAAAAAAAIkDYpwNgSzQZQAAAAAAAADFAAAAAAAAAJkAWrhNfn4UhQAAAAAAAADFAAAAAAAAAGEDUschbmPgVQAAAAAAAADFAAAAAAAAAIECvLdAOtcoXQAAAAAAAADFAAAAAAAAAFEDISM7oIX0SQAAAAAAAADFAAAAAAAAAHEC6Y5XgLIQWQAAAAAAAADFAAAAAAAAAKEBhdaA\u002fslkpQAAAAAAAADFAAAAAAAAAEEDHU72tY2InQAAAAAAAADFAAAAAAAAAJED0kia6kjwdQAAAAAAAADFAAAAAAAAALEDWWlY2ivcvQAAAAAAAADFA","shape":"11, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=17\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","service_begins","queue_wait_begins","queue_wait_begins"],"ids":{"dtype":"i1","bdata":"DQkLBggFBwwECg4="},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83d\udc69\ud83c\udffb\u200d\ud83e\uddb0","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddb3","\ud83e\uddcd\ud83c\udffd\u200d\u2640\ufe0f","\ud83e\udd30","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb3","\ud83d\udc69\ud83c\udfff\u200d\ud83e\uddb1","\ud83d\udc73\ud83c\udffd","\ud83d\udc68\ud83c\udffc\u200d\ud83d\udd2c","\ud83e\uddd1\ud83c\udffb","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb1","\ud83e\uddd5\ud83c\udfff"],"x":{"dtype":"f8","bdata":"AAAAAABAZUAAAAAAAEBqQAAAAAAAwGdAAAAAAAAAbkAAAAAAAIBrQAAAAAAAQG9AAAAAAADAbEAAAAAAAIBmQAAAAAAAQG9AAAAAAAAAaUAAAAAAAABkQA=="},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAwGJAAAAAAABAb0AAAAAAAEBvQA=="},"yaxis":"y","type":"scatter"}],"name":"17"},{"data":[{"customdata":{"dtype":"f8","bdata":"AAAAAAAALEDWWlY2ivcvQAAAAAAAADJAAAAAAAAAKkDVjRxOe1AuQAAAAAAAADJAAAAAAAAAJED0kia6kjwdQAAAAAAAADJAAAAAAAAAFEA295aDw\u002fQxQAAAAAAAADJAAAAAAAAAEEDHU72tY2InQAAAAAAAADJAAAAAAAAAHEC6Y5XgLIQWQAAAAAAAADJAAAAAAAAAGEDUschbmPgVQAAAAAAAADJAAAAAAAAAIECvLdAOtcoXQAAAAAAAADJAAAAAAAAAJkAWrhNfn4UhQAAAAAAAADJAAAAAAAAAKEBhdaA\u002fslkpQAAAAAAAADJAAAAAAAAAIkDYpwNgSzQZQAAAAAAAADJA","shape":"11, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=18\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["queue_wait_begins","queue_wait_begins","queue_wait_begins","service_begins","depart","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins"],"ids":{"dtype":"i1","bdata":"Dg0KBQQHBggLDAk="},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83e\uddd5\ud83c\udfff","\ud83d\udc69\ud83c\udffb\u200d\ud83e\uddb0","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb1","\ud83d\udc69\ud83c\udfff\u200d\ud83e\uddb1","\ud83e\uddd1\ud83c\udffb","\ud83d\udc73\ud83c\udffd","\ud83e\udd30","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb3","\ud83e\uddcd\ud83c\udffd\u200d\u2640\ufe0f","\ud83d\udc68\ud83c\udffc\u200d\ud83d\udd2c","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddb3"],"x":{"dtype":"f8","bdata":"AAAAAABAZUAAAAAAAIBmQAAAAAAAQGpAAAAAAABAb0AAAAAAAEBvQAAAAAAAAG5AAAAAAABAb0AAAAAAAMBsQAAAAAAAAGlAAAAAAADAZ0AAAAAAAIBrQA=="},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAADAYkAAAAAAAABJQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQA=="},"yaxis":"y","type":"scatter"}],"name":"18"},{"data":[{"customdata":{"dtype":"f8","bdata":"AAAAAAAAJED0kia6kjwdQAAAAAAAADNAAAAAAAAAIECvLdAOtcoXQAAAAAAAADNAAAAAAAAAKEBhdaA\u002fslkpQAAAAAAAADNAAAAAAAAAJkAWrhNfn4UhQAAAAAAAADNAAAAAAAAAKkDVjRxOe1AuQAAAAAAAADNAAAAAAAAAFEA295aDw\u002fQxQAAAAAAAADNAAAAAAAAAGEDUschbmPgVQAAAAAAAADNAAAAAAAAAHEC6Y5XgLIQWQAAAAAAAADNAAAAAAAAALEDWWlY2ivcvQAAAAAAAADNAAAAAAAAALkBCPTE+xv4yQAAAAAAAADNAAAAAAAAAIkDYpwNgSzQZQAAAAAAAADNA","shape":"11, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=19\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","service_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins"],"ids":{"dtype":"i1","bdata":"CggMCw0FBgcODwk="},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb1","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb3","\ud83d\udc68\ud83c\udffc\u200d\ud83d\udd2c","\ud83e\uddcd\ud83c\udffd\u200d\u2640\ufe0f","\ud83d\udc69\ud83c\udffb\u200d\ud83e\uddb0","\ud83d\udc69\ud83c\udfff\u200d\ud83e\uddb1","\ud83e\udd30","\ud83d\udc73\ud83c\udffd","\ud83e\uddd5\ud83c\udfff","\ud83d\udc68\ud83c\udffc\u200d\ud83e\uddbd","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddb3"],"x":{"dtype":"f8","bdata":"AAAAAABAakAAAAAAAMBsQAAAAAAAwGdAAAAAAAAAaUAAAAAAAIBmQAAAAAAAQG9AAAAAAABAb0AAAAAAAABuQAAAAAAAQGVAAAAAAAAAZEAAAAAAAIBrQA=="},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAwGJAAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQA=="},"yaxis":"y","type":"scatter"}],"name":"19"},{"data":[{"customdata":{"dtype":"f8","bdata":"AAAAAAAAKkDVjRxOe1AuQAAAAAAAADRAAAAAAAAAHEC6Y5XgLIQWQAAAAAAAADRAAAAAAAAAJED0kia6kjwdQAAAAAAAADRAAAAAAAAAFEA295aDw\u002fQxQAAAAAAAADRAAAAAAAAALEDWWlY2ivcvQAAAAAAAADRAAAAAAAAAIkDYpwNgSzQZQAAAAAAAADRAAAAAAAAAKEBhdaA\u002fslkpQAAAAAAAADRAAAAAAAAAGEDWcpintsQzQAAAAAAAADRAAAAAAAAALkBCPTE+xv4yQAAAAAAAADRAAAAAAAAAIECvLdAOtcoXQAAAAAAAADRAAAAAAAAAJkAWrhNfn4UhQAAAAAAAADRA","shape":"11, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=20\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["queue_wait_begins","queue_wait_begins","queue_wait_begins","depart","queue_wait_begins","queue_wait_begins","queue_wait_begins","service_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins"],"ids":{"dtype":"i1","bdata":"DQcKBQ4JDAYPCAs="},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83d\udc69\ud83c\udffb\u200d\ud83e\uddb0","\ud83d\udc73\ud83c\udffd","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb1","\ud83d\udc69\ud83c\udfff\u200d\ud83e\uddb1","\ud83e\uddd5\ud83c\udfff","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddb3","\ud83d\udc68\ud83c\udffc\u200d\ud83d\udd2c","\ud83e\udd30","\ud83d\udc68\ud83c\udffc\u200d\ud83e\uddbd","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb3","\ud83e\uddcd\ud83c\udffd\u200d\u2640\ufe0f"],"x":{"dtype":"f8","bdata":"AAAAAADAZ0AAAAAAAEBvQAAAAAAAgGtAAAAAAABAb0AAAAAAAIBmQAAAAAAAwGxAAAAAAAAAaUAAAAAAAEBvQAAAAAAAQGVAAAAAAAAAbkAAAAAAAEBqQA=="},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAAAASUAAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAMBiQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQA=="},"yaxis":"y","type":"scatter"}],"name":"20"},{"data":[{"customdata":{"dtype":"f8","bdata":"AAAAAAAALEDWWlY2ivcvQAAAAAAAADVAAAAAAAAAMEAuj0mcR1w0QAAAAAAAADVAAAAAAAAALkBCPTE+xv4yQAAAAAAAADVAAAAAAAAAKkDVjRxOe1AuQAAAAAAAADVAAAAAAAAAHEC6Y5XgLIQWQAAAAAAAADVAAAAAAAAAIEBmwlkXqWU0QAAAAAAAADVAAAAAAAAAJkAWrhNfn4UhQAAAAAAAADVAAAAAAAAAIkDYpwNgSzQZQAAAAAAAADVAAAAAAAAAJED0kia6kjwdQAAAAAAAADVAAAAAAAAAKEBhdaA\u002fslkpQAAAAAAAADVAAAAAAAAAGEDWcpintsQzQAAAAAAAADVA","shape":"11, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=21\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","depart","service_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","depart"],"ids":{"dtype":"i1","bdata":"DhAPDQcICwkKDAY="},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83e\uddd5\ud83c\udfff","\ud83d\udc74\ud83c\udffe","\ud83d\udc68\ud83c\udffc\u200d\ud83e\uddbd","\ud83d\udc69\ud83c\udffb\u200d\ud83e\uddb0","\ud83d\udc73\ud83c\udffd","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb3","\ud83e\uddcd\ud83c\udffd\u200d\u2640\ufe0f","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddb3","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb1","\ud83d\udc68\ud83c\udffc\u200d\ud83d\udd2c","\ud83e\udd30"],"x":{"dtype":"f8","bdata":"AAAAAAAAaUAAAAAAAIBmQAAAAAAAwGdAAAAAAABAakAAAAAAAABuQAAAAAAAQG9AAAAAAADAbEAAAAAAAEBvQAAAAAAAAG5AAAAAAACAa0AAAAAAAEBvQA=="},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAABJQAAAAAAAwGJAAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAABJQA=="},"yaxis":"y","type":"scatter"}],"name":"21"},{"data":[{"customdata":{"dtype":"f8","bdata":"AAAAAAAAMEAuj0mcR1w0QAAAAAAAADZAAAAAAAAAIEBmwlkXqWU0QAAAAAAAADZAAAAAAAAAKkDVjRxOe1AuQAAAAAAAADZAAAAAAAAAJED0kia6kjwdQAAAAAAAADZAAAAAAAAAKEBhdaA\u002fslkpQAAAAAAAADZAAAAAAAAALkBCPTE+xv4yQAAAAAAAADZAAAAAAAAAIkDYpwNgSzQZQAAAAAAAADZAAAAAAAAALEDWWlY2ivcvQAAAAAAAADZAAAAAAAAAMUBxir7DWZU1QAAAAAAAADZAAAAAAAAAJkAWrhNfn4UhQAAAAAAAADZA","shape":"10, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=22\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["queue_wait_begins","service_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins"],"ids":{"dtype":"i1","bdata":"EAgNCgwPCQ4RCw=="},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83d\udc74\ud83c\udffe","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb3","\ud83d\udc69\ud83c\udffb\u200d\ud83e\uddb0","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb1","\ud83d\udc68\ud83c\udffc\u200d\ud83d\udd2c","\ud83d\udc68\ud83c\udffc\u200d\ud83e\uddbd","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddb3","\ud83e\uddd5\ud83c\udfff","\ud83d\udc68\ud83c\udffc\u200d\ud83e\uddb1","\ud83e\uddcd\ud83c\udffd\u200d\u2640\ufe0f"],"x":{"dtype":"f8","bdata":"AAAAAACAZkAAAAAAAEBvQAAAAAAAQGpAAAAAAAAAbkAAAAAAAIBrQAAAAAAAwGdAAAAAAABAb0AAAAAAAABpQAAAAAAAQGVAAAAAAADAbEA="},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAABAb0AAAAAAAMBiQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0A="},"yaxis":"y","type":"scatter"}],"name":"22"},{"data":[{"customdata":{"dtype":"f8","bdata":"AAAAAAAAIkAYPH20NC82QAAAAAAAADdAAAAAAAAALEDWWlY2ivcvQAAAAAAAADdAAAAAAAAAJkAWrhNfn4UhQAAAAAAAADdAAAAAAAAAIEBmwlkXqWU0QAAAAAAAADdAAAAAAAAAKEBhdaA\u002fslkpQAAAAAAAADdAAAAAAAAALkBCPTE+xv4yQAAAAAAAADdAAAAAAAAAMUBxir7DWZU1QAAAAAAAADdAAAAAAAAAKkDVjRxOe1AuQAAAAAAAADdAAAAAAAAAJED0kia6kjwdQAAAAAAAADdAAAAAAAAAMEAuj0mcR1w0QAAAAAAAADdAAAAAAAAAMkAssZpR6cw2QAAAAAAAADdA","shape":"11, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=23\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["service_begins","queue_wait_begins","queue_wait_begins","depart","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins"],"ids":{"dtype":"i1","bdata":"CQ4LCAwPEQ0KEBI="},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddb3","\ud83e\uddd5\ud83c\udfff","\ud83e\uddcd\ud83c\udffd\u200d\u2640\ufe0f","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb3","\ud83d\udc68\ud83c\udffc\u200d\ud83d\udd2c","\ud83d\udc68\ud83c\udffc\u200d\ud83e\uddbd","\ud83d\udc68\ud83c\udffc\u200d\ud83e\uddb1","\ud83d\udc69\ud83c\udffb\u200d\ud83e\uddb0","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb1","\ud83d\udc74\ud83c\udffe","\ud83d\udc77\ud83c\udffe"],"x":{"dtype":"f8","bdata":"AAAAAABAb0AAAAAAAEBqQAAAAAAAAG5AAAAAAABAb0AAAAAAAMBsQAAAAAAAAGlAAAAAAACAZkAAAAAAAIBrQAAAAAAAQG9AAAAAAADAZ0AAAAAAAEBlQA=="},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAADAYkAAAAAAAEBvQAAAAAAAQG9AAAAAAAAASUAAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQA=="},"yaxis":"y","type":"scatter"}],"name":"23"},{"data":[{"customdata":{"dtype":"f8","bdata":"AAAAAAAALkBCPTE+xv4yQAAAAAAAADhAAAAAAAAAKEBhdaA\u002fslkpQAAAAAAAADhAAAAAAAAAJkAWrhNfn4UhQAAAAAAAADhAAAAAAAAALEDWWlY2ivcvQAAAAAAAADhAAAAAAAAAMUBxir7DWZU1QAAAAAAAADhAAAAAAAAAMEAuj0mcR1w0QAAAAAAAADhAAAAAAAAAIkAYPH20NC82QAAAAAAAADhAAAAAAAAAJEBd71N2e7E3QAAAAAAAADhAAAAAAAAAM0CA4gVAbd83QAAAAAAAADhAAAAAAAAAKkDVjRxOe1AuQAAAAAAAADhAAAAAAAAAMkAssZpR6cw2QAAAAAAAADhA","shape":"11, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=24\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","depart","service_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins"],"ids":{"dtype":"i1","bdata":"DwwLDhEQCQoTDRI="},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83d\udc68\ud83c\udffc\u200d\ud83e\uddbd","\ud83d\udc68\ud83c\udffc\u200d\ud83d\udd2c","\ud83e\uddcd\ud83c\udffd\u200d\u2640\ufe0f","\ud83e\uddd5\ud83c\udfff","\ud83d\udc68\ud83c\udffc\u200d\ud83e\uddb1","\ud83d\udc74\ud83c\udffe","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddb3","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb1","\ud83d\udc67\ud83c\udfff","\ud83d\udc69\ud83c\udffb\u200d\ud83e\uddb0","\ud83d\udc77\ud83c\udffe"],"x":{"dtype":"f8","bdata":"AAAAAABAakAAAAAAAABuQAAAAAAAQG9AAAAAAACAa0AAAAAAAMBnQAAAAAAAAGlAAAAAAABAb0AAAAAAAEBvQAAAAAAAQGVAAAAAAADAbEAAAAAAAIBmQA=="},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAAAASUAAAAAAAMBiQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQA=="},"yaxis":"y","type":"scatter"}],"name":"24"},{"data":[{"customdata":{"dtype":"f8","bdata":"AAAAAAAAMUBxir7DWZU1QAAAAAAAADlAAAAAAAAAJkAWrhNfn4UhQAAAAAAAADlAAAAAAAAALkBCPTE+xv4yQAAAAAAAADlAAAAAAAAAMEAuj0mcR1w0QAAAAAAAADlAAAAAAAAAM0CA4gVAbd83QAAAAAAAADlAAAAAAAAAJEBd71N2e7E3QAAAAAAAADlAAAAAAAAALEDWWlY2ivcvQAAAAAAAADlAAAAAAAAAMkAssZpR6cw2QAAAAAAAADlAAAAAAAAAKkDVjRxOe1AuQAAAAAAAADlAAAAAAAAAKEBhdaA\u002fslkpQAAAAAAAADlA","shape":"10, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=25\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","service_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins"],"ids":{"dtype":"i1","bdata":"EQsPEBMKDhINDA=="},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83d\udc68\ud83c\udffc\u200d\ud83e\uddb1","\ud83e\uddcd\ud83c\udffd\u200d\u2640\ufe0f","\ud83d\udc68\ud83c\udffc\u200d\ud83e\uddbd","\ud83d\udc74\ud83c\udffe","\ud83d\udc67\ud83c\udfff","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb1","\ud83e\uddd5\ud83c\udfff","\ud83d\udc77\ud83c\udffe","\ud83d\udc69\ud83c\udffb\u200d\ud83e\uddb0","\ud83d\udc68\ud83c\udffc\u200d\ud83d\udd2c"],"x":{"dtype":"f8","bdata":"AAAAAADAZ0AAAAAAAEBvQAAAAAAAQGpAAAAAAAAAaUAAAAAAAEBlQAAAAAAAQG9AAAAAAACAa0AAAAAAAIBmQAAAAAAAwGxAAAAAAAAAbkA="},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAwGJAAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0A="},"yaxis":"y","type":"scatter"}],"name":"25"},{"data":[{"customdata":{"dtype":"f8","bdata":"AAAAAAAAJkAWrhNfn4UhQAAAAAAAADpAAAAAAAAAJEBd71N2e7E3QAAAAAAAADpAAAAAAAAALkBCPTE+xv4yQAAAAAAAADpAAAAAAAAAKkDVjRxOe1AuQAAAAAAAADpAAAAAAAAAKEBhdaA\u002fslkpQAAAAAAAADpAAAAAAAAAMkAssZpR6cw2QAAAAAAAADpAAAAAAAAAM0CA4gVAbd83QAAAAAAAADpAAAAAAAAAMUBxir7DWZU1QAAAAAAAADpAAAAAAAAALEDWWlY2ivcvQAAAAAAAADpAAAAAAAAANEBRkURMfTA5QAAAAAAAADpAAAAAAAAAMEAuj0mcR1w0QAAAAAAAADpA","shape":"11, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=26\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["queue_wait_begins","service_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins"],"ids":{"dtype":"i1","bdata":"CwoPDQwSExEOFBA="},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83e\uddcd\ud83c\udffd\u200d\u2640\ufe0f","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb1","\ud83d\udc68\ud83c\udffc\u200d\ud83e\uddbd","\ud83d\udc69\ud83c\udffb\u200d\ud83e\uddb0","\ud83d\udc68\ud83c\udffc\u200d\ud83d\udd2c","\ud83d\udc77\ud83c\udffe","\ud83d\udc67\ud83c\udfff","\ud83d\udc68\ud83c\udffc\u200d\ud83e\uddb1","\ud83e\uddd5\ud83c\udfff","\ud83d\ude4e\ud83c\udffc\u200d\u2642\ufe0f","\ud83d\udc74\ud83c\udffe"],"x":{"dtype":"f8","bdata":"AAAAAABAb0AAAAAAAEBvQAAAAAAAQGpAAAAAAADAbEAAAAAAAABuQAAAAAAAgGZAAAAAAABAZUAAAAAAAMBnQAAAAAAAgGtAAAAAAAAAZEAAAAAAAABpQA=="},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAABAb0AAAAAAAMBiQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQA=="},"yaxis":"y","type":"scatter"}],"name":"26"},{"data":[{"customdata":{"dtype":"f8","bdata":"AAAAAAAAKEDzui7DUMM6QAAAAAAAADtAAAAAAAAAJEBd71N2e7E3QAAAAAAAADtAAAAAAAAANEBRkURMfTA5QAAAAAAAADtAAAAAAAAAMkAssZpR6cw2QAAAAAAAADtAAAAAAAAALkBCPTE+xv4yQAAAAAAAADtAAAAAAAAAM0CA4gVAbd83QAAAAAAAADtAAAAAAAAAMEAuj0mcR1w0QAAAAAAAADtAAAAAAAAAKkDVjRxOe1AuQAAAAAAAADtAAAAAAAAANUDlQ8yeOw86QAAAAAAAADtAAAAAAAAAJkAWrhNfn4UhQAAAAAAAADtAAAAAAAAALEDWWlY2ivcvQAAAAAAAADtAAAAAAAAAMUBxir7DWZU1QAAAAAAAADtA","shape":"12, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=27\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["service_begins","depart","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","depart","queue_wait_begins","queue_wait_begins"],"ids":{"dtype":"i1","bdata":"DAoUEg8TEA0VCw4R"},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83d\udc68\ud83c\udffc\u200d\ud83d\udd2c","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb1","\ud83d\ude4e\ud83c\udffc\u200d\u2642\ufe0f","\ud83d\udc77\ud83c\udffe","\ud83d\udc68\ud83c\udffc\u200d\ud83e\uddbd","\ud83d\udc67\ud83c\udfff","\ud83d\udc74\ud83c\udffe","\ud83d\udc69\ud83c\udffb\u200d\ud83e\uddb0","\ud83d\udc69\ud83c\udffb\u200d\ud83e\uddb2","\ud83e\uddcd\ud83c\udffd\u200d\u2640\ufe0f","\ud83e\uddd5\ud83c\udfff","\ud83d\udc68\ud83c\udffc\u200d\ud83e\uddb1"],"x":{"dtype":"f8","bdata":"AAAAAABAb0AAAAAAAEBvQAAAAAAAgGZAAAAAAAAAaUAAAAAAAMBsQAAAAAAAwGdAAAAAAACAa0AAAAAAAEBvQAAAAAAAQGVAAAAAAAAAbkAAAAAAAABuQAAAAAAAQGpA"},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAADAYkAAAAAAAABJQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAAAASUAAAAAAAEBvQAAAAAAAQG9A"},"yaxis":"y","type":"scatter"}],"name":"27"},{"data":[{"customdata":{"dtype":"f8","bdata":"AAAAAAAAKEDzui7DUMM6QAAAAAAAADxAAAAAAAAAMEAuj0mcR1w0QAAAAAAAADxAAAAAAAAALEDWWlY2ivcvQAAAAAAAADxAAAAAAAAANkA8CEX0S9Q7QAAAAAAAADxAAAAAAAAAMkAssZpR6cw2QAAAAAAAADxAAAAAAAAANEBRkURMfTA5QAAAAAAAADxAAAAAAAAAM0CA4gVAbd83QAAAAAAAADxAAAAAAAAALkBCPTE+xv4yQAAAAAAAADxAAAAAAAAAKkDVjRxOe1AuQAAAAAAAADxAAAAAAAAANUDlQ8yeOw86QAAAAAAAADxAAAAAAAAAMUBxir7DWZU1QAAAAAAAADxA","shape":"11, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=28\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["service_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins"],"ids":{"dtype":"i1","bdata":"DBAOFhIUEw8NFRE="},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83d\udc68\ud83c\udffc\u200d\ud83d\udd2c","\ud83d\udc74\ud83c\udffe","\ud83e\uddd5\ud83c\udfff","\ud83e\uddd4\ud83c\udffe","\ud83d\udc77\ud83c\udffe","\ud83d\ude4e\ud83c\udffc\u200d\u2642\ufe0f","\ud83d\udc67\ud83c\udfff","\ud83d\udc68\ud83c\udffc\u200d\ud83e\uddbd","\ud83d\udc69\ud83c\udffb\u200d\ud83e\uddb0","\ud83d\udc69\ud83c\udffb\u200d\ud83e\uddb2","\ud83d\udc68\ud83c\udffc\u200d\ud83e\uddb1"],"x":{"dtype":"f8","bdata":"AAAAAABAb0AAAAAAAIBrQAAAAAAAAG5AAAAAAAAAZEAAAAAAAABpQAAAAAAAgGZAAAAAAADAZ0AAAAAAAMBsQAAAAAAAQG9AAAAAAABAZUAAAAAAAEBqQA=="},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAADAYkAAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQA=="},"yaxis":"y","type":"scatter"}],"name":"28"},{"data":[{"customdata":{"dtype":"f8","bdata":"AAAAAAAANkA8CEX0S9Q7QAAAAAAAAD1AAAAAAAAAN0Dn695vs+I8QAAAAAAAAD1AAAAAAAAANEBRkURMfTA5QAAAAAAAAD1AAAAAAAAAMEAuj0mcR1w0QAAAAAAAAD1AAAAAAAAAKEDzui7DUMM6QAAAAAAAAD1AAAAAAAAALEDWWlY2ivcvQAAAAAAAAD1AAAAAAAAAMkAssZpR6cw2QAAAAAAAAD1AAAAAAAAAM0CA4gVAbd83QAAAAAAAAD1AAAAAAAAALkBCPTE+xv4yQAAAAAAAAD1AAAAAAAAAKkDVjRxOe1AuQAAAAAAAAD1AAAAAAAAAMUBxir7DWZU1QAAAAAAAAD1AAAAAAAAANUDlQ8yeOw86QAAAAAAAAD1A","shape":"12, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=29\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","service_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins"],"ids":{"dtype":"i1","bdata":"FhcUEAwOEhMPDREV"},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83e\uddd4\ud83c\udffe","\ud83e\uddd5\ud83c\udffb","\ud83d\ude4e\ud83c\udffc\u200d\u2642\ufe0f","\ud83d\udc74\ud83c\udffe","\ud83d\udc68\ud83c\udffc\u200d\ud83d\udd2c","\ud83e\uddd5\ud83c\udfff","\ud83d\udc77\ud83c\udffe","\ud83d\udc67\ud83c\udfff","\ud83d\udc68\ud83c\udffc\u200d\ud83e\uddbd","\ud83d\udc69\ud83c\udffb\u200d\ud83e\uddb0","\ud83d\udc68\ud83c\udffc\u200d\ud83e\uddb1","\ud83d\udc69\ud83c\udffb\u200d\ud83e\uddb2"],"x":{"dtype":"f8","bdata":"AAAAAAAAZEAAAAAAAMBiQAAAAAAAgGZAAAAAAACAa0AAAAAAAEBvQAAAAAAAAG5AAAAAAAAAaUAAAAAAAMBnQAAAAAAAwGxAAAAAAABAb0AAAAAAAEBqQAAAAAAAQGVA"},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAMBiQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9A"},"yaxis":"y","type":"scatter"}],"name":"29"},{"data":[{"customdata":{"dtype":"f8","bdata":"AAAAAAAAMUBxir7DWZU1QAAAAAAAAD5AAAAAAAAANEBRkURMfTA5QAAAAAAAAD5AAAAAAAAAM0CA4gVAbd83QAAAAAAAAD5AAAAAAAAAMkAssZpR6cw2QAAAAAAAAD5AAAAAAAAAMEAuj0mcR1w0QAAAAAAAAD5AAAAAAAAAOkAovpYPXOs9QAAAAAAAAD5AAAAAAAAANkA8CEX0S9Q7QAAAAAAAAD5AAAAAAAAAKEDzui7DUMM6QAAAAAAAAD5AAAAAAAAAKkDVjRxOe1AuQAAAAAAAAD5AAAAAAAAAN0Dn695vs+I8QAAAAAAAAD5AAAAAAAAALEDWWlY2ivcvQAAAAAAAAD5AAAAAAAAAOUCN4Lru0949QAAAAAAAAD5AAAAAAAAANUDlQ8yeOw86QAAAAAAAAD5AAAAAAAAAOEAvbU0KlW09QAAAAAAAAD5AAAAAAAAALkBCPTE+xv4yQAAAAAAAAD5A","shape":"15, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=30\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","service_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins"],"ids":{"dtype":"i1","bdata":"ERQTEhAaFgwNFw4ZFRgP"},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83d\udc68\ud83c\udffc\u200d\ud83e\uddb1","\ud83d\ude4e\ud83c\udffc\u200d\u2642\ufe0f","\ud83d\udc67\ud83c\udfff","\ud83d\udc77\ud83c\udffe","\ud83d\udc74\ud83c\udffe","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddb0","\ud83e\uddd4\ud83c\udffe","\ud83d\udc68\ud83c\udffc\u200d\ud83d\udd2c","\ud83d\udc69\ud83c\udffb\u200d\ud83e\uddb0","\ud83e\uddd5\ud83c\udffb","\ud83e\uddd5\ud83c\udfff","\ud83d\udc68\ud83c\udffe\u200d\ud83e\uddb2","\ud83d\udc69\ud83c\udffb\u200d\ud83e\uddb2","\ud83d\udc68\ud83c\udffe\u200d\ud83c\udf93","\ud83d\udc68\ud83c\udffc\u200d\ud83e\uddbd"],"x":{"dtype":"f8","bdata":"AAAAAABAakAAAAAAAIBmQAAAAAAAwGdAAAAAAAAAaUAAAAAAAIBrQAAAAAAAAF5AAAAAAAAAZEAAAAAAAEBvQAAAAAAAQG9AAAAAAADAYkAAAAAAAABuQAAAAAAAQGBAAAAAAABAZUAAAAAAAIBhQAAAAAAAwGxA"},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAMBiQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9A"},"yaxis":"y","type":"scatter"}],"name":"30"},{"data":[{"customdata":{"dtype":"f8","bdata":"AAAAAAAAO0BwpCOCwko+QAAAAAAAAD9AAAAAAAAALkBCPTE+xv4yQAAAAAAAAD9AAAAAAAAANUDlQ8yeOw86QAAAAAAAAD9AAAAAAAAAMkAssZpR6cw2QAAAAAAAAD9AAAAAAAAALEDWWlY2ivcvQAAAAAAAAD9AAAAAAAAAKkCZg3O3oiA+QAAAAAAAAD9AAAAAAAAAKEDzui7DUMM6QAAAAAAAAD9AAAAAAAAAPEBHp5ojtFc+QAAAAAAAAD9AAAAAAAAAM0CA4gVAbd83QAAAAAAAAD9AAAAAAAAAOkAovpYPXOs9QAAAAAAAAD9AAAAAAAAAMUBxir7DWZU1QAAAAAAAAD9AAAAAAAAAOUCN4Lru0949QAAAAAAAAD9AAAAAAAAAOEAvbU0KlW09QAAAAAAAAD9AAAAAAAAANEBRkURMfTA5QAAAAAAAAD9AAAAAAAAANkA8CEX0S9Q7QAAAAAAAAD9AAAAAAAAAN0Dn695vs+I8QAAAAAAAAD9AAAAAAAAAMEAuj0mcR1w0QAAAAAAAAD9A","shape":"17, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=31\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","service_begins","depart","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins"],"ids":{"dtype":"i1","bdata":"Gw8VEg4NDBwTGhEZGBQWFxA="},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83d\ude4d\ud83c\udffc\u200d\u2642\ufe0f","\ud83d\udc68\ud83c\udffc\u200d\ud83e\uddbd","\ud83d\udc69\ud83c\udffb\u200d\ud83e\uddb2","\ud83d\udc77\ud83c\udffe","\ud83e\uddd5\ud83c\udfff","\ud83d\udc69\ud83c\udffb\u200d\ud83e\uddb0","\ud83d\udc68\ud83c\udffc\u200d\ud83d\udd2c","\ud83d\ude4b\ud83c\udffe\u200d\u2640\ufe0f","\ud83d\udc67\ud83c\udfff","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddb0","\ud83d\udc68\ud83c\udffc\u200d\ud83e\uddb1","\ud83d\udc68\ud83c\udffe\u200d\ud83e\uddb2","\ud83d\udc68\ud83c\udffe\u200d\ud83c\udf93","\ud83d\ude4e\ud83c\udffc\u200d\u2642\ufe0f","\ud83e\uddd4\ud83c\udffe","\ud83e\uddd5\ud83c\udffb","\ud83d\udc74\ud83c\udffe"],"x":{"dtype":"f8","bdata":"AAAAAAAAXkAAAAAAAABuQAAAAAAAgGZAAAAAAABAakAAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAIBbQAAAAAAAAGlAAAAAAABAYEAAAAAAAIBrQAAAAAAAgGFAAAAAAADAYkAAAAAAAMBnQAAAAAAAQGVAAAAAAAAAZEAAAAAAAMBsQA=="},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAwGJAAAAAAAAASUAAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQA=="},"yaxis":"y","type":"scatter"}],"name":"31"},{"data":[{"customdata":{"dtype":"f8","bdata":"AAAAAAAANUDlQ8yeOw86QAAAAAAAAEBAAAAAAAAANkA8CEX0S9Q7QAAAAAAAAEBAAAAAAAAAN0Dn695vs+I8QAAAAAAAAEBAAAAAAAAAOkAovpYPXOs9QAAAAAAAAEBAAAAAAAAAMkAssZpR6cw2QAAAAAAAAEBAAAAAAAAAPEBHp5ojtFc+QAAAAAAAAEBAAAAAAAAANEBRkURMfTA5QAAAAAAAAEBAAAAAAAAAO0BwpCOCwko+QAAAAAAAAEBAAAAAAAAAM0CA4gVAbd83QAAAAAAAAEBAAAAAAAAAOUCN4Lru0949QAAAAAAAAEBAAAAAAAAAOEAvbU0KlW09QAAAAAAAAEBAAAAAAAAAKkCZg3O3oiA+QAAAAAAAAEBAAAAAAAAALkBCPTE+xv4yQAAAAAAAAEBAAAAAAAAAMUBxir7DWZU1QAAAAAAAAEBAAAAAAAAALEDWWlY2ivcvQAAAAAAAAEBAAAAAAAAAMEAuj0mcR1w0QAAAAAAAAEBA","shape":"16, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=32\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","service_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins"],"ids":{"dtype":"i1","bdata":"FRYXGhIcFBsTGRgNDxEOEA=="},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83d\udc69\ud83c\udffb\u200d\ud83e\uddb2","\ud83e\uddd4\ud83c\udffe","\ud83e\uddd5\ud83c\udffb","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddb0","\ud83d\udc77\ud83c\udffe","\ud83d\ude4b\ud83c\udffe\u200d\u2640\ufe0f","\ud83d\ude4e\ud83c\udffc\u200d\u2642\ufe0f","\ud83d\ude4d\ud83c\udffc\u200d\u2642\ufe0f","\ud83d\udc67\ud83c\udfff","\ud83d\udc68\ud83c\udffe\u200d\ud83e\uddb2","\ud83d\udc68\ud83c\udffe\u200d\ud83c\udf93","\ud83d\udc69\ud83c\udffb\u200d\ud83e\uddb0","\ud83d\udc68\ud83c\udffc\u200d\ud83e\uddbd","\ud83d\udc68\ud83c\udffc\u200d\ud83e\uddb1","\ud83e\uddd5\ud83c\udfff","\ud83d\udc74\ud83c\udffe"],"x":{"dtype":"f8","bdata":"AAAAAACAZkAAAAAAAEBlQAAAAAAAAGRAAAAAAABAYEAAAAAAAEBqQAAAAAAAgFtAAAAAAADAZ0AAAAAAAABeQAAAAAAAAGlAAAAAAACAYUAAAAAAAMBiQAAAAAAAQG9AAAAAAAAAbkAAAAAAAIBrQAAAAAAAQG9AAAAAAADAbEA="},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAwGJAAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0A="},"yaxis":"y","type":"scatter"}],"name":"32"},{"data":[{"customdata":{"dtype":"f8","bdata":"AAAAAAAALkBCPTE+xv4yQAAAAAAAgEBAAAAAAAAAOkAovpYPXOs9QAAAAAAAgEBAAAAAAAAALEDOaT9Q2E5AQAAAAAAAgEBAAAAAAAAAOUCN4Lru0949QAAAAAAAgEBAAAAAAAAAM0CA4gVAbd83QAAAAAAAgEBAAAAAAAAAKkCZg3O3oiA+QAAAAAAAgEBAAAAAAAAANkA8CEX0S9Q7QAAAAAAAgEBAAAAAAAAANUDlQ8yeOw86QAAAAAAAgEBAAAAAAAAANEBRkURMfTA5QAAAAAAAgEBAAAAAAAAAOEAvbU0KlW09QAAAAAAAgEBAAAAAAAAAMEAuj0mcR1w0QAAAAAAAgEBAAAAAAAAAMUBxir7DWZU1QAAAAAAAgEBAAAAAAAAAO0BwpCOCwko+QAAAAAAAgEBAAAAAAAAAMkAssZpR6cw2QAAAAAAAgEBAAAAAAAAAN0Dn695vs+I8QAAAAAAAgEBAAAAAAAAAPEBHp5ojtFc+QAAAAAAAgEBA","shape":"16, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=33\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["queue_wait_begins","queue_wait_begins","service_begins","queue_wait_begins","queue_wait_begins","depart","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins"],"ids":{"dtype":"i1","bdata":"DxoOGRMNFhUUGBARGxIXHA=="},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83d\udc68\ud83c\udffc\u200d\ud83e\uddbd","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddb0","\ud83e\uddd5\ud83c\udfff","\ud83d\udc68\ud83c\udffe\u200d\ud83e\uddb2","\ud83d\udc67\ud83c\udfff","\ud83d\udc69\ud83c\udffb\u200d\ud83e\uddb0","\ud83e\uddd4\ud83c\udffe","\ud83d\udc69\ud83c\udffb\u200d\ud83e\uddb2","\ud83d\ude4e\ud83c\udffc\u200d\u2642\ufe0f","\ud83d\udc68\ud83c\udffe\u200d\ud83c\udf93","\ud83d\udc74\ud83c\udffe","\ud83d\udc68\ud83c\udffc\u200d\ud83e\uddb1","\ud83d\ude4d\ud83c\udffc\u200d\u2642\ufe0f","\ud83d\udc77\ud83c\udffe","\ud83e\uddd5\ud83c\udffb","\ud83d\ude4b\ud83c\udffe\u200d\u2640\ufe0f"],"x":{"dtype":"f8","bdata":"AAAAAABAb0AAAAAAAIBhQAAAAAAAQG9AAAAAAADAYkAAAAAAAEBqQAAAAAAAQG9AAAAAAACAZkAAAAAAAMBnQAAAAAAAAGlAAAAAAAAAZEAAAAAAAABuQAAAAAAAwGxAAAAAAABAYEAAAAAAAIBrQAAAAAAAQGVAAAAAAAAAXkA="},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAABAb0AAAAAAAEBvQAAAAAAAwGJAAAAAAABAb0AAAAAAAEBvQAAAAAAAAElAAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0A="},"yaxis":"y","type":"scatter"}],"name":"33"},{"data":[{"customdata":{"dtype":"f8","bdata":"AAAAAAAAM0CA4gVAbd83QAAAAAAAAEFAAAAAAAAAOkAovpYPXOs9QAAAAAAAAEFAAAAAAAAANEBRkURMfTA5QAAAAAAAAEFAAAAAAAAAO0BwpCOCwko+QAAAAAAAAEFAAAAAAAAALkBCPTE+xv4yQAAAAAAAAEFAAAAAAAAANUDlQ8yeOw86QAAAAAAAAEFAAAAAAAAAN0Dn695vs+I8QAAAAAAAAEFAAAAAAAAALEDOaT9Q2E5AQAAAAAAAAEFAAAAAAAAAPUAdIKT8hYVAQAAAAAAAAEFAAAAAAAAAMUBxir7DWZU1QAAAAAAAAEFAAAAAAAAAMkAssZpR6cw2QAAAAAAAAEFAAAAAAAAAPEBHp5ojtFc+QAAAAAAAAEFAAAAAAAAAMEAuj0mcR1w0QAAAAAAAAEFAAAAAAAAAOUCN4Lru0949QAAAAAAAAEFAAAAAAAAAOEAvbU0KlW09QAAAAAAAAEFAAAAAAAAANkA8CEX0S9Q7QAAAAAAAAEFA","shape":"16, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=34\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","service_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins"],"ids":{"dtype":"i1","bdata":"ExoUGw8VFw4dERIcEBkYFg=="},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83d\udc67\ud83c\udfff","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddb0","\ud83d\ude4e\ud83c\udffc\u200d\u2642\ufe0f","\ud83d\ude4d\ud83c\udffc\u200d\u2642\ufe0f","\ud83d\udc68\ud83c\udffc\u200d\ud83e\uddbd","\ud83d\udc69\ud83c\udffb\u200d\ud83e\uddb2","\ud83e\uddd5\ud83c\udffb","\ud83e\uddd5\ud83c\udfff","\ud83d\udc69\ud83c\udffb\u200d\ud83d\udd27","\ud83d\udc68\ud83c\udffc\u200d\ud83e\uddb1","\ud83d\udc77\ud83c\udffe","\ud83d\ude4b\ud83c\udffe\u200d\u2640\ufe0f","\ud83d\udc74\ud83c\udffe","\ud83d\udc68\ud83c\udffe\u200d\ud83e\uddb2","\ud83d\udc68\ud83c\udffe\u200d\ud83c\udf93","\ud83e\uddd4\ud83c\udffe"],"x":{"dtype":"f8","bdata":"AAAAAABAakAAAAAAAIBhQAAAAAAAAGlAAAAAAABAYEAAAAAAAEBvQAAAAAAAwGdAAAAAAABAZUAAAAAAAEBvQAAAAAAAgFtAAAAAAADAbEAAAAAAAIBrQAAAAAAAAF5AAAAAAAAAbkAAAAAAAMBiQAAAAAAAAGRAAAAAAACAZkA="},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAMBiQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0A="},"yaxis":"y","type":"scatter"}],"name":"34"},{"data":[{"customdata":{"dtype":"f8","bdata":"AAAAAAAAP0DdbGwlUm9BQAAAAAAAgEFAAAAAAAAANkA8CEX0S9Q7QAAAAAAAgEFAAAAAAAAAN0Dn695vs+I8QAAAAAAAgEFAAAAAAAAANUDlQ8yeOw86QAAAAAAAgEFAAAAAAAAAPkDe2HoDnUJBQAAAAAAAgEFAAAAAAAAAOkAovpYPXOs9QAAAAAAAgEFAAAAAAAAAOUCN4Lru0949QAAAAAAAgEFAAAAAAAAALkBCPTE+xv4yQAAAAAAAgEFAAAAAAAAANEBRkURMfTA5QAAAAAAAgEFAAAAAAAAAMUBxir7DWZU1QAAAAAAAgEFAAAAAAAAAMEAuj0mcR1w0QAAAAAAAgEFAAAAAAAAAM0CA4gVAbd83QAAAAAAAgEFAAAAAAAAAMkAssZpR6cw2QAAAAAAAgEFAAAAAAAAAO0BwpCOCwko+QAAAAAAAgEFAAAAAAAAAPUAdIKT8hYVAQAAAAAAAgEFAAAAAAAAALEDOaT9Q2E5AQAAAAAAAgEFAAAAAAAAAPEBHp5ojtFc+QAAAAAAAgEFAAAAAAAAAOEAvbU0KlW09QAAAAAAAgEFA","shape":"18, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=35\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","service_begins","queue_wait_begins","queue_wait_begins"],"ids":{"dtype":"i1","bdata":"HxYXFR4aGQ8UERATEhsdDhwY"},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb3","\ud83e\uddd4\ud83c\udffe","\ud83e\uddd5\ud83c\udffb","\ud83d\udc69\ud83c\udffb\u200d\ud83e\uddb2","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddbd","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddb0","\ud83d\udc68\ud83c\udffe\u200d\ud83e\uddb2","\ud83d\udc68\ud83c\udffc\u200d\ud83e\uddbd","\ud83d\ude4e\ud83c\udffc\u200d\u2642\ufe0f","\ud83d\udc68\ud83c\udffc\u200d\ud83e\uddb1","\ud83d\udc74\ud83c\udffe","\ud83d\udc67\ud83c\udfff","\ud83d\udc77\ud83c\udffe","\ud83d\ude4d\ud83c\udffc\u200d\u2642\ufe0f","\ud83d\udc69\ud83c\udffb\u200d\ud83d\udd27","\ud83e\uddd5\ud83c\udfff","\ud83d\ude4b\ud83c\udffe\u200d\u2640\ufe0f","\ud83d\udc68\ud83c\udffe\u200d\ud83c\udf93"],"x":{"dtype":"f8","bdata":"AAAAAACAVkAAAAAAAIBmQAAAAAAAQGVAAAAAAADAZ0AAAAAAAABZQAAAAAAAgGFAAAAAAADAYkAAAAAAAEBvQAAAAAAAAGlAAAAAAADAbEAAAAAAAABuQAAAAAAAQGpAAAAAAACAa0AAAAAAAEBgQAAAAAAAgFtAAAAAAABAb0AAAAAAAABeQAAAAAAAAGRA"},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAADAYkAAAAAAAEBvQAAAAAAAQG9A"},"yaxis":"y","type":"scatter"}],"name":"35"},{"data":[{"customdata":{"dtype":"f8","bdata":"AAAAAAAAMUBxir7DWZU1QAAAAAAAAEJAAAAAAAAAN0Dn695vs+I8QAAAAAAAAEJAAAAAAAAAM0CA4gVAbd83QAAAAAAAAEJAAAAAAAAALEDOaT9Q2E5AQAAAAAAAAEJAAAAAAAAAOUCN4Lru0949QAAAAAAAAEJAAAAAAAAAOkAovpYPXOs9QAAAAAAAAEJAAAAAAAAAPEBHp5ojtFc+QAAAAAAAAEJAAAAAAAAAPUAdIKT8hYVAQAAAAAAAAEJAAAAAAAAAMEAuj0mcR1w0QAAAAAAAAEJAAAAAAAAANkA8CEX0S9Q7QAAAAAAAAEJAAAAAAAAAO0BwpCOCwko+QAAAAAAAAEJAAAAAAAAAP0DdbGwlUm9BQAAAAAAAAEJAAAAAAAAAMkAssZpR6cw2QAAAAAAAAEJAAAAAAAAAOEAvbU0KlW09QAAAAAAAAEJAAAAAAAAAPkDe2HoDnUJBQAAAAAAAAEJAAAAAAAAANEBRkURMfTA5QAAAAAAAAEJAAAAAAAAALkBCPTE+xv4yQAAAAAAAAEJAAAAAAAAANUDlQ8yeOw86QAAAAAAAAEJA","shape":"18, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=36\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["queue_wait_begins","queue_wait_begins","queue_wait_begins","service_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins"],"ids":{"dtype":"i1","bdata":"ERcTDhkaHB0QFhsfEhgeFA8V"},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83d\udc68\ud83c\udffc\u200d\ud83e\uddb1","\ud83e\uddd5\ud83c\udffb","\ud83d\udc67\ud83c\udfff","\ud83e\uddd5\ud83c\udfff","\ud83d\udc68\ud83c\udffe\u200d\ud83e\uddb2","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddb0","\ud83d\ude4b\ud83c\udffe\u200d\u2640\ufe0f","\ud83d\udc69\ud83c\udffb\u200d\ud83d\udd27","\ud83d\udc74\ud83c\udffe","\ud83e\uddd4\ud83c\udffe","\ud83d\ude4d\ud83c\udffc\u200d\u2642\ufe0f","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb3","\ud83d\udc77\ud83c\udffe","\ud83d\udc68\ud83c\udffe\u200d\ud83c\udf93","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddbd","\ud83d\ude4e\ud83c\udffc\u200d\u2642\ufe0f","\ud83d\udc68\ud83c\udffc\u200d\ud83e\uddbd","\ud83d\udc69\ud83c\udffb\u200d\ud83e\uddb2"],"x":{"dtype":"f8","bdata":"AAAAAADAbEAAAAAAAEBlQAAAAAAAQGpAAAAAAABAb0AAAAAAAMBiQAAAAAAAgGFAAAAAAAAAXkAAAAAAAIBbQAAAAAAAAG5AAAAAAACAZkAAAAAAAEBgQAAAAAAAgFZAAAAAAACAa0AAAAAAAABkQAAAAAAAAFlAAAAAAAAAaUAAAAAAAEBvQAAAAAAAwGdA"},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAADAYkAAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9A"},"yaxis":"y","type":"scatter"}],"name":"36"},{"data":[{"customdata":{"dtype":"f8","bdata":"AAAAAAAAOUCN4Lru0949QAAAAAAAgEJAAAAAAAAAMkAssZpR6cw2QAAAAAAAgEJAAAAAAAAANkA8CEX0S9Q7QAAAAAAAgEJAAAAAAAAAPEBHp5ojtFc+QAAAAAAAgEJAAAAAAAAAMEAuj0mcR1w0QAAAAAAAgEJAAAAAAAAAP0DdbGwlUm9BQAAAAAAAgEJAAAAAAAAAN0Dn695vs+I8QAAAAAAAgEJAAAAAAAAALkBCPTE+xv4yQAAAAAAAgEJAAAAAAAAANUDlQ8yeOw86QAAAAAAAgEJAAAAAAAAANEBRkURMfTA5QAAAAAAAgEJAAAAAAAAAMUBxir7DWZU1QAAAAAAAgEJAAAAAAAAAQEAi6dFGLiRCQAAAAAAAgEJAAAAAAAAAPkDe2HoDnUJBQAAAAAAAgEJAAAAAAAAAM0CA4gVAbd83QAAAAAAAgEJAAAAAAAAALEDOaT9Q2E5AQAAAAAAAgEJAAAAAAAAAO0BwpCOCwko+QAAAAAAAgEJAAAAAAAAAOEAvbU0KlW09QAAAAAAAgEJAAAAAAAAAOkAovpYPXOs9QAAAAAAAgEJAAAAAAAAAPUAdIKT8hYVAQAAAAAAAgEJA","shape":"19, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=37\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","service_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins"],"ids":{"dtype":"i1","bdata":"GRIWHBAfFw8VFBEgHhMOGxgaHQ=="},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83d\udc68\ud83c\udffe\u200d\ud83e\uddb2","\ud83d\udc77\ud83c\udffe","\ud83e\uddd4\ud83c\udffe","\ud83d\ude4b\ud83c\udffe\u200d\u2640\ufe0f","\ud83d\udc74\ud83c\udffe","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb3","\ud83e\uddd5\ud83c\udffb","\ud83d\udc68\ud83c\udffc\u200d\ud83e\uddbd","\ud83d\udc69\ud83c\udffb\u200d\ud83e\uddb2","\ud83d\ude4e\ud83c\udffc\u200d\u2642\ufe0f","\ud83d\udc68\ud83c\udffc\u200d\ud83e\uddb1","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddbc","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddbd","\ud83d\udc67\ud83c\udfff","\ud83e\uddd5\ud83c\udfff","\ud83d\ude4d\ud83c\udffc\u200d\u2642\ufe0f","\ud83d\udc68\ud83c\udffe\u200d\ud83c\udf93","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddb0","\ud83d\udc69\ud83c\udffb\u200d\ud83d\udd27"],"x":{"dtype":"f8","bdata":"AAAAAADAYkAAAAAAAIBrQAAAAAAAgGZAAAAAAAAAXkAAAAAAAABuQAAAAAAAgFZAAAAAAABAZUAAAAAAAEBvQAAAAAAAwGdAAAAAAAAAaUAAAAAAAMBsQAAAAAAAAFRAAAAAAAAAWUAAAAAAAEBqQAAAAAAAQG9AAAAAAABAYEAAAAAAAABkQAAAAAAAgGFAAAAAAACAW0A="},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAwGJAAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0A="},"yaxis":"y","type":"scatter"}],"name":"37"},{"data":[{"customdata":{"dtype":"f8","bdata":"AAAAAAAAOEAvbU0KlW09QAAAAAAAAENAAAAAAAAANkA8CEX0S9Q7QAAAAAAAAENAAAAAAAAAP0DdbGwlUm9BQAAAAAAAAENAAAAAAAAAMkAssZpR6cw2QAAAAAAAAENAAAAAAAAAO0BwpCOCwko+QAAAAAAAAENAAAAAAACAQEADnRTnwIxCQAAAAAAAAENAAAAAAAAAMUBxir7DWZU1QAAAAAAAAENAAAAAAAAANEBRkURMfTA5QAAAAAAAAENAAAAAAAAAPUAdIKT8hYVAQAAAAAAAAENAAAAAAAAANUDlQ8yeOw86QAAAAAAAAENAAAAAAAAAMEAuj0mcR1w0QAAAAAAAAENAAAAAAAAAOkAovpYPXOs9QAAAAAAAAENAAAAAAAAALEDOaT9Q2E5AQAAAAAAAAENAAAAAAAAALkDO9Ichy7dCQAAAAAAAAENAAAAAAAAAQEAi6dFGLiRCQAAAAAAAAENAAAAAAAAAOUCN4Lru0949QAAAAAAAAENAAAAAAAAAQUDEaPdQidZCQAAAAAAAAENAAAAAAAAAM0CA4gVAbd83QAAAAAAAAENAAAAAAAAAPkDe2HoDnUJBQAAAAAAAAENAAAAAAAAAN0Dn695vs+I8QAAAAAAAAENAAAAAAAAAPEBHp5ojtFc+QAAAAAAAAENA","shape":"21, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=38\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","depart","service_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins"],"ids":{"dtype":"i1","bdata":"GBYfEhshERQdFRAaDg8gGSITHhcc"},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83d\udc68\ud83c\udffe\u200d\ud83c\udf93","\ud83e\uddd4\ud83c\udffe","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb3","\ud83d\udc77\ud83c\udffe","\ud83d\ude4d\ud83c\udffc\u200d\u2642\ufe0f","\ud83d\ude4b\ud83c\udffd\u200d\u2642\ufe0f","\ud83d\udc68\ud83c\udffc\u200d\ud83e\uddb1","\ud83d\ude4e\ud83c\udffc\u200d\u2642\ufe0f","\ud83d\udc69\ud83c\udffb\u200d\ud83d\udd27","\ud83d\udc69\ud83c\udffb\u200d\ud83e\uddb2","\ud83d\udc74\ud83c\udffe","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddb0","\ud83e\uddd5\ud83c\udfff","\ud83d\udc68\ud83c\udffc\u200d\ud83e\uddbd","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddbc","\ud83d\udc68\ud83c\udffe\u200d\ud83e\uddb2","\ud83d\udc69\ud83c\udfff\u200d\ud83c\udf93","\ud83d\udc67\ud83c\udfff","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddbd","\ud83e\uddd5\ud83c\udffb","\ud83d\ude4b\ud83c\udffe\u200d\u2640\ufe0f"],"x":{"dtype":"f8","bdata":"AAAAAABAZUAAAAAAAMBnQAAAAAAAAFlAAAAAAADAbEAAAAAAAIBhQAAAAAAAAFRAAAAAAAAAbkAAAAAAAEBqQAAAAAAAAF5AAAAAAAAAaUAAAAAAAEBvQAAAAAAAwGJAAAAAAABAb0AAAAAAAEBvQAAAAAAAgFZAAAAAAAAAZEAAAAAAAIBRQAAAAAAAgGtAAAAAAACAW0AAAAAAAIBmQAAAAAAAQGBA"},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAAAASUAAAAAAAMBiQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9A"},"yaxis":"y","type":"scatter"}],"name":"38"},{"data":[{"customdata":{"dtype":"f8","bdata":"AAAAAAAAOEAvbU0KlW09QAAAAAAAgENAAAAAAAAAQEAi6dFGLiRCQAAAAAAAgENAAAAAAAAAN0Dn695vs+I8QAAAAAAAgENAAAAAAAAAO0BwpCOCwko+QAAAAAAAgENAAAAAAAAAOkAovpYPXOs9QAAAAAAAgENAAAAAAAAAMkAssZpR6cw2QAAAAAAAgENAAAAAAAAAPEBHp5ojtFc+QAAAAAAAgENAAAAAAAAAMUBxir7DWZU1QAAAAAAAgENAAAAAAAAAM0CA4gVAbd83QAAAAAAAgENAAAAAAAAAPUAdIKT8hYVAQAAAAAAAgENAAAAAAAAANEBRkURMfTA5QAAAAAAAgENAAAAAAAAANUDlQ8yeOw86QAAAAAAAgENAAAAAAAAAPkDe2HoDnUJBQAAAAAAAgENAAAAAAAAALkDO9Ichy7dCQAAAAAAAgENAAAAAAAAAOUCN4Lru0949QAAAAAAAgENAAAAAAAAAQUDEaPdQidZCQAAAAAAAgENAAAAAAAAAMEAuj0mcR1w0QAAAAAAAgENAAAAAAAAANkA8CEX0S9Q7QAAAAAAAgENAAAAAAACAQEADnRTnwIxCQAAAAAAAgENAAAAAAAAAP0DdbGwlUm9BQAAAAAAAgENA","shape":"20, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=39\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","service_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins"],"ids":{"dtype":"i1","bdata":"GCAXGxoSHBETHRQVHg8ZIhAWIR8="},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83d\udc68\ud83c\udffe\u200d\ud83c\udf93","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddbc","\ud83e\uddd5\ud83c\udffb","\ud83d\ude4d\ud83c\udffc\u200d\u2642\ufe0f","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddb0","\ud83d\udc77\ud83c\udffe","\ud83d\ude4b\ud83c\udffe\u200d\u2640\ufe0f","\ud83d\udc68\ud83c\udffc\u200d\ud83e\uddb1","\ud83d\udc67\ud83c\udfff","\ud83d\udc69\ud83c\udffb\u200d\ud83d\udd27","\ud83d\ude4e\ud83c\udffc\u200d\u2642\ufe0f","\ud83d\udc69\ud83c\udffb\u200d\ud83e\uddb2","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddbd","\ud83d\udc68\ud83c\udffc\u200d\ud83e\uddbd","\ud83d\udc68\ud83c\udffe\u200d\ud83e\uddb2","\ud83d\udc69\ud83c\udfff\u200d\ud83c\udf93","\ud83d\udc74\ud83c\udffe","\ud83e\uddd4\ud83c\udffe","\ud83d\ude4b\ud83c\udffd\u200d\u2642\ufe0f","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb3"],"x":{"dtype":"f8","bdata":"AAAAAABAZUAAAAAAAIBWQAAAAAAAgGZAAAAAAACAYUAAAAAAAMBiQAAAAAAAwGxAAAAAAABAYEAAAAAAAABuQAAAAAAAgGtAAAAAAAAAXkAAAAAAAEBqQAAAAAAAAGlAAAAAAACAW0AAAAAAAEBvQAAAAAAAAGRAAAAAAACAUUAAAAAAAEBvQAAAAAAAwGdAAAAAAAAAVEAAAAAAAABZQA=="},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAMBiQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQA=="},"yaxis":"y","type":"scatter"}],"name":"39"},{"data":[{"customdata":{"dtype":"f8","bdata":"AAAAAAAAOUCN4Lru0949QAAAAAAAAERAAAAAAAAAP0DdbGwlUm9BQAAAAAAAAERAAAAAAAAAOkAovpYPXOs9QAAAAAAAAERAAAAAAAAAPUAdIKT8hYVAQAAAAAAAAERAAAAAAAAAO0BwpCOCwko+QAAAAAAAAERAAAAAAAAAPEBHp5ojtFc+QAAAAAAAAERAAAAAAAAAPkDe2HoDnUJBQAAAAAAAAERAAAAAAAAAOEAvbU0KlW09QAAAAAAAAERAAAAAAAAAQEAi6dFGLiRCQAAAAAAAAERAAAAAAACAQUB8g2S8aKFDQAAAAAAAAERAAAAAAAAAMkAssZpR6cw2QAAAAAAAAERAAAAAAACAQEADnRTnwIxCQAAAAAAAAERAAAAAAAAAMUBxir7DWZU1QAAAAAAAAERAAAAAAAAAM0CA4gVAbd83QAAAAAAAAERAAAAAAAAAMEAuj0mcR1w0QAAAAAAAAERAAAAAAAAAN0Dn695vs+I8QAAAAAAAAERAAAAAAAAANkA8CEX0S9Q7QAAAAAAAAERAAAAAAAAANUDlQ8yeOw86QAAAAAAAAERAAAAAAAAAQUDEaPdQidZCQAAAAAAAAERAAAAAAAAANEBRkURMfTA5QAAAAAAAAERAAAAAAAAALkDO9Ichy7dCQAAAAAAAAERA","shape":"21, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=40\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","service_begins"],"ids":{"dtype":"i1","bdata":"GR8aHRscHhggIxIhERMQFxYVIhQP"},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83d\udc68\ud83c\udffe\u200d\ud83e\uddb2","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb3","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddb0","\ud83d\udc69\ud83c\udffb\u200d\ud83d\udd27","\ud83d\ude4d\ud83c\udffc\u200d\u2642\ufe0f","\ud83d\ude4b\ud83c\udffe\u200d\u2640\ufe0f","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddbd","\ud83d\udc68\ud83c\udffe\u200d\ud83c\udf93","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddbc","\ud83d\udc74\ud83c\udffb","\ud83d\udc77\ud83c\udffe","\ud83d\ude4b\ud83c\udffd\u200d\u2642\ufe0f","\ud83d\udc68\ud83c\udffc\u200d\ud83e\uddb1","\ud83d\udc67\ud83c\udfff","\ud83d\udc74\ud83c\udffe","\ud83e\uddd5\ud83c\udffb","\ud83e\uddd4\ud83c\udffe","\ud83d\udc69\ud83c\udffb\u200d\ud83e\uddb2","\ud83d\udc69\ud83c\udfff\u200d\ud83c\udf93","\ud83d\ude4e\ud83c\udffc\u200d\u2642\ufe0f","\ud83d\udc68\ud83c\udffc\u200d\ud83e\uddbd"],"x":{"dtype":"f8","bdata":"AAAAAAAAZEAAAAAAAABZQAAAAAAAwGJAAAAAAAAAXkAAAAAAAIBhQAAAAAAAQGBAAAAAAACAW0AAAAAAAEBlQAAAAAAAgFZAAAAAAAAATkAAAAAAAMBsQAAAAAAAAFRAAAAAAAAAbkAAAAAAAIBrQAAAAAAAQG9AAAAAAACAZkAAAAAAAMBnQAAAAAAAAGlAAAAAAACAUUAAAAAAAEBqQAAAAAAAQG9A"},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAwGJA"},"yaxis":"y","type":"scatter"}],"name":"40"},{"data":[{"customdata":{"dtype":"f8","bdata":"AAAAAAAANUDlQ8yeOw86QAAAAAAAgERAAAAAAAAAMEDIYONn+m1EQAAAAAAAgERAAAAAAAAAQUDEaPdQidZCQAAAAAAAgERAAAAAAAAAPUAdIKT8hYVAQAAAAAAAgERAAAAAAAAAOkAovpYPXOs9QAAAAAAAgERAAAAAAAAAPkDe2HoDnUJBQAAAAAAAgERAAAAAAAAANEBRkURMfTA5QAAAAAAAgERAAAAAAAAAQkCB968yACpEQAAAAAAAgERAAAAAAACAQkAQxOcV5jREQAAAAAAAgERAAAAAAAAAO0BwpCOCwko+QAAAAAAAgERAAAAAAAAAM0CA4gVAbd83QAAAAAAAgERAAAAAAAAAMUBxir7DWZU1QAAAAAAAgERAAAAAAAAAMkAssZpR6cw2QAAAAAAAgERAAAAAAACAQUB8g2S8aKFDQAAAAAAAgERAAAAAAAAAOUCN4Lru0949QAAAAAAAgERAAAAAAAAAP0DdbGwlUm9BQAAAAAAAgERAAAAAAAAAQEAi6dFGLiRCQAAAAAAAgERAAAAAAAAAOEAvbU0KlW09QAAAAAAAgERAAAAAAAAALkDO9Ichy7dCQAAAAAAAgERAAAAAAACAQEADnRTnwIxCQAAAAAAAgERAAAAAAAAAPEBHp5ojtFc+QAAAAAAAgERAAAAAAAAANkA8CEX0S9Q7QAAAAAAAgERAAAAAAAAAN0Dn695vs+I8QAAAAAAAgERA","shape":"23, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=41\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["queue_wait_begins","service_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","depart","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins"],"ids":{"dtype":"i1","bdata":"FRAiHRoeFCQlGxMREiMZHyAYDyEcFhc="},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83d\udc69\ud83c\udffb\u200d\ud83e\uddb2","\ud83d\udc74\ud83c\udffe","\ud83d\udc69\ud83c\udfff\u200d\ud83c\udf93","\ud83d\udc69\ud83c\udffb\u200d\ud83d\udd27","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddb0","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddbd","\ud83d\ude4e\ud83c\udffc\u200d\u2642\ufe0f","\ud83e\udd37\ud83c\udffb\u200d\u2640\ufe0f","\ud83d\udc76\ud83c\udffe","\ud83d\ude4d\ud83c\udffc\u200d\u2642\ufe0f","\ud83d\udc67\ud83c\udfff","\ud83d\udc68\ud83c\udffc\u200d\ud83e\uddb1","\ud83d\udc77\ud83c\udffe","\ud83d\udc74\ud83c\udffb","\ud83d\udc68\ud83c\udffe\u200d\ud83e\uddb2","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb3","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddbc","\ud83d\udc68\ud83c\udffe\u200d\ud83c\udf93","\ud83d\udc68\ud83c\udffc\u200d\ud83e\uddbd","\ud83d\ude4b\ud83c\udffd\u200d\u2642\ufe0f","\ud83d\ude4b\ud83c\udffe\u200d\u2640\ufe0f","\ud83e\uddd4\ud83c\udffe","\ud83e\uddd5\ud83c\udffb"],"x":{"dtype":"f8","bdata":"AAAAAABAakAAAAAAAEBvQAAAAAAAAFRAAAAAAABAYEAAAAAAAABkQAAAAAAAAF5AAAAAAACAa0AAAAAAAABOQAAAAAAAQG9AAAAAAADAYkAAAAAAAMBsQAAAAAAAQG9AAAAAAAAAbkAAAAAAAIBRQAAAAAAAQGVAAAAAAACAW0AAAAAAAABZQAAAAAAAgGZAAAAAAABAb0AAAAAAAIBWQAAAAAAAgGFAAAAAAAAAaUAAAAAAAMBnQA=="},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAABAb0AAAAAAAMBiQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAgHFAAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAAAASUAAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQA=="},"yaxis":"y","type":"scatter"}],"name":"41"},{"data":[{"customdata":{"dtype":"f8","bdata":"AAAAAAAAO0BwpCOCwko+QAAAAAAAAEVAAAAAAAAAN0Dn695vs+I8QAAAAAAAAEVAAAAAAAAAMUBxir7DWZU1QAAAAAAAAEVAAAAAAAAANEBRkURMfTA5QAAAAAAAAEVAAAAAAAAAMkAssZpR6cw2QAAAAAAAAEVAAAAAAAAAM0CA4gVAbd83QAAAAAAAAEVAAAAAAACAQkAQxOcV5jREQAAAAAAAAEVAAAAAAAAAP0DdbGwlUm9BQAAAAAAAAEVAAAAAAAAAQkCB968yACpEQAAAAAAAAEVAAAAAAAAAOEAvbU0KlW09QAAAAAAAAEVAAAAAAAAAQEAi6dFGLiRCQAAAAAAAAEVAAAAAAAAAPUAdIKT8hYVAQAAAAAAAAEVAAAAAAAAAOkAovpYPXOs9QAAAAAAAAEVAAAAAAAAAPEBHp5ojtFc+QAAAAAAAAEVAAAAAAAAANUDlQ8yeOw86QAAAAAAAAEVAAAAAAACAQUB8g2S8aKFDQAAAAAAAAEVAAAAAAACAQEADnRTnwIxCQAAAAAAAAEVAAAAAAAAAPkDe2HoDnUJBQAAAAAAAAEVAAAAAAAAANkA8CEX0S9Q7QAAAAAAAAEVAAAAAAAAAQUDEaPdQidZCQAAAAAAAAEVAAAAAAAAAOUCN4Lru0949QAAAAAAAAEVAAAAAAAAAMEDIYONn+m1EQAAAAAAAAEVA","shape":"22, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=42\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","service_begins"],"ids":{"dtype":"i1","bdata":"GxcRFBITJR8kGCAdGhwVIyEeFiIZEA=="},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83d\ude4d\ud83c\udffc\u200d\u2642\ufe0f","\ud83e\uddd5\ud83c\udffb","\ud83d\udc68\ud83c\udffc\u200d\ud83e\uddb1","\ud83d\ude4e\ud83c\udffc\u200d\u2642\ufe0f","\ud83d\udc77\ud83c\udffe","\ud83d\udc67\ud83c\udfff","\ud83d\udc76\ud83c\udffe","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb3","\ud83e\udd37\ud83c\udffb\u200d\u2640\ufe0f","\ud83d\udc68\ud83c\udffe\u200d\ud83c\udf93","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddbc","\ud83d\udc69\ud83c\udffb\u200d\ud83d\udd27","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddb0","\ud83d\ude4b\ud83c\udffe\u200d\u2640\ufe0f","\ud83d\udc69\ud83c\udffb\u200d\ud83e\uddb2","\ud83d\udc74\ud83c\udffb","\ud83d\ude4b\ud83c\udffd\u200d\u2642\ufe0f","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddbd","\ud83e\uddd4\ud83c\udffe","\ud83d\udc69\ud83c\udfff\u200d\ud83c\udf93","\ud83d\udc68\ud83c\udffe\u200d\ud83e\uddb2","\ud83d\udc74\ud83c\udffe"],"x":{"dtype":"f8","bdata":"AAAAAADAYkAAAAAAAMBnQAAAAAAAQG9AAAAAAACAa0AAAAAAAABuQAAAAAAAwGxAAAAAAABAb0AAAAAAAIBbQAAAAAAAAE5AAAAAAACAZkAAAAAAAABZQAAAAAAAQGBAAAAAAAAAZEAAAAAAAIBhQAAAAAAAQGpAAAAAAACAUUAAAAAAAIBWQAAAAAAAAF5AAAAAAAAAaUAAAAAAAABUQAAAAAAAQGVAAAAAAABAb0A="},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAACAcUAAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAADAYkA="},"yaxis":"y","type":"scatter"}],"name":"42"},{"data":[{"customdata":{"dtype":"f8","bdata":"AAAAAACAQUB8g2S8aKFDQAAAAAAAgEVAAAAAAAAAO0BwpCOCwko+QAAAAAAAgEVAAAAAAAAAPkDe2HoDnUJBQAAAAAAAgEVAAAAAAAAAN0Dn695vs+I8QAAAAAAAgEVAAAAAAAAAPEBHp5ojtFc+QAAAAAAAgEVAAAAAAAAAMUBxir7DWZU1QAAAAAAAgEVAAAAAAAAAQ0DyWf0B\u002fxhFQAAAAAAAgEVAAAAAAAAAMkAssZpR6cw2QAAAAAAAgEVAAAAAAACAQEADnRTnwIxCQAAAAAAAgEVAAAAAAAAAP0DdbGwlUm9BQAAAAAAAgEVAAAAAAAAAOUCN4Lru0949QAAAAAAAgEVAAAAAAAAAM0CA4gVAbd83QAAAAAAAgEVAAAAAAAAANUDlQ8yeOw86QAAAAAAAgEVAAAAAAAAAMEDIYONn+m1EQAAAAAAAgEVAAAAAAAAAQEAi6dFGLiRCQAAAAAAAgEVAAAAAAAAAOkAovpYPXOs9QAAAAAAAgEVAAAAAAAAANEBRkURMfTA5QAAAAAAAgEVAAAAAAACAQkAQxOcV5jREQAAAAAAAgEVAAAAAAAAAPUAdIKT8hYVAQAAAAAAAgEVAAAAAAAAANkA8CEX0S9Q7QAAAAAAAgEVAAAAAAAAAQUDEaPdQidZCQAAAAAAAgEVAAAAAAAAAOEAvbU0KlW09QAAAAAAAgEVAAAAAAAAAQkCB968yACpEQAAAAAAAgEVA","shape":"23, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=43\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","service_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins"],"ids":{"dtype":"i1","bdata":"IxseFxwRJhIhHxkTFRAgGhQlHRYiGCQ="},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83d\udc74\ud83c\udffb","\ud83d\ude4d\ud83c\udffc\u200d\u2642\ufe0f","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddbd","\ud83e\uddd5\ud83c\udffb","\ud83d\ude4b\ud83c\udffe\u200d\u2640\ufe0f","\ud83d\udc68\ud83c\udffc\u200d\ud83e\uddb1","\ud83d\udc68\ud83c\udffb\u200d\u2708\ufe0f","\ud83d\udc77\ud83c\udffe","\ud83d\ude4b\ud83c\udffd\u200d\u2642\ufe0f","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb3","\ud83d\udc68\ud83c\udffe\u200d\ud83e\uddb2","\ud83d\udc67\ud83c\udfff","\ud83d\udc69\ud83c\udffb\u200d\ud83e\uddb2","\ud83d\udc74\ud83c\udffe","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddbc","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddb0","\ud83d\ude4e\ud83c\udffc\u200d\u2642\ufe0f","\ud83d\udc76\ud83c\udffe","\ud83d\udc69\ud83c\udffb\u200d\ud83d\udd27","\ud83e\uddd4\ud83c\udffe","\ud83d\udc69\ud83c\udfff\u200d\ud83c\udf93","\ud83d\udc68\ud83c\udffe\u200d\ud83c\udf93","\ud83e\udd37\ud83c\udffb\u200d\u2640\ufe0f"],"x":{"dtype":"f8","bdata":"AAAAAACAUUAAAAAAAMBiQAAAAAAAAF5AAAAAAADAZ0AAAAAAAIBhQAAAAAAAQG9AAAAAAAAAbkAAAAAAAABuQAAAAAAAgFZAAAAAAACAW0AAAAAAAEBlQAAAAAAAwGxAAAAAAABAakAAAAAAAEBvQAAAAAAAAFlAAAAAAAAAZEAAAAAAAIBrQAAAAAAAQG9AAAAAAABAYEAAAAAAAABpQAAAAAAAAFRAAAAAAACAZkAAAAAAAABOQA=="},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAACAcUAAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAMBiQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAgHFAAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQA=="},"yaxis":"y","type":"scatter"}],"name":"43"},{"data":[{"customdata":{"dtype":"f8","bdata":"AAAAAAAAP0DdbGwlUm9BQAAAAAAAAEZAAAAAAAAAPEBHp5ojtFc+QAAAAAAAAEZAAAAAAAAAPUAdIKT8hYVAQAAAAAAAAEZAAAAAAACAQEADnRTnwIxCQAAAAAAAAEZAAAAAAACAQkAQxOcV5jREQAAAAAAAAEZAAAAAAAAAQ0DyWf0B\u002fxhFQAAAAAAAAEZAAAAAAACAQ0BTwjSTpuFFQAAAAAAAAEZAAAAAAAAAREB6CmIT8\u002f5FQAAAAAAAAEZAAAAAAAAAQEAi6dFGLiRCQAAAAAAAAEZAAAAAAAAAQkCB968yACpEQAAAAAAAAEZAAAAAAACAQUB8g2S8aKFDQAAAAAAAAEZAAAAAAAAAQUDEaPdQidZCQAAAAAAAAEZAAAAAAAAAPkDe2HoDnUJBQAAAAAAAAEZAAAAAAAAANEBRkURMfTA5QAAAAAAAAEZAAAAAAAAAOEAvbU0KlW09QAAAAAAAAEZAAAAAAAAAOkAovpYPXOs9QAAAAAAAAEZAAAAAAAAAN0Dn695vs+I8QAAAAAAAAEZAAAAAAAAANkA8CEX0S9Q7QAAAAAAAAEZAAAAAAAAAM0CA4gVAbd83QAAAAAAAAEZAAAAAAAAAMUBxir7DWZU1QAAAAAAAAEZAAAAAAAAAO0BwpCOCwko+QAAAAAAAAEZAAAAAAAAAMEDIYONn+m1EQAAAAAAAAEZAAAAAAAAAOUCN4Lru0949QAAAAAAAAEZAAAAAAAAANUDlQ8yeOw86QAAAAAAAAEZAAAAAAAAAMkAssZpR6cw2QAAAAAAAAEZA","shape":"25, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=44\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","service_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins"],"ids":{"dtype":"i1","bdata":"HxwdISUmJyggJCMiHhQYGhcWExEbEBkVEg=="},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb3","\ud83d\ude4b\ud83c\udffe\u200d\u2640\ufe0f","\ud83d\udc69\ud83c\udffb\u200d\ud83d\udd27","\ud83d\ude4b\ud83c\udffd\u200d\u2642\ufe0f","\ud83d\udc76\ud83c\udffe","\ud83d\udc68\ud83c\udffb\u200d\u2708\ufe0f","\ud83d\ude4e\ud83c\udfff\u200d\u2640\ufe0f","\ud83d\udc76\ud83c\udffb","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddbc","\ud83e\udd37\ud83c\udffb\u200d\u2640\ufe0f","\ud83d\udc74\ud83c\udffb","\ud83d\udc69\ud83c\udfff\u200d\ud83c\udf93","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddbd","\ud83d\ude4e\ud83c\udffc\u200d\u2642\ufe0f","\ud83d\udc68\ud83c\udffe\u200d\ud83c\udf93","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddb0","\ud83e\uddd5\ud83c\udffb","\ud83e\uddd4\ud83c\udffe","\ud83d\udc67\ud83c\udfff","\ud83d\udc68\ud83c\udffc\u200d\ud83e\uddb1","\ud83d\ude4d\ud83c\udffc\u200d\u2642\ufe0f","\ud83d\udc74\ud83c\udffe","\ud83d\udc68\ud83c\udffe\u200d\ud83e\uddb2","\ud83d\udc69\ud83c\udffb\u200d\ud83e\uddb2","\ud83d\udc77\ud83c\udffe"],"x":{"dtype":"f8","bdata":"AAAAAACAW0AAAAAAAIBhQAAAAAAAQGBAAAAAAACAVkAAAAAAAEBvQAAAAAAAAG5AAAAAAADAbEAAAAAAAIBrQAAAAAAAAFlAAAAAAAAATkAAAAAAAIBRQAAAAAAAAFRAAAAAAAAAXkAAAAAAAIBrQAAAAAAAgGZAAAAAAAAAZEAAAAAAAMBnQAAAAAAAAGlAAAAAAADAbEAAAAAAAEBvQAAAAAAAwGJAAAAAAABAb0AAAAAAAEBlQAAAAAAAQGpAAAAAAAAAbkA="},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAIBxQAAAAAAAgHFAAAAAAACAcUAAAAAAAIBxQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAADAYkAAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0A="},"yaxis":"y","type":"scatter"}],"name":"44"},{"data":[{"customdata":{"dtype":"f8","bdata":"AAAAAACAQkAQxOcV5jREQAAAAAAAgEZAAAAAAAAANEBRkURMfTA5QAAAAAAAgEZAAAAAAAAAP0DdbGwlUm9BQAAAAAAAgEZAAAAAAAAANUDlQ8yeOw86QAAAAAAAgEZAAAAAAACAREAleCThWTtGQAAAAAAAgEZAAAAAAAAAN0Dn695vs+I8QAAAAAAAgEZAAAAAAACAQEADnRTnwIxCQAAAAAAAgEZAAAAAAAAAREB6CmIT8\u002f5FQAAAAAAAgEZAAAAAAAAAOkAovpYPXOs9QAAAAAAAgEZAAAAAAAAAQ0DyWf0B\u002fxhFQAAAAAAAgEZAAAAAAAAAOUCN4Lru0949QAAAAAAAgEZAAAAAAAAAPkDe2HoDnUJBQAAAAAAAgEZAAAAAAACAQ0BTwjSTpuFFQAAAAAAAgEZAAAAAAAAAPEBHp5ojtFc+QAAAAAAAgEZAAAAAAAAANkA8CEX0S9Q7QAAAAAAAgEZAAAAAAAAAMkAssZpR6cw2QAAAAAAAgEZAAAAAAAAAQEAi6dFGLiRCQAAAAAAAgEZAAAAAAAAAOEAvbU0KlW09QAAAAAAAgEZAAAAAAAAAO0BwpCOCwko+QAAAAAAAgEZAAAAAAAAAQUDEaPdQidZCQAAAAAAAgEZAAAAAAAAAQkCB968yACpEQAAAAAAAgEZAAAAAAAAAM0CA4gVAbd83QAAAAAAAgEZAAAAAAAAAMEDIYONn+m1EQAAAAAAAgEZAAAAAAAAAMUBxir7DWZU1QAAAAAAAgEZAAAAAAAAAPUAdIKT8hYVAQAAAAAAAgEZAAAAAAACAQUB8g2S8aKFDQAAAAAAAgEZA","shape":"26, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=45\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","service_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins"],"ids":{"dtype":"i1","bdata":"JRQfFSkXISgaJhkeJxwWEiAYGyIkExARHSM="},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83d\udc76\ud83c\udffe","\ud83d\ude4e\ud83c\udffc\u200d\u2642\ufe0f","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb3","\ud83d\udc69\ud83c\udffb\u200d\ud83e\uddb2","\ud83d\udc74\ud83c\udfff","\ud83e\uddd5\ud83c\udffb","\ud83d\ude4b\ud83c\udffd\u200d\u2642\ufe0f","\ud83d\udc76\ud83c\udffb","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddb0","\ud83d\udc68\ud83c\udffb\u200d\u2708\ufe0f","\ud83d\udc68\ud83c\udffe\u200d\ud83e\uddb2","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddbd","\ud83d\ude4e\ud83c\udfff\u200d\u2640\ufe0f","\ud83d\ude4b\ud83c\udffe\u200d\u2640\ufe0f","\ud83e\uddd4\ud83c\udffe","\ud83d\udc77\ud83c\udffe","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddbc","\ud83d\udc68\ud83c\udffe\u200d\ud83c\udf93","\ud83d\ude4d\ud83c\udffc\u200d\u2642\ufe0f","\ud83d\udc69\ud83c\udfff\u200d\ud83c\udf93","\ud83e\udd37\ud83c\udffb\u200d\u2640\ufe0f","\ud83d\udc67\ud83c\udfff","\ud83d\udc74\ud83c\udffe","\ud83d\udc68\ud83c\udffc\u200d\ud83e\uddb1","\ud83d\udc69\ud83c\udffb\u200d\ud83d\udd27","\ud83d\udc74\ud83c\udffb"],"x":{"dtype":"f8","bdata":"AAAAAABAb0AAAAAAAIBrQAAAAAAAgFtAAAAAAABAakAAAAAAAEBqQAAAAAAAwGdAAAAAAACAVkAAAAAAAIBrQAAAAAAAAGRAAAAAAAAAbkAAAAAAAEBlQAAAAAAAAF5AAAAAAADAbEAAAAAAAIBhQAAAAAAAAGlAAAAAAAAAbkAAAAAAAABZQAAAAAAAgGZAAAAAAADAYkAAAAAAAABUQAAAAAAAAE5AAAAAAADAbEAAAAAAAEBvQAAAAAAAQG9AAAAAAABAYEAAAAAAAIBRQA=="},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAACAcUAAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAIBxQAAAAAAAQG9AAAAAAABAb0AAAAAAAIBxQAAAAAAAQG9AAAAAAACAcUAAAAAAAEBvQAAAAAAAQG9AAAAAAACAcUAAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAMBiQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQA=="},"yaxis":"y","type":"scatter"}],"name":"45"},{"data":[{"customdata":{"dtype":"f8","bdata":"AAAAAAAANkA8CEX0S9Q7QAAAAAAAAEdAAAAAAACAQ0BTwjSTpuFFQAAAAAAAAEdAAAAAAAAANUDlQ8yeOw86QAAAAAAAAEdAAAAAAAAAQEAi6dFGLiRCQAAAAAAAAEdAAAAAAAAAP0DdbGwlUm9BQAAAAAAAAEdAAAAAAAAAQ0DyWf0B\u002fxhFQAAAAAAAAEdAAAAAAAAAQkCB968yACpEQAAAAAAAAEdAAAAAAAAAM0CA4gVAbd83QAAAAAAAAEdAAAAAAAAAN0Dn695vs+I8QAAAAAAAAEdAAAAAAAAAREB6CmIT8\u002f5FQAAAAAAAAEdAAAAAAAAAOEAvbU0KlW09QAAAAAAAAEdAAAAAAAAAPEBHp5ojtFc+QAAAAAAAAEdAAAAAAAAAMkAssZpR6cw2QAAAAAAAAEdAAAAAAAAAQUDEaPdQidZCQAAAAAAAAEdAAAAAAAAAO0BwpCOCwko+QAAAAAAAAEdAAAAAAACAQUB8g2S8aKFDQAAAAAAAAEdAAAAAAAAAOkAovpYPXOs9QAAAAAAAAEdAAAAAAAAAPUAdIKT8hYVAQAAAAAAAAEdAAAAAAACAQEADnRTnwIxCQAAAAAAAAEdAAAAAAAAAMEDIYONn+m1EQAAAAAAAAEdAAAAAAACARUD14tMmm9hGQAAAAAAAAEdAAAAAAAAARUDQSq3ez9RGQAAAAAAAAEdAAAAAAAAAPkDe2HoDnUJBQAAAAAAAAEdAAAAAAACAQkAQxOcV5jREQAAAAAAAAEdAAAAAAACAREAleCThWTtGQAAAAAAAAEdAAAAAAAAANEBRkURMfTA5QAAAAAAAAEdAAAAAAAAAOUCN4Lru0949QAAAAAAAAEdAAAAAAAAAMUBxir7DWZU1QAAAAAAAAEdA","shape":"28, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=46\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","service_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins"],"ids":{"dtype":"i1","bdata":"FicVIB8mJBMXKBgcEiIbIxodIRArKh4lKRQZEQ=="},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83e\uddd4\ud83c\udffe","\ud83d\ude4e\ud83c\udfff\u200d\u2640\ufe0f","\ud83d\udc69\ud83c\udffb\u200d\ud83e\uddb2","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddbc","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb3","\ud83d\udc68\ud83c\udffb\u200d\u2708\ufe0f","\ud83e\udd37\ud83c\udffb\u200d\u2640\ufe0f","\ud83d\udc67\ud83c\udfff","\ud83e\uddd5\ud83c\udffb","\ud83d\udc76\ud83c\udffb","\ud83d\udc68\ud83c\udffe\u200d\ud83c\udf93","\ud83d\ude4b\ud83c\udffe\u200d\u2640\ufe0f","\ud83d\udc77\ud83c\udffe","\ud83d\udc69\ud83c\udfff\u200d\ud83c\udf93","\ud83d\ude4d\ud83c\udffc\u200d\u2642\ufe0f","\ud83d\udc74\ud83c\udffb","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddb0","\ud83d\udc69\ud83c\udffb\u200d\ud83d\udd27","\ud83d\ude4b\ud83c\udffd\u200d\u2642\ufe0f","\ud83d\udc74\ud83c\udffe","\ud83d\udc69\ud83c\udffd","\ud83d\udc68\ud83c\udffb\u200d\ud83e\uddb3","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddbd","\ud83d\udc76\ud83c\udffe","\ud83d\udc74\ud83c\udfff","\ud83d\ude4e\ud83c\udffc\u200d\u2642\ufe0f","\ud83d\udc68\ud83c\udffe\u200d\ud83e\uddb2","\ud83d\udc68\ud83c\udffc\u200d\ud83e\uddb1"],"x":{"dtype":"f8","bdata":"AAAAAAAAaUAAAAAAAMBsQAAAAAAAQGpAAAAAAAAAWUAAAAAAAIBbQAAAAAAAAG5AAAAAAAAATkAAAAAAAMBsQAAAAAAAwGdAAAAAAACAa0AAAAAAAIBmQAAAAAAAgGFAAAAAAAAAbkAAAAAAAABUQAAAAAAAwGJAAAAAAACAUUAAAAAAAABkQAAAAAAAQGBAAAAAAACAVkAAAAAAAEBvQAAAAAAAwGdAAAAAAAAAaUAAAAAAAABeQAAAAAAAQG9AAAAAAABAakAAAAAAAIBrQAAAAAAAQGVAAAAAAABAb0A="},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAABAb0AAAAAAAIBxQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAgHFAAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAACAcUAAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAMBiQAAAAAAAgHFAAAAAAACAcUAAAAAAAEBvQAAAAAAAgHFAAAAAAACAcUAAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0A="},"yaxis":"y","type":"scatter"}],"name":"46"},{"data":[{"customdata":{"dtype":"f8","bdata":"AAAAAAAAMEDIYONn+m1EQAAAAAAAgEdAAAAAAACAQkAQxOcV5jREQAAAAAAAgEdAAAAAAAAANUDlQ8yeOw86QAAAAAAAgEdAAAAAAAAAQUDEaPdQidZCQAAAAAAAgEdAAAAAAACAQEADnRTnwIxCQAAAAAAAgEdAAAAAAAAAMUCXRlelhAFHQAAAAAAAgEdAAAAAAAAANkA8CEX0S9Q7QAAAAAAAgEdAAAAAAAAAPEBHp5ojtFc+QAAAAAAAgEdAAAAAAAAAMkAssZpR6cw2QAAAAAAAgEdAAAAAAAAAO0BwpCOCwko+QAAAAAAAgEdAAAAAAACAQUB8g2S8aKFDQAAAAAAAgEdAAAAAAACARkD7IzwQiSFHQAAAAAAAgEdAAAAAAAAAOkAovpYPXOs9QAAAAAAAgEdAAAAAAAAAPUAdIKT8hYVAQAAAAAAAgEdAAAAAAAAARkBca4d+UgxHQAAAAAAAgEdAAAAAAACARUD14tMmm9hGQAAAAAAAgEdAAAAAAAAARUDQSq3ez9RGQAAAAAAAgEdAAAAAAAAAOUCN4Lru0949QAAAAAAAgEdAAAAAAAAAPkDe2HoDnUJBQAAAAAAAgEdAAAAAAACAREAleCThWTtGQAAAAAAAgEdAAAAAAAAAOEAvbU0KlW09QAAAAAAAgEdAAAAAAAAAREB6CmIT8\u002f5FQAAAAAAAgEdAAAAAAAAAN0Dn695vs+I8QAAAAAAAgEdAAAAAAAAAP0DdbGwlUm9BQAAAAAAAgEdAAAAAAAAAM0CA4gVAbd83QAAAAAAAgEdAAAAAAACAQ0BTwjSTpuFFQAAAAAAAgEdAAAAAAAAANEBRkURMfTA5QAAAAAAAgEdAAAAAAAAAQ0DyWf0B\u002fxhFQAAAAAAAgEdAAAAAAAAAQEAi6dFGLiRCQAAAAAAAgEdAAAAAAAAAQkCB968yACpEQAAAAAAAgEdA","shape":"30, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=47\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["depart","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","service_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins"],"ids":{"dtype":"i1","bdata":"ECUVIiERFhwSGyMtGh0sKyoZHikYKBcfEycUJiAk"},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83d\udc74\ud83c\udffe","\ud83d\udc76\ud83c\udffe","\ud83d\udc69\ud83c\udffb\u200d\ud83e\uddb2","\ud83d\udc69\ud83c\udfff\u200d\ud83c\udf93","\ud83d\ude4b\ud83c\udffd\u200d\u2642\ufe0f","\ud83d\udc68\ud83c\udffc\u200d\ud83e\uddb1","\ud83e\uddd4\ud83c\udffe","\ud83d\ude4b\ud83c\udffe\u200d\u2640\ufe0f","\ud83d\udc77\ud83c\udffe","\ud83d\ude4d\ud83c\udffc\u200d\u2642\ufe0f","\ud83d\udc74\ud83c\udffb","\ud83e\uddcd\ud83c\udffc\u200d\u2642\ufe0f","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddb0","\ud83d\udc69\ud83c\udffb\u200d\ud83d\udd27","\ud83d\udc69\ud83c\udffd\u200d\ud83e\uddb3","\ud83d\udc69\ud83c\udffd","\ud83d\udc68\ud83c\udffb\u200d\ud83e\uddb3","\ud83d\udc68\ud83c\udffe\u200d\ud83e\uddb2","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddbd","\ud83d\udc74\ud83c\udfff","\ud83d\udc68\ud83c\udffe\u200d\ud83c\udf93","\ud83d\udc76\ud83c\udffb","\ud83e\uddd5\ud83c\udffb","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb3","\ud83d\udc67\ud83c\udfff","\ud83d\ude4e\ud83c\udfff\u200d\u2640\ufe0f","\ud83d\ude4e\ud83c\udffc\u200d\u2642\ufe0f","\ud83d\udc68\ud83c\udffb\u200d\u2708\ufe0f","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddbc","\ud83e\udd37\ud83c\udffb\u200d\u2640\ufe0f"],"x":{"dtype":"f8","bdata":"AAAAAABAb0AAAAAAAABOQAAAAAAAgGtAAAAAAACAVkAAAAAAAABZQAAAAAAAQG9AAAAAAABAakAAAAAAAMBiQAAAAAAAQG9AAAAAAAAAZEAAAAAAAABUQAAAAAAAgGZAAAAAAABAZUAAAAAAAIBhQAAAAAAAwGdAAAAAAAAAaUAAAAAAAEBqQAAAAAAAgGZAAAAAAABAYEAAAAAAAIBrQAAAAAAAwGdAAAAAAADAbEAAAAAAAABpQAAAAAAAAF5AAAAAAAAAbkAAAAAAAABuQAAAAAAAwGxAAAAAAABAb0AAAAAAAIBbQAAAAAAAgFFA"},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAAAASUAAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAwGJAAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAgHFAAAAAAABAb0AAAAAAAEBvQAAAAAAAgHFAAAAAAACAcUAAAAAAAIBxQAAAAAAAQG9AAAAAAABAb0AAAAAAAIBxQAAAAAAAQG9AAAAAAACAcUAAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAIBxQAAAAAAAQG9AAAAAAACAcUAAAAAAAEBvQAAAAAAAQG9A"},"yaxis":"y","type":"scatter"}],"name":"47"},{"data":[{"customdata":{"dtype":"f8","bdata":"AAAAAACAQ0BTwjSTpuFFQAAAAAAAAEhAAAAAAACAQkAQxOcV5jREQAAAAAAAAEhAAAAAAAAAQ0DyWf0B\u002fxhFQAAAAAAAAEhAAAAAAAAAREB6CmIT8\u002f5FQAAAAAAAAEhAAAAAAACAREAleCThWTtGQAAAAAAAAEhAAAAAAAAARUDQSq3ez9RGQAAAAAAAAEhAAAAAAACARUD14tMmm9hGQAAAAAAAAEhAAAAAAAAARkBca4d+UgxHQAAAAAAAAEhAAAAAAACARkD7IzwQiSFHQAAAAAAAAEhAAAAAAAAAMkAssZpR6cw2QAAAAAAAAEhAAAAAAAAAQkCB968yACpEQAAAAAAAAEhAAAAAAAAAM0CA4gVAbd83QAAAAAAAAEhAAAAAAAAAQUDEaPdQidZCQAAAAAAAAEhAAAAAAAAAOkAovpYPXOs9QAAAAAAAAEhAAAAAAAAAOEAvbU0KlW09QAAAAAAAAEhAAAAAAAAAPkDe2HoDnUJBQAAAAAAAAEhAAAAAAAAAOUCN4Lru0949QAAAAAAAAEhAAAAAAAAANkA8CEX0S9Q7QAAAAAAAAEhAAAAAAAAAQEAi6dFGLiRCQAAAAAAAAEhAAAAAAAAAPUAdIKT8hYVAQAAAAAAAAEhAAAAAAAAAP0DdbGwlUm9BQAAAAAAAAEhAAAAAAAAANUDlQ8yeOw86QAAAAAAAAEhAAAAAAACAQEADnRTnwIxCQAAAAAAAAEhAAAAAAAAAN0Dn695vs+I8QAAAAAAAAEhAAAAAAAAAPEBHp5ojtFc+QAAAAAAAAEhAAAAAAAAAMUCXRlelhAFHQAAAAAAAAEhAAAAAAACAQUB8g2S8aKFDQAAAAAAAAEhAAAAAAAAANEBRkURMfTA5QAAAAAAAAEhAAAAAAAAAO0BwpCOCwko+QAAAAAAAAEhA","shape":"29, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=48\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","service_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins"],"ids":{"dtype":"i1","bdata":"JyUmKCkqKywtEiQTIhoYHhkWIB0fFSEXHBEjFBs="},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83d\ude4e\ud83c\udfff\u200d\u2640\ufe0f","\ud83d\udc76\ud83c\udffe","\ud83d\udc68\ud83c\udffb\u200d\u2708\ufe0f","\ud83d\udc76\ud83c\udffb","\ud83d\udc74\ud83c\udfff","\ud83d\udc68\ud83c\udffb\u200d\ud83e\uddb3","\ud83d\udc69\ud83c\udffd","\ud83d\udc69\ud83c\udffd\u200d\ud83e\uddb3","\ud83e\uddcd\ud83c\udffc\u200d\u2642\ufe0f","\ud83d\udc77\ud83c\udffe","\ud83e\udd37\ud83c\udffb\u200d\u2640\ufe0f","\ud83d\udc67\ud83c\udfff","\ud83d\udc69\ud83c\udfff\u200d\ud83c\udf93","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddb0","\ud83d\udc68\ud83c\udffe\u200d\ud83c\udf93","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddbd","\ud83d\udc68\ud83c\udffe\u200d\ud83e\uddb2","\ud83e\uddd4\ud83c\udffe","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddbc","\ud83d\udc69\ud83c\udffb\u200d\ud83d\udd27","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb3","\ud83d\udc69\ud83c\udffb\u200d\ud83e\uddb2","\ud83d\ude4b\ud83c\udffd\u200d\u2642\ufe0f","\ud83e\uddd5\ud83c\udffb","\ud83d\ude4b\ud83c\udffe\u200d\u2640\ufe0f","\ud83d\udc68\ud83c\udffc\u200d\ud83e\uddb1","\ud83d\udc74\ud83c\udffb","\ud83d\ude4e\ud83c\udffc\u200d\u2642\ufe0f","\ud83d\ude4d\ud83c\udffc\u200d\u2642\ufe0f"],"x":{"dtype":"f8","bdata":"AAAAAAAAbkAAAAAAAABOQAAAAAAAQG9AAAAAAADAbEAAAAAAAIBrQAAAAAAAQGpAAAAAAAAAaUAAAAAAAMBnQAAAAAAAgGZAAAAAAABAb0AAAAAAAIBRQAAAAAAAAG5AAAAAAACAVkAAAAAAAEBlQAAAAAAAwGdAAAAAAABAYEAAAAAAAIBmQAAAAAAAQGpAAAAAAACAW0AAAAAAAIBhQAAAAAAAAF5AAAAAAACAa0AAAAAAAABZQAAAAAAAAGlAAAAAAADAYkAAAAAAAEBvQAAAAAAAAFRAAAAAAADAbEAAAAAAAABkQA=="},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAACAcUAAAAAAAEBvQAAAAAAAgHFAAAAAAACAcUAAAAAAAIBxQAAAAAAAgHFAAAAAAACAcUAAAAAAAIBxQAAAAAAAgHFAAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAMBiQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQA=="},"yaxis":"y","type":"scatter"}],"name":"48"},{"data":[{"customdata":{"dtype":"f8","bdata":"AAAAAACARkD7IzwQiSFHQAAAAAAAgEhAAAAAAAAAN0Dn695vs+I8QAAAAAAAgEhAAAAAAAAAOEAvbU0KlW09QAAAAAAAgEhAAAAAAAAAPkDe2HoDnUJBQAAAAAAAgEhAAAAAAAAAPEBHp5ojtFc+QAAAAAAAgEhAAAAAAACAREAleCThWTtGQAAAAAAAgEhAAAAAAAAAOUCN4Lru0949QAAAAAAAgEhAAAAAAAAARUDQSq3ez9RGQAAAAAAAgEhAAAAAAAAAPUAdIKT8hYVAQAAAAAAAgEhAAAAAAACARUD14tMmm9hGQAAAAAAAgEhAAAAAAAAAMkC\u002fjJDOuQdIQAAAAAAAgEhAAAAAAAAASEBFp5ruenVIQAAAAAAAgEhAAAAAAACAR0A2KQvH3SlIQAAAAAAAgEhAAAAAAAAARkBca4d+UgxHQAAAAAAAgEhAAAAAAAAAOkAovpYPXOs9QAAAAAAAgEhAAAAAAAAAR0BXqDV2+QtIQAAAAAAAgEhAAAAAAAAAM0CA4gVAbd83QAAAAAAAgEhAAAAAAAAAREB6CmIT8\u002f5FQAAAAAAAgEhAAAAAAAAAO0BwpCOCwko+QAAAAAAAgEhAAAAAAACAQkAQxOcV5jREQAAAAAAAgEhAAAAAAAAANEBRkURMfTA5QAAAAAAAgEhAAAAAAAAAQEAi6dFGLiRCQAAAAAAAgEhAAAAAAAAANkA8CEX0S9Q7QAAAAAAAgEhAAAAAAAAANUDlQ8yeOw86QAAAAAAAgEhAAAAAAAAAQ0DyWf0B\u002fxhFQAAAAAAAgEhAAAAAAAAAMUCXRlelhAFHQAAAAAAAgEhAAAAAAACAQEADnRTnwIxCQAAAAAAAgEhAAAAAAAAAQUDEaPdQidZCQAAAAAAAgEhAAAAAAACAQ0BTwjSTpuFFQAAAAAAAgEhAAAAAAACAQUB8g2S8aKFDQAAAAAAAgEhAAAAAAAAAP0DdbGwlUm9BQAAAAAAAgEhAAAAAAAAAQkCB968yACpEQAAAAAAAgEhA","shape":"32, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=49\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","service_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","depart","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins"],"ids":{"dtype":"i1","bdata":"LRcYHhwpGSodKxIwLywaLhMoGyUUIBYVJhEhIicjHyQ="},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83e\uddcd\ud83c\udffc\u200d\u2642\ufe0f","\ud83e\uddd5\ud83c\udffb","\ud83d\udc68\ud83c\udffe\u200d\ud83c\udf93","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddbd","\ud83d\ude4b\ud83c\udffe\u200d\u2640\ufe0f","\ud83d\udc74\ud83c\udfff","\ud83d\udc68\ud83c\udffe\u200d\ud83e\uddb2","\ud83d\udc68\ud83c\udffb\u200d\ud83e\uddb3","\ud83d\udc69\ud83c\udffb\u200d\ud83d\udd27","\ud83d\udc69\ud83c\udffd","\ud83d\udc77\ud83c\udffe","\ud83d\udc72\ud83c\udffc","\ud83d\udc71\ud83c\udffb\u200d\u2640\ufe0f","\ud83d\udc69\ud83c\udffd\u200d\ud83e\uddb3","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddb0","\ud83d\udc69\ud83c\udffd\u200d\ud83c\udf93","\ud83d\udc67\ud83c\udfff","\ud83d\udc76\ud83c\udffb","\ud83d\ude4d\ud83c\udffc\u200d\u2642\ufe0f","\ud83d\udc76\ud83c\udffe","\ud83d\ude4e\ud83c\udffc\u200d\u2642\ufe0f","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddbc","\ud83e\uddd4\ud83c\udffe","\ud83d\udc69\ud83c\udffb\u200d\ud83e\uddb2","\ud83d\udc68\ud83c\udffb\u200d\u2708\ufe0f","\ud83d\udc68\ud83c\udffc\u200d\ud83e\uddb1","\ud83d\ude4b\ud83c\udffd\u200d\u2642\ufe0f","\ud83d\udc69\ud83c\udfff\u200d\ud83c\udf93","\ud83d\ude4e\ud83c\udfff\u200d\u2640\ufe0f","\ud83d\udc74\ud83c\udffb","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb3","\ud83e\udd37\ud83c\udffb\u200d\u2640\ufe0f"],"x":{"dtype":"f8","bdata":"AAAAAADAZ0AAAAAAAEBqQAAAAAAAAGlAAAAAAACAYUAAAAAAAABkQAAAAAAAwGxAAAAAAADAZ0AAAAAAAIBrQAAAAAAAwGJAAAAAAABAakAAAAAAAEBvQAAAAAAAAGRAAAAAAABAZUAAAAAAAABpQAAAAAAAgGZAAAAAAACAZkAAAAAAAEBvQAAAAAAAAG5AAAAAAABAZUAAAAAAAIBRQAAAAAAAAG5AAAAAAAAAXkAAAAAAAIBrQAAAAAAAwGxAAAAAAAAATkAAAAAAAEBvQAAAAAAAgFtAAAAAAAAAWUAAAAAAAEBvQAAAAAAAgFZAAAAAAABAYEAAAAAAAABUQA=="},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAACAcUAAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAgHFAAAAAAABAb0AAAAAAAIBxQAAAAAAAQG9AAAAAAACAcUAAAAAAAMBiQAAAAAAAgHFAAAAAAACAcUAAAAAAAIBxQAAAAAAAQG9AAAAAAACAcUAAAAAAAEBvQAAAAAAAgHFAAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAABJQAAAAAAAQG9AAAAAAABAb0AAAAAAAIBxQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQA=="},"yaxis":"y","type":"scatter"}],"name":"49"},{"data":[{"customdata":{"dtype":"f8","bdata":"AAAAAACAQEADnRTnwIxCQAAAAAAAAElAAAAAAAAAOkAovpYPXOs9QAAAAAAAAElAAAAAAAAANEBRkURMfTA5QAAAAAAAAElAAAAAAACARkD7IzwQiSFHQAAAAAAAAElAAAAAAAAAR0BXqDV2+QtIQAAAAAAAAElAAAAAAACAQUB8g2S8aKFDQAAAAAAAAElAAAAAAACAR0A2KQvH3SlIQAAAAAAAAElAAAAAAAAAPEBHp5ojtFc+QAAAAAAAAElAAAAAAAAAQUDEaPdQidZCQAAAAAAAAElAAAAAAAAASEBFp5ruenVIQAAAAAAAAElAAAAAAAAAO0BwpCOCwko+QAAAAAAAAElAAAAAAAAAQkCB968yACpEQAAAAAAAAElAAAAAAAAAMkC\u002fjJDOuQdIQAAAAAAAAElAAAAAAACAQ0BTwjSTpuFFQAAAAAAAAElAAAAAAAAAN0Dn695vs+I8QAAAAAAAAElAAAAAAAAAP0DdbGwlUm9BQAAAAAAAAElAAAAAAAAAM0CA4gVAbd83QAAAAAAAAElAAAAAAAAAREB6CmIT8\u002f5FQAAAAAAAAElAAAAAAAAANkA8CEX0S9Q7QAAAAAAAAElAAAAAAAAAPkDe2HoDnUJBQAAAAAAAAElAAAAAAAAAQ0DyWf0B\u002fxhFQAAAAAAAAElAAAAAAACAREAleCThWTtGQAAAAAAAAElAAAAAAAAAOEAvbU0KlW09QAAAAAAAAElAAAAAAAAAQEAi6dFGLiRCQAAAAAAAAElAAAAAAAAARUDQSq3ez9RGQAAAAAAAAElAAAAAAAAAOUCN4Lru0949QAAAAAAAAElAAAAAAAAAPUAdIKT8hYVAQAAAAAAAAElAAAAAAAAANUDlQ8yeOw86QAAAAAAAAElAAAAAAACAQkAQxOcV5jREQAAAAAAAAElAAAAAAAAARkBca4d+UgxHQAAAAAAAAElAAAAAAACARUD14tMmm9hGQAAAAAAAAElA","shape":"31, 3"},"hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003esnapshot_time_display=50\u003cbr\u003ex_final=%{x}\u003cbr\u003ey_final=%{y}\u003cbr\u003eicon=%{text}\u003cbr\u003eentity_id=%{customdata[0]}\u003cbr\u003etime=%{customdata[1]}\u003cbr\u003esnapshot_time=%{customdata[2]}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","service_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins","queue_wait_begins"],"ids":{"dtype":"i1","bdata":"IRoULS4jLxwiMBskEicXHxMoFh4mKRggKhkdFSUsKw=="},"legendgroup":"","marker":{"color":"#636efa","opacity":0,"symbol":"circle"},"mode":"markers+text","name":"","orientation":"v","showlegend":false,"text":["\ud83d\ude4b\ud83c\udffd\u200d\u2642\ufe0f","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddb0","\ud83d\ude4e\ud83c\udffc\u200d\u2642\ufe0f","\ud83e\uddcd\ud83c\udffc\u200d\u2642\ufe0f","\ud83d\udc69\ud83c\udffd\u200d\ud83c\udf93","\ud83d\udc74\ud83c\udffb","\ud83d\udc71\ud83c\udffb\u200d\u2640\ufe0f","\ud83d\ude4b\ud83c\udffe\u200d\u2640\ufe0f","\ud83d\udc69\ud83c\udfff\u200d\ud83c\udf93","\ud83d\udc72\ud83c\udffc","\ud83d\ude4d\ud83c\udffc\u200d\u2642\ufe0f","\ud83e\udd37\ud83c\udffb\u200d\u2640\ufe0f","\ud83d\udc77\ud83c\udffe","\ud83d\ude4e\ud83c\udfff\u200d\u2640\ufe0f","\ud83e\uddd5\ud83c\udffb","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddb3","\ud83d\udc67\ud83c\udfff","\ud83d\udc76\ud83c\udffb","\ud83e\uddd4\ud83c\udffe","\ud83d\udc68\ud83c\udfff\u200d\ud83e\uddbd","\ud83d\udc68\ud83c\udffb\u200d\u2708\ufe0f","\ud83d\udc74\ud83c\udfff","\ud83d\udc68\ud83c\udffe\u200d\ud83c\udf93","\ud83d\udc69\ud83c\udffc\u200d\ud83e\uddbc","\ud83d\udc68\ud83c\udffb\u200d\ud83e\uddb3","\ud83d\udc68\ud83c\udffe\u200d\ud83e\uddb2","\ud83d\udc69\ud83c\udffb\u200d\ud83d\udd27","\ud83d\udc69\ud83c\udffb\u200d\ud83e\uddb2","\ud83d\udc76\ud83c\udffe","\ud83d\udc69\ud83c\udffd\u200d\ud83e\uddb3","\ud83d\udc69\ud83c\udffd"],"x":{"dtype":"f8","bdata":"AAAAAACAW0AAAAAAAIBmQAAAAAAAAG5AAAAAAADAZ0AAAAAAAIBmQAAAAAAAgFZAAAAAAABAZUAAAAAAAABkQAAAAAAAAFlAAAAAAAAAZEAAAAAAAEBlQAAAAAAAAFRAAAAAAABAb0AAAAAAAEBvQAAAAAAAQGpAAAAAAABAYEAAAAAAAEBvQAAAAAAAAG5AAAAAAACAa0AAAAAAAIBhQAAAAAAAAE5AAAAAAADAbEAAAAAAAABpQAAAAAAAAF5AAAAAAACAa0AAAAAAAMBnQAAAAAAAwGJAAAAAAADAbEAAAAAAAIBRQAAAAAAAAGlAAAAAAABAakA="},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAACAcUAAAAAAAIBxQAAAAAAAQG9AAAAAAACAcUAAAAAAAEBvQAAAAAAAQG9AAAAAAACAcUAAAAAAAEBvQAAAAAAAQG9AAAAAAADAYkAAAAAAAIBxQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAgHFAAAAAAABAb0AAAAAAAEBvQAAAAAAAQG9AAAAAAACAcUAAAAAAAEBvQAAAAAAAQG9AAAAAAACAcUAAAAAAAEBvQAAAAAAAQG9AAAAAAABAb0AAAAAAAEBvQAAAAAAAgHFAAAAAAACAcUA="},"yaxis":"y","type":"scatter"}],"name":"50"}]);
+                        }).then(function(){
+                            
+var gd = document.getElementById('8d9658a2-484b-4054-bb38-ec8950ef5ea5');
+var x = new MutationObserver(function (mutations, observer) {{
+        var display = window.getComputedStyle(gd).display;
+        if (!display || display === 'none') {{
+            console.log([gd, 'removed!']);
+            Plotly.purge(gd);
+            observer.disconnect();
+        }}
+}});
+
+// Listen for the removal of the full notebook cells
+var notebookContainer = gd.closest('#notebook-container');
+if (notebookContainer) {{
+    x.observe(notebookContainer, {childList: true});
+}}
+
+// Listen for the clearing of the current output cell
+var outputEl = gd.closest('.output');
+if (outputEl) {{
+    x.observe(outputEl, {childList: true});
+}}
+
+                        })                };            </script>        </div>
+</div>
+</div>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+<script src="../site_libs/quarto-contrib/line-highlight-1.0.0/line-highlight.js" defer="true"></script>
+</body></html>
