@@ -1,6 +1,31 @@
+"""
+Resource and Store code has been adapted from SimPy. Licence code for SimPy is provided below.
+
+The MIT License (MIT)
+
+Copyright (c) 2013 Ontje Lünsdorf and Stefan Scherfke (also see AUTHORS.txt)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+and associated documentation files (the “Software”), to deal in the Software without restriction,
+including without limitation the rights to use, copy, modify, merge, publish, distribute,
+sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or
+substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+"""
+
 import simpy
 from simpy.core import BoundClass
 
+# MARK: VidigiResource Class
 class VidigiResource:
     """
     A simple resource class with an ID attribute for use in VidigiStore and VidigiPriorityStore.
@@ -75,6 +100,7 @@ def populate_store(num_resources, simpy_store, sim_env):
 # VidigiStore and Associated Methods
 #\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\#
 
+# MARK: VidigiStore class
 class VidigiStore:
     """
     A wrapper around SimPy's Store that allows using a context manager pattern
@@ -255,6 +281,7 @@ class _StoreRequest:
 #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&#
 # LEGACY VidigiPriorityStore and Associated Methods
 #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&#
+# MARK: LEGACY PriorityGet
 class PriorityGetLegacy(simpy.resources.base.Get):
     """
     A priority-aware request for resources in a SimPy environment.
@@ -298,6 +325,7 @@ class PriorityGetLegacy(simpy.resources.base.Get):
 
         super().__init__(resource)
 
+# MARK: LEGACY Priority Store
 class VidigiPriorityStoreLegacy(simpy.resources.store.Store):
     """
     A SimPy store that processes requests with priority.
@@ -560,7 +588,7 @@ class VidigiPriorityStore:
             # print(f"{self.env.now}: Attempted to cancel a request that was no longer in the queue (likely already fulfilled).")
             pass
 
-
+# MARK: Priority Store Request
 class _OptimizedStoreRequest:
     """
     Context manager helper class for OptimizedVidigiPriorityStore.
@@ -586,7 +614,86 @@ class _OptimizedStoreRequest:
             self.store.return_item(self.item)
         return False  # Don't suppress exceptions
 
+class VidigiResourceLegacy(simpy.Resource):
+    """
+    A custom resource class that extends simpy.Resource with an additional ID attribute.
 
+    This class allows for more detailed tracking and management of resources in a simulation
+    by adding an ID attribute to each resource instance.
+
+    Parameters
+    ----------
+    env : simpy.Environment
+        The SimPy environment in which this resource exists.
+    capacity : int
+        The capacity of the resource (how many units can be in use simultaneously).
+    id_attribute : any, optional
+        An identifier for the resource (default is None).
+
+    Attributes
+    ----------
+    id_attribute : any
+        An identifier for the resource, which can be used for custom tracking or logic.
+
+    Notes
+    -----
+    This class inherits from simpy.Resource and overrides the request and release methods
+    to allow for custom handling of the id_attribute. The actual implementation of ID
+    assignment or reset logic should be added by the user as needed.
+
+    Examples
+    --------
+    ```
+    env = simpy.Environment()
+    custom_resource = VidigiResource(env, capacity=1, id_attribute="Resource_1")
+    def process(env, resource):
+        with resource.request() as req:
+            yield req
+            print(f"Using resource with ID: {resource.id_attribute}")
+            yield env.timeout(1)
+    env.process(process(env, custom_resource))
+    env.run()
+    ```
+    Using resource with ID: Resource_1
+    """
+    def __init__(self, env, capacity, id_attribute=None):
+        super().__init__(env, capacity)
+        self.id_attribute = id_attribute
+
+    def request(self, *args, **kwargs):
+        """
+        Request the resource.
+
+        This method can be customized to handle the ID attribute when a request is made.
+        Currently, it simply calls the parent class's request method.
+
+        Returns
+        -------
+        simpy.events.Request
+            A SimPy request event.
+        """
+        # Add logic to handle the ID attribute when a request is made
+        # For example, you can assign an ID to the requester
+        # self.id_attribute = assign_id_logic()
+        return super().request(*args, **kwargs)
+
+    def release(self, *args, **kwargs):
+        """
+        Release the resource.
+
+        This method can be customized to handle the ID attribute when a release is made.
+        Currently, it simply calls the parent class's release method.
+
+        Returns
+        -------
+        None
+        """
+        # Add logic to handle the ID attribute when a release is made
+        # For example, you can reset the ID attribute
+        # reset_id_logic(self.id_attribute)
+        return super().release(*args, **kwargs)
+
+# MARK: Archived Classes
 
 # Create the PriorityStore by subclassing simpy.Store
 # class VidigiPriorityStore(simpy.resources.store.Store):
@@ -878,83 +985,3 @@ class _OptimizedStoreRequest:
 
 
 #================================================#
-
-
-class VidigiResourceLegacy(simpy.Resource):
-    """
-    A custom resource class that extends simpy.Resource with an additional ID attribute.
-
-    This class allows for more detailed tracking and management of resources in a simulation
-    by adding an ID attribute to each resource instance.
-
-    Parameters
-    ----------
-    env : simpy.Environment
-        The SimPy environment in which this resource exists.
-    capacity : int
-        The capacity of the resource (how many units can be in use simultaneously).
-    id_attribute : any, optional
-        An identifier for the resource (default is None).
-
-    Attributes
-    ----------
-    id_attribute : any
-        An identifier for the resource, which can be used for custom tracking or logic.
-
-    Notes
-    -----
-    This class inherits from simpy.Resource and overrides the request and release methods
-    to allow for custom handling of the id_attribute. The actual implementation of ID
-    assignment or reset logic should be added by the user as needed.
-
-    Examples
-    --------
-    ```
-    env = simpy.Environment()
-    custom_resource = VidigiResource(env, capacity=1, id_attribute="Resource_1")
-    def process(env, resource):
-        with resource.request() as req:
-            yield req
-            print(f"Using resource with ID: {resource.id_attribute}")
-            yield env.timeout(1)
-    env.process(process(env, custom_resource))
-    env.run()
-    ```
-    Using resource with ID: Resource_1
-    """
-    def __init__(self, env, capacity, id_attribute=None):
-        super().__init__(env, capacity)
-        self.id_attribute = id_attribute
-
-    def request(self, *args, **kwargs):
-        """
-        Request the resource.
-
-        This method can be customized to handle the ID attribute when a request is made.
-        Currently, it simply calls the parent class's request method.
-
-        Returns
-        -------
-        simpy.events.Request
-            A SimPy request event.
-        """
-        # Add logic to handle the ID attribute when a request is made
-        # For example, you can assign an ID to the requester
-        # self.id_attribute = assign_id_logic()
-        return super().request(*args, **kwargs)
-
-    def release(self, *args, **kwargs):
-        """
-        Release the resource.
-
-        This method can be customized to handle the ID attribute when a release is made.
-        Currently, it simply calls the parent class's release method.
-
-        Returns
-        -------
-        None
-        """
-        # Add logic to handle the ID attribute when a release is made
-        # For example, you can reset the ID attribute
-        # reset_id_logic(self.id_attribute)
-        return super().release(*args, **kwargs)
