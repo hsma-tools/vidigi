@@ -9,6 +9,9 @@ website:
     - href: HISTORY.md
       text: Changelog
     - contents:
+      - vidigi_docs/basic_example_with_vidigi_logger_helpers.qmd
+      - vidigi_docs/basic_example_with_vidigi_logger_helpers_multiple_servers.qmd
+      - vidigi_docs/basic_example_minimal_required_vidigi_functions.qmd
       - vidigi_docs/adding_vidigi_to_a_simple_simpy_model_hsma_structure.qmd
       section: Walkthroughs
     - contents:
