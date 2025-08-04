@@ -21,9 +21,9 @@ With just a minimal set of logs - with helper functions provided to make that ea
 
 ## Useful Links
 
-The source code is available on GitHub: [github.com/Bergam0t/vidigi](https://github.com/Bergam0t/vidigi).
+The source code is available on GitHub: [github.com/hsma-tools/vidigi](https://github.com/hsma-tools/vidigi).
 
-**Spotted a bug? Or just have a new feature you'd like to suggest? Raise an issue [here](https://github.com/Bergam0t/vidigi/issues/new)**
+**Spotted a bug? Or just have a new feature you'd like to suggest? Raise an issue [here](https://github.com/hsma-tools/vidigi/issues/new)**
 
 
 ## What does the name mean?

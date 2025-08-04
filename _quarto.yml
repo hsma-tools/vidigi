@@ -24,10 +24,10 @@ quartodoc:
       - icon: github
         menu:
           - text: Source Code
-            href:  https://github.com/Bergam0t/vidigi
+            href:  https://github.com/hsma-tools/vidigi
             target: _blank
           - text: Report a Bug
-            href:  https://github.com/Bergam0t/vidigi/issues
+            href:  https://github.com/hsma-tools/vidigi/issues
             target: _blank
       - icon: box-fill
         menu:

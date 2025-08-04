@@ -89,10 +89,10 @@ website:
     tools:
     - icon: github
       menu:
-      - href: https://github.com/Bergam0t/vidigi
+      - href: https://github.com/hsma-tools/vidigi
         target: _blank
         text: Source Code
-      - href: https://github.com/Bergam0t/vidigi/issues
+      - href: https://github.com/hsma-tools/vidigi/issues
         target: _blank
         text: Report a Bug
     - icon: box-fill

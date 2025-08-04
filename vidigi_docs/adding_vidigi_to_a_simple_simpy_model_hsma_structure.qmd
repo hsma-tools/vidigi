@@ -1312,7 +1312,7 @@ animate_activity_log(
         time_display_units="simulation_day_clock_ampm",
         display_stage_labels=False, # hide our Label column from our event_position_df
         # Add a local or web-hosted image as our background
-        add_background_image="https://raw.githubusercontent.com/Bergam0t/vidigi/refs/heads/main/examples/example_1_simplest_case/Simplest%20Model%20Background%20Image%20-%20Horizontal%20Layout.drawio.png")
+        add_background_image="https://raw.githubusercontent.com/hsma-tools/vidigi/refs/heads/main/examples/example_1_simplest_case/Simplest%20Model%20Background%20Image%20-%20Horizontal%20Layout.drawio.png")
 ```
 
 We can then rerun our animation, passing in different parameters - though make sure to rerun your trial if you do so!
@@ -1352,5 +1352,5 @@ animate_activity_log(
         time_display_units="simulation_day_clock_ampm",
         display_stage_labels=False, # hide our Label column from our event_position_df
         # Add a local or web-hosted image as our background
-        add_background_image="https://raw.githubusercontent.com/Bergam0t/vidigi/refs/heads/main/examples/example_1_simplest_case/Simplest%20Model%20Background%20Image%20-%20Horizontal%20Layout.drawio.png")
+        add_background_image="https://raw.githubusercontent.com/hsma-tools/vidigi/refs/heads/main/examples/example_1_simplest_case/Simplest%20Model%20Background%20Image%20-%20Horizontal%20Layout.drawio.png")
 ```
