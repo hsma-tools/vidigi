@@ -30,8 +30,8 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/bergam0t/vidigi"
-"Bug Tracker" = "https://github.com/bergam0t/vidigi/issues"
+Homepage = "https://github.com/hsma-tools/vidigi"
+"Bug Tracker" = "https://github.com/hsma-tools/vidigi/issues"
 
 [tool.hatch.version]
 path = "vidigi/__init__.py"
