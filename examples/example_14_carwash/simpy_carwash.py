@@ -128,7 +128,7 @@ event_log_df = pd.read_csv("logs.csv")
 event_positions = create_event_position_df([
     EventPosition(event='arrival', x=0, y=350, label="Entrance"),
     EventPosition(event='carwash_queue_wait_begins', x=350, y=200, label="Queue"),
-    EventPosition(event='carwashing_begins', x=350, y=100, resource='num_carwashes',
+    EventPosition(event='carwashing_begins', x=340, y=100, resource='num_carwashes',
                   label="Being Washed"),
     EventPosition(event='depart', x=250, y=50, label="Exit")
 ])
@@ -162,12 +162,13 @@ animate_activity_log(
     limit_duration=SIM_TIME,
     entity_icon_size=50,
     gap_between_entities=50,
-    gap_between_resources=200,
+    gap_between_resources=180,
     display_stage_labels=False,
     wrap_queues_at=7,
     step_snapshot_max=14,
     gap_between_queue_rows=60,
     custom_entity_icon_list=icon_list,
+    resource_opacity=0,
     setup_mode=False,
-    add_background_image="carwashv1.png"
+    add_background_image="https://raw.githubusercontent.com/hsma-tools/vidigi/refs/heads/main/examples/example_14_carwash/carwash_bg.png"
 )
