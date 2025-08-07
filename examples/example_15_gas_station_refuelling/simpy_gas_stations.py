@@ -30,7 +30,7 @@ import simpy
 
 # fmt: off
 RANDOM_SEED = 42
-STATION_TANK_SIZE = 400    # MODIFIED FROM EXAMPLE: Size of the gas station tank (liters)
+STATION_TANK_SIZE = 600    # MODIFIED FROM EXAMPLE: Size of the gas station tank (liters)
 THRESHOLD = 25             # Station tank minimum level (% of full)
 CAR_TANK_SIZE = 50         # Size of car fuel tanks (liters)
 CAR_TANK_LEVEL = [5, 25]   # Min/max levels of car fuel tanks (liters)
@@ -105,22 +105,53 @@ def gas_station_control(env, station_tank, logger):
 
             truck_call_id += 1
 
-        yield env.timeout(10)  # Check every 10 seconds
+        yield env.timeout(120)  # Check every 120 seconds
 
 
+# def tank_truck(env, station_tank, logger, truck_call_id):
+#     """Arrives at the gas station after a certain delay and refuels it."""
+#     yield env.timeout(TANK_TRUCK_ARRIVAL_TIME)
+#     logger.log_departure(entity_id=f"Call {truck_call_id}")
+#     logger.log_arrival(entity_id=f"Truck {truck_call_id}")
+#     amount = station_tank.capacity - station_tank.level
+#     logger.log_queue(entity_id=f"Truck {truck_call_id}", event="refueling")
+#     yield env.timeout(TANK_TRUCK_REFUEL_TIME)
+#     station_tank.put(amount)
+#     print(
+#         f'{env.now:6.1f} s: Tank truck arrived and refuelled station with {amount:.1f}L'
+#     )
+#     logger.log_departure(entity_id=f"Truck {truck_call_id}")
+
+# Modification to make refuelling a smooth, loggable process
 def tank_truck(env, station_tank, logger, truck_call_id):
-    """Arrives at the gas station after a certain delay and refuels it."""
+    """Tank truck arrives and refuels the station tank for a fixed duration."""
     yield env.timeout(TANK_TRUCK_ARRIVAL_TIME)
     logger.log_departure(entity_id=f"Call {truck_call_id}")
     logger.log_arrival(entity_id=f"Truck {truck_call_id}")
-    amount = station_tank.capacity - station_tank.level
-    logger.log_queue(entity_id=f"Truck {truck_call_id}", event="refueling")
-    yield env.timeout(TANK_TRUCK_REFUEL_TIME)
-    station_tank.put(amount)
-    print(
-        f'{env.now:6.1f} s: Tank truck arrived and refuelled station with {amount:.1f}L'
-    )
+    logger.log_queue(entity_id=f"Truck {truck_call_id}", event="refuelling")
+
+    refuel_time = TANK_TRUCK_REFUEL_TIME     # total time truck stays
+    refuel_rate = 10                         # L/s (or adjust based on need)
+    step = 1                                 # seconds between each refill step
+
+    total_refueled = 0
+    elapsed = 0
+
+    while (elapsed < refuel_time) | station_tank.level < (STATION_TANK_SIZE - (STATION_TANK_SIZE*0.02)):
+        yield env.timeout(step)
+        elapsed += step
+
+        increment = refuel_rate * step
+        space_available = station_tank.capacity - station_tank.level
+        actual_increment = min(increment, space_available)
+
+        if actual_increment > 0:
+            station_tank.put(actual_increment)
+            total_refueled += actual_increment
+
+    print(f'{env.now:6.1f} s: Truck {truck_call_id} refueled station with {total_refueled:.1f}L')
     logger.log_departure(entity_id=f"Truck {truck_call_id}")
+
 
 
 def car_generator(env, gas_station, station_tank, logger):
