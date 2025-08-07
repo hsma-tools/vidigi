@@ -680,6 +680,24 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">Additional Synchronised Traces - Orthopaedic Ward - Hospital Efficiency Project</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../examples/example_14_carwash/carwash.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Example 14: Carwash</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../examples/example_15_gas_station_refuelling/gas_station.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Explore incorporating the fuel level bar plot as an additional synchronised plot</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../examples/example_17_resourceless_larger_queues/resourceless_longer_queues.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Example 17 - Ways of visualising larger queues</span></a>
+  </div>
+</li>
       </ul>
   </li>
         <li class="sidebar-item sidebar-item-section">
@@ -824,7 +842,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>    debug_mode<span class="op">=</span><span class="va">False</span>,</span>
 <span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a>    custom_entity_icon_list<span class="op">=</span><span class="va">None</span>,</span>
 <span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a>    debug_write_intermediate_objects<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>    background_image_opacity<span class="op">=</span><span class="fl">0.5</span>,</span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a>    overflow_text_color<span class="op">=</span><span class="st">'black'</span>,</span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a>    stage_label_text_colour<span class="op">=</span><span class="st">'black'</span>,</span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a>    backend<span class="op">=</span><span class="st">'express'</span>,</span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <pre><code>Generate an animated visualization of patient flow through a system.
 
 This function processes event log data, adds positional information, and creates
@@ -915,7 +937,7 @@ time_display_units : str, optional
     'm'    : Month and year (e.g., "June 2025")
     'y'    : Year only (e.g., "2025")
     'day_clock' or 'simulation_day_clock': Show simulation-relative day and time (e.g., "Simulation Day 3</code></pre>
-<p>14:15”) ‘day_clock_ampm’ or ‘simulation_day_clock_ampm’: Same as above, but time is shown in 12-hour clock with AM/PM (e.g., “Simulation Day 3 02:15 PM”) Alternatively, you can supply a custom <a href="https://strftime.org/">strftime</a> format string (e.g., ‘%Y-%m-%d %H’) to control the display manually. setup_mode : bool, optional If True, display grid and tick marks for initial setup (default is False). frame_duration : int, optional Duration of each frame in milliseconds (default is 400). frame_transition_duration : int, optional Duration of transition between frames in milliseconds (default is 600). debug_mode : bool, optional If True, print debug information during processing (default is False). custom_entity_icon_list: list, optional If given, overrides the default list of emojis used to represent entities</p>
+<p>14:15”) ‘day_clock_ampm’ or ‘simulation_day_clock_ampm’: Same as above, but time is shown in 12-hour clock with AM/PM (e.g., “Simulation Day 3 02:15 PM”) Alternatively, you can supply a custom <a href="https://strftime.org/">strftime</a> format string (e.g., ‘%Y-%m-%d %H’) to control the display manually. setup_mode : bool, optional If True, display grid and tick marks for initial setup (default is False). frame_duration : int, optional Duration of each frame in milliseconds (default is 400). frame_transition_duration : int, optional Duration of transition between frames in milliseconds (default is 600). debug_mode : bool, optional If True, print debug information during processing (default is False). custom_entity_icon_list: list, optional If given, overrides the default list of emojis used to represent entities background_image_opacity : float, optional Opacity (0 is transparent, to 1, completely opaque) of the provided background image backend: str, optional EXPERIMENTAL. Whether to use the plotly express backend for the initial plot (default), or the experimental plotly go backend. The go approach is currently unstable and much slower. Use at your own risk.</p>
 </section>
 <section id="returns" class="level2 doc-section doc-section-----returns">
 <h2 class="doc-section doc-section-----returns anchored" data-anchor-id="returns">Returns</h2>

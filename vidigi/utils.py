@@ -1,6 +1,7 @@
 import pandas as pd
 from pydantic import BaseModel, ValidationError
 from typing import List, Optional
+import webcolors
 
 class EventPosition(BaseModel):
     """
@@ -153,3 +154,17 @@ def streamlit_play_all():
             "This function requires the dependency 'st_javascript', but this is not installed with vidigi by default. "
             "Install it with: pip install vidigi[helper]"
         )
+
+
+def html_color_to_rgba(color_str, opacity):
+    """
+    Convert an HTML color name or hex code to an rgba string with specified opacity.
+    """
+    try:
+        rgb = webcolors.name_to_rgb(color_str)
+    except ValueError:
+        try:
+            rgb = webcolors.hex_to_rgb(color_str)
+        except ValueError:
+            raise ValueError(f"Unknown color: {color_str}")
+    return f"rgba({rgb.red}, {rgb.green}, {rgb.blue}, {opacity})"

@@ -1,3 +1,9 @@
+# 1.0.1 (in progress - not yet released)
+
+- Added 'background_image_opacity' argument to generate_animation and animate_activity_log. Default opacity is 0.5, which matches the previous hardcoded value.
+- Added 'overflow_text_color' argument to generate_animation and animate_activity_log. Default is 'black'. Overflow text refers to the '+ x more' text that appears when queue lengths exceed the snapshot size.
+- Added 'stage_label_text_colour' argument to generate_animation and animate_activity_log. Default is 'black'. These are the optional labels showing the stages as defined in the event position dataframe, which you may be using instead of passing in a custom background with stage labels.
+
 # 1.0.0
 
 Migration guide below!

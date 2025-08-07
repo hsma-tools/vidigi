@@ -4,9 +4,10 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from vidigi.prep import reshape_for_animations, generate_animation_df
+from vidigi.utils import html_color_to_rgba
 import numpy as np
 from copy import deepcopy
-
+from collections import defaultdict
 
 def generate_animation(
         full_entity_df_plus_pos,
@@ -39,7 +40,11 @@ def generate_animation(
         setup_mode=False,
         frame_duration=400, #milliseconds
         frame_transition_duration=600, #milliseconds
-        debug_mode=False
+        debug_mode=False,
+        background_image_opacity=0.5,
+        overflow_text_color="black",
+        stage_label_text_colour="black",
+        backend="express"
 ):
     """
     Generate an animated visualization of patient flow through a system.
@@ -136,6 +141,12 @@ def generate_animation(
         Duration of transition between frames in milliseconds (default is 600).
     debug_mode : bool, optional
         Whether to run in debug mode with additional output (default is False).
+    background_image_opacity : float, optional
+        Opacity (0 is transparent, to 1, completely opaque) of the provided background image
+    backend: str, optional
+        EXPERIMENTAL. Whether to use the plotly express backend for the initial plot (default),
+        or the experimental plotly go backend. The go approach is currently unstable and much slower.
+        Use at your own risk.
 
     Returns
     -------
@@ -332,26 +343,196 @@ def generate_animation(
         else:
             hovers = [entity_col_name, time_col_name, "snapshot_time"]
 
-    fig = px.scatter(
-            full_entity_df_plus_pos_copy.sort_values("snapshot_time_base"),
-            x="x_final",
-            y="y_final",
-            # Each frame is one step of time, with the gap being determined
-            # in the reshape_for_animation function
-            animation_frame="snapshot_time_display",
-            # Important to group by patient here
-            animation_group=entity_col_name,
-            text="icon",
-            hover_name=event_col_name,
-            hover_data=hovers,
-            range_x=[0, x_max],
-            range_y=[0, y_max],
+    # Add opacity where not present for backwards compatibility prior to 1.0.1
+    if "opacity" not in full_entity_df_plus_pos_copy:
+        full_entity_df_plus_pos_copy["opacity"] = 1
+
+    if str.lower(backend) in ["express", "px", "plotly express"]:
+        fig = px.scatter(
+                full_entity_df_plus_pos_copy.sort_values("snapshot_time_base"),
+                x="x_final",
+                y="y_final",
+                # Each frame is one step of time, with the gap being determined
+                # in the reshape_for_animation function
+                animation_frame="snapshot_time_display",
+                # Important to group by patient here
+                animation_group=entity_col_name,
+                text="icon",
+                hover_name=event_col_name,
+                hover_data=hovers,
+                range_x=[0, x_max],
+                range_y=[0, y_max],
+                height=plotly_height,
+                width=plotly_width,
+                # This sets the opacity of the points that sit behind
+                opacity=0
+                )
+
+    # EXPERIMENTAL
+    elif backend in ["go", "graph objects", "plotly graph objects", "plotly go"]:
+        # Get sorted lists of unique entities and animation frames
+        unique_entities = sorted(full_entity_df_plus_pos_copy[entity_col_name].unique())
+        unique_frames = sorted(full_entity_df_plus_pos_copy["snapshot_time_display"].unique())
+
+        # Pre-group data by frame for efficient lookup
+        frames_data = {}
+        for frame_time in unique_frames:
+            frame_df = full_entity_df_plus_pos_copy[full_entity_df_plus_pos_copy["snapshot_time_display"] == frame_time]
+            frames_data[frame_time] = frame_df.groupby(entity_col_name)
+
+        # Initialize the figure
+        fig = go.Figure()
+
+        # --- Create the initial traces (for ALL entities, not just first frame) ---
+        first_frame_groups = frames_data[unique_frames[0]]
+
+        for entity in unique_entities:
+            # Set text opacity once
+            text_opacity = 1.0 if entity == "Patient_0" else 0.5
+
+            # Check if entity exists in first frame
+            if entity in first_frame_groups.groups:
+                entity_df = first_frame_groups.get_group(entity)
+
+                fig.add_trace(go.Scatter(
+                    x=entity_df["x_final"],
+                    y=entity_df["y_final"],
+                    name=entity,
+                    text=entity_df["icon"],
+                    mode='text',
+                    textfont=dict(
+                        size=16,
+                        color=f'rgba(0, 0, 0, {text_opacity})'
+                    ),
+                    hovertemplate=(
+                        f"<b>{entity_df[event_col_name].iloc[0]}</b><br><br>"
+                        "x: %{x}<br>"
+                        "y: %{y}<br>"
+                        "Info: %{customdata[0]}"
+                        "<extra></extra>"
+                    ),
+                    customdata=entity_df[hovers]
+                ))
+            else:
+                # Create empty trace for entities not in first frame
+                fig.add_trace(go.Scatter(
+                    x=[None],
+                    y=[None],
+                    name=entity,
+                    text=[''],
+                    mode='text',
+                    textfont=dict(
+                        size=16,
+                        color=f'rgba(0, 0, 0, {text_opacity})'
+                    ),
+                    hovertemplate="<extra></extra>",
+                    customdata=[[""]]
+                ))
+
+        # --- Create animation frames (optimized) ---
+        frames = []
+
+        # Pre-calculate text opacities for all entities
+        text_opacities = {entity: 1.0 if entity == "Patient_0" else 0.5 for entity in unique_entities}
+
+        for frame_time in unique_frames:
+            frame_groups = frames_data[frame_time]
+
+            # Build frame data efficiently
+            data_for_frame = []
+
+            for entity in unique_entities:
+                text_opacity = text_opacities[entity]
+
+                if entity in frame_groups.groups:
+                    entity_df = frame_groups.get_group(entity)
+
+                    # Only include necessary properties in frame data
+                    data_for_frame.append({
+                        'x': entity_df["x_final"].tolist(),
+                        'y': entity_df["y_final"].tolist(),
+                        'text': entity_df["icon"].tolist(),
+                        'customdata': entity_df[hovers].values.tolist(),
+                        'textfont.color': f'rgba(0, 0, 0, {text_opacity})'
+                    })
+                else:
+                    # Empty data for missing entities
+                    data_for_frame.append({
+                        'x': [None],
+                        'y': [None],
+                        'text': [''],
+                        'customdata': [[""]],
+                        'textfont.color': f'rgba(0, 0, 0, {text_opacity})'
+                    })
+
+            frames.append(go.Frame(data=data_for_frame, name=str(frame_time)))
+
+        fig.frames = frames
+
+        # --- Optimized animation settings ---
+        play_settings = {
+            "frame": {"duration": 300, "redraw": False},
+            "transition": {"duration": 50, "easing": "linear"}
+        }
+
+        pause_settings = {
+            "frame": {"duration": 0, "redraw": False},
+            "transition": {"duration": 0}
+        }
+
+        fig.update_layout(
+            title_text="Animated Patient Locations (Graph Objects)",
             height=plotly_height,
             width=plotly_width,
-            # This sets the opacity of the points that sit behind
-            opacity=0
-            )
-
+            xaxis=dict(range=[0, x_max], autorange=False),
+            yaxis=dict(range=[0, y_max], autorange=False),
+            # Fixed control buttons
+            updatemenus=[{
+                "type": "buttons",
+                "showactive": False,
+                "x": 0.1,
+                "y": 0,
+                "buttons": [
+                    {
+                        "label": "▶ Play",
+                        "method": "animate",
+                        "args": [None, play_settings]
+                    },
+                    {
+                        "label": "⏸ Pause",
+                        "method": "animate",
+                        "args": [None, {"frame": {"duration": 0}, "mode": "immediate"}]
+                    },
+                    {
+                        "label": "⏮ Reset",
+                        "method": "animate",
+                        "args": [str(unique_frames[0]), pause_settings]
+                    }
+                ]
+            }],
+            # Optimized slider
+            sliders=[{
+                "active": 0,
+                "yanchor": "top",
+                "xanchor": "left",
+                "currentvalue": {
+                    "font": {"size": 20},
+                    "prefix": "Time: ",
+                    "visible": True,
+                    "xanchor": "right"
+                },
+                "steps": [
+                    {
+                        "label": str(f),
+                        "method": "animate",
+                        "args": [str(f), pause_settings]
+                    }
+                    for f in unique_frames
+                ]
+            }]
+        )
+    else:
+        raise("Invalid backend passed. Options are: 'express'|'px'|'plotly express' for original vidigi backend, or 'go'|'graph objects' for advanced backend")
 
     # Update the size of the icons and labels
     # This is what determines the size of the individual emojis that
@@ -361,6 +542,7 @@ def generate_animation(
     for trace in fig.data:
         if "marker" in trace:
             trace.textfont.size = entity_icon_size
+            trace.textfont.color = overflow_text_color
 
     # Now add labels identifying each stage (optional - can either be used
     # in conjunction with a background image or as a way to see stage names
@@ -381,6 +563,7 @@ def generate_animation(
         # represent our people!
         # Update the text size for the LAST ADDED trace (stage labels)
         fig.data[-1].textfont.size = text_size
+        fig.data[-1].textfont.color = stage_label_text_colour
 
     #############################################
     # Add in icons to indicate the available resources
@@ -483,7 +666,7 @@ def generate_animation(
                 xanchor="right",
                 yanchor="top",
                 sizing="stretch",
-                opacity=0.5,
+                opacity=background_image_opacity,
                 layer="below")
     )
 
@@ -565,7 +748,11 @@ def animate_activity_log(
         frame_transition_duration=600, #milliseconds
         debug_mode=False,
         custom_entity_icon_list=None,
-        debug_write_intermediate_objects=False
+        debug_write_intermediate_objects=False,
+        background_image_opacity=0.5,
+        overflow_text_color="black",
+        stage_label_text_colour="black",
+        backend="express"
         ):
     """
     Generate an animated visualization of patient flow through a system.
@@ -672,6 +859,12 @@ def animate_activity_log(
         If True, print debug information during processing (default is False).
     custom_entity_icon_list: list, optional
         If given, overrides the default list of emojis used to represent entities
+    background_image_opacity : float, optional
+        Opacity (0 is transparent, to 1, completely opaque) of the provided background image
+    backend: str, optional
+        EXPERIMENTAL. Whether to use the plotly express backend for the initial plot (default),
+        or the experimental plotly go backend. The go approach is currently unstable and much slower.
+        Use at your own risk.
 
     Returns
     -------
@@ -762,7 +955,11 @@ def animate_activity_log(
         entity_col_name=entity_col_name,
         event_col_name=event_col_name,
         pathway_col_name=pathway_col_name,
-        resource_col_name=resource_col_name
+        resource_col_name=resource_col_name,
+        background_image_opacity=background_image_opacity,
+        overflow_text_color=overflow_text_color,
+        stage_label_text_colour=stage_label_text_colour,
+        backend=backend
     )
 
     if debug_mode:

@@ -42,6 +42,10 @@ animation.animate_activity_log(
     debug_mode=False,
     custom_entity_icon_list=None,
     debug_write_intermediate_objects=False,
+    background_image_opacity=0.5,
+    overflow_text_color='black',
+    stage_label_text_colour='black',
+    backend='express',
 )
 ```
 
@@ -151,6 +155,12 @@ animation.animate_activity_log(
         If True, print debug information during processing (default is False).
     custom_entity_icon_list: list, optional
         If given, overrides the default list of emojis used to represent entities
+    background_image_opacity : float, optional
+        Opacity (0 is transparent, to 1, completely opaque) of the provided background image
+    backend: str, optional
+        EXPERIMENTAL. Whether to use the plotly express backend for the initial plot (default),
+        or the experimental plotly go backend. The go approach is currently unstable and much slower.
+        Use at your own risk.
 
 ##     Returns {.doc-section .doc-section-----returns}
 

@@ -680,6 +680,24 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">Additional Synchronised Traces - Orthopaedic Ward - Hospital Efficiency Project</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./examples/example_14_carwash/carwash.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Example 14: Carwash</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./examples/example_15_gas_station_refuelling/gas_station.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Explore incorporating the fuel level bar plot as an additional synchronised plot</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./examples/example_17_resourceless_larger_queues/resourceless_longer_queues.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Example 17 - Ways of visualising larger queues</span></a>
+  </div>
+</li>
       </ul>
   </li>
         <li class="sidebar-item sidebar-item-section">
@@ -781,6 +799,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 
+<section id="in-progress---not-yet-released" class="level1">
+<h1>1.0.1 (in progress - not yet released)</h1>
+<ul>
+<li>Added ‘background_image_opacity’ argument to generate_animation and animate_activity_log. Default opacity is 0.5, which matches the previous hardcoded value.</li>
+<li>Added ‘overflow_text_color’ argument to generate_animation and animate_activity_log. Default is ‘black’. Overflow text refers to the ‘+ x more’ text that appears when queue lengths exceed the snapshot size.</li>
+<li>Added ‘stage_label_text_colour’ argument to generate_animation and animate_activity_log. Default is ‘black’. These are the optional labels showing the stages as defined in the event position dataframe, which you may be using instead of passing in a custom background with stage labels.</li>
+</ul>
+</section>
 <section id="section" class="level1">
 <h1>1.0.0</h1>
 <p>Migration guide below!</p>

@@ -33,6 +33,10 @@ animation.generate_animation(
     frame_duration=400,
     frame_transition_duration=600,
     debug_mode=False,
+    background_image_opacity=0.5,
+    overflow_text_color='black',
+    stage_label_text_colour='black',
+    backend='express',
 )
 ```
 
@@ -132,6 +136,12 @@ animation.generate_animation(
         Duration of transition between frames in milliseconds (default is 600).
     debug_mode : bool, optional
         Whether to run in debug mode with additional output (default is False).
+    background_image_opacity : float, optional
+        Opacity (0 is transparent, to 1, completely opaque) of the provided background image
+    backend: str, optional
+        EXPERIMENTAL. Whether to use the plotly express backend for the initial plot (default),
+        or the experimental plotly go backend. The go approach is currently unstable and much slower.
+        Use at your own risk.
 
 ##     Returns {.doc-section .doc-section-----returns}
 

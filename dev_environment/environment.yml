@@ -23,3 +23,4 @@ dependencies:
   - pytest-html=4.1.1
   - tox=4.25.0
   - pydantic=2.10.4
+  - webcolors=24.11.1

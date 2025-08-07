@@ -680,6 +680,24 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">Additional Synchronised Traces - Orthopaedic Ward - Hospital Efficiency Project</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../examples/example_14_carwash/carwash.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Example 14: Carwash</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../examples/example_15_gas_station_refuelling/gas_station.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Explore incorporating the fuel level bar plot as an additional synchronised plot</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../examples/example_17_resourceless_larger_queues/resourceless_longer_queues.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Example 17 - Ways of visualising larger queues</span></a>
+  </div>
+</li>
       </ul>
   </li>
         <li class="sidebar-item sidebar-item-section">
@@ -815,7 +833,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>    frame_duration<span class="op">=</span><span class="dv">400</span>,</span>
 <span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>    frame_transition_duration<span class="op">=</span><span class="dv">600</span>,</span>
 <span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>    debug_mode<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>    background_image_opacity<span class="op">=</span><span class="fl">0.5</span>,</span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>    overflow_text_color<span class="op">=</span><span class="st">'black'</span>,</span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>    stage_label_text_colour<span class="op">=</span><span class="st">'black'</span>,</span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>    backend<span class="op">=</span><span class="st">'express'</span>,</span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <pre><code>Generate an animated visualization of patient flow through a system.
 
 This function creates an interactive Plotly animation based on patient data and event positions.</code></pre>
@@ -881,7 +903,7 @@ override_y_max : int, optional
     'm'    : Month and year (e.g., "June 2025")
     'y'    : Year only (e.g., "2025")
     'day_clock' or 'simulation_day_clock': Show simulation-relative day and time (e.g., "Simulation Day 3</code></pre>
-<p>14:15”) ‘day_clock_ampm’ or ‘simulation_day_clock_ampm’: Same as above, but time is shown in 12-hour clock with AM/PM (e.g., “Simulation Day 3 02:15 PM”) Alternatively, you can supply a custom <a href="https://strftime.org/">strftime</a> format string (e.g., ‘%Y-%m-%d %H’) to control the display manually. start_date : str, optional Start date for the animation in ‘YYYY-MM-DD’ format. Only used when time_display_units is ‘d’ or ‘dhm’ (default is None). start_time : str, optional Start date for the animation in ‘HH:MM:SS’ format. Only used when time_display_units is ‘d’ or ‘dhm’ (default is None). resource_opacity : float, optional Opacity of resource icons (default is 0.8). custom_resource_icon : str, optional Custom icon to use for resources (default is None). wrap_resources_at : int, optional Number of resources to show before wrapping to a new row (default is 20). If this has been set elsewhere, it is also important to set it in this function to ensure the visual indicators of the resources wrap in the same way the entities using those resources do. gap_between_resources : int, optional Spacing between resources in pixels (default is 10). gap_between_resource_rows : int, optional Vertical spacing between rows in pixels (default is 30). setup_mode : bool, optional Whether to run in setup mode, showing grid and tick marks (default is False). frame_duration : int, optional Duration of each frame in milliseconds (default is 400). frame_transition_duration : int, optional Duration of transition between frames in milliseconds (default is 600). debug_mode : bool, optional Whether to run in debug mode with additional output (default is False).</p>
+<p>14:15”) ‘day_clock_ampm’ or ‘simulation_day_clock_ampm’: Same as above, but time is shown in 12-hour clock with AM/PM (e.g., “Simulation Day 3 02:15 PM”) Alternatively, you can supply a custom <a href="https://strftime.org/">strftime</a> format string (e.g., ‘%Y-%m-%d %H’) to control the display manually. start_date : str, optional Start date for the animation in ‘YYYY-MM-DD’ format. Only used when time_display_units is ‘d’ or ‘dhm’ (default is None). start_time : str, optional Start date for the animation in ‘HH:MM:SS’ format. Only used when time_display_units is ‘d’ or ‘dhm’ (default is None). resource_opacity : float, optional Opacity of resource icons (default is 0.8). custom_resource_icon : str, optional Custom icon to use for resources (default is None). wrap_resources_at : int, optional Number of resources to show before wrapping to a new row (default is 20). If this has been set elsewhere, it is also important to set it in this function to ensure the visual indicators of the resources wrap in the same way the entities using those resources do. gap_between_resources : int, optional Spacing between resources in pixels (default is 10). gap_between_resource_rows : int, optional Vertical spacing between rows in pixels (default is 30). setup_mode : bool, optional Whether to run in setup mode, showing grid and tick marks (default is False). frame_duration : int, optional Duration of each frame in milliseconds (default is 400). frame_transition_duration : int, optional Duration of transition between frames in milliseconds (default is 600). debug_mode : bool, optional Whether to run in debug mode with additional output (default is False). background_image_opacity : float, optional Opacity (0 is transparent, to 1, completely opaque) of the provided background image backend: str, optional EXPERIMENTAL. Whether to use the plotly express backend for the initial plot (default), or the experimental plotly go backend. The go approach is currently unstable and much slower. Use at your own risk.</p>
 </section>
 <section id="returns" class="level2 doc-section doc-section-----returns">
 <h2 class="doc-section doc-section-----returns anchored" data-anchor-id="returns">Returns</h2>

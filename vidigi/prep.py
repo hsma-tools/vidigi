@@ -509,4 +509,6 @@ def generate_animation_df(
             ignore_index=True
         )
 
+    full_entity_df_plus_pos["opacity"] = 1.0
+
     return full_entity_df_plus_pos
