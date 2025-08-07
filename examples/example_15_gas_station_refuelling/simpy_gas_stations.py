@@ -35,7 +35,7 @@ THRESHOLD = 25             # Station tank minimum level (% of full)
 CAR_TANK_SIZE = 50         # Size of car fuel tanks (liters)
 CAR_TANK_LEVEL = [5, 25]   # Min/max levels of car fuel tanks (liters)
 PAYMENT_TIME = [30, 90]    # MODIFICATION: Time it takes to pay
-REFUELING_SPEED = 2        # MODIFIED FROM EXAMPLE: Rate of refuelling car fuel tank (liters / second)
+REFUELING_SPEED = 1        # MODIFIED FROM EXAMPLE: Rate of refuelling car fuel tank (liters / second)
 TANK_TRUCK_ARRIVAL_TIME = 300  # Time it takes tank truck to arrive (seconds)
 TANK_TRUCK_REFUEL_TIME = 1000  # MODIFICATION: Time it takes tank truck to fill the station tank (seconds)
 T_INTER = [30, 300]        # Interval between car arrivals [min, max] (seconds)
@@ -60,23 +60,23 @@ def car(name, env, gas_station, station_tank, logger):
         # Request one of the gas pumps
         gas_pump = yield req
 
+        # Get the required amount of fuel
+        fuel_required = CAR_TANK_SIZE - car_tank_level
+        yield station_tank.get(fuel_required)
+
         logger.log_resource_use_start(entity_id=name, event="payment_begins",
                                   resource_id=gas_pump.id_attribute,
                      fuel_level_start=car_tank_level, fuel_level_end=CAR_TANK_SIZE)
 
         yield env.timeout(random.randint(*PAYMENT_TIME))
 
-        logger.log_resource_use_start(entity_id=name, event="payment_ends",
+        logger.log_resource_use_end(entity_id=name, event="payment_ends",
                             resource_id=gas_pump.id_attribute,
                      fuel_level_start=car_tank_level, fuel_level_end=CAR_TANK_SIZE)
 
         logger.log_resource_use_start(entity_id=name, event="pumping_begins",
-                                  resource_id=gas_pump.id_attribute,
-                     fuel_level_start=car_tank_level, fuel_level_end=CAR_TANK_SIZE)
-
-        # Get the required amount of fuel
-        fuel_required = CAR_TANK_SIZE - car_tank_level
-        yield station_tank.get(fuel_required)
+                            resource_id=gas_pump.id_attribute,
+                fuel_level_start=car_tank_level, fuel_level_end=CAR_TANK_SIZE)
 
         # The "actual" refueling process takes some time
         yield env.timeout(fuel_required / REFUELING_SPEED)
@@ -129,7 +129,7 @@ def car_generator(env, gas_station, station_tank, logger):
         yield env.timeout(random.randint(*T_INTER))
         env.process(car(f'Car {i}', env, gas_station, station_tank, logger))
 
-def fuel_monitor(env, station_tank, logger, interval=60):
+def fuel_monitor(env, station_tank, logger, interval=1):
     """Logs the fuel level at regular intervals."""
     while True:
         logger.log_queue(
