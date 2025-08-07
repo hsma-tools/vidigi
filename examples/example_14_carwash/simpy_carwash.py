@@ -107,7 +107,7 @@ def setup(env, num_machines, washtime, t_inter, duration):
 
     # Allow remaining events to finish before returning
     yield env.timeout(0)
-    carwash.logger.to_dataframe().to_csv("logs.csv")
+    carwash.logger.to_dataframe().to_csv(f"logs_{NUM_MACHINES}_machines_{T_INTER}_IAT.csv")
 
 
 # Setup and start the simulation
@@ -115,60 +115,15 @@ print('Carwash')
 print('Check out http://youtu.be/fXXmeP9TvBg while simulating ... ;-)')
 random.seed(RANDOM_SEED)  # This helps to reproduce the results
 
-# Create an environment and start the setup process
-env = simpy.Environment()
-carwash_process = env.process(setup(env, NUM_MACHINES, WASHTIME, T_INTER, SIM_TIME))
-# Execute!
-env.run(until=carwash_process)
+def run_model():
+    # Create an environment and start the setup process
+    env = simpy.Environment()
+    carwash_process = env.process(setup(env, NUM_MACHINES, WASHTIME, T_INTER, SIM_TIME))
+    # Execute!
+    env.run(until=carwash_process)
 
-# Display log
-event_log_df = pd.read_csv("logs.csv")
+run_model()
 
-# Define positions for animation
-event_positions = create_event_position_df([
-    EventPosition(event='arrival', x=0, y=350, label="Entrance"),
-    EventPosition(event='carwash_queue_wait_begins', x=350, y=200, label="Queue"),
-    EventPosition(event='carwashing_begins', x=340, y=100, resource='num_carwashes',
-                  label="Being Washed"),
-    EventPosition(event='depart', x=250, y=50, label="Exit")
-])
+T_INTER = 7
 
-
-class Params:
-    def __init__(self):
-        self.num_carwashes = NUM_MACHINES
-
-icon_list = [ "🚗", "🚙", "🚓",
-            "🚗", "🚙", "🏎️",
-            "🚗", "🚙", "🚚",
-            "🚗", "🚙", "🛻",
-            "🚗", "🚙", "🚛",
-            "🚗", "🚙", "🚕",
-            "🚗", "🚙", "🚒",
-            "🚗", "🚙", "🚑"]
-
-random.shuffle(icon_list)
-
-# Create animation
-animate_activity_log(
-    event_log=event_log_df,
-    event_position_df=event_positions,
-    scenario=Params(),
-    every_x_time_units=1,
-    plotly_height=800,
-    plotly_width=800,
-    override_x_max=400,
-    override_y_max=400,
-    limit_duration=SIM_TIME,
-    entity_icon_size=50,
-    gap_between_entities=50,
-    gap_between_resources=180,
-    display_stage_labels=False,
-    wrap_queues_at=7,
-    step_snapshot_max=14,
-    gap_between_queue_rows=60,
-    custom_entity_icon_list=icon_list,
-    resource_opacity=0,
-    setup_mode=False,
-    add_background_image="https://raw.githubusercontent.com/hsma-tools/vidigi/refs/heads/main/examples/example_14_carwash/carwash_bg.png"
-)
+run_model()
