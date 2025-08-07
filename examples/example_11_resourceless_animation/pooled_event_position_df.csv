@@ -1,0 +1,34 @@
+event,y,x,label,clinic
+appointment_booked_waiting_0,870.0,625,Booked into<br>clinic 0 🟠,0.0
+appointment_booked_waiting_1,790.0,625,Booked into<br>clinic 1 🟡,1.0
+appointment_booked_waiting_2,710.0,625,Booked into<br>clinic 2 🟢,2.0
+appointment_booked_waiting_3,630.0,625,Booked into<br>clinic 3 🔵,3.0
+appointment_booked_waiting_4,550.0,625,Booked into<br>clinic 4 🟣,4.0
+appointment_booked_waiting_5,470.0,625,Booked into<br>clinic 5 🟤,5.0
+appointment_booked_waiting_6,390.0,625,Booked into<br>clinic 6 ⚫,6.0
+appointment_booked_waiting_7,310.0,625,Booked into<br>clinic 7 ⚪,7.0
+appointment_booked_waiting_8,230.0,625,Booked into<br>clinic 8 🔶,8.0
+appointment_booked_waiting_9,150.0,625,Booked into<br>clinic 9 🔷,9.0
+appointment_booked_waiting_10,70.0,625,Booked into<br>clinic 10 🟩,10.0
+have_appointment_0,870.0,850,Attending appointment<br>at clinic 0,
+have_appointment_1,790.0,850,Attending appointment<br>at clinic 1,
+have_appointment_2,710.0,850,Attending appointment<br>at clinic 2,
+have_appointment_3,630.0,850,Attending appointment<br>at clinic 3,
+have_appointment_4,550.0,850,Attending appointment<br>at clinic 4,
+have_appointment_5,470.0,850,Attending appointment<br>at clinic 5,
+have_appointment_6,390.0,850,Attending appointment<br>at clinic 6,
+have_appointment_7,310.0,850,Attending appointment<br>at clinic 7,
+have_appointment_8,230.0,850,Attending appointment<br>at clinic 8,
+have_appointment_9,150.0,850,Attending appointment<br>at clinic 9,
+have_appointment_10,70.0,850,Attending appointment<br>at clinic 10,
+referred_out_0,870.0,125,Referred Out From <br>clinic 0,
+referred_out_1,790.0,125,Referred Out From <br>clinic 1,
+referred_out_2,710.0,125,Referred Out From <br>clinic 2,
+referred_out_3,630.0,125,Referred Out From <br>clinic 3,
+referred_out_4,550.0,125,Referred Out From <br>clinic 4,
+referred_out_5,470.0,125,Referred Out From <br>clinic 5,
+referred_out_6,390.0,125,Referred Out From <br>clinic 6,
+referred_out_7,310.0,125,Referred Out From <br>clinic 7,
+referred_out_8,230.0,125,Referred Out From <br>clinic 8,
+referred_out_9,150.0,125,Referred Out From <br>clinic 9,
+referred_out_10,70.0,125,Referred Out From <br>clinic 10,
