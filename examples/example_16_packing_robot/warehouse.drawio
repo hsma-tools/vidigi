@@ -71,7 +71,7 @@
           <mxGeometry x="760" y="50" width="150" height="80" as="geometry" />
         </mxCell>
         <mxCell id="Tgi34v9Rim2OoH0ApFjI-15" value="" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#FF8000;strokeWidth=8;" vertex="1" parent="1">
-          <mxGeometry x="820" y="260" width="150" height="80" as="geometry" />
+          <mxGeometry x="820" y="210" width="150" height="190" as="geometry" />
         </mxCell>
         <mxCell id="Tgi34v9Rim2OoH0ApFjI-16" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E3E3E3;fontColor=#000000;strokeColor=#B09500;strokeWidth=7;" vertex="1" parent="1">
           <mxGeometry x="760" y="470" width="150" height="80" as="geometry" />
@@ -92,7 +92,7 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="Tgi34v9Rim2OoH0ApFjI-20" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E3E3E3;fontColor=#000000;strokeColor=#009900;strokeWidth=7;" vertex="1" parent="1">
-          <mxGeometry x="330" y="260" width="190" height="80" as="geometry" />
+          <mxGeometry x="330" y="210" width="190" height="180" as="geometry" />
         </mxCell>
         <mxCell id="Tgi34v9Rim2OoH0ApFjI-22" value="&lt;p&gt;&lt;span style=&quot;color: rgb(40, 40, 40);&quot;&gt;&lt;b&gt;&lt;font face=&quot;Russo One&quot; data-font-src=&quot;https://fonts.googleapis.com/css?family=+Russo+One+&quot;&gt;LOADING BAY 1&lt;/font&gt;&lt;/b&gt;&lt;/span&gt;&lt;/p&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=23;" vertex="1" parent="1">
           <mxGeometry x="15" y="75" width="120" height="30" as="geometry" />
@@ -119,10 +119,10 @@
           <mxGeometry x="775" y="495" width="120" height="30" as="geometry" />
         </mxCell>
         <mxCell id="Tgi34v9Rim2OoH0ApFjI-31" value="MAINTENANCE" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=17;fontFamily=Russo One;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DRusso%2BOne;" vertex="1" parent="1">
-          <mxGeometry x="835" y="264" width="120" height="30" as="geometry" />
+          <mxGeometry x="835" y="210" width="120" height="30" as="geometry" />
         </mxCell>
         <mxCell id="Tgi34v9Rim2OoH0ApFjI-32" value="PACKING" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=17;fontFamily=Russo One;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DRusso%2BOne;" vertex="1" parent="1">
-          <mxGeometry x="365" y="260" width="120" height="30" as="geometry" />
+          <mxGeometry x="370" y="210" width="120" height="30" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
