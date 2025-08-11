@@ -67,7 +67,7 @@ website:
       - examples/example_13_additional_synchronised_traces_method_1/synchronised_traces.ipynb
       - examples/example_14_carwash/carwash.ipynb
       - examples/example_15_gas_station_refuelling/gas_station.ipynb
-      - examples/example_16/packing_robot/packing_robot.ipynb
+      - examples/example_16_packing_robot/packing_robot.ipynb
       - examples/example_17_resourceless_larger_queues/resourceless_longer_queues.ipynb
       section: SimPy Examples
     - contents:
