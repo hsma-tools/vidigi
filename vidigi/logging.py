@@ -58,11 +58,15 @@ class BaseEvent(BaseModel):
 
         A warning for each unrecognized type is issued only once.
         """
+        # Skip check if context flag is set
+        if info.context and info.context.get("skip_event_type_check"):
+            return v
+
         if v not in RECOGNIZED_EVENT_TYPES and v not in cls._warned_unrecognized_event_types:
             warnings.warn(
                 f"Unrecognized event_type '{v}'. Recommended values are: {', '.join(RECOGNIZED_EVENT_TYPES)}.",
                 UserWarning,
-                stacklevel=4,  # Adjusted stacklevel for better error reporting
+                stacklevel=4,
             )
             cls._warned_unrecognized_event_types.add(v)
         return v
@@ -126,7 +130,7 @@ class EventLogger:
         self.run_number = run_number
         self._log: List[dict] = []
 
-    def log_event(self, **event_data):
+    def log_event(self, context: Optional[dict] = None, **event_data):
         if "time" not in event_data:
             if self.env is not None and hasattr(self.env, "now"):
                 event_data["time"] = self.env.now
@@ -138,7 +142,7 @@ class EventLogger:
                 event_data["run_number"] = self.run_number
 
         try:
-            event = self.event_model(**event_data)
+            event = self.event_model.model_validate(event_data, context=context or {})
         except Exception as e:
             raise ValueError(f"Invalid event data: {e}")
 
@@ -234,6 +238,30 @@ class EventLogger:
         }
         event_data.update(extra_fields)
         self.log_event(**{k: v for k, v in event_data.items() if v is not None})
+
+    def log_custom_event(self, *, entity_id: Any, event_type: str,
+                         event: str,
+                         time: Optional[float] = None,
+                         pathway: Optional[str] = None,
+                         run_number: Optional[int] = None,
+                        **extra_fields):
+        """
+        Log a custom event. The 'event' here can be any string describing the queue event.
+        An 'event_type' must also be passed, but can be any string of the user's choosing.
+        """
+        event_data = {
+            "entity_id": entity_id,
+            "event_type": event_type,
+            "event": event,
+            "time": time,
+            "pathway": pathway,
+            "run_number": run_number,
+        }
+        event_data.update(extra_fields)
+        self.log_event(
+            **{k: v for k, v in event_data.items() if v is not None},
+            context={"skip_event_type_check": True}
+        )
 
     ####################################################
     # Accessing and exporting the resulting logs       #
