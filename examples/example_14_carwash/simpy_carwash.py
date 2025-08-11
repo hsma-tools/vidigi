@@ -14,6 +14,8 @@ Scenario:
   machine is available, they start the washing process and wait for it
   to finish. If not, they wait until they can use one.
 
+  simpy model (simpy_carwash.py) written by Team SimPy as part of SimPy documentation.
+
 """
 
 import itertools

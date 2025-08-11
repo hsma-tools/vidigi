@@ -10,18 +10,18 @@ from vidigi.logging import EventLogger
 # Coordinates in pixels for animation space
 LAYOUT = {
     # Packing & maintenance
-    "packing": (300, 300),
+    "packing": (270, 270),
     "maintenance": (600, 300),
 
-    # 8 pickup points around the warehouse
-    "pickup_1": (0, 500),
-    "pickup_2": (200, 500),
-    "pickup_3": (400, 500),
-    "pickup_4": (600, 500),
-    "pickup_5": (0, 100),
-    "pickup_6": (200, 100),
-    "pickup_7": (400, 100),
-    "pickup_8": (600, 100),
+    # 8 pickup points
+    "pickup_1": (25, 500),
+    "pickup_2": (180, 500),
+    "pickup_3": (70, 500),
+    "pickup_4": (550, 500),
+    "pickup_5": (25, 100),
+    "pickup_6": (180, 100),
+    "pickup_7": (370, 100),
+    "pickup_8": (550, 100),
 }
 
 PICKUP_POINTS = list(name for name in LAYOUT if name.startswith("pickup"))
@@ -61,55 +61,49 @@ class PackingRobot:
                                          x=self.pos[0], y=self.pos[1])
             yield self.env.timeout(1)
 
-    def move_to(self, location_name, pathway):
-        """Move robot to a named location in L-shaped (Manhattan) path."""
+    def move_to(self, location_name, pathway, outbound=True):
+        """Move robot to a location using Manhattan path.
+        outbound=True: horizontal then vertical
+        outbound=False: retrace return path (vertical then horizontal)
+        """
         destination = LAYOUT[location_name]
         start_x, start_y = self.pos
         dest_x, dest_y = destination
 
-        # ---- First leg: horizontal ----
-        dx = dest_x - start_x
-        if dx != 0:
-            travel_x_time = abs(dx) / SPEED
-            steps_x = int(travel_x_time)
-            remaining_x = travel_x_time - steps_x
-            dx_per_unit = dx / travel_x_time
+        if outbound:
+            sequence = [("x", dest_x - start_x), ("y", dest_y - start_y)]
+        else:
+            sequence = [("y", dest_y - start_y), ("x", dest_x - start_x)]
 
-            for _ in range(steps_x):
-                yield self.env.timeout(1)
-                self.pos = (self.pos[0] + dx_per_unit, self.pos[1])
-            if remaining_x > 0:
-                yield self.env.timeout(remaining_x)
-                self.pos = (dest_x, self.pos[1])
-            else:
-                self.pos = (dest_x, self.pos[1])
+        for axis, delta in sequence:
+            if delta != 0:
+                travel_time = abs(delta) / SPEED
+                steps = int(travel_time)
+                remaining = travel_time - steps
+                move_per_unit = delta / travel_time
 
-        # ---- Second leg: vertical ----
-        dy = dest_y - self.pos[1]
-        if dy != 0:
-            travel_y_time = abs(dy) / SPEED
-            steps_y = int(travel_y_time)
-            remaining_y = travel_y_time - steps_y
-            dy_per_unit = dy / travel_y_time
-
-            for _ in range(steps_y):
-                yield self.env.timeout(1)
-                self.pos = (self.pos[0], self.pos[1] + dy_per_unit)
-            if remaining_y > 0:
-                yield self.env.timeout(remaining_y)
-                self.pos = (self.pos[0], dest_y)
-            else:
-                self.pos = (self.pos[0], dest_y)
+                for _ in range(steps):
+                    yield self.env.timeout(1)
+                    if axis == "x":
+                        self.pos = (self.pos[0] + move_per_unit, self.pos[1])
+                    else:
+                        self.pos = (self.pos[0], self.pos[1] + move_per_unit)
+                if remaining > 0:
+                    yield self.env.timeout(remaining)
+                    if axis == "x":
+                        self.pos = (self.pos[0] + move_per_unit * remaining, self.pos[1])
+                    else:
+                        self.pos = (self.pos[0], self.pos[1] + move_per_unit * remaining)
 
 
     def pickup_packages(self, count, pickup_name):
-        yield self.env.process(self.move_to(pickup_name, "to_pickup"))
-        self.logger.log_custom_event(entity_id=self.name, event_type="action",
-                                     event=f"picked_up_{count}_packages",
-                                     x=self.pos[0], y=self.pos[1],
-                                     location=pickup_name)
+        yield self.env.process(self.move_to(pickup_name, "to_pickup", outbound=True))
+        # self.logger.log_custom_event(entity_id=self.name, event_type="action",
+        #                              event=f"picked_up_{count}_packages",
+        #                              x=self.pos[0], y=self.pos[1],
+        #                              location=pickup_name)
 
-        yield self.env.process(self.move_to("packing", "to_packing"))
+        yield self.env.process(self.move_to("packing", "to_packing", outbound=False))
 
 
         self.logger.log_queue(entity_id=self.name,

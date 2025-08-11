@@ -16,6 +16,8 @@ Scenario:
   and calls a tank truck for refueling if the station's level drops
   below a threshold.
 
+  simpy model (simpy_gas_stations.py) written by Team SimPy as part of SimPy documentation.
+
 """
 
 import itertools
