@@ -683,19 +683,22 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./examples/example_14_carwash/carwash.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Example 14: Carwash</span></a>
+ <span class="menu-text">Examples from Outside of Healthcare: Carwash</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./examples/example_15_gas_station_refuelling/gas_station.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Explore incorporating the fuel level bar plot as an additional synchronised plot</span></a>
+ <span class="menu-text">Visualising a more complex status alongside entity icons - gas station with individual fuel tank level</span></a>
   </div>
 </li>
           <li class="sidebar-item">
+ <span class="menu-text">examples/example_16/packing_robot/packing_robot.ipynb</span>
+  </li>
+          <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./examples/example_17_resourceless_larger_queues/resourceless_longer_queues.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Example 17 - Ways of visualising larger queues</span></a>
+ <span class="menu-text">Ways of visualising larger queues</span></a>
   </div>
 </li>
       </ul>
@@ -805,6 +808,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>Added ‘background_image_opacity’ argument to generate_animation and animate_activity_log. Default opacity is 0.5, which matches the previous hardcoded value.</li>
 <li>Added ‘overflow_text_color’ argument to generate_animation and animate_activity_log. Default is ‘black’. Overflow text refers to the ‘+ x more’ text that appears when queue lengths exceed the snapshot size.</li>
 <li>Added ‘stage_label_text_colour’ argument to generate_animation and animate_activity_log. Default is ‘black’. These are the optional labels showing the stages as defined in the event position dataframe, which you may be using instead of passing in a custom background with stage labels.</li>
+<li>Add ability to log custom events with non-standard event_type using the .log_custom_event() method of the EventLogger class.</li>
 </ul>
 </section>
 <section id="section" class="level1">

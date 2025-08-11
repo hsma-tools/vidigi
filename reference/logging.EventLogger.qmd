@@ -15,6 +15,7 @@ logging.EventLogger(self, event_model=BaseEvent, env=None, run_number=None)
 | [get_events_by_event_type](#vidigi.logging.EventLogger.get_events_by_event_type) | Return all events of a specific event_type. |
 | [get_events_by_run](#vidigi.logging.EventLogger.get_events_by_run) | Return all events associated with a specific entity_id. |
 | [log_arrival](#vidigi.logging.EventLogger.log_arrival) | Helper to log an arrival event with the correct event_type and event fields. |
+| [log_custom_event](#vidigi.logging.EventLogger.log_custom_event) | Log a custom event. The 'event' here can be any string describing the queue event. |
 | [log_departure](#vidigi.logging.EventLogger.log_departure) | Helper to log a departure event with the correct event_type and event fields. |
 | [log_queue](#vidigi.logging.EventLogger.log_queue) | Log a queue event. The 'event' here can be any string describing the queue event. |
 | [log_resource_use_end](#vidigi.logging.EventLogger.log_resource_use_end) | Log the end of resource use. Requires resource_id. |
@@ -70,6 +71,23 @@ logging.EventLogger.log_arrival(
 ```
 
 Helper to log an arrival event with the correct event_type and event fields.
+
+### log_custom_event { #vidigi.logging.EventLogger.log_custom_event }
+
+```python
+logging.EventLogger.log_custom_event(
+    entity_id,
+    event_type,
+    event,
+    time=None,
+    pathway=None,
+    run_number=None,
+    **extra_fields,
+)
+```
+
+Log a custom event. The 'event' here can be any string describing the queue event.
+An 'event_type' must also be passed, but can be any string of the user's choosing.
 
 ### log_departure { #vidigi.logging.EventLogger.log_departure }
 

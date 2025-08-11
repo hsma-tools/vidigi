@@ -683,19 +683,22 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../examples/example_14_carwash/carwash.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Example 14: Carwash</span></a>
+ <span class="menu-text">Examples from Outside of Healthcare: Carwash</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../examples/example_15_gas_station_refuelling/gas_station.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Explore incorporating the fuel level bar plot as an additional synchronised plot</span></a>
+ <span class="menu-text">Visualising a more complex status alongside entity icons - gas station with individual fuel tank level</span></a>
   </div>
 </li>
           <li class="sidebar-item">
+ <span class="menu-text">examples/example_16/packing_robot/packing_robot.ipynb</span>
+  </li>
+          <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../examples/example_17_resourceless_larger_queues/resourceless_longer_queues.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Example 17 - Ways of visualising larger queues</span></a>
+ <span class="menu-text">Ways of visualising larger queues</span></a>
   </div>
 </li>
       </ul>
@@ -833,38 +836,42 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>Helper to log an arrival event with the correct event_type and event fields.</td>
 </tr>
 <tr class="even">
+<td><a href="#vidigi.logging.EventLogger.log_custom_event">log_custom_event</a></td>
+<td>Log a custom event. The ‘event’ here can be any string describing the queue event.</td>
+</tr>
+<tr class="odd">
 <td><a href="#vidigi.logging.EventLogger.log_departure">log_departure</a></td>
 <td>Helper to log a departure event with the correct event_type and event fields.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#vidigi.logging.EventLogger.log_queue">log_queue</a></td>
 <td>Log a queue event. The ‘event’ here can be any string describing the queue event.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#vidigi.logging.EventLogger.log_resource_use_end">log_resource_use_end</a></td>
 <td>Log the end of resource use. Requires resource_id.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#vidigi.logging.EventLogger.log_resource_use_start">log_resource_use_start</a></td>
 <td>Log the start of resource use. Requires resource_id.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#vidigi.logging.EventLogger.plot_entity_timeline">plot_entity_timeline</a></td>
 <td>Plot a timeline of events for a specific entity_id.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#vidigi.logging.EventLogger.to_csv">to_csv</a></td>
 <td>Write the log to a CSV file.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#vidigi.logging.EventLogger.to_dataframe">to_dataframe</a></td>
 <td>Convert the event log to a pandas DataFrame.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#vidigi.logging.EventLogger.to_json">to_json</a></td>
 <td>Write the event log to a JSON file or file-like buffer.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#vidigi.logging.EventLogger.to_json_string">to_json_string</a></td>
 <td>Return the event log as a pretty JSON string.</td>
 </tr>
@@ -901,44 +908,45 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Helper to log an arrival event with the correct event_type and event fields.</p>
 </section>
+<section id="vidigi.logging.EventLogger.log_custom_event" class="level3">
+<h3 class="anchored" data-anchor-id="vidigi.logging.EventLogger.log_custom_event">log_custom_event</h3>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.log_custom_event(</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    entity_id,</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    event_type,</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    event,</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    time<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    pathway<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    run_number<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>extra_fields,</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Log a custom event. The ‘event’ here can be any string describing the queue event. An ‘event_type’ must also be passed, but can be any string of the user’s choosing.</p>
+</section>
 <section id="vidigi.logging.EventLogger.log_departure" class="level3">
 <h3 class="anchored" data-anchor-id="vidigi.logging.EventLogger.log_departure">log_departure</h3>
-<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.log_departure(</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    entity_id,</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    time<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    pathway<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    run_number<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>extra_fields,</span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.log_departure(</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    entity_id,</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    time<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    pathway<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    run_number<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>extra_fields,</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Helper to log a departure event with the correct event_type and event fields.</p>
 </section>
 <section id="vidigi.logging.EventLogger.log_queue" class="level3">
 <h3 class="anchored" data-anchor-id="vidigi.logging.EventLogger.log_queue">log_queue</h3>
-<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.log_queue(</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    entity_id,</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    event,</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    time<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    pathway<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    run_number<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>extra_fields,</span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Log a queue event. The ‘event’ here can be any string describing the queue event.</p>
-</section>
-<section id="vidigi.logging.EventLogger.log_resource_use_end" class="level3">
-<h3 class="anchored" data-anchor-id="vidigi.logging.EventLogger.log_resource_use_end">log_resource_use_end</h3>
-<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.log_resource_use_end(</span>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.log_queue(</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    entity_id,</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    resource_id,</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    event,</span>
 <span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    time<span class="op">=</span><span class="va">None</span>,</span>
 <span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    pathway<span class="op">=</span><span class="va">None</span>,</span>
 <span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    run_number<span class="op">=</span><span class="va">None</span>,</span>
 <span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>extra_fields,</span>
 <span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Log the end of resource use. Requires resource_id.</p>
+<p>Log a queue event. The ‘event’ here can be any string describing the queue event.</p>
 </section>
-<section id="vidigi.logging.EventLogger.log_resource_use_start" class="level3">
-<h3 class="anchored" data-anchor-id="vidigi.logging.EventLogger.log_resource_use_start">log_resource_use_start</h3>
-<div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.log_resource_use_start(</span>
+<section id="vidigi.logging.EventLogger.log_resource_use_end" class="level3">
+<h3 class="anchored" data-anchor-id="vidigi.logging.EventLogger.log_resource_use_end">log_resource_use_end</h3>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.log_resource_use_end(</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    entity_id,</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    resource_id,</span>
 <span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    time<span class="op">=</span><span class="va">None</span>,</span>
@@ -946,31 +954,43 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    run_number<span class="op">=</span><span class="va">None</span>,</span>
 <span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>extra_fields,</span>
 <span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Log the end of resource use. Requires resource_id.</p>
+</section>
+<section id="vidigi.logging.EventLogger.log_resource_use_start" class="level3">
+<h3 class="anchored" data-anchor-id="vidigi.logging.EventLogger.log_resource_use_start">log_resource_use_start</h3>
+<div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.log_resource_use_start(</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    entity_id,</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    resource_id,</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    time<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    pathway<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>    run_number<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>extra_fields,</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Log the start of resource use. Requires resource_id.</p>
 </section>
 <section id="vidigi.logging.EventLogger.plot_entity_timeline" class="level3">
 <h3 class="anchored" data-anchor-id="vidigi.logging.EventLogger.plot_entity_timeline">plot_entity_timeline</h3>
-<div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.plot_entity_timeline(entity_id)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.plot_entity_timeline(entity_id)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Plot a timeline of events for a specific entity_id.</p>
 </section>
 <section id="vidigi.logging.EventLogger.to_csv" class="level3">
 <h3 class="anchored" data-anchor-id="vidigi.logging.EventLogger.to_csv">to_csv</h3>
-<div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.to_csv(path_or_buffer)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.to_csv(path_or_buffer)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Write the log to a CSV file.</p>
 </section>
 <section id="vidigi.logging.EventLogger.to_dataframe" class="level3">
 <h3 class="anchored" data-anchor-id="vidigi.logging.EventLogger.to_dataframe">to_dataframe</h3>
-<div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.to_dataframe()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.to_dataframe()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Convert the event log to a pandas DataFrame.</p>
 </section>
 <section id="vidigi.logging.EventLogger.to_json" class="level3">
 <h3 class="anchored" data-anchor-id="vidigi.logging.EventLogger.to_json">to_json</h3>
-<div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.to_json(path_or_buffer, indent<span class="op">=</span><span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.to_json(path_or_buffer, indent<span class="op">=</span><span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Write the event log to a JSON file or file-like buffer.</p>
 </section>
 <section id="vidigi.logging.EventLogger.to_json_string" class="level3">
 <h3 class="anchored" data-anchor-id="vidigi.logging.EventLogger.to_json_string">to_json_string</h3>
-<div class="sourceCode" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.to_json_string(indent<span class="op">=</span><span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.to_json_string(indent<span class="op">=</span><span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Return the event log as a pretty JSON string.</p>
 
 
