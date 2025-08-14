@@ -1,0 +1,111 @@
+
+
+
+```{r}
+library(simmer)
+
+set.seed(1234)
+
+customer <-
+  trajectory("Customer's path") %>%
+  seize("counter") %>%
+  timeout(function() {rexp(1, 1/12)}) %>%
+  release("counter")
+
+bank <-
+  simmer("bank") %>%
+  add_resource("counter", 2) %>%
+  add_generator("Customer", customer, function() {c(0, rexp(4, 1/10), -1)}, 2)
+
+bank %>% run(until = 400)
+
+```
+
+```{r}
+bank %>% get_mon_arrivals()
+```
+
+
+```{r}
+bank %>% get_mon_attributes()
+```
+
+```{r}
+bank %>% get_mon_resources()
+```
+
+
+
+
+```{r}
+library(simmer)
+library(testthat)
+
+set.seed(1234)
+
+simmer_logs <- ""
+
+simmer_logs <- capture_output({
+print("first_line,to_discard,,,")
+
+customer <-
+  trajectory("Customer's path") %>%
+  log_("arrival_departure,arrival,") %>%
+  log_("queue,queue_counter,") %>%
+  seize("counter") %>%
+  log_("resource_use,counter_use_start,counter") %>%
+  timeout(function() {rexp(1, 1/20)}) %>%
+  log_("resource_use_end,counter_use_end,counter") %>%
+  log_("arrival_departure,depart,") %>%
+  release("counter")
+
+bank <-
+  simmer("bank") %>%
+  add_resource("counter", 2) %>%
+  add_generator("Customer", customer, function() {c(0, rexp(50, 1/15), -1)}, 2)
+
+bank %>% run(until = 400)
+
+})
+
+```
+
+```{r}
+simmer_logs
+```
+
+```{r}
+# Clean the strings using two substitutions
+# First, replace the colon after the timestamp. sub() only replaces the first match.
+cleaned_lines <- gsub(pattern = ": ", replacement = ",", x = simmer_logs)
+# Second, remove the extra ': 0,' after the customer ID
+cleaned_lines <- gsub(pattern = ": 0,", replacement = ",", x = cleaned_lines)
+```
+
+```{r}
+cleaned_lines
+```
+
+
+```{r}
+# Read the cleaned character vector directly into a data frame
+log_df <- read.csv(
+  text = cleaned_lines,
+  header = FALSE,
+  col.names = c("time","entity_id","event_type","event","resource")
+)
+
+# Discard the sacrifical row
+log_df <- log_df %>% tail(-1)
+
+log_df
+```
+
+```{r}
+library(readr)
+library(here)
+library(glue)
+
+bank %>% get_mon_resources() %>% readr::write_csv(glue("{here::here()}/examples/r_simmer/resources.csv"))
+log_df %>% readr::write_csv(glue("{here::here()}/examples/r_simmer/logs.csv"))
+```

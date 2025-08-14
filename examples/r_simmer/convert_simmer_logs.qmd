@@ -1,0 +1,126 @@
+
+
+```{python}
+import pandas as pd
+
+event_log_df = pd.read_csv("logs.csv")
+resource_use = pd.read_csv("resources.csv")
+```
+
+```{python}
+event_log_df["time"] = event_log_df["time"].astype('float').round(4)
+event_log_df
+```
+
+```{python}
+resource_use["time"] = resource_use["time"].astype('float').round(4)
+resource_use
+```
+
+```{python}
+resource_use_start_events = event_log_df[event_log_df["event_type"] == "resource_use"].reset_index(drop=False).merge(
+    resource_use[["time", "server", "resource"]],
+    on=["time", "resource"],
+    how="left"
+).set_index('index')
+
+resource_use_start_events
+```
+
+```{python}
+resource_use_start_end_events = pd.concat([
+event_log_df[event_log_df["event_type"] == "resource_use_end"],
+resource_use_start_events
+])
+
+resource_use_start_end_events
+```
+
+```{python}
+resource_use_start_end_events['server'] = resource_use_start_end_events.groupby(['entity_id', 'resource'])['server'].bfill().ffill()
+
+resource_use_start_end_events
+```
+
+```{python}
+final_event_log = pd.concat([
+event_log_df[~event_log_df["event_type"].str.contains("resource_use")],
+resource_use_start_end_events
+]).sort_index().rename(columns={"server":"resource_id"})
+
+final_event_log["entity_id"] = final_event_log["entity_id"].str.replace("Customer", "")
+
+final_event_log.head(60)
+```
+
+```{python}
+class Params():
+    def __init__(self):
+        self.n_counters = 2
+```
+
+
+```{python}
+from vidigi.utils import EventPosition, create_event_position_df
+from vidigi.animation import animate_activity_log
+
+# Create a list of EventPosition objects
+event_position_df = create_event_position_df([
+    EventPosition(event='arrival', x=50, y=450, label="Arrival"),
+    EventPosition(event='queue_counter', x=205, y=275, label="Waiting for Counter"),
+    EventPosition(event='counter_use_start', x=205, y=175, label="At Counter", resource='n_counters'),
+    EventPosition(event='depart', x=270, y=70, label="Exit")
+])
+```
+
+
+```{python}
+animate_activity_log(
+        # Pass in our filtered event log
+        event_log=final_event_log,
+        # Pass in our event position dataframe
+        event_position_df= event_position_df,
+        # Pass in the class
+        scenario=Params(),
+        # How long should the animation last? We can pass in any value here - but I've chosen to
+        # make it last as long as our originally defined simulation duration
+        limit_duration=400,
+        # Turn on logging messages
+        debug_mode=True,
+        # Turn on axis units - this can help with honing your event_position_df iteratively
+        setup_mode=False,
+        # How big should the time steps be? Here,
+        every_x_time_units=1,
+        # Should the animation allow you to just drag a slider to progress through the animation,
+        # or should it include a play button?
+        include_play_button=True,
+        # How big should the icons representing our entities be?
+        entity_icon_size=20,
+        # How big should the icons representing our resources be?
+        resource_icon_size=20,
+        # How big should the gap between our entities be when they are queueing?
+        gap_between_entities=6,
+        # When we wrap the entities to fit more neatly on the screen, how big should the vertical
+        # gap be between these rows?
+        gap_between_queue_rows=25,
+        # How tall, in pixels, should the plotly plot be?
+        plotly_height=600,
+        # How wide, in pixels, should the plotly plot be?
+        plotly_width=1000,
+        # How long, in milliseconds, should each frame last?
+        frame_duration=200,
+        # How long, in milliseconds, should the transition between each pair of frames be?
+        frame_transition_duration=600,
+        # How wide, in coordinates, should our plot's internal coordinate system be?
+        override_x_max=300,
+        # How tall, in coordinates, should our plot's internal coordinate system be?
+        override_y_max=500,
+        # How long should a queue be before it starts wrapping vertically?
+        wrap_queues_at=25,
+        # What are the maximum numbers of entities that should be displayed in any queueing steps
+        # before displaying additional entities as a text string like '+ 37 more'
+        step_snapshot_max=125,
+        # display our Label column from our event_position_df to identify the position of each icon
+        display_stage_labels=True
+    )
+```
