@@ -35,6 +35,9 @@ bank %>% get_mon_resources()
 ```
 
 
+# Add in logging
+
+Let's increase the frequency of arrivals and the duration of counter usage too.
 
 
 ```{r}
@@ -102,10 +105,65 @@ log_df
 ```
 
 ```{r}
+bank %>% get_mon_resources()
+```
+
+```{r}
+assign_server_assignments <- function(df) {
+  df$assigned_server <- NA
+
+  # State: whether each server is busy
+  server_busy <- c(FALSE, FALSE)
+  # Queue of which server is working on each active job (for FIFO releases)
+  active_jobs <- c()
+
+  for (i in seq_len(nrow(df))) {
+    prev_busy_count <- if (i == 1) 0 else df$server[i - 1]
+    current_busy_count <- df$server[i]
+
+    # Releases first
+    if (current_busy_count < prev_busy_count) {
+      releases <- prev_busy_count - current_busy_count
+      # Remove from the front of the queue
+      for (r in seq_len(releases)) {
+        if (length(active_jobs) > 0) {
+          released <- active_jobs[1]
+          active_jobs <- active_jobs[-1]
+          server_busy[released] <- FALSE
+        }
+      }
+    }
+
+    # New assignments
+    if (current_busy_count > prev_busy_count) {
+      new_assignments <- current_busy_count - prev_busy_count
+      for (a in seq_len(new_assignments)) {
+        # First available server in numerical order
+        avail <- which(!server_busy)[1]
+        if (length(avail) > 0) {
+          server_busy[avail] <- TRUE
+          active_jobs <- c(active_jobs, avail)
+          df$assigned_server[i] <- avail
+        }
+      }
+    }
+  }
+
+  df
+}
+
+resource_usage_raw <- bank %>% get_mon_resources()
+resource_usage <- assign_server_assignments(resource_usage_raw)
+
+resource_usage
+```
+
+
+```{r}
 library(readr)
 library(here)
 library(glue)
 
-bank %>% get_mon_resources() %>% readr::write_csv(glue("{here::here()}/examples/r_simmer/resources.csv"))
+resource_usage %>% readr::write_csv(glue("{here::here()}/examples/r_simmer/resources.csv"))
 log_df %>% readr::write_csv(glue("{here::here()}/examples/r_simmer/logs.csv"))
 ```

@@ -19,7 +19,7 @@ resource_use
 
 ```{python}
 resource_use_start_events = event_log_df[event_log_df["event_type"] == "resource_use"].reset_index(drop=False).merge(
-    resource_use[["time", "server", "resource"]],
+    resource_use[["time", "assigned_server", "resource"]],
     on=["time", "resource"],
     how="left"
 ).set_index('index')
@@ -37,7 +37,7 @@ resource_use_start_end_events
 ```
 
 ```{python}
-resource_use_start_end_events['server'] = resource_use_start_end_events.groupby(['entity_id', 'resource'])['server'].bfill().ffill()
+resource_use_start_end_events['assigned_server'] = resource_use_start_end_events.groupby(['entity_id', 'resource'])['assigned_server'].bfill().ffill()
 
 resource_use_start_end_events
 ```
@@ -46,7 +46,7 @@ resource_use_start_end_events
 final_event_log = pd.concat([
 event_log_df[~event_log_df["event_type"].str.contains("resource_use")],
 resource_use_start_end_events
-]).sort_index().rename(columns={"server":"resource_id"})
+]).sort_index().rename(columns={"assigned_server":"resource_id"})
 
 final_event_log["entity_id"] = final_event_log["entity_id"].str.replace("Customer", "")
 
