@@ -3,16 +3,19 @@ import time
 import pandas as pd
 import numpy as np
 
-def reshape_for_animations(event_log,
-                           every_x_time_units=10,
-                           limit_duration=10*60*24,
-                           step_snapshot_max=50,
-                           time_col_name="time",
-                           entity_col_name="entity_id",
-                           event_type_col_name="event_type",
-                           event_col_name="event",
-                           pathway_col_name=None,
-                           debug_mode=False):
+
+def reshape_for_animations(
+    event_log,
+    every_x_time_units=10,
+    limit_duration=10 * 60 * 24,
+    step_snapshot_max=50,
+    time_col_name="time",
+    entity_col_name="entity_id",
+    event_type_col_name="event_type",
+    event_col_name="event",
+    pathway_col_name=None,
+    debug_mode=False,
+):
     """
     Reshape event log data for animation purposes.
 
@@ -77,32 +80,25 @@ def reshape_for_animations(event_log,
     if pathway_col_name is not None:
         pivoted_log = event_log.pivot_table(
             values=time_col_name,
-            index=[
-                entity_col_name,
-                event_type_col_name,
-                pathway_col_name
-                ],
-                columns=event_col_name
-            ).reset_index()
+            index=[entity_col_name, event_type_col_name, pathway_col_name],
+            columns=event_col_name,
+        ).reset_index()
 
     else:
         pivoted_log = event_log.pivot_table(
             values=time_col_name,
-            index=[
-                entity_col_name,
-                event_type_col_name
-                ],
-                columns=event_col_name
-            ).reset_index()
+            index=[entity_col_name, event_type_col_name],
+            columns=event_col_name,
+        ).reset_index()
 
-    #TODO: Add in behaviour for if limit_duration is None
+    # TODO: Add in behaviour for if limit_duration is None
 
     ################################################################################
     # Iterate through every matching minute
     # and generate snapshot df of position of any entities present at that moment
     ################################################################################
     # Note that we want to do this for everything up to AND INCLUDING the duration
-    for time_unit in range(limit_duration+every_x_time_units):
+    for time_unit in range(limit_duration + every_x_time_units):
         # print(minute)
         # Get entities who arrived before the current minute and who left the system after the current minute
         # (or arrived but didn't reach the point of being seen before the model run ended)
@@ -119,19 +115,15 @@ def reshape_for_animations(event_log,
                 # They will have arrived at or before the minute in question, and they will depart at
                 # or after the minute in question, or never depart during our model run
                 # (which can happen if they arrive towards the end, or there is a bottleneck)
-                current_entities_in_moment = (pivoted_log[
-
-                    (pivoted_log['arrival'] <= time_unit) &
-
-                    (
-                        (pivoted_log['depart'] >= time_unit) |
-                        (pivoted_log['depart'].isnull() )
-                    )]
-                [entity_col_name]
-                .values
-                )
+                current_entities_in_moment = pivoted_log[
+                    (pivoted_log["arrival"] <= time_unit)
+                    & (
+                        (pivoted_log["depart"] >= time_unit)
+                        | (pivoted_log["depart"].isnull())
+                    )
+                ][entity_col_name].values
             except KeyError:
-                current_entities_in_moment = [] # Use an empty list for consistency
+                current_entities_in_moment = []  # Use an empty list for consistency
 
             # If we do have any entities, they will have been passed as a list
             # so now just filter our event log down to the events these entities have been
@@ -142,9 +134,9 @@ def reshape_for_animations(event_log,
                 # Filter out any events that have taken place after the minute we are interested in
 
                 entity_minute_df = event_log[
-                    (event_log[entity_col_name].isin(current_entities_in_moment)) &
-                    (event_log[time_col_name] <= time_unit)
-                    ]
+                    (event_log[entity_col_name].isin(current_entities_in_moment))
+                    & (event_log[time_col_name] <= time_unit)
+                ]
 
                 # Each entity can only be in a single place at once
 
@@ -155,26 +147,30 @@ def reshape_for_animations(event_log,
                 # We have filtered out  events that occurred later than the current minute,
                 # so filter out any events then just take the latest event that has
                 # taken place for each entity
-                most_recent_events_time_unit_ungrouped = entity_minute_df \
-                    .reset_index(drop=False) \
-                    .sort_values([time_col_name, 'index'], ascending=True) \
-                    .groupby([entity_col_name]) \
+                most_recent_events_time_unit_ungrouped = (
+                    entity_minute_df.reset_index(drop=False)
+                    .sort_values([time_col_name, "index"], ascending=True)
+                    .groupby([entity_col_name])
                     .tail(1)
+                )
 
                 # Now rank entities within a given event by the order in which they turned up to that event
-                most_recent_events_time_unit_ungrouped['rank'] = most_recent_events_time_unit_ungrouped \
-                              .groupby([event_col_name])['index'] \
-                              .rank(method='first')
+                most_recent_events_time_unit_ungrouped["rank"] = (
+                    most_recent_events_time_unit_ungrouped.groupby([event_col_name])[
+                        "index"
+                    ].rank(method="first")
+                )
 
-                most_recent_events_time_unit_ungrouped['max'] = (
-                    most_recent_events_time_unit_ungrouped.groupby(event_col_name)['rank'] \
-                    .transform('max')
-                    )
+                most_recent_events_time_unit_ungrouped["max"] = (
+                    most_recent_events_time_unit_ungrouped.groupby(event_col_name)[
+                        "rank"
+                    ].transform("max")
+                )
 
                 # ----------------------------------------------------------------------------- #
 
                 # Exclude event types that should not be part of snapshot logic
-                excluded_types = ['resource_use', 'resource_use_end']
+                excluded_types = ["resource_use", "resource_use_end"]
 
                 # Apply snapshot logic per event (assuming 'event_id' identifies each event)
                 def process_event_group(df):
@@ -182,47 +178,54 @@ def reshape_for_animations(event_log,
                         return df  # Return unchanged
                     else:
                         # Keep only top (step_snapshot_max + 1) ranks
-                        df = df[df['rank'] <= (step_snapshot_max + 1)].copy()
+                        df = df[df["rank"] <= (step_snapshot_max + 1)].copy()
 
                         # Identify max rank row (to possibly add 'additional' column)
-                        max_row = df[df['rank'] == float(step_snapshot_max + 1)].copy()
+                        max_row = df[df["rank"] == float(step_snapshot_max + 1)].copy()
                         if len(max_row) > 0:
-                            max_row['additional'] = max_row['max'] - max_row['rank']
-                            df = pd.concat([
-                                df[df['rank'] != float(step_snapshot_max + 1)],
-                                max_row
-                            ], ignore_index=True)
+                            max_row["additional"] = max_row["max"] - max_row["rank"]
+                            df = pd.concat(
+                                [
+                                    df[df["rank"] != float(step_snapshot_max + 1)],
+                                    max_row,
+                                ],
+                                ignore_index=True,
+                            )
                         return df
 
                 # Apply the per-event logic
                 most_recent_events_time_unit_ungrouped = (
-                    most_recent_events_time_unit_ungrouped
-                    .groupby(event_col_name, group_keys=False)
-                    .apply(process_event_group)
+                    most_recent_events_time_unit_ungrouped.groupby(
+                        event_col_name, group_keys=False
+                    ).apply(process_event_group)
                 )
 
                 # Clean up and store snapshot
                 entity_dfs.append(
-                    most_recent_events_time_unit_ungrouped
-                    .drop(columns='max', errors='ignore')
-                    .assign(snapshot_time=time_unit)
+                    most_recent_events_time_unit_ungrouped.drop(
+                        columns="max", errors="ignore"
+                    ).assign(snapshot_time=time_unit)
                 )
 
             else:
                 # If no entities, append a DataFrame with just the snapshot_time
                 # This creates a row with NaN for all other columns, preserving the time step.
-                empty_df = pd.DataFrame([{'snapshot_time': time_unit}])
+                empty_df = pd.DataFrame([{"snapshot_time": time_unit}])
                 entity_dfs.append(empty_df)
 
     if debug_mode:
-        print(f'Iteration through time-unit-by-time-unit logs complete {time.strftime("%H:%M:%S", time.localtime())}')
+        print(
+            f"Iteration through time-unit-by-time-unit logs complete {time.strftime('%H:%M:%S', time.localtime())}"
+        )
 
     # Join together all entity dfs - so the dataframe created per time snapshot - are put into
     # one large dataframe
     full_entity_df = (pd.concat(entity_dfs, ignore_index=True)).reset_index(drop=True)
 
     if debug_mode:
-        print(f'Snapshot df concatenation complete at {time.strftime("%H:%M:%S", time.localtime())}')
+        print(
+            f"Snapshot df concatenation complete at {time.strftime('%H:%M:%S', time.localtime())}"
+        )
 
     # We no longer need to keep the individual dataframes in that list, so get rid of them
     # to free up memory asap
@@ -239,15 +242,14 @@ def reshape_for_animations(event_log,
 
     # First, get the last step for every single person
     final_step = (
-        full_entity_df
-        .sort_values([entity_col_name, 'snapshot_time'], ascending=True)
+        full_entity_df.sort_values([entity_col_name, "snapshot_time"], ascending=True)
         .groupby(entity_col_name)
         .tail(1)
         .copy()
     )
 
     # Propose their 'exit' time
-    final_step['snapshot_time'] = final_step['snapshot_time'] + every_x_time_units
+    final_step["snapshot_time"] = final_step["snapshot_time"] + every_x_time_units
     final_step[event_col_name] = "depart"
 
     # Only keep rows for people whose exit step will happen *before* the simulation end
@@ -258,26 +260,31 @@ def reshape_for_animations(event_log,
     del final_step
     gc.collect()
 
-    return full_entity_df.sort_values(['snapshot_time', event_col_name]).reset_index(drop=True)
+    return (
+        full_entity_df.sort_values(["snapshot_time", event_col_name])
+        .reset_index(drop=True)
+        .dropna(axis=1, how="all")
+    )
+
 
 def generate_animation_df(
-        full_entity_df,
-        event_position_df,
-        wrap_queues_at=20,
-        wrap_resources_at=20,
-        step_snapshot_max=50,
-        gap_between_entities=10,
-        gap_between_resources=10,
-        gap_between_resource_rows=30,
-        gap_between_queue_rows=30,
-        time_col_name="time",
-        entity_col_name="entity_id",
-        event_type_col_name="event_type",
-        event_col_name="event",
-        resource_col_name="resource_id",
-        debug_mode=False,
-        custom_entity_icon_list=None,
-        include_fun_emojis=False
+    full_entity_df,
+    event_position_df,
+    wrap_queues_at=20,
+    wrap_resources_at=20,
+    step_snapshot_max=50,
+    gap_between_entities=10,
+    gap_between_resources=10,
+    gap_between_resource_rows=30,
+    gap_between_queue_rows=30,
+    time_col_name="time",
+    entity_col_name="entity_id",
+    event_type_col_name="event_type",
+    event_col_name="event",
+    resource_col_name="resource_id",
+    debug_mode=False,
+    custom_entity_icon_list=None,
+    include_fun_emojis=False,
 ):
     """
     Generate a DataFrame for animation purposes by adding position information to entity data.
@@ -353,17 +360,13 @@ def generate_animation_df(
     # and return an error if it does so
 
     # Order entities within event/time unit to determine their eventual position in the line
-    full_entity_df['rank'] = (
-        full_entity_df.groupby([event_col_name, "snapshot_time"])
-        ["snapshot_time"]
-        .rank(method='first')
-        )
+    full_entity_df["rank"] = full_entity_df.groupby([event_col_name, "snapshot_time"])[
+        "snapshot_time"
+    ].rank(method="first")
 
-    full_entity_df_plus_pos = (
-        full_entity_df
-        .merge(event_position_df, on=event_col_name, how='left')
-        .sort_values([event_col_name, "snapshot_time", time_col_name])
-        )
+    full_entity_df_plus_pos = full_entity_df.merge(
+        event_position_df, on=event_col_name, how="left"
+    ).sort_values([event_col_name, "snapshot_time", time_col_name])
 
     # Separate the empty snapshots from the entity data
     # We can identify them as rows where the entity ID is null.
@@ -376,56 +379,61 @@ def generate_animation_df(
     ].copy()
 
     # Determine the position for any resource use steps
-    resource_use = (
-        entity_data[entity_data[event_type_col_name] == "resource_use"]
-        .copy()
-        )
+    resource_use = entity_data[
+        entity_data[event_type_col_name] == "resource_use"
+    ].copy()
     # resource_use['y_final'] =  resource_use['y']
 
     if len(resource_use) > 0:
         resource_use = resource_use.rename(columns={"y": "y_final"})
-        resource_use['x_final'] = resource_use['x'] - resource_use[resource_col_name] * gap_between_resources
+        resource_use["x_final"] = (
+            resource_use["x"] - resource_use[resource_col_name] * gap_between_resources
+        )
 
         # If we want resources to wrap at a certain queue length, do this here
         # They'll wrap at the defined point and then the queue will start expanding upwards
         # from the starting row
         if wrap_resources_at is not None:
-            resource_use['row'] = np.floor((resource_use[resource_col_name] - 1) / (wrap_resources_at))
+            resource_use["row"] = np.floor(
+                (resource_use[resource_col_name] - 1) / (wrap_resources_at)
+            )
 
-            resource_use['x_final'] = (
-                resource_use['x_final'] +
-                (wrap_resources_at * resource_use['row'] * gap_between_resources) +
-                gap_between_resources
-                )
+            resource_use["x_final"] = (
+                resource_use["x_final"]
+                + (wrap_resources_at * resource_use["row"] * gap_between_resources)
+                + gap_between_resources
+            )
 
-            resource_use['y_final'] = resource_use['y_final'] + (resource_use['row'] * gap_between_resource_rows)
+            resource_use["y_final"] = resource_use["y_final"] + (
+                resource_use["row"] * gap_between_resource_rows
+            )
 
     # Determine the position for any queuing steps
-    queues = entity_data[entity_data['event_type']=='queue'].copy()
+    queues = entity_data[entity_data["event_type"] == "queue"].copy()
 
     # queues['y_final'] =  queues['y']
     queues = queues.rename(columns={"y": "y_final"})
-    queues['x_final'] = queues['x'] - queues['rank'] * gap_between_entities
+    queues["x_final"] = queues["x"] - queues["rank"] * gap_between_entities
 
     # If we want people to wrap at a certain queue length, do this here
     # They'll wrap at the defined point and then the queue will start expanding upwards
     # from the starting row
     if wrap_queues_at is not None:
-        queues['row'] = np.floor((queues['rank'] - 1) / (wrap_queues_at))
+        queues["row"] = np.floor((queues["rank"] - 1) / (wrap_queues_at))
 
-        queues['x_final'] = (
-            queues['x_final'] +
-            (wrap_queues_at * queues['row'] * gap_between_entities) +
-            gap_between_entities
+        queues["x_final"] = (
+            queues["x_final"]
+            + (wrap_queues_at * queues["row"] * gap_between_entities)
+            + gap_between_entities
         )
 
-        queues['y_final'] = queues['y_final'] + (queues['row'] * gap_between_queue_rows)
+        queues["y_final"] = queues["y_final"] + (queues["row"] * gap_between_queue_rows)
 
-    queues['x_final'] = np.where(
-        queues['rank'] != step_snapshot_max + 1,
-        queues['x_final'],
-        queues['x_final'] - (gap_between_entities * (wrap_queues_at/2))
-        )
+    queues["x_final"] = np.where(
+        queues["rank"] != step_snapshot_max + 1,
+        queues["x_final"],
+        queues["x_final"] - (gap_between_entities * (wrap_queues_at / 2)),
+    )
 
     if len(resource_use) > 0:
         processed_entities_df = pd.concat([queues, resource_use], ignore_index=True)
@@ -436,79 +444,150 @@ def generate_animation_df(
 
     # Add the empty snapshots back into the main dataframe
     full_entity_df_plus_pos = pd.concat(
-        [processed_entities_df, empty_snapshots],
-        ignore_index=True
+        [processed_entities_df, empty_snapshots], ignore_index=True
     )
 
     if debug_mode:
-        print(f'Placement dataframe finished construction at {time.strftime("%H:%M:%S", time.localtime())}')
+        print(
+            f"Placement dataframe finished construction at {time.strftime('%H:%M:%S', time.localtime())}"
+        )
 
     # full_patient_df_plus_pos['icon'] = '🙍'
 
     # TODO: Add warnings if duplicates are found (because in theory they shouldn't be)
-    individual_entities = full_entity_df[entity_col_name].drop_duplicates().sort_values()
+    individual_entities = (
+        full_entity_df[entity_col_name].drop_duplicates().sort_values()
+    )
 
     # Recommend https://emojipedia.org/ for finding emojis to add to list
     # note that best compatibility across systems can be achieved by using
     # emojis from v12.0 and below - Windows 10 got no more updates after that point
 
     if custom_entity_icon_list is None:
-
         icon_list = [
-            '🧔🏼', '👨🏿‍🦯', '👨🏻‍🦰', '🧑🏻', '👩🏿‍🦱',
-            '🤰', '👳🏽', '👩🏼‍🦳', '👨🏿‍🦳', '👩🏼‍🦱',
-            '🧍🏽‍♀️', '👨🏼‍🔬', '👩🏻‍🦰', '🧕🏿', '👨🏼‍🦽',
-            '👴🏾', '👨🏼‍🦱', '👷🏾', '👧🏿', '🙎🏼‍♂️',
-            '👩🏻‍🦲', '🧔🏾', '🧕🏻', '👨🏾‍🎓', '👨🏾‍🦲',
-            '👨🏿‍🦰', '🙍🏼‍♂️', '🙋🏾‍♀️', '👩🏻‍🔧', '👨🏿‍🦽',
-            '👩🏼‍🦳', '👩🏼‍🦼', '🙋🏽‍♂️', '👩🏿‍🎓', '👴🏻',
-            '🤷🏻‍♀️', '👶🏾', '👨🏻‍✈️', '🙎🏿‍♀️', '👶🏻',
-            '👴🏿', '👨🏻‍🦳', '👩🏽', '👩🏽‍🦳', '🧍🏼‍♂️',
-            '👩🏽‍🎓', '👱🏻‍♀️', '👲🏼', '🧕🏾', '👨🏻‍🦯',
-            '🧔🏿', '👳🏿', '🤦🏻‍♂️', '👩🏽‍🦰', '👨🏼‍✈️',
-            '👨🏾‍🦲', '🧍🏾‍♂️', '👧🏼', '🤷🏿‍♂️', '👨🏿‍🔧',
-            '👱🏾‍♂️', '👨🏼‍🎓', '👵🏼', '🤵🏿', '🤦🏾‍♀️',
-            '👳🏻', '🙋🏼‍♂️', '👩🏻‍🎓', '👩🏼‍🌾', '👩🏾‍🔬',
-            '👩🏿‍✈️',  '👵🏿', '🤵🏻', '🤰'
+            "🧔🏼",
+            "👨🏿‍🦯",
+            "👨🏻‍🦰",
+            "🧑🏻",
+            "👩🏿‍🦱",
+            "🤰",
+            "👳🏽",
+            "👩🏼‍🦳",
+            "👨🏿‍🦳",
+            "👩🏼‍🦱",
+            "🧍🏽‍♀️",
+            "👨🏼‍🔬",
+            "👩🏻‍🦰",
+            "🧕🏿",
+            "👨🏼‍🦽",
+            "👴🏾",
+            "👨🏼‍🦱",
+            "👷🏾",
+            "👧🏿",
+            "🙎🏼‍♂️",
+            "👩🏻‍🦲",
+            "🧔🏾",
+            "🧕🏻",
+            "👨🏾‍🎓",
+            "👨🏾‍🦲",
+            "👨🏿‍🦰",
+            "🙍🏼‍♂️",
+            "🙋🏾‍♀️",
+            "👩🏻‍🔧",
+            "👨🏿‍🦽",
+            "👩🏼‍🦳",
+            "👩🏼‍🦼",
+            "🙋🏽‍♂️",
+            "👩🏿‍🎓",
+            "👴🏻",
+            "🤷🏻‍♀️",
+            "👶🏾",
+            "👨🏻‍✈️",
+            "🙎🏿‍♀️",
+            "👶🏻",
+            "👴🏿",
+            "👨🏻‍🦳",
+            "👩🏽",
+            "👩🏽‍🦳",
+            "🧍🏼‍♂️",
+            "👩🏽‍🎓",
+            "👱🏻‍♀️",
+            "👲🏼",
+            "🧕🏾",
+            "👨🏻‍🦯",
+            "🧔🏿",
+            "👳🏿",
+            "🤦🏻‍♂️",
+            "👩🏽‍🦰",
+            "👨🏼‍✈️",
+            "👨🏾‍🦲",
+            "🧍🏾‍♂️",
+            "👧🏼",
+            "🤷🏿‍♂️",
+            "👨🏿‍🔧",
+            "👱🏾‍♂️",
+            "👨🏼‍🎓",
+            "👵🏼",
+            "🤵🏿",
+            "🤦🏾‍♀️",
+            "👳🏻",
+            "🙋🏼‍♂️",
+            "👩🏻‍🎓",
+            "👩🏼‍🌾",
+            "👩🏾‍🔬",
+            "👩🏿‍✈️",
+            "👵🏿",
+            "🤵🏻",
+            "🤰",
         ]
 
         if include_fun_emojis:
-            additional_fun_icon_list = ['🎅🏼', '👽', '🤸', '🧜', '🏇', '🧟', '🧞', '🧚', '🧙',
-                                        '🦹', '🦸']
+            additional_fun_icon_list = [
+                "🎅🏼",
+                "👽",
+                "🤸",
+                "🧜",
+                "🏇",
+                "🧟",
+                "🧞",
+                "🧚",
+                "🧙",
+                "🦹",
+                "🦸",
+            ]
 
             icon_list.extend(additional_fun_icon_list)
     else:
         icon_list = custom_entity_icon_list.copy()
 
-    full_icon_list = icon_list * int(np.ceil(len(individual_entities)/len(icon_list)))
+    full_icon_list = icon_list * int(np.ceil(len(individual_entities) / len(icon_list)))
 
-    full_icon_list = full_icon_list[0:len(individual_entities)]
+    full_icon_list = full_icon_list[0 : len(individual_entities)]
 
     full_entity_df_plus_pos = full_entity_df_plus_pos.merge(
         pd.DataFrame(
-            {entity_col_name:list(individual_entities),
-            'icon':full_icon_list}
-            ),
-        on=entity_col_name
+            {entity_col_name: list(individual_entities), "icon": full_icon_list}
+        ),
+        on=entity_col_name,
+    )
+
+    if "additional" in full_entity_df_plus_pos.columns:
+        exceeded_snapshot_limit = full_entity_df_plus_pos[
+            full_entity_df_plus_pos["additional"].notna()
+        ].copy()
+
+        exceeded_snapshot_limit["icon"] = exceeded_snapshot_limit["additional"].apply(
+            lambda x: f"+ {int(x):5d} more"
         )
-
-    if 'additional' in full_entity_df_plus_pos.columns:
-        exceeded_snapshot_limit = (
-            full_entity_df_plus_pos[full_entity_df_plus_pos['additional'].notna()].copy()
-            )
-
-        exceeded_snapshot_limit['icon'] = (
-            exceeded_snapshot_limit['additional'].apply(lambda x: f"+ {int(x):5d} more")
-            )
 
         full_entity_df_plus_pos = pd.concat(
             [
-                full_entity_df_plus_pos[full_entity_df_plus_pos['additional'].isna()],
-                exceeded_snapshot_limit
+                full_entity_df_plus_pos[full_entity_df_plus_pos["additional"].isna()],
+                exceeded_snapshot_limit,
             ],
-            ignore_index=True
+            ignore_index=True,
         )
 
     full_entity_df_plus_pos["opacity"] = 1.0
 
-    return full_entity_df_plus_pos
+    return full_entity_df_plus_pos.dropna(axis=1, how="all")

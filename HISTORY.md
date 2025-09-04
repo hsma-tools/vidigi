@@ -1,9 +1,18 @@
-# 1.0.1 (in progress - not yet released)
+# 1.0.2
+
+- Bump minimum Python version to 3.10 to simplify support for install across both conda-forge and python. 3.9 is no longer going to be supported after October 2025.
+
+# 1.0.1
 
 - Added 'background_image_opacity' argument to generate_animation and animate_activity_log. Default opacity is 0.5, which matches the previous hardcoded value.
 - Added 'overflow_text_color' argument to generate_animation and animate_activity_log. Default is 'black'. Overflow text refers to the '+ x more' text that appears when queue lengths exceed the snapshot size.
 - Added 'stage_label_text_colour' argument to generate_animation and animate_activity_log. Default is 'black'. These are the optional labels showing the stages as defined in the event position dataframe, which you may be using instead of passing in a custom background with stage labels.
 - Add ability to log custom events with non-standard event_type using the .log_custom_event() method of the EventLogger class.
+- Fully empty columns are now automatically removed when
+    - exporting event log as df or csv
+    - using prep.reshape_for_animation
+    - using prep.generate_animation_df
+- Experimental: Added a graph objects backend (alternative to plotly express). This is not recommended for active use - it primarily exists to help explore ways in which further customisations could be applied to the plot.
 
 # 1.0.0
 

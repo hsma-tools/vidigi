@@ -1,6 +1,8 @@
 project:
   type: website
   output-dir: docs
+  pre-render:
+    - vidigi_docs/sync_docs.py
 
 website:
   title: vidigi
@@ -45,7 +47,7 @@ quartodoc:
       - text: "Introduction"
         href: vidigi_docs/introduction.qmd
       - text: "Changelog"
-        href: HISTORY.md
+        href: vidigi_docs/changelog.qmd
       - section: "Walkthroughs"
         contents:
         - vidigi_docs/basic_example_with_vidigi_logger_helpers.qmd
@@ -90,6 +92,12 @@ quartodoc:
         contents:
         - vidigi_docs/adding_vidigi_to_a_simple_simpy_model_hsma_structure_old.qmd
         - vidigi_docs/populating_event_logs.qmd
+      - section: "Package Details"
+        contents:
+        - text: "Licence"
+          href: vidigi_docs/licence.qmd
+        - text: "Contributor Code of Conduct"
+          href: vidigi_docs/code_of_conduct.qmd
 
   sections:
     - title: All-In-One Animation Functions

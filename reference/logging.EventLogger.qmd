@@ -37,7 +37,7 @@ Return all events associated with a specific entity_id.
 ### get_events_by_event_name { #vidigi.logging.EventLogger.get_events_by_event_name }
 
 ```python
-logging.EventLogger.get_events_by_event_name(event, as_dataframe=True)
+logging.EventLogger.get_events_by_event_name(event_name, as_dataframe=True)
 ```
 
 Return all events of a specific event_type.

@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.33">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>r_simmer – vidigi</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-ea385d0e468b0dd5ea5bf0780b1290d9.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-bc185b5c5bdbcb35c2eb49d8a876ef70.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-118ef196ea5a522dd56ba8aec161d365.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-2f16ea7a84ed9ca618c0e06b6872dad0.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+</head>
+
+<body class="fullcontent quarto-dark"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = true;
+    const darkModeDefault = authorPrefersDark;
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    
+<!-- main -->
+<main class="content" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block"></header>
+
+
+
+
+
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(simmer)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'simmer' was built under R version 4.3.3</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1234</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>customer <span class="ot">&lt;-</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">trajectory</span>(<span class="st">"Customer's path"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">seize</span>(<span class="st">"counter"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">timeout</span>(<span class="cf">function</span>() {<span class="fu">rexp</span>(<span class="dv">1</span>, <span class="dv">1</span><span class="sc">/</span><span class="dv">12</span>)}) <span class="sc">%&gt;%</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">release</span>(<span class="st">"counter"</span>)</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>bank <span class="ot">&lt;-</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">simmer</span>(<span class="st">"bank"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_resource</span>(<span class="st">"counter"</span>, <span class="dv">2</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_generator</span>(<span class="st">"Customer"</span>, customer, <span class="cf">function</span>() {<span class="fu">c</span>(<span class="dv">0</span>, <span class="fu">rexp</span>(<span class="dv">4</span>, <span class="dv">1</span><span class="sc">/</span><span class="dv">10</span>), <span class="sc">-</span><span class="dv">1</span>)}, <span class="dv">2</span>)</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>bank <span class="sc">%&gt;%</span> <span class="fu">run</span>(<span class="at">until =</span> <span class="dv">400</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>simmer environment: bank | now: 55.0349391797799 | next: 
+{ Monitor: in memory }
+{ Resource: counter | monitored: TRUE | server status: 0(2) | queue status: 0(Inf) }
+{ Source: Customer | monitored: 2 | n_generated: 5 }</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>bank <span class="sc">%&gt;%</span> <span class="fu">get_mon_arrivals</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>       name start_time  end_time activity_time finished replication
+1 Customer0    0.00000  4.646191      4.646191     TRUE           1
+2 Customer1   25.01759 26.096982      1.079396     TRUE           1
+3 Customer3   27.55099 29.982409      2.431415     TRUE           1
+4 Customer2   27.48517 37.374153      9.888978     TRUE           1
+5 Customer4   44.97846 55.034939     10.056484     TRUE           1</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>bank <span class="sc">%&gt;%</span> <span class="fu">get_mon_attributes</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] time  name  key   value
+&lt;0 rows&gt; (or 0-length row.names)</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>bank <span class="sc">%&gt;%</span> <span class="fu">get_mon_resources</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   resource      time server queue capacity queue_size system limit replication
+1   counter  0.000000      1     0        2        Inf      1   Inf           1
+2   counter  4.646191      0     0        2        Inf      0   Inf           1
+3   counter 25.017586      1     0        2        Inf      1   Inf           1
+4   counter 26.096982      0     0        2        Inf      0   Inf           1
+5   counter 27.485175      1     0        2        Inf      1   Inf           1
+6   counter 27.550994      2     0        2        Inf      2   Inf           1
+7   counter 29.982409      1     0        2        Inf      1   Inf           1
+8   counter 37.374153      0     0        2        Inf      0   Inf           1
+9   counter 44.978455      1     0        2        Inf      1   Inf           1
+10  counter 55.034939      0     0        2        Inf      0   Inf           1</code></pre>
+</div>
+</div>
+<section id="add-in-logging" class="level1">
+<h1>Add in logging</h1>
+<p>Let’s increase the frequency of arrivals and the duration of counter usage too.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(simmer)</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(testthat)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'testthat' was built under R version 4.3.3</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1234</span>)</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>simmer_logs <span class="ot">&lt;-</span> <span class="st">""</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>simmer_logs <span class="ot">&lt;-</span> <span class="fu">capture_output</span>({</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="st">"first_line,to_discard,,,"</span>)</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>customer <span class="ot">&lt;-</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">trajectory</span>(<span class="st">"Customer's path"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">log_</span>(<span class="st">"arrival_departure,arrival,"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">log_</span>(<span class="st">"queue,queue_counter,"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">seize</span>(<span class="st">"counter"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">log_</span>(<span class="st">"resource_use,counter_use_start,counter"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">timeout</span>(<span class="cf">function</span>() {<span class="fu">rexp</span>(<span class="dv">1</span>, <span class="dv">1</span><span class="sc">/</span><span class="dv">20</span>)}) <span class="sc">%&gt;%</span></span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">log_</span>(<span class="st">"resource_use_end,counter_use_end,counter"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">log_</span>(<span class="st">"arrival_departure,depart,"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">release</span>(<span class="st">"counter"</span>)</span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>bank <span class="ot">&lt;-</span></span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">simmer</span>(<span class="st">"bank"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_resource</span>(<span class="st">"counter"</span>, <span class="dv">2</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_generator</span>(<span class="st">"Customer"</span>, customer, <span class="cf">function</span>() {<span class="fu">c</span>(<span class="dv">0</span>, <span class="fu">rexp</span>(<span class="dv">50</span>, <span class="dv">1</span><span class="sc">/</span><span class="dv">15</span>), <span class="sc">-</span><span class="dv">1</span>)}, <span class="dv">2</span>)</span>
+<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a>bank <span class="sc">%&gt;%</span> <span class="fu">run</span>(<span class="at">until =</span> <span class="dv">400</span>)</span>
+<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-26"><a href="#cb13-26" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>simmer_logs</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "[1] \"first_line,to_discard,,,\"\n0: Customer0: arrival_departure,arrival,\n0: Customer0: queue,queue_counter,\n0: Customer0: resource_use,counter_use_start,counter\n37.5264: Customer1: arrival_departure,arrival,\n37.5264: Customer1: queue,queue_counter,\n37.5264: Customer1: resource_use,counter_use_start,counter\n39.1138: Customer0: resource_use_end,counter_use_end,counter\n39.1138: Customer0: arrival_departure,depart,\n41.2278: Customer2: arrival_departure,arrival,\n41.2278: Customer2: queue,queue_counter,\n41.2278: Customer2: resource_use,counter_use_start,counter\n41.3265: Customer3: arrival_departure,arrival,\n41.3265: Customer3: queue,queue_counter,\n41.836: Customer1: resource_use_end,counter_use_end,counter\n41.836: Customer1: arrival_departure,depart,\n41.836: Customer3: resource_use,counter_use_start,counter\n44.1427: Customer3: resource_use_end,counter_use_end,counter\n44.1427: Customer3: arrival_departure,depart,\n67.4677: Customer4: arrival_departure,arrival,\n67.4677: Customer4: queue,queue_counter,\n67.4677: Customer4: resource_use,counter_use_start,counter\n73.2754: Customer5: arrival_departure,arrival,\n73.2754: Customer5: queue,queue_counter,\n74.5582: Customer2: resource_use_end,counter_use_end,counter\n74.5582: Customer2: arrival_departure,depart,\n74.5582: Customer5: resource_use,counter_use_start,counter\n74.6247: Customer6: arrival_departure,arrival,\n74.6247: Customer6: queue,queue_counter,\n86.9859: Customer7: arrival_departure,arrival,\n86.9859: Customer7: queue,queue_counter,\n90.0252: Customer8: arrival_departure,arrival,\n90.0252: Customer8: queue,queue_counter,\n96.6461: Customer4: resource_use_end,counter_use_end,counter\n96.6461: Customer4: arrival_departure,depart,\n96.6461: Customer6: resource_use,counter_use_start,counter\n102.596: Customer9: arrival_departure,arrival,\n102.596: Customer9: queue,queue_counter,\n103.342: Customer5: resource_use_end,counter_use_end,counter\n103.342: Customer5: arrival_departure,depart,\n103.342: Customer7: resource_use,counter_use_start,counter\n103.806: Customer7: resource_use_end,counter_use_end,counter\n103.806: Customer7: arrival_departure,depart,\n103.806: Customer8: resource_use,counter_use_start,counter\n114.002: Customer10: arrival_departure,arrival,\n114.002: Customer10: queue,queue_counter,\n121.685: Customer8: resource_use_end,counter_use_end,counter\n121.685: Customer8: arrival_departure,depart,\n121.685: Customer9: resource_use,counter_use_start,counter\n142.203: Customer11: arrival_departure,arrival,\n142.203: Customer11: queue,queue_counter,\n151.927: Customer6: resource_use_end,counter_use_end,counter\n151.927: Customer6: arrival_departure,depart,\n151.927: Customer10: resource_use,counter_use_start,counter\n166.145: Customer12: arrival_departure,arrival,\n166.145: Customer12: queue,queue_counter,\n191.025: Customer13: arrival_departure,arrival,\n191.025: Customer13: queue,queue_counter,\n195.292: Customer9: resource_use_end,counter_use_end,counter\n195.292: Customer9: arrival_departure,depart,\n195.292: Customer11: resource_use,counter_use_start,counter\n197.895: Customer11: resource_use_end,counter_use_end,counter\n197.895: Customer11: arrival_departure,depart,\n197.895: Customer12: resource_use,counter_use_start,counter\n210.071: Customer10: resource_use_end,counter_use_end,counter\n210.071: Customer10: arrival_departure,depart,\n210.071: Customer13: resource_use,counter_use_start,counter\n214.179: Customer12: resource_use_end,counter_use_end,counter\n214.179: Customer12: arrival_departure,depart,\n236.812: Customer14: arrival_departure,arrival,\n236.812: Customer14: queue,queue_counter,\n236.812: Customer14: resource_use,counter_use_start,counter\n250.468: Customer13: resource_use_end,counter_use_end,counter\n250.468: Customer13: arrival_departure,depart,\n263.072: Customer15: arrival_departure,arrival,\n263.072: Customer15: queue,queue_counter,\n263.072: Customer15: resource_use,counter_use_start,counter\n263.548: Customer16: arrival_departure,arrival,\n263.548: Customer16: queue,queue_counter,\n265.936: Customer14: resource_use_end,counter_use_end,counter\n265.936: Customer14: arrival_departure,depart,\n265.936: Customer16: resource_use,counter_use_start,counter\n276.702: Customer17: arrival_departure,arrival,\n276.702: Customer17: queue,queue_counter,\n276.921: Customer18: arrival_departure,arrival,\n276.921: Customer18: queue,queue_counter,\n282.989: Customer15: resource_use_end,counter_use_end,counter\n282.989: Customer15: arrival_departure,depart,\n282.989: Customer17: resource_use,counter_use_start,counter\n298.472: Customer16: resource_use_end,counter_use_end,counter\n298.472: Customer16: arrival_departure,depart,\n298.472: Customer18: resource_use,counter_use_start,counter\n304.447: Customer19: arrival_departure,arrival,\n304.447: Customer19: queue,queue_counter,\n311.509: Customer17: resource_use_end,counter_use_end,counter\n311.509: Customer17: arrival_departure,depart,\n311.509: Customer19: resource_use,counter_use_start,counter\n312.238: Customer20: arrival_departure,arrival,\n312.238: Customer20: queue,queue_counter,\n312.87: Customer18: resource_use_end,counter_use_end,counter\n312.87: Customer18: arrival_departure,depart,\n312.87: Customer20: resource_use,counter_use_start,counter\n314.559: Customer20: resource_use_end,counter_use_end,counter\n314.559: Customer20: arrival_departure,depart,\n342.182: Customer21: arrival_departure,arrival,\n342.182: Customer21: queue,queue_counter,\n342.182: Customer21: resource_use,counter_use_start,counter\n346.052: Customer21: resource_use_end,counter_use_end,counter\n346.052: Customer21: arrival_departure,depart,\n353.108: Customer22: arrival_departure,arrival,\n353.108: Customer22: queue,queue_counter,\n353.108: Customer22: resource_use,counter_use_start,counter\n358.861: Customer23: arrival_departure,arrival,\n358.861: Customer23: queue,queue_counter,\n365.344: Customer19: resource_use_end,counter_use_end,counter\n365.344: Customer19: arrival_departure,depart,\n365.344: Customer23: resource_use,counter_use_start,counter\n368.831: Customer23: resource_use_end,counter_use_end,counter\n368.831: Customer23: arrival_departure,depart,\n372.967: Customer24: arrival_departure,arrival,\n372.967: Customer24: queue,queue_counter,\n372.967: Customer24: resource_use,counter_use_start,counter\n373.098: Customer24: resource_use_end,counter_use_end,counter\n373.098: Customer24: arrival_departure,depart,\n376.622: Customer25: arrival_departure,arrival,\n376.622: Customer25: queue,queue_counter,\n376.622: Customer25: resource_use,counter_use_start,counter\n391.805: Customer26: arrival_departure,arrival,\n391.805: Customer26: queue,queue_counter,\n391.865: Customer27: arrival_departure,arrival,\n391.865: Customer27: queue,queue_counter,\n394.899: Customer25: resource_use_end,counter_use_end,counter\n394.899: Customer25: arrival_departure,depart,\n394.899: Customer26: resource_use,counter_use_start,counter\n397.178: Customer28: arrival_departure,arrival,\n397.178: Customer28: queue,queue_counter,"</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Clean the strings using two substitutions</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="co"># First, replace the colon after the timestamp. sub() only replaces the first match.</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>cleaned_lines <span class="ot">&lt;-</span> <span class="fu">gsub</span>(<span class="at">pattern =</span> <span class="st">": "</span>, <span class="at">replacement =</span> <span class="st">","</span>, <span class="at">x =</span> simmer_logs)</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Second, remove the extra ': 0,' after the customer ID</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>cleaned_lines <span class="ot">&lt;-</span> <span class="fu">gsub</span>(<span class="at">pattern =</span> <span class="st">": 0,"</span>, <span class="at">replacement =</span> <span class="st">","</span>, <span class="at">x =</span> cleaned_lines)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>cleaned_lines</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "[1] \"first_line,to_discard,,,\"\n0,Customer0,arrival_departure,arrival,\n0,Customer0,queue,queue_counter,\n0,Customer0,resource_use,counter_use_start,counter\n37.5264,Customer1,arrival_departure,arrival,\n37.5264,Customer1,queue,queue_counter,\n37.5264,Customer1,resource_use,counter_use_start,counter\n39.1138,Customer0,resource_use_end,counter_use_end,counter\n39.1138,Customer0,arrival_departure,depart,\n41.2278,Customer2,arrival_departure,arrival,\n41.2278,Customer2,queue,queue_counter,\n41.2278,Customer2,resource_use,counter_use_start,counter\n41.3265,Customer3,arrival_departure,arrival,\n41.3265,Customer3,queue,queue_counter,\n41.836,Customer1,resource_use_end,counter_use_end,counter\n41.836,Customer1,arrival_departure,depart,\n41.836,Customer3,resource_use,counter_use_start,counter\n44.1427,Customer3,resource_use_end,counter_use_end,counter\n44.1427,Customer3,arrival_departure,depart,\n67.4677,Customer4,arrival_departure,arrival,\n67.4677,Customer4,queue,queue_counter,\n67.4677,Customer4,resource_use,counter_use_start,counter\n73.2754,Customer5,arrival_departure,arrival,\n73.2754,Customer5,queue,queue_counter,\n74.5582,Customer2,resource_use_end,counter_use_end,counter\n74.5582,Customer2,arrival_departure,depart,\n74.5582,Customer5,resource_use,counter_use_start,counter\n74.6247,Customer6,arrival_departure,arrival,\n74.6247,Customer6,queue,queue_counter,\n86.9859,Customer7,arrival_departure,arrival,\n86.9859,Customer7,queue,queue_counter,\n90.0252,Customer8,arrival_departure,arrival,\n90.0252,Customer8,queue,queue_counter,\n96.6461,Customer4,resource_use_end,counter_use_end,counter\n96.6461,Customer4,arrival_departure,depart,\n96.6461,Customer6,resource_use,counter_use_start,counter\n102.596,Customer9,arrival_departure,arrival,\n102.596,Customer9,queue,queue_counter,\n103.342,Customer5,resource_use_end,counter_use_end,counter\n103.342,Customer5,arrival_departure,depart,\n103.342,Customer7,resource_use,counter_use_start,counter\n103.806,Customer7,resource_use_end,counter_use_end,counter\n103.806,Customer7,arrival_departure,depart,\n103.806,Customer8,resource_use,counter_use_start,counter\n114.002,Customer10,arrival_departure,arrival,\n114.002,Customer10,queue,queue_counter,\n121.685,Customer8,resource_use_end,counter_use_end,counter\n121.685,Customer8,arrival_departure,depart,\n121.685,Customer9,resource_use,counter_use_start,counter\n142.203,Customer11,arrival_departure,arrival,\n142.203,Customer11,queue,queue_counter,\n151.927,Customer6,resource_use_end,counter_use_end,counter\n151.927,Customer6,arrival_departure,depart,\n151.927,Customer10,resource_use,counter_use_start,counter\n166.145,Customer12,arrival_departure,arrival,\n166.145,Customer12,queue,queue_counter,\n191.025,Customer13,arrival_departure,arrival,\n191.025,Customer13,queue,queue_counter,\n195.292,Customer9,resource_use_end,counter_use_end,counter\n195.292,Customer9,arrival_departure,depart,\n195.292,Customer11,resource_use,counter_use_start,counter\n197.895,Customer11,resource_use_end,counter_use_end,counter\n197.895,Customer11,arrival_departure,depart,\n197.895,Customer12,resource_use,counter_use_start,counter\n210.071,Customer10,resource_use_end,counter_use_end,counter\n210.071,Customer10,arrival_departure,depart,\n210.071,Customer13,resource_use,counter_use_start,counter\n214.179,Customer12,resource_use_end,counter_use_end,counter\n214.179,Customer12,arrival_departure,depart,\n236.812,Customer14,arrival_departure,arrival,\n236.812,Customer14,queue,queue_counter,\n236.812,Customer14,resource_use,counter_use_start,counter\n250.468,Customer13,resource_use_end,counter_use_end,counter\n250.468,Customer13,arrival_departure,depart,\n263.072,Customer15,arrival_departure,arrival,\n263.072,Customer15,queue,queue_counter,\n263.072,Customer15,resource_use,counter_use_start,counter\n263.548,Customer16,arrival_departure,arrival,\n263.548,Customer16,queue,queue_counter,\n265.936,Customer14,resource_use_end,counter_use_end,counter\n265.936,Customer14,arrival_departure,depart,\n265.936,Customer16,resource_use,counter_use_start,counter\n276.702,Customer17,arrival_departure,arrival,\n276.702,Customer17,queue,queue_counter,\n276.921,Customer18,arrival_departure,arrival,\n276.921,Customer18,queue,queue_counter,\n282.989,Customer15,resource_use_end,counter_use_end,counter\n282.989,Customer15,arrival_departure,depart,\n282.989,Customer17,resource_use,counter_use_start,counter\n298.472,Customer16,resource_use_end,counter_use_end,counter\n298.472,Customer16,arrival_departure,depart,\n298.472,Customer18,resource_use,counter_use_start,counter\n304.447,Customer19,arrival_departure,arrival,\n304.447,Customer19,queue,queue_counter,\n311.509,Customer17,resource_use_end,counter_use_end,counter\n311.509,Customer17,arrival_departure,depart,\n311.509,Customer19,resource_use,counter_use_start,counter\n312.238,Customer20,arrival_departure,arrival,\n312.238,Customer20,queue,queue_counter,\n312.87,Customer18,resource_use_end,counter_use_end,counter\n312.87,Customer18,arrival_departure,depart,\n312.87,Customer20,resource_use,counter_use_start,counter\n314.559,Customer20,resource_use_end,counter_use_end,counter\n314.559,Customer20,arrival_departure,depart,\n342.182,Customer21,arrival_departure,arrival,\n342.182,Customer21,queue,queue_counter,\n342.182,Customer21,resource_use,counter_use_start,counter\n346.052,Customer21,resource_use_end,counter_use_end,counter\n346.052,Customer21,arrival_departure,depart,\n353.108,Customer22,arrival_departure,arrival,\n353.108,Customer22,queue,queue_counter,\n353.108,Customer22,resource_use,counter_use_start,counter\n358.861,Customer23,arrival_departure,arrival,\n358.861,Customer23,queue,queue_counter,\n365.344,Customer19,resource_use_end,counter_use_end,counter\n365.344,Customer19,arrival_departure,depart,\n365.344,Customer23,resource_use,counter_use_start,counter\n368.831,Customer23,resource_use_end,counter_use_end,counter\n368.831,Customer23,arrival_departure,depart,\n372.967,Customer24,arrival_departure,arrival,\n372.967,Customer24,queue,queue_counter,\n372.967,Customer24,resource_use,counter_use_start,counter\n373.098,Customer24,resource_use_end,counter_use_end,counter\n373.098,Customer24,arrival_departure,depart,\n376.622,Customer25,arrival_departure,arrival,\n376.622,Customer25,queue,queue_counter,\n376.622,Customer25,resource_use,counter_use_start,counter\n391.805,Customer26,arrival_departure,arrival,\n391.805,Customer26,queue,queue_counter,\n391.865,Customer27,arrival_departure,arrival,\n391.865,Customer27,queue,queue_counter,\n394.899,Customer25,resource_use_end,counter_use_end,counter\n394.899,Customer25,arrival_departure,depart,\n394.899,Customer26,resource_use,counter_use_start,counter\n397.178,Customer28,arrival_departure,arrival,\n397.178,Customer28,queue,queue_counter,"</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Read the cleaned character vector directly into a data frame</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>log_df <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">text =</span> cleaned_lines,</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">header =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">col.names =</span> <span class="fu">c</span>(<span class="st">"time"</span>,<span class="st">"entity_id"</span>,<span class="st">"event_type"</span>,<span class="st">"event"</span>,<span class="st">"resource"</span>)</span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Discard the sacrifical row</span></span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>log_df <span class="ot">&lt;-</span> log_df <span class="sc">%&gt;%</span> <span class="fu">tail</span>(<span class="sc">-</span><span class="dv">1</span>)</span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>log_df</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>       time  entity_id        event_type             event resource
+2         0  Customer0 arrival_departure           arrival         
+3         0  Customer0             queue     queue_counter         
+4         0  Customer0      resource_use counter_use_start  counter
+5   37.5264  Customer1 arrival_departure           arrival         
+6   37.5264  Customer1             queue     queue_counter         
+7   37.5264  Customer1      resource_use counter_use_start  counter
+8   39.1138  Customer0  resource_use_end   counter_use_end  counter
+9   39.1138  Customer0 arrival_departure            depart         
+10  41.2278  Customer2 arrival_departure           arrival         
+11  41.2278  Customer2             queue     queue_counter         
+12  41.2278  Customer2      resource_use counter_use_start  counter
+13  41.3265  Customer3 arrival_departure           arrival         
+14  41.3265  Customer3             queue     queue_counter         
+15   41.836  Customer1  resource_use_end   counter_use_end  counter
+16   41.836  Customer1 arrival_departure            depart         
+17   41.836  Customer3      resource_use counter_use_start  counter
+18  44.1427  Customer3  resource_use_end   counter_use_end  counter
+19  44.1427  Customer3 arrival_departure            depart         
+20  67.4677  Customer4 arrival_departure           arrival         
+21  67.4677  Customer4             queue     queue_counter         
+22  67.4677  Customer4      resource_use counter_use_start  counter
+23  73.2754  Customer5 arrival_departure           arrival         
+24  73.2754  Customer5             queue     queue_counter         
+25  74.5582  Customer2  resource_use_end   counter_use_end  counter
+26  74.5582  Customer2 arrival_departure            depart         
+27  74.5582  Customer5      resource_use counter_use_start  counter
+28  74.6247  Customer6 arrival_departure           arrival         
+29  74.6247  Customer6             queue     queue_counter         
+30  86.9859  Customer7 arrival_departure           arrival         
+31  86.9859  Customer7             queue     queue_counter         
+32  90.0252  Customer8 arrival_departure           arrival         
+33  90.0252  Customer8             queue     queue_counter         
+34  96.6461  Customer4  resource_use_end   counter_use_end  counter
+35  96.6461  Customer4 arrival_departure            depart         
+36  96.6461  Customer6      resource_use counter_use_start  counter
+37  102.596  Customer9 arrival_departure           arrival         
+38  102.596  Customer9             queue     queue_counter         
+39  103.342  Customer5  resource_use_end   counter_use_end  counter
+40  103.342  Customer5 arrival_departure            depart         
+41  103.342  Customer7      resource_use counter_use_start  counter
+42  103.806  Customer7  resource_use_end   counter_use_end  counter
+43  103.806  Customer7 arrival_departure            depart         
+44  103.806  Customer8      resource_use counter_use_start  counter
+45  114.002 Customer10 arrival_departure           arrival         
+46  114.002 Customer10             queue     queue_counter         
+47  121.685  Customer8  resource_use_end   counter_use_end  counter
+48  121.685  Customer8 arrival_departure            depart         
+49  121.685  Customer9      resource_use counter_use_start  counter
+50  142.203 Customer11 arrival_departure           arrival         
+51  142.203 Customer11             queue     queue_counter         
+52  151.927  Customer6  resource_use_end   counter_use_end  counter
+53  151.927  Customer6 arrival_departure            depart         
+54  151.927 Customer10      resource_use counter_use_start  counter
+55  166.145 Customer12 arrival_departure           arrival         
+56  166.145 Customer12             queue     queue_counter         
+57  191.025 Customer13 arrival_departure           arrival         
+58  191.025 Customer13             queue     queue_counter         
+59  195.292  Customer9  resource_use_end   counter_use_end  counter
+60  195.292  Customer9 arrival_departure            depart         
+61  195.292 Customer11      resource_use counter_use_start  counter
+62  197.895 Customer11  resource_use_end   counter_use_end  counter
+63  197.895 Customer11 arrival_departure            depart         
+64  197.895 Customer12      resource_use counter_use_start  counter
+65  210.071 Customer10  resource_use_end   counter_use_end  counter
+66  210.071 Customer10 arrival_departure            depart         
+67  210.071 Customer13      resource_use counter_use_start  counter
+68  214.179 Customer12  resource_use_end   counter_use_end  counter
+69  214.179 Customer12 arrival_departure            depart         
+70  236.812 Customer14 arrival_departure           arrival         
+71  236.812 Customer14             queue     queue_counter         
+72  236.812 Customer14      resource_use counter_use_start  counter
+73  250.468 Customer13  resource_use_end   counter_use_end  counter
+74  250.468 Customer13 arrival_departure            depart         
+75  263.072 Customer15 arrival_departure           arrival         
+76  263.072 Customer15             queue     queue_counter         
+77  263.072 Customer15      resource_use counter_use_start  counter
+78  263.548 Customer16 arrival_departure           arrival         
+79  263.548 Customer16             queue     queue_counter         
+80  265.936 Customer14  resource_use_end   counter_use_end  counter
+81  265.936 Customer14 arrival_departure            depart         
+82  265.936 Customer16      resource_use counter_use_start  counter
+83  276.702 Customer17 arrival_departure           arrival         
+84  276.702 Customer17             queue     queue_counter         
+85  276.921 Customer18 arrival_departure           arrival         
+86  276.921 Customer18             queue     queue_counter         
+87  282.989 Customer15  resource_use_end   counter_use_end  counter
+88  282.989 Customer15 arrival_departure            depart         
+89  282.989 Customer17      resource_use counter_use_start  counter
+90  298.472 Customer16  resource_use_end   counter_use_end  counter
+91  298.472 Customer16 arrival_departure            depart         
+92  298.472 Customer18      resource_use counter_use_start  counter
+93  304.447 Customer19 arrival_departure           arrival         
+94  304.447 Customer19             queue     queue_counter         
+95  311.509 Customer17  resource_use_end   counter_use_end  counter
+96  311.509 Customer17 arrival_departure            depart         
+97  311.509 Customer19      resource_use counter_use_start  counter
+98  312.238 Customer20 arrival_departure           arrival         
+99  312.238 Customer20             queue     queue_counter         
+100  312.87 Customer18  resource_use_end   counter_use_end  counter
+101  312.87 Customer18 arrival_departure            depart         
+102  312.87 Customer20      resource_use counter_use_start  counter
+103 314.559 Customer20  resource_use_end   counter_use_end  counter
+104 314.559 Customer20 arrival_departure            depart         
+105 342.182 Customer21 arrival_departure           arrival         
+106 342.182 Customer21             queue     queue_counter         
+107 342.182 Customer21      resource_use counter_use_start  counter
+108 346.052 Customer21  resource_use_end   counter_use_end  counter
+109 346.052 Customer21 arrival_departure            depart         
+110 353.108 Customer22 arrival_departure           arrival         
+111 353.108 Customer22             queue     queue_counter         
+112 353.108 Customer22      resource_use counter_use_start  counter
+113 358.861 Customer23 arrival_departure           arrival         
+114 358.861 Customer23             queue     queue_counter         
+115 365.344 Customer19  resource_use_end   counter_use_end  counter
+116 365.344 Customer19 arrival_departure            depart         
+117 365.344 Customer23      resource_use counter_use_start  counter
+118 368.831 Customer23  resource_use_end   counter_use_end  counter
+119 368.831 Customer23 arrival_departure            depart         
+120 372.967 Customer24 arrival_departure           arrival         
+121 372.967 Customer24             queue     queue_counter         
+122 372.967 Customer24      resource_use counter_use_start  counter
+123 373.098 Customer24  resource_use_end   counter_use_end  counter
+124 373.098 Customer24 arrival_departure            depart         
+125 376.622 Customer25 arrival_departure           arrival         
+126 376.622 Customer25             queue     queue_counter         
+127 376.622 Customer25      resource_use counter_use_start  counter
+128 391.805 Customer26 arrival_departure           arrival         
+129 391.805 Customer26             queue     queue_counter         
+130 391.865 Customer27 arrival_departure           arrival         
+131 391.865 Customer27             queue     queue_counter         
+132 394.899 Customer25  resource_use_end   counter_use_end  counter
+133 394.899 Customer25 arrival_departure            depart         
+134 394.899 Customer26      resource_use counter_use_start  counter
+135 397.178 Customer28 arrival_departure           arrival         
+136 397.178 Customer28             queue     queue_counter         </code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>bank <span class="sc">%&gt;%</span> <span class="fu">get_mon_resources</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   resource      time server queue capacity queue_size system limit replication
+1   counter   0.00000      1     0        2        Inf      1   Inf           1
+2   counter  37.52638      2     0        2        Inf      2   Inf           1
+3   counter  39.11383      1     0        2        Inf      1   Inf           1
+4   counter  41.22776      2     0        2        Inf      2   Inf           1
+5   counter  41.32649      2     1        2        Inf      3   Inf           1
+6   counter  41.83596      2     0        2        Inf      2   Inf           1
+7   counter  44.14267      1     0        2        Inf      1   Inf           1
+8   counter  67.46768      2     0        2        Inf      2   Inf           1
+9   counter  73.27542      2     1        2        Inf      3   Inf           1
+10  counter  74.55824      2     0        2        Inf      2   Inf           1
+11  counter  74.62467      2     1        2        Inf      3   Inf           1
+12  counter  86.98589      2     2        2        Inf      4   Inf           1
+13  counter  90.02516      2     3        2        Inf      5   Inf           1
+14  counter  96.64608      2     2        2        Inf      4   Inf           1
+15  counter 102.59576      2     3        2        Inf      5   Inf           1
+16  counter 103.34238      2     2        2        Inf      4   Inf           1
+17  counter 103.80573      2     1        2        Inf      3   Inf           1
+18  counter 114.00222      2     2        2        Inf      4   Inf           1
+19  counter 121.68460      2     1        2        Inf      3   Inf           1
+20  counter 142.20337      2     2        2        Inf      4   Inf           1
+21  counter 151.92691      2     1        2        Inf      3   Inf           1
+22  counter 166.14495      2     2        2        Inf      4   Inf           1
+23  counter 191.02488      2     3        2        Inf      5   Inf           1
+24  counter 195.29194      2     2        2        Inf      4   Inf           1
+25  counter 197.89498      2     1        2        Inf      3   Inf           1
+26  counter 210.07099      2     0        2        Inf      2   Inf           1
+27  counter 214.17855      1     0        2        Inf      1   Inf           1
+28  counter 236.81176      2     0        2        Inf      2   Inf           1
+29  counter 250.46829      1     0        2        Inf      1   Inf           1
+30  counter 263.07196      2     0        2        Inf      2   Inf           1
+31  counter 263.54784      2     1        2        Inf      3   Inf           1
+32  counter 265.93587      2     0        2        Inf      2   Inf           1
+33  counter 276.70225      2     1        2        Inf      3   Inf           1
+34  counter 276.92146      2     2        2        Inf      4   Inf           1
+35  counter 282.98946      2     1        2        Inf      3   Inf           1
+36  counter 298.47167      2     0        2        Inf      2   Inf           1
+37  counter 304.44742      2     1        2        Inf      3   Inf           1
+38  counter 311.50929      2     0        2        Inf      2   Inf           1
+39  counter 312.23754      2     1        2        Inf      3   Inf           1
+40  counter 312.87031      2     0        2        Inf      2   Inf           1
+41  counter 314.55907      1     0        2        Inf      1   Inf           1
+42  counter 342.18172      2     0        2        Inf      2   Inf           1
+43  counter 346.05164      1     0        2        Inf      1   Inf           1
+44  counter 353.10751      2     0        2        Inf      2   Inf           1
+45  counter 358.86064      2     1        2        Inf      3   Inf           1
+46  counter 365.34421      2     0        2        Inf      2   Inf           1
+47  counter 368.83137      1     0        2        Inf      1   Inf           1
+48  counter 372.96730      2     0        2        Inf      2   Inf           1
+49  counter 373.09751      1     0        2        Inf      1   Inf           1
+50  counter 376.62188      2     0        2        Inf      2   Inf           1
+51  counter 391.80530      2     1        2        Inf      3   Inf           1
+52  counter 391.86522      2     2        2        Inf      4   Inf           1
+53  counter 394.89942      2     1        2        Inf      3   Inf           1
+54  counter 397.17806      2     2        2        Inf      4   Inf           1</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>assign_server_assignments <span class="ot">&lt;-</span> <span class="cf">function</span>(df) {</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>  df<span class="sc">$</span>assigned_server <span class="ot">&lt;-</span> <span class="cn">NA</span></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>  <span class="co"># State: whether each server is busy</span></span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>  server_busy <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="cn">FALSE</span>, <span class="cn">FALSE</span>)</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Queue of which server is working on each active job (for FIFO releases)</span></span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>  active_jobs <span class="ot">&lt;-</span> <span class="fu">c</span>()</span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (i <span class="cf">in</span> <span class="fu">seq_len</span>(<span class="fu">nrow</span>(df))) {</span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a>    prev_busy_count <span class="ot">&lt;-</span> <span class="cf">if</span> (i <span class="sc">==</span> <span class="dv">1</span>) <span class="dv">0</span> <span class="cf">else</span> df<span class="sc">$</span>server[i <span class="sc">-</span> <span class="dv">1</span>]</span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a>    current_busy_count <span class="ot">&lt;-</span> df<span class="sc">$</span>server[i]</span>
+<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-13"><a href="#cb23-13" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Releases first</span></span>
+<span id="cb23-14"><a href="#cb23-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (current_busy_count <span class="sc">&lt;</span> prev_busy_count) {</span>
+<span id="cb23-15"><a href="#cb23-15" aria-hidden="true" tabindex="-1"></a>      releases <span class="ot">&lt;-</span> prev_busy_count <span class="sc">-</span> current_busy_count</span>
+<span id="cb23-16"><a href="#cb23-16" aria-hidden="true" tabindex="-1"></a>      <span class="co"># Remove from the front of the queue</span></span>
+<span id="cb23-17"><a href="#cb23-17" aria-hidden="true" tabindex="-1"></a>      <span class="cf">for</span> (r <span class="cf">in</span> <span class="fu">seq_len</span>(releases)) {</span>
+<span id="cb23-18"><a href="#cb23-18" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> (<span class="fu">length</span>(active_jobs) <span class="sc">&gt;</span> <span class="dv">0</span>) {</span>
+<span id="cb23-19"><a href="#cb23-19" aria-hidden="true" tabindex="-1"></a>          released <span class="ot">&lt;-</span> active_jobs[<span class="dv">1</span>]</span>
+<span id="cb23-20"><a href="#cb23-20" aria-hidden="true" tabindex="-1"></a>          active_jobs <span class="ot">&lt;-</span> active_jobs[<span class="sc">-</span><span class="dv">1</span>]</span>
+<span id="cb23-21"><a href="#cb23-21" aria-hidden="true" tabindex="-1"></a>          server_busy[released] <span class="ot">&lt;-</span> <span class="cn">FALSE</span></span>
+<span id="cb23-22"><a href="#cb23-22" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb23-23"><a href="#cb23-23" aria-hidden="true" tabindex="-1"></a>      }</span>
+<span id="cb23-24"><a href="#cb23-24" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb23-25"><a href="#cb23-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-26"><a href="#cb23-26" aria-hidden="true" tabindex="-1"></a>    <span class="co"># New assignments</span></span>
+<span id="cb23-27"><a href="#cb23-27" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (current_busy_count <span class="sc">&gt;</span> prev_busy_count) {</span>
+<span id="cb23-28"><a href="#cb23-28" aria-hidden="true" tabindex="-1"></a>      new_assignments <span class="ot">&lt;-</span> current_busy_count <span class="sc">-</span> prev_busy_count</span>
+<span id="cb23-29"><a href="#cb23-29" aria-hidden="true" tabindex="-1"></a>      <span class="cf">for</span> (a <span class="cf">in</span> <span class="fu">seq_len</span>(new_assignments)) {</span>
+<span id="cb23-30"><a href="#cb23-30" aria-hidden="true" tabindex="-1"></a>        <span class="co"># First available server in numerical order</span></span>
+<span id="cb23-31"><a href="#cb23-31" aria-hidden="true" tabindex="-1"></a>        avail <span class="ot">&lt;-</span> <span class="fu">which</span>(<span class="sc">!</span>server_busy)[<span class="dv">1</span>]</span>
+<span id="cb23-32"><a href="#cb23-32" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> (<span class="fu">length</span>(avail) <span class="sc">&gt;</span> <span class="dv">0</span>) {</span>
+<span id="cb23-33"><a href="#cb23-33" aria-hidden="true" tabindex="-1"></a>          server_busy[avail] <span class="ot">&lt;-</span> <span class="cn">TRUE</span></span>
+<span id="cb23-34"><a href="#cb23-34" aria-hidden="true" tabindex="-1"></a>          active_jobs <span class="ot">&lt;-</span> <span class="fu">c</span>(active_jobs, avail)</span>
+<span id="cb23-35"><a href="#cb23-35" aria-hidden="true" tabindex="-1"></a>          df<span class="sc">$</span>assigned_server[i] <span class="ot">&lt;-</span> avail</span>
+<span id="cb23-36"><a href="#cb23-36" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb23-37"><a href="#cb23-37" aria-hidden="true" tabindex="-1"></a>      }</span>
+<span id="cb23-38"><a href="#cb23-38" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb23-39"><a href="#cb23-39" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb23-40"><a href="#cb23-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-41"><a href="#cb23-41" aria-hidden="true" tabindex="-1"></a>  df</span>
+<span id="cb23-42"><a href="#cb23-42" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb23-43"><a href="#cb23-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-44"><a href="#cb23-44" aria-hidden="true" tabindex="-1"></a>resource_usage_raw <span class="ot">&lt;-</span> bank <span class="sc">%&gt;%</span> <span class="fu">get_mon_resources</span>()</span>
+<span id="cb23-45"><a href="#cb23-45" aria-hidden="true" tabindex="-1"></a>resource_usage <span class="ot">&lt;-</span> <span class="fu">assign_server_assignments</span>(resource_usage_raw)</span>
+<span id="cb23-46"><a href="#cb23-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-47"><a href="#cb23-47" aria-hidden="true" tabindex="-1"></a>resource_usage</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   resource      time server queue capacity queue_size system limit replication
+1   counter   0.00000      1     0        2        Inf      1   Inf           1
+2   counter  37.52638      2     0        2        Inf      2   Inf           1
+3   counter  39.11383      1     0        2        Inf      1   Inf           1
+4   counter  41.22776      2     0        2        Inf      2   Inf           1
+5   counter  41.32649      2     1        2        Inf      3   Inf           1
+6   counter  41.83596      2     0        2        Inf      2   Inf           1
+7   counter  44.14267      1     0        2        Inf      1   Inf           1
+8   counter  67.46768      2     0        2        Inf      2   Inf           1
+9   counter  73.27542      2     1        2        Inf      3   Inf           1
+10  counter  74.55824      2     0        2        Inf      2   Inf           1
+11  counter  74.62467      2     1        2        Inf      3   Inf           1
+12  counter  86.98589      2     2        2        Inf      4   Inf           1
+13  counter  90.02516      2     3        2        Inf      5   Inf           1
+14  counter  96.64608      2     2        2        Inf      4   Inf           1
+15  counter 102.59576      2     3        2        Inf      5   Inf           1
+16  counter 103.34238      2     2        2        Inf      4   Inf           1
+17  counter 103.80573      2     1        2        Inf      3   Inf           1
+18  counter 114.00222      2     2        2        Inf      4   Inf           1
+19  counter 121.68460      2     1        2        Inf      3   Inf           1
+20  counter 142.20337      2     2        2        Inf      4   Inf           1
+21  counter 151.92691      2     1        2        Inf      3   Inf           1
+22  counter 166.14495      2     2        2        Inf      4   Inf           1
+23  counter 191.02488      2     3        2        Inf      5   Inf           1
+24  counter 195.29194      2     2        2        Inf      4   Inf           1
+25  counter 197.89498      2     1        2        Inf      3   Inf           1
+26  counter 210.07099      2     0        2        Inf      2   Inf           1
+27  counter 214.17855      1     0        2        Inf      1   Inf           1
+28  counter 236.81176      2     0        2        Inf      2   Inf           1
+29  counter 250.46829      1     0        2        Inf      1   Inf           1
+30  counter 263.07196      2     0        2        Inf      2   Inf           1
+31  counter 263.54784      2     1        2        Inf      3   Inf           1
+32  counter 265.93587      2     0        2        Inf      2   Inf           1
+33  counter 276.70225      2     1        2        Inf      3   Inf           1
+34  counter 276.92146      2     2        2        Inf      4   Inf           1
+35  counter 282.98946      2     1        2        Inf      3   Inf           1
+36  counter 298.47167      2     0        2        Inf      2   Inf           1
+37  counter 304.44742      2     1        2        Inf      3   Inf           1
+38  counter 311.50929      2     0        2        Inf      2   Inf           1
+39  counter 312.23754      2     1        2        Inf      3   Inf           1
+40  counter 312.87031      2     0        2        Inf      2   Inf           1
+41  counter 314.55907      1     0        2        Inf      1   Inf           1
+42  counter 342.18172      2     0        2        Inf      2   Inf           1
+43  counter 346.05164      1     0        2        Inf      1   Inf           1
+44  counter 353.10751      2     0        2        Inf      2   Inf           1
+45  counter 358.86064      2     1        2        Inf      3   Inf           1
+46  counter 365.34421      2     0        2        Inf      2   Inf           1
+47  counter 368.83137      1     0        2        Inf      1   Inf           1
+48  counter 372.96730      2     0        2        Inf      2   Inf           1
+49  counter 373.09751      1     0        2        Inf      1   Inf           1
+50  counter 376.62188      2     0        2        Inf      2   Inf           1
+51  counter 391.80530      2     1        2        Inf      3   Inf           1
+52  counter 391.86522      2     2        2        Inf      4   Inf           1
+53  counter 394.89942      2     1        2        Inf      3   Inf           1
+54  counter 397.17806      2     2        2        Inf      4   Inf           1
+   assigned_server
+1                1
+2                2
+3               NA
+4                1
+5               NA
+6               NA
+7               NA
+8                2
+9               NA
+10              NA
+11              NA
+12              NA
+13              NA
+14              NA
+15              NA
+16              NA
+17              NA
+18              NA
+19              NA
+20              NA
+21              NA
+22              NA
+23              NA
+24              NA
+25              NA
+26              NA
+27              NA
+28               1
+29              NA
+30               2
+31              NA
+32              NA
+33              NA
+34              NA
+35              NA
+36              NA
+37              NA
+38              NA
+39              NA
+40              NA
+41              NA
+42               1
+43              NA
+44               2
+45              NA
+46              NA
+47              NA
+48               1
+49              NA
+50               2
+51              NA
+52              NA
+53              NA
+54              NA</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readr)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: 'readr'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following objects are masked from 'package:testthat':
+
+    edition_get, local_edition</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(here)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>here() starts at C:/simviz/vidigi</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(glue)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'glue' was built under R version 4.3.3</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>resource_usage <span class="sc">%&gt;%</span> readr<span class="sc">::</span><span class="fu">write_csv</span>(<span class="fu">glue</span>(<span class="st">"{here::here()}/examples/r_simmer/resources.csv"</span>))</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>log_df <span class="sc">%&gt;%</span> readr<span class="sc">::</span><span class="fu">write_csv</span>(<span class="fu">glue</span>(<span class="st">"{here::here()}/examples/r_simmer/logs.csv"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

@@ -25,6 +25,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 import simpy
 from simpy.core import BoundClass
 
+
 # MARK: VidigiResource Class
 class VidigiResource:
     """
@@ -35,6 +36,7 @@ class VidigiResource:
 
     Accepts additional attributes as kwargs.
     """
+
     def __init__(self, id_attribute=None, **kwargs):
         self.id_attribute = id_attribute
 
@@ -43,6 +45,7 @@ class VidigiResource:
 
     def __repr__(self):
         return f"VidigiResource(id={self.id_attribute})"
+
 
 def populate_store(num_resources, simpy_store, sim_env):
     """
@@ -88,17 +91,13 @@ def populate_store(num_resources, simpy_store, sim_env):
     5
     """
     for i in range(num_resources):
+        simpy_store.put(VidigiResource(env=sim_env, capacity=1, id_attribute=i + 1))
 
-        simpy_store.put(
-            VidigiResource(
-                env=sim_env,
-                capacity=1,
-                id_attribute = i+1)
-            )
 
-#\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\#
+# \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\#
 # VidigiStore and Associated Methods
-#\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\#
+# \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\#
+
 
 # MARK: VidigiStore class
 class VidigiStore:
@@ -118,11 +117,13 @@ class VidigiStore:
     and tested by a human.
     """
 
-    def __init__(self, env,
-                 num_resources=None,
-                 capacity=float('inf'),
-                #  , init_items=None
-                 ):
+    def __init__(
+        self,
+        env,
+        num_resources=None,
+        capacity=float("inf"),
+        #  , init_items=None
+    ):
         """
         Initialize the VidigiStore.
 
@@ -160,13 +161,7 @@ class VidigiStore:
         None
         """
         for i in range(num_resources):
-            self.put(
-                VidigiResource(
-                    env=self.env,
-                    capacity=1,
-                    id_attribute=i + 1
-                )
-            )
+            self.put(VidigiResource(env=self.env, capacity=1, id_attribute=i + 1))
 
     def request(self):
         """
@@ -269,18 +264,19 @@ class _StoreRequest:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         # If the get event has been processed and we have an item, put it back
-        if self.get_event.processed and hasattr(self.get_event, 'value'):
+        if self.get_event.processed and hasattr(self.get_event, "value"):
             self.item = self.get_event.value
             # Return the item to the store
             self.store.put(self.item)
         return False  # Don't suppress exceptions
 
-#\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\#
+
+# \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\#
 
 
-#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&#
+# &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&#
 # LEGACY VidigiPriorityStore and Associated Methods
-#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&#
+# &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&#
 # MARK: LEGACY PriorityGet
 class PriorityGetLegacy(simpy.resources.base.Get):
     """
@@ -312,6 +308,7 @@ class PriorityGetLegacy(simpy.resources.base.Get):
     Credit to arabinelli
     # https://stackoverflow.com/questions/58603000/how-do-i-make-a-priority-get-request-from-resource-store
     """
+
     def __init__(self, resource, priority=999, preempt=True):
         self.priority = priority
 
@@ -324,6 +321,7 @@ class PriorityGetLegacy(simpy.resources.base.Get):
         self.key = (self.priority, self.time, not self.preempt)
 
         super().__init__(resource)
+
 
 # MARK: LEGACY Priority Store
 class VidigiPriorityStoreLegacy(simpy.resources.store.Store):
@@ -346,15 +344,18 @@ class VidigiPriorityStoreLegacy(simpy.resources.store.Store):
     # https://stackoverflow.com/questions/58603000/how-do-i-make-a-priority-get-request-from-resource-store
 
     """
+
     GetQueue = simpy.resources.resource.SortedQueue
 
     get = BoundClass(PriorityGetLegacy)
 
-#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&#
 
-#================================================#
+# &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&#
+
+# ================================================#
 # VidigiPriorityStore and Associated Methods
-#================================================#
+# ================================================#
+
 
 # Create the OptimizedPriorityStore by subclassing simpy.Store
 class VidigiPriorityStore:
@@ -370,11 +371,12 @@ class VidigiPriorityStore:
     """
 
     def __init__(
-            self, env,
-            num_resources=None,
-            capacity=float('inf')
-            #  , init_items=None
-            ):
+        self,
+        env,
+        num_resources=None,
+        capacity=float("inf"),
+        #  , init_items=None
+    ):
         """
         Initialize the OptimizedVidigiPriorityStore.
 
@@ -386,7 +388,7 @@ class VidigiPriorityStore:
         """
         self.env = env
         self.capacity = capacity
-        self.items = [] #if init_items is None else list(init_items)
+        self.items = []  # if init_items is None else list(init_items)
 
         # Custom priority queue for get requests
         self.get_queue = []  # We'll maintain this as a sorted list
@@ -414,13 +416,7 @@ class VidigiPriorityStore:
         None
         """
         for i in range(num_resources):
-            self.put(
-                VidigiResource(
-                    env=self.env,
-                    capacity=1,
-                    id_attribute=i + 1
-                )
-            )
+            self.put(VidigiResource(env=self.env, capacity=1, id_attribute=i + 1))
 
     def request(self, priority=0):
         """
@@ -588,6 +584,7 @@ class VidigiPriorityStore:
             # print(f"{self.env.now}: Attempted to cancel a request that was no longer in the queue (likely already fulfilled).")
             pass
 
+
 # MARK: Priority Store Request
 class _OptimizedStoreRequest:
     """
@@ -608,11 +605,12 @@ class _OptimizedStoreRequest:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         # If the get event has been processed and we have an item, put it back
-        if self.get_event.processed and hasattr(self.get_event, 'value'):
+        if self.get_event.processed and hasattr(self.get_event, "value"):
             self.item = self.get_event.value
             # Return the item to the store DIRECTLY - key optimization point
             self.store.return_item(self.item)
         return False  # Don't suppress exceptions
+
 
 class VidigiResourceLegacy(simpy.Resource):
     """
@@ -656,6 +654,7 @@ class VidigiResourceLegacy(simpy.Resource):
     ```
     Using resource with ID: Resource_1
     """
+
     def __init__(self, env, capacity, id_attribute=None):
         super().__init__(env, capacity)
         self.id_attribute = id_attribute
@@ -692,6 +691,7 @@ class VidigiResourceLegacy(simpy.Resource):
         # For example, you can reset the ID attribute
         # reset_id_logic(self.id_attribute)
         return super().release(*args, **kwargs)
+
 
 # MARK: Archived Classes
 
@@ -984,4 +984,4 @@ class VidigiResourceLegacy(simpy.Resource):
 #         return False  # Don't suppress exceptions
 
 
-#================================================#
+# ================================================#
