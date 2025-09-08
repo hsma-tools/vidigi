@@ -62,6 +62,7 @@ Therefore, it's highly advisable to check the key output metrics from your model
 ## Creating a visualisation from an existing model
 
 Two key things need to happen to existing models to work with the visualisation code:
+
 1. All simpy resources need to be changed to simpy stores containing a custom resource with an ID attribute. Vidigi provides two helper classes - VidigiStore and VidigiPriorityStore - to support with this.
 2. Logging needs to be added at key points: **arrival, (queueing, resource use start, resource use end), departure**
 where the steps in the middle can be repeated for as many queues and resource types as required, with the minimum requirement being at least one of each of arrival, queueing, departure.
@@ -291,6 +292,7 @@ event_log.append(
 ##### resource_use and resource_use_end
 
 Resource use is more complex to include but comes with two key benefits over the queue:
+
 - it becomes easier to monitor the length of time a resource is in use by a single entity as users won't 'move through' the resource use stage (which can also prove confusing to less experienced viewers)
 - it becomes possible to show the total number of resources that are available, making it easier to understand how well resources are being utilised at different stages
 
@@ -360,11 +362,12 @@ Once the event log has been created, the positions of each queue and resource mu
 An easy way to create this is passing a list of dictionaries to the `pd.DataFrame` function.
 
 The columns required are
-`event`: This must match the label used for the event in the event log
-`x`: The x coordinate of the event for the animation. This will correspond to the bottom-right hand corner of a queue, or the rightmost resource.
-`y`: The y coordinate of the event for the animaation. This will correspond to the lowest row of a queue, or the central point of the resources.
-`label`: A label for the stage. This can be hidden at a later step if you opt to use a background image with labels built-in. Note that line breaks in the label can be created using the HTML tag `<br>`.
-`resource` (OPTIONAL): Only required if the step is a resource_use step. This looks at the 'scenario' object passed to the `animate_activity_log()` function and pulls the attribute with the given name, which should give the number of available resources for that step.
+
+- `event`: This must match the label used for the event in the event log
+- `x`: The x coordinate of the event for the animation. This will correspond to the bottom-right hand corner of a queue, or the rightmost resource.
+- `y`: The y coordinate of the event for the animaation. This will correspond to the lowest row of a queue, or the central point of the resources.
+- `label`: A label for the stage. This can be hidden at a later step if you opt to use a background image with labels built-in. Note that line breaks in the label can be created using the HTML tag `<br>`.
+- `resource` (OPTIONAL): Only required if the step is a resource_use step. This looks at the 'scenario' object passed to the `animate_activity_log()` function and pulls the attribute with the given name, which should give the number of available resources for that step.
 
 
 Vidigi provides some helper classes and functions for setting this up.
