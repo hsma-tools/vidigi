@@ -912,7 +912,11 @@ Test, test, and test again!
 </div>
 <section id="creating-a-visualisation-from-an-existing-model" class="level2">
 <h2 class="anchored" data-anchor-id="creating-a-visualisation-from-an-existing-model">Creating a visualisation from an existing model</h2>
-<p>Two key things need to happen to existing models to work with the visualisation code: 1. All simpy resources need to be changed to simpy stores containing a custom resource with an ID attribute. Vidigi provides two helper classes - VidigiStore and VidigiPriorityStore - to support with this. 2. Logging needs to be added at key points: <strong>arrival, (queueing, resource use start, resource use end), departure</strong> where the steps in the middle can be repeated for as many queues and resource types as required, with the minimum requirement being at least one of each of arrival, queueing, departure.</p>
+<p>Two key things need to happen to existing models to work with the visualisation code:</p>
+<ol type="1">
+<li>All simpy resources need to be changed to simpy stores containing a custom resource with an ID attribute. Vidigi provides two helper classes - VidigiStore and VidigiPriorityStore - to support with this.</li>
+<li>Logging needs to be added at key points: <strong>arrival, (queueing, resource use start, resource use end), departure</strong> where the steps in the middle can be repeated for as many queues and resource types as required, with the minimum requirement being at least one of each of arrival, queueing, departure.</li>
+</ol>
 <section id="all-simpy-resources-need-to-be-changed-to-simpy-stores-containing-a-custom-resource-with-an-id-attribute" class="level3">
 <h3 class="anchored" data-anchor-id="all-simpy-resources-need-to-be-changed-to-simpy-stores-containing-a-custom-resource-with-an-id-attribute">1. All simpy resources need to be changed to simpy stores containing a custom resource with an ID attribute</h3>
 <p>To allow the use of resources to be visualised correctly - with entities staying with the same resource throughout the time they are using it - it is essential to be able to identify and track individual resources.</p>
@@ -920,7 +924,7 @@ Test, test, and test again!
 <div class="callout-info" data-collapse="true">
 <p>The easiest workaround which drops fairly painlessly into existing models is to use a simpy store with a custom resource class.</p>
 <p>The custom resource is setup as follows:</p>
-<div id="c0c9151d" class="cell" data-execution_count="1">
+<div id="f869f03f" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> CustomResource(simpy.Resource):</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, env, capacity, id_attribute<span class="op">=</span><span class="va">None</span>):</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>(env, capacity)</span>
@@ -935,7 +939,7 @@ Test, test, and test again!
 <span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="bu">super</span>().release(<span class="op">*</span>args, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>The creation of simpy resources is then replaced with the following pattern:</p>
-<div id="8d33e3bf" class="cell" data-execution_count="2">
+<div id="fc1c9cba" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>beds <span class="op">=</span> simpy.Store(environment)</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(number_of_beds):</span>
@@ -949,11 +953,11 @@ Test, test, and test again!
 </div>
 <p><code>vidigi.resources</code> provides a helper function for setting up simpy resources in the required manner.</p>
 <p>For a given resource that would have been created like this:</p>
-<div id="b8799538" class="cell" data-execution_count="3">
+<div id="0cdb76e7" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>nurses <span class="op">=</span> simpy.Resource(simpy_environment, capacity<span class="op">=</span>number_of_nurses)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>You would use</p>
-<div id="7749e74a" class="cell" data-execution_count="4">
+<div id="4636f4cf" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> vidigi.resources <span class="im">import</span> VidigiStore</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>nurses <span class="op">=</span> VidigiStore(simpy_environment, num_resources<span class="op">=</span>number_of_nurses)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
@@ -1035,7 +1039,7 @@ Test, test, and test again!
 </tbody>
 </table>
 <p>One easy way to achieve this is by appending dictionaries to a list at each important point in the process. For example:</p>
-<div id="6af43759" class="cell" data-execution_count="5">
+<div id="5c181fb6" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>event_log <span class="op">=</span> []</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>...</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>...</span>
@@ -1049,12 +1053,12 @@ Test, test, and test again!
 <span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>The list of dictionaries could then be converted to a pandas dataframe using</p>
-<div id="78593773" class="cell" data-execution_count="6">
+<div id="92cabfeb" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>pd.DataFrame(event_log)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>and passed to the animation function where required.</p>
 <p>However, from vidigi 1.0.0, you can use the EventLogger helper class instead! This will ensure the expected data is available throughout.</p>
-<div id="591db93f" class="cell" data-execution_count="7">
+<div id="1ee6c542" class="cell" data-execution_count="7">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> vidigi.logging <span class="im">import</span> EventLogger</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>logger <span class="op">=</span> EventLogger(</span>
@@ -1092,12 +1096,12 @@ Test, test, and test again!
 <section id="arrival_departure" class="level5">
 <h5 class="anchored" data-anchor-id="arrival_departure">arrival_departure</h5>
 <p>Within this, a minimum of two ‘arrival_departure’ events per entity are mandatory - <code>arrival</code> and <code>depart</code>, both with an event_type of <code>arrival_departure</code>, as shown below.</p>
-<div id="73d1978e" class="cell" data-execution_count="8">
+<div id="d362089f" class="cell" data-execution_count="8">
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>logger.log_arrival(</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>        entity_id<span class="op">=</span>patient.identifier</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>        )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div id="8378e857" class="cell" data-execution_count="9">
+<div id="31591dd8" class="cell" data-execution_count="9">
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>logger.log_departure(</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>        entity_id<span class="op">=</span>patient.identifier</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>        )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -1115,7 +1119,7 @@ Click to see how we’d do this with a dictionary instead
 </div>
 <div id="callout-2" class="callout-2-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<div id="40ae85f6" class="cell" data-execution_count="10">
+<div id="49a1ae2c" class="cell" data-execution_count="10">
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>event_log.append(</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>      {<span class="st">'patient'</span>: unique_entity_identifier,</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>      <span class="st">'pathway'</span>: <span class="st">'Revision'</span>,</span>
@@ -1124,7 +1128,7 @@ Click to see how we’d do this with a dictionary instead
 <span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>      <span class="st">'time'</span>: env.now}</span>
 <span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div id="c74b4574" class="cell" data-execution_count="11">
+<div id="3b0f96d2" class="cell" data-execution_count="11">
 <div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>event_log.append(</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>      {<span class="st">'patient'</span>: unique_entity_identifier,</span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>      <span class="st">'pathway'</span>: <span class="st">'Revision'</span>,</span>
@@ -1143,7 +1147,7 @@ Click to see how we’d do this with a dictionary instead
 <p>It is possible to solely use queues and never make use of a simpy resource.</p>
 <p>By tracking each important step in the process as a ‘queue’ step, the movement of patients can be accurately tracked.</p>
 <p>Entities will be ordered by the point at which they are added to the queue, with the first entries appearing at the front (bottom-right) of the queue.</p>
-<div id="70b0717f" class="cell" data-execution_count="12">
+<div id="ac9b22ab" class="cell" data-execution_count="12">
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>logger.log_queue(</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    entity_id<span class="op">=</span>patient.identifier,</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    event<span class="op">=</span><span class="st">"treatment_wait_begins"</span></span>
@@ -1162,7 +1166,7 @@ Click to see how we’d do this with a dictionary instead
 </div>
 <div id="callout-3" class="callout-3-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<div id="124049a6" class="cell" data-execution_count="13">
+<div id="1fb598e9" class="cell" data-execution_count="13">
 <div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>event_log.append(</span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>            {<span class="st">'patient'</span>: unique_entity_identifier,</span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>             <span class="st">'pathway'</span>: <span class="st">'High intensity'</span>,</span>
@@ -1178,8 +1182,12 @@ Click to see how we’d do this with a dictionary instead
 </section>
 <section id="resource_use-and-resource_use_end" class="level5">
 <h5 class="anchored" data-anchor-id="resource_use-and-resource_use_end">resource_use and resource_use_end</h5>
-<p>Resource use is more complex to include but comes with two key benefits over the queue: - it becomes easier to monitor the length of time a resource is in use by a single entity as users won’t ‘move through’ the resource use stage (which can also prove confusing to less experienced viewers) - it becomes possible to show the total number of resources that are available, making it easier to understand how well resources are being utilised at different stages</p>
-<div id="b7d81f28" class="cell" data-execution_count="14">
+<p>Resource use is more complex to include but comes with two key benefits over the queue:</p>
+<ul>
+<li>it becomes easier to monitor the length of time a resource is in use by a single entity as users won’t ‘move through’ the resource use stage (which can also prove confusing to less experienced viewers)</li>
+<li>it becomes possible to show the total number of resources that are available, making it easier to understand how well resources are being utilised at different stages</li>
+</ul>
+<div id="557ec2ce" class="cell" data-execution_count="14">
 <div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> treatment_cubicles.request() <span class="im">as</span> req:</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Make sure we assign the result of the yield to a variable</span></span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Assuming we are using a VidigiStore or VidigiPriorityStore, this will allow us</span></span>
@@ -1217,7 +1225,7 @@ Click to see how we’d do this with a dictionary instead
 </div>
 <div id="callout-4" class="callout-4-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<div id="20c564ef" class="cell" data-execution_count="15">
+<div id="bf0ac478" class="cell" data-execution_count="15">
 <div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>event_log.append(</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    {<span class="st">'patient'</span>: unique_entity_identifier,</span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>     <span class="st">'pathway'</span>: <span class="st">'Trauma'</span>,</span>
@@ -1254,9 +1262,16 @@ Click to see how we’d do this with a dictionary instead
 <h3 class="anchored" data-anchor-id="determining-event-positioning-in-the-animation">Determining event positioning in the animation</h3>
 <p>Once the event log has been created, the positions of each queue and resource must be set up.</p>
 <p>An easy way to create this is passing a list of dictionaries to the <code>pd.DataFrame</code> function.</p>
-<p>The columns required are <code>event</code>: This must match the label used for the event in the event log <code>x</code>: The x coordinate of the event for the animation. This will correspond to the bottom-right hand corner of a queue, or the rightmost resource. <code>y</code>: The y coordinate of the event for the animaation. This will correspond to the lowest row of a queue, or the central point of the resources. <code>label</code>: A label for the stage. This can be hidden at a later step if you opt to use a background image with labels built-in. Note that line breaks in the label can be created using the HTML tag <code>&lt;br&gt;</code>. <code>resource</code> (OPTIONAL): Only required if the step is a resource_use step. This looks at the ‘scenario’ object passed to the <code>animate_activity_log()</code> function and pulls the attribute with the given name, which should give the number of available resources for that step.</p>
+<p>The columns required are</p>
+<ul>
+<li><code>event</code>: This must match the label used for the event in the event log</li>
+<li><code>x</code>: The x coordinate of the event for the animation. This will correspond to the bottom-right hand corner of a queue, or the rightmost resource.</li>
+<li><code>y</code>: The y coordinate of the event for the animaation. This will correspond to the lowest row of a queue, or the central point of the resources.</li>
+<li><code>label</code>: A label for the stage. This can be hidden at a later step if you opt to use a background image with labels built-in. Note that line breaks in the label can be created using the HTML tag <code>&lt;br&gt;</code>.</li>
+<li><code>resource</code> (OPTIONAL): Only required if the step is a resource_use step. This looks at the ‘scenario’ object passed to the <code>animate_activity_log()</code> function and pulls the attribute with the given name, which should give the number of available resources for that step.</li>
+</ul>
 <p>Vidigi provides some helper classes and functions for setting this up.</p>
-<div id="033a9095" class="cell" data-execution_count="16">
+<div id="2c060ead" class="cell" data-execution_count="16">
 <div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> vidigi.utils <span class="im">import</span> create_event_position_df, EventPosition</span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>event_position_df <span class="op">=</span> create_event_position_df([</span>
@@ -1279,7 +1294,7 @@ Click to see how we’d do this with a dictionary instead
 <div id="callout-5" class="callout-5-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <p>If you’d rather not use the Vidigi helpers for this, you can just pass it as a dataframe, which can be easily generated with a list of dictionaries.</p>
-<div id="98062159" class="cell" data-execution_count="17">
+<div id="f12c3731" class="cell" data-execution_count="17">
 <div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>        event_position_df <span class="op">=</span> pd.DataFrame([</span>
 <span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>                <span class="co"># Triage</span></span>
 <span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>                {<span class="st">'event'</span>: <span class="st">'triage_wait_begins'</span>,</span>
