@@ -56,24 +56,26 @@ website:
     - contents:
       - examples/example_1_simplest_case/ex_1_simplest_case.ipynb
       - examples/example_2_branching_multistep/ex_2_branching_multistep_case.ipynb
-      - examples/example_3_simplest_case_priority_resource/ex_3_simplest_case_priority_resource.ipynb
-      - examples/example_5_simplest_case_wrapped_resources/ex_5_simplest_case_wrapped_resource.ipynb
       - examples/example_6_simplest_case_storewrapper/ex_6_simplest_case.ipynb
       - examples/example_7_simplest_case_priority_resource_storewrapper/ex_7_simplest_case_priority_resource.ipynb
-      - examples/example_8_wide_resource_spacing/ex_8_model.ipynb
-      - examples/example_9_wide_resource_spacing_multiple/ex_9_model.ipynb
-      - examples/example_11_resourceless_animation/ex_11_resourceless.ipynb
-      - examples/example_12_resourceless_with_back_and_forth/ex_12_resourceless_advanced.ipynb
-      - examples/example_13_additional_synchronised_traces_method_1/synchronised_traces.ipynb
       - examples/example_14_carwash/carwash.ipynb
-      - examples/example_15_gas_station_refuelling/gas_station.ipynb
-      - examples/example_16_packing_robot/packing_robot.ipynb
-      - examples/example_17_resourceless_larger_queues/resourceless_longer_queues.ipynb
       section: SimPy Examples
     - contents:
       - examples/example_4_ciw/ex_4_ciw.ipynb
       - examples/example_10_advanced_ciw/ex_10_ciw.ipynb
       section: Ciw Examples
+    - contents:
+      - examples/example_3_simplest_case_priority_resource/ex_3_simplest_case_priority_resource.ipynb
+      - examples/example_5_simplest_case_wrapped_resources/ex_5_simplest_case_wrapped_resource.ipynb
+      - examples/example_8_wide_resource_spacing/ex_8_model.ipynb
+      - examples/example_9_wide_resource_spacing_multiple/ex_9_model.ipynb
+      - examples/example_11_resourceless_animation/ex_11_resourceless.ipynb
+      - examples/example_12_resourceless_with_back_and_forth/ex_12_resourceless_advanced.ipynb
+      - examples/example_13_additional_synchronised_traces_method_1/synchronised_traces.ipynb
+      - examples/example_15_gas_station_refuelling/gas_station.ipynb
+      - examples/example_16_packing_robot/packing_robot.ipynb
+      - examples/example_17_resourceless_larger_queues/resourceless_longer_queues.ipynb
+      section: Advanced Animation Examples
     - contents:
       - examples/feat_changing_sim_time/feat_changing_sim_time.ipynb
       - examples/feat_repeating_overlay/feat_repeating_overlay.ipynb
