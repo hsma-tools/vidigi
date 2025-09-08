@@ -5,6 +5,12 @@ filters:
 ---
 # A very simple example with one server
 
+In this example, we'll create a very simply SimPy model where only one server/resource is present.
+
+In a later example with multiple servers, we'll bring in vidigi's custom classes for tracking resource use.
+
+If you're working with ciw, you may find it more useful to look at [this cafe example](../examples/example_10_advanced_ciw/ex_10_ciw.ipynb).
+
 ## Step 1. Import required libraries
 
 * `vidigi`
@@ -33,11 +39,19 @@ SERVICE_TIME = 3.0
 
 ## Step 3. Write model code with event logs
 
-Create a simple simulation model using `simpy`.
+Here we create a simple simulation model using `simpy`.
 
-On the left is a basic `simpy` model. If not familiar check out `simpy` documentation for intro to simpy.
+On the left is a basic `simpy` model. If you're not familiar with this notation, check out the `simpy` documentation for an introduction to SimPy, or [the DES book from the Health Service Modelling Associate programme](https://des.hsma.co.uk/intro_to_simpy.html).
 
-On the right is how we incorporate `vidigi`. Information for `vidigi` collected in a list of dictionaries which we will convert into a dataframe. You need a `arrival_departure` event.
+On the right is how we incorporate `vidigi`.
+
+We set up a `logger` using the `EventLogger` class. This then gives us methods for recording arrivals, departures and queueing steps.
+
+Every entity must have a single arrival and a single departure event. If this isn't true, unexpected behaviour will occur in the animation.
+
+They may have as many queueing events as desired (and they don't have to just be what you're traditionally think of as a 'queue' - they can be any point where an individual is waiting for something or doing something).
+
+We can also record the points at which an entity starts using/blocking a resource/server, and when this ends. For this we also need to pass in an identifier that tracks which resource they are using. Here we only have 1 resource, so this will always be 1 - for more complex examples, we can use vidigi's custom resource classes, which expose this detail, and are covered in the [next chapter](basic_example_with_vidigi_logger_helpers_multiple_servers.qmd).
 
 :::: {.columns}
 
@@ -48,7 +62,7 @@ On the right is how we incorporate `vidigi`. Information for `vidigi` collected 
 ```{.python}
 
 def patient_generator(env, server, event_log):
-    """Generate patients arriving at the shop"""
+    """Generate patients arriving"""
     patient_id = 0
 
     while True:
@@ -95,7 +109,7 @@ def run_simulation():
 
 ```{python}
 def patient_generator(env, server, logger):
-    """Generate patients arriving at the shop"""
+    """Generate patients arriving"""
     patient_id = 0
 
     while True:
@@ -162,6 +176,11 @@ print(f"Generated {len(event_log_df)} events")
 
 ## Step 5. Create event positions dataframe
 
+We need to tell vidigi where the bottom-right-hand corner of each queue should be on the page.
+
+This gives it a starting point to work from for laying out the events within the animation canvas.
+We provide coordinates to it to do this.
+
 ```{python}
 # Define positions for animation
 event_positions = create_event_position_df([
@@ -174,12 +193,12 @@ event_positions = create_event_position_df([
 
 ## Step 6. Create animation
 
-Explaining:
+Finally, we create our animation.
 
-* `plotly_height` and `plotly_width`
-* `override_x_max` and `override_y_max`
-* `setup_mode`
-* `every_x_time_units`
+* `plotly_height` and/or `plotly_width` set the actual physical size of the resulting plotly canvas in pixels
+* `override_x_max` and/or `override_y_max` controls the limits of the grid within the plot. If not specified, it will set it to a value that's just larger than the maximum coordinate that is generated within the animation. However, manually setting the extents of the plot makes it more consistent and can help if we want to later add a background image.
+* `setup_mode` turns on and off the gridlines and coordinate grid values, which are useful when setting up the animation but may not be wanted once you are ready to share the animation
+* `every_x_time_units` defines how often the animation will poll the position of each entity - so e.g. a value of 10 would mean that the animation would progress in jumps of 10 minutes (or whatever the relevant time unit of your simulation is)
 
 ```{python}
 # Create animation
