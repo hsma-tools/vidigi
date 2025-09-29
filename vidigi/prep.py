@@ -3,6 +3,7 @@ import time
 import pandas as pd
 import numpy as np
 import re
+import hashlib
 
 
 def reshape_for_animations(
@@ -584,12 +585,17 @@ def generate_animation_df(
         ].copy()
 
         if step_snapshot_limit_gauges:
+            # Calculate the maximum queue length seen at any step across the whole animation
+            # This will be used to calculate the upper limit of the gauges across all steps
+            # so there is a consistent length that they can be used to compare across
             max_count = max(exceeded_snapshot_limit["additional"])
 
-            if step_snapshot_max == 1:
-                display_fig_string = False
+            # If step snapshot max is very low, we don't want to display the icon as '+ x more' -
+            # we simply want to display it as 'x'
+            if step_snapshot_max <= 1:
+                display_fig_string = "raw"
             else:
-                display_fig_string = True
+                display_fig_string = "more"
 
             # Update the icon column conditionally
             exceeded_snapshot_limit["icon"] = exceeded_snapshot_limit.apply(
@@ -598,7 +604,8 @@ def generate_animation_df(
                     count=row["additional"],
                     max_count=max_count,
                     bar_length=10,
-                    display_fig_string=display_fig_string,
+                    display_count_as_fig=True,
+                    count_string_format=display_fig_string,
                 ),
                 axis=1,
             )
@@ -607,6 +614,14 @@ def generate_animation_df(
             exceeded_snapshot_limit["icon"] = exceeded_snapshot_limit[
                 "additional"
             ].apply(lambda x: f"+ {int(x):5d} more")
+
+        # 29/09/25 We will replace the entity_id of any instance where we have a bar or
+        # text string indicating excess queues with a consistent ID for that particular event.
+        # This prevents these icons from 'flying in' each time a new individual enters the
+        # animation, making the animation more stable-looking and visually pleasing.
+        exceeded_snapshot_limit[entity_col_name] = exceeded_snapshot_limit[
+            event_col_name
+        ].apply(_event_to_icon_id)
 
         full_entity_df_plus_pos = pd.concat(
             [
@@ -629,7 +644,8 @@ def ascii_queue_icon(
     filled_char="█",
     empty_char="░",
     count_only=False,
-    display_fig_string=True,
+    display_count_as_fig=True,
+    count_string_format="more",
 ):
     """
     Generate an ASCII progress bar string representing the queue length.
@@ -658,6 +674,13 @@ def ascii_queue_icon(
     count_only : bool, optional
         If True, only return the total entities in the step rather than a bar
         gauge (default is False).
+    display_count_as_fig: bool, optional
+        If True, displays the step count as a number after the bar gauge
+        Ignored if count_only = True
+    count_string_format: str, optional
+        If "more", displays the count string after the bar as "[bar] + x more"
+        Otherwise, displays it as "[bar] x"
+
 
     Returns
     -------
@@ -683,9 +706,16 @@ def ascii_queue_icon(
         else:
             filled_len = int(round(bar_length * count / max_count))
             bar = filled_char * filled_len + empty_char * (bar_length - filled_len)
-            if display_fig_string:
-                return f"[{bar}] + {count:.0f} more"
-            else:
-                return f"[{bar}]"
+            if display_count_as_fig:
+                if count_string_format == "more":
+                    return f"[{bar}] + {count:.0f} more"
+                else:
+                    return f"[{bar}] {count:.0f}"
     else:
         return ""
+
+
+def _event_to_icon_id(event_name):
+    # Hash event name, take first 6 digits, and offset to keep it large
+    h = int(hashlib.md5(event_name.encode()).hexdigest(), 16)
+    return 9_000_000 + (h % 1_000_000)
