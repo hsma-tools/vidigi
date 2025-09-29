@@ -4,9 +4,13 @@ import pandas as pd
 import numpy as np
 import warnings
 import numbers
-from typing import Optional
+from typing import Optional, Union
+import inspect
+from functools import wraps
+from vidigi.utils import _enforce_int_params
 
 
+@_enforce_int_params(["every_x_time_units", "limit_duration", "step_snapshot_max"])
 def reshape_for_animations(
     event_log: pd.DataFrame,
     every_x_time_units: int = 10,
@@ -18,6 +22,7 @@ def reshape_for_animations(
     event_col_name: str = "event",
     pathway_col_name: Optional[str] = None,
     debug_mode: bool = False,
+    save_intermediate_outputs: Optional[Union[bool, str]] = False,
 ) -> pd.DataFrame:
     """
     Reshape event log data for animation purposes.
@@ -54,6 +59,11 @@ def reshape_for_animations(
         information is not present.
     debug_mode : bool, optional
         If True, print debug information during processing (default is False).
+    save_intermediate_outputs: bool or str, optional
+        For debugging purposes.
+        If True or a string, output a series of csvs with intermediate transformed dataframes.
+        If a string is passed, this will be interpreted as the path to prefix the dataframes with.
+        Default is False.
 
     Returns
     -------
@@ -68,6 +78,8 @@ def reshape_for_animations(
     - Entities are ranked within each event based on their arrival order.
     - A maximum number of patients per event can be set to limit the number of entities who will be
       displayed on screen within any one event type at a time.
+    - This function assumes entities only exist in one place/queue at a time. Simulations where this
+      assumption does not hold may display unexpected behaviour.
     - An 'exit' event is added for each entity at the end of their journey.
     - The function uses memory management techniques (del and gc.collect()) to handle large datasets.
 
@@ -81,21 +93,40 @@ def reshape_for_animations(
     # Begin logic
     entity_dfs = []
 
+    # If a pathway column is provided, make this part of the index
     if pathway_col_name is not None:
-        pivoted_log = event_log.pivot_table(
-            values=time_col_name,
-            index=[entity_col_name, event_type_col_name, pathway_col_name],
-            columns=event_col_name,
-        ).reset_index()
+        pivoted_log = (
+            event_log.pivot_table(
+                values=time_col_name,
+                index=[entity_col_name, event_type_col_name, pathway_col_name],
+                columns=event_col_name,
+            )
+            .reset_index()
+            .copy()
+        )
 
+    # If no pathway column is provided, index is just the entity ID and the event type
     else:
-        pivoted_log = event_log.pivot_table(
-            values=time_col_name,
-            index=[entity_col_name, event_type_col_name],
-            columns=event_col_name,
-        ).reset_index()
+        pivoted_log = (
+            event_log.pivot_table(
+                values=time_col_name,
+                index=[entity_col_name, event_type_col_name],
+                columns=event_col_name,
+            )
+            .reset_index()
+            .copy()
+        )
 
-    # TODO: Add in behaviour for if limit_duration is None
+    # Add in behaviour for if limit_duration is None (which strictly speaking it shouldn't be,
+    # but should improve behaviour if users try to do this)
+    if limit_duration is None:
+        limit_duration = int(round(max(pivoted_log[time_col_name]), 0))
+        warnings.warn(
+            f"`None` was provided for the limit_duration argument."
+            f"This is not an officially supported input, so has been set to {limit_duration}.",
+            UserWarning,
+            stacklevel=3,
+        )
 
     ################################################################################
     # Iterate through every matching minute
@@ -103,16 +134,8 @@ def reshape_for_animations(
     ################################################################################
     # Note that we want to do this for everything up to AND INCLUDING the duration
     for time_unit in range(limit_duration + every_x_time_units):
-        # print(minute)
         # Get entities who arrived before the current minute and who left the system after the current minute
         # (or arrived but didn't reach the point of being seen before the model run ended)
-        # When turning this into a function, think we will want user to pass
-        # 'first step' and 'last step' or something similar
-        # and will want to reshape the event log for this so that it has a clear start/end regardless
-        # of pathway (move all the pathway stuff into a separate column?)
-
-        # Think we maybe need a pathway order and pathway precedence column
-        # But what about shared elements of each pathway?
         if time_unit % every_x_time_units == 0:
             try:
                 # Work out which entities - if any - were present in the simulation at the current time
@@ -120,10 +143,16 @@ def reshape_for_animations(
                 # or after the minute in question, or never depart during our model run
                 # (which can happen if they arrive towards the end, or there is a bottleneck)
                 current_entities_in_moment = pivoted_log[
-                    (pivoted_log["arrival"] <= time_unit)
+                    (
+                        pivoted_log["arrival"] <= time_unit
+                    )  # Arrived before or at the current time
                     & (
-                        (pivoted_log["depart"] >= time_unit)
-                        | (pivoted_log["depart"].isnull())
+                        (
+                            pivoted_log["depart"] >= time_unit
+                        )  # Left after or at the current time
+                        | (
+                            pivoted_log["depart"].isnull()
+                        )  # Or never left (due to model ending first)
                     )
                 ][entity_col_name].values
             except KeyError:
@@ -148,9 +177,8 @@ def reshape_for_animations(
                 # handle them? e.g. someone who is in a ward but waiting for an x-ray to be read
                 # could need to be represented in both queues simultaneously
 
-                # We have filtered out  events that occurred later than the current minute,
-                # so filter out any events then just take the latest event that has
-                # taken place for each entity
+                # We have filtered out events that occurred *later* than the current minute,
+                # so now take the latest/most recent event that has taken place for each entity
                 most_recent_events_time_unit_ungrouped = (
                     entity_minute_df.reset_index(drop=False)
                     .sort_values([time_col_name, "index"], ascending=True)
@@ -158,7 +186,10 @@ def reshape_for_animations(
                     .tail(1)
                 )
 
-                # Now rank entities within a given event by the order in which they turned up to that event
+                # Now rank entities within a given event by the order
+                # in which they turned up to that event (so we are effectively calculating their
+                # visual queue position, which ensures consistent positioning and a 'queue-like'
+                # progression through the animation)
                 most_recent_events_time_unit_ungrouped["rank"] = (
                     most_recent_events_time_unit_ungrouped.groupby([event_col_name])[
                         "index"
@@ -173,10 +204,14 @@ def reshape_for_animations(
 
                 # ----------------------------------------------------------------------------- #
 
-                # Exclude event types that should not be part of snapshot logic
+                # Now limit the rows to anything below or equal to the step_snapshot_max
+                # (so we shed excessive rows here to help manage the size of the resulting
+                # output and, eventually, the animation)
+
+                # First we exclude event types that should not be part of snapshot logic
                 excluded_types = ["resource_use", "resource_use_end"]
 
-                # Apply snapshot logic per event (assuming 'event_id' identifies each event)
+                # Apply snapshot logic per event
                 def process_event_group(df):
                     if df[event_type_col_name].iloc[0] in excluded_types:
                         return df  # Return unchanged
@@ -197,7 +232,7 @@ def reshape_for_animations(
                             )
                         return df
 
-                # Apply the per-event logic
+                # Apply the per-event logic to each row
                 most_recent_events_time_unit_ungrouped = (
                     most_recent_events_time_unit_ungrouped.groupby(
                         event_col_name, group_keys=False
@@ -229,6 +264,17 @@ def reshape_for_animations(
     if debug_mode:
         print(
             f"Snapshot df concatenation complete at {time.strftime('%H:%M:%S', time.localtime())}"
+        )
+
+    if save_intermediate_outputs is not False:
+        if isinstance(save_intermediate_outputs, str):
+            extra_path = save_intermediate_outputs
+        else:
+            extra_path = ""
+        event_log.to_csv(path_or_buf=f"{extra_path}_0_event_log.csv", index=True)
+        pivoted_log.to_csv(path_or_buf=f"{extra_path}_1_pivoted_log.csv", index=True)
+        full_entity_df.to_csv(
+            path_or_buf=f"{extra_path}_2_full_entity_df.csv", index=True
         )
 
     # We no longer need to keep the individual dataframes in that list, so get rid of them
@@ -271,6 +317,17 @@ def reshape_for_animations(
     )
 
 
+@_enforce_int_params(
+    [
+        "wrap_queues_at",
+        "wrap_resources_at",
+        "step_snapshot_max",
+        "gap_between_entities",
+        "gap_between_resources",
+        "gap_between_resource_rows",
+        "gap_between_queue_rows",
+    ]
+)
 def generate_animation_df(
     full_entity_df: pd.DataFrame,
     event_position_df: pd.DataFrame,
