@@ -93,10 +93,26 @@ def reshape_for_animations(
     # Begin logic
     entity_dfs = []
 
+    if save_intermediate_outputs is not False:
+        if isinstance(save_intermediate_outputs, str):
+            extra_path = save_intermediate_outputs
+        else:
+            extra_path = ""
+
+    # First, we convert our event log from a long format (one row per event) to a wide format
+    # By using the entity ID and the event type as the index, we will obtain a dataframe where
+    # the arrival time and departure time for an individual are side-by-side, allowing us to more
+    # easily filter for entities that meet arrival/departure time criteria and get their IDs, which
+    # we can then use for later filtering
+
     # If a pathway column is provided, make this part of the index
+    # (note - this is a hang over from the early development of the package, and it is likely
+    # to be removed as a behaviour at a later date as the concept of 'pathways' was tied up in
+    # some specific use cases and isn't really necessary for things to function)
     if pathway_col_name is not None:
         pivoted_log = (
-            event_log.pivot_table(
+            event_log[event_log[event_type_col_name] == "arrival_departure"]
+            .pivot_table(
                 values=time_col_name,
                 index=[entity_col_name, event_type_col_name, pathway_col_name],
                 columns=event_col_name,
@@ -106,9 +122,11 @@ def reshape_for_animations(
         )
 
     # If no pathway column is provided, index is just the entity ID and the event type
+    # This is expected to be the code actually used in most cases
     else:
         pivoted_log = (
-            event_log.pivot_table(
+            event_log[event_log[event_type_col_name] == "arrival_departure"]
+            .pivot_table(
                 values=time_col_name,
                 index=[entity_col_name, event_type_col_name],
                 columns=event_col_name,
@@ -196,6 +214,7 @@ def reshape_for_animations(
                     ].rank(method="first")
                 )
 
+                # Calculate the total number of entities observed in this step
                 most_recent_events_time_unit_ungrouped["max"] = (
                     most_recent_events_time_unit_ungrouped.groupby(event_col_name)[
                         "rank"
@@ -239,7 +258,8 @@ def reshape_for_animations(
                     ).apply(process_event_group)
                 )
 
-                # Clean up and store snapshot
+                # Clean up and store snapshot in our list of snapshots, which will all be
+                # concatenated into one large dataframe at the end
                 entity_dfs.append(
                     most_recent_events_time_unit_ungrouped.drop(
                         columns="max", errors="ignore"
@@ -248,7 +268,8 @@ def reshape_for_animations(
 
             else:
                 # If no entities, append a DataFrame with just the snapshot_time
-                # This creates a row with NaN for all other columns, preserving the time step.
+                # This creates a row with NaN for all other columns, preserving the time step so we
+                # don't get odd time skips in the final animation.
                 empty_df = pd.DataFrame([{"snapshot_time": time_unit}])
                 entity_dfs.append(empty_df)
 
@@ -267,10 +288,6 @@ def reshape_for_animations(
         )
 
     if save_intermediate_outputs is not False:
-        if isinstance(save_intermediate_outputs, str):
-            extra_path = save_intermediate_outputs
-        else:
-            extra_path = ""
         event_log.to_csv(path_or_buf=f"{extra_path}_0_event_log.csv", index=True)
         pivoted_log.to_csv(path_or_buf=f"{extra_path}_1_pivoted_log.csv", index=True)
         full_entity_df.to_csv(
@@ -282,15 +299,15 @@ def reshape_for_animations(
     del entity_dfs
     gc.collect()
 
-    # Add a final exit step for each client
+    # Add a final exit step for each entity
 
-    # This is helpful as it ensures all patients are visually seen to exit rather than
+    # This is helpful as it ensures all entities are visually seen to exit rather than
     # just disappearing after their final step
 
     # It makes it easier to track the split of people going on to an optional step when
     # this step is at the end of the pathway
 
-    # First, get the last step for every single person
+    # First, get the last step for every single entity
     final_step = (
         full_entity_df.sort_values([entity_col_name, "snapshot_time"], ascending=True)
         .groupby(entity_col_name)
@@ -307,6 +324,8 @@ def reshape_for_animations(
 
     full_entity_df = pd.concat([full_entity_df, final_step], ignore_index=True)
 
+    # We no longer need this dataframe as we have concatenated it to our main dataframe, so
+    # delete it and clear up the memory it was using asap
     del final_step
     gc.collect()
 
