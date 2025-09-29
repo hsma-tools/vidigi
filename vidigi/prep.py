@@ -434,6 +434,14 @@ def generate_animation_df(
     - Write a test to ensure that no entity ID appears in multiple places at a single time unit.
     """
 
+    if step_snapshot_max % wrap_queues_at != 0:
+        warnings.warn(
+            f"`step_snapshot_max` is not a multiple of `wrap_queues_at`."
+            f"The animation will display better if this is resolved.",
+            UserWarning,
+            stacklevel=3,
+        )
+
     # Filter to only a single replication
 
     # TODO: Write a test  to ensure that no patient ID appears in multiple places at a single time unit
