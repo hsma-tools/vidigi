@@ -149,10 +149,20 @@ def reshape_for_animations(
     ################################################################################
     # Iterate through every matching minute
     # and generate snapshot df of position of any entities present at that moment
+    # (i.e. dataframe per 'snapshot time' of the most recent position of every
+    # entity present in the model at that time)
+    # e.g. if they joined the treatment queue at time 72, and started treatment at
+    # time 85, then departed at time 93
+    # - at snapshot_time 80, they would have a last event of joined_treatment_queue
+    # - at snapshot_time 90, they would have a last event of started_treatment
+    # - at snapshot_time 100, they would not appear (as they have departed)
     ################################################################################
-    # Note that we want to do this for everything up to AND INCLUDING the duration
+    # Note that we want to do this for everything up to AND INCLUDING the full duration we've passed
+    # as the limit
     for time_unit in range(limit_duration + every_x_time_units):
-        # Get entities who arrived before the current minute and who left the system after the current minute
+        # Get entities who
+        # - arrived before the current minute
+        # - and who left the system after the current minute
         # (or arrived but didn't reach the point of being seen before the model run ended)
         if time_unit % every_x_time_units == 0:
             try:
@@ -322,6 +332,9 @@ def reshape_for_animations(
     # Only keep rows for people whose exit step will happen *before* the simulation end
     final_step = final_step[final_step["snapshot_time"] <= (limit_duration)]
 
+    # Change the event_type of the final step to more accurately reflect what it is
+    final_step["event_type"] = "exit"
+
     full_entity_df = pd.concat([full_entity_df, final_step], ignore_index=True)
 
     # We no longer need this dataframe as we have concatenated it to our main dataframe, so
@@ -365,6 +378,8 @@ def generate_animation_df(
     debug_mode: bool = False,
     custom_entity_icon_list: Optional[list[str]] = None,
     include_fun_emojis: bool = False,
+    save_intermediate_outputs: Optional[Union[bool, str]] = False,
+    minimize_output_df: bool = True,
 ):
     """
     Generate a DataFrame for animation purposes by adding position information to entity data.
@@ -416,6 +431,11 @@ def generate_animation_df(
     include_fun_emojis : bool, default=False
         If True, include the more 'fun' emojis, such as Santa Claus. Ignored if a custom entity icon list
         is passed.
+    save_intermediate_outputs: bool or str, optional
+        For debugging purposes.
+        If True or a string, output a series of csvs with intermediate transformed dataframes.
+        If a string is passed, this will be interpreted as the path to prefix the dataframes with.
+        Default is False.
 
     Returns
     -------
@@ -434,6 +454,12 @@ def generate_animation_df(
     - Write a test to ensure that no entity ID appears in multiple places at a single time unit.
     """
 
+    if save_intermediate_outputs is not False:
+        if isinstance(save_intermediate_outputs, str):
+            extra_path = save_intermediate_outputs
+        else:
+            extra_path = ""
+
     if step_snapshot_max % wrap_queues_at != 0:
         warnings.warn(
             f"`step_snapshot_max` is not a multiple of `wrap_queues_at`."
@@ -447,6 +473,8 @@ def generate_animation_df(
     # TODO: Write a test  to ensure that no patient ID appears in multiple places at a single time unit
     # and return an error if it does so
 
+    # 29/09/2025 - consider removing as this is already done in reshape_for_animation function
+    # (though method is very slightly different, but should achieve the same output)
     # Order entities within event/time unit to determine their eventual position in the line
     full_entity_df["rank"] = full_entity_df.groupby([event_col_name, "snapshot_time"])[
         "snapshot_time"
@@ -462,9 +490,16 @@ def generate_animation_df(
         full_entity_df_plus_pos[entity_col_name].isnull()
     ].copy()
 
+    # Then a non-null entity name will be a row where an entity is tracked
     entity_data = full_entity_df_plus_pos[
         full_entity_df_plus_pos[entity_col_name].notnull()
     ].copy()
+
+    if save_intermediate_outputs is not False:
+        empty_snapshots.to_csv(
+            path_or_buf=f"{extra_path}_3_empty_snapshots.csv", index=True
+        )
+        entity_data.to_csv(path_or_buf=f"{extra_path}_4_entity_data.csv", index=True)
 
     # Determine the position for any resource use steps
     resource_use = entity_data[
@@ -523,12 +558,26 @@ def generate_animation_df(
         queues["x_final"] - (gap_between_entities * (wrap_queues_at / 2)),
     )
 
+    # Deal with the exit steps
+    exit_steps = entity_data[entity_data[event_type_col_name] == "exit"].copy()
+    exit_steps["x_final"] = exit_steps["x"]
+    exit_steps["y_final"] = exit_steps["y"]
+
+    if save_intermediate_outputs is not False:
+        resource_use.to_csv(
+            path_or_buf=f"{extra_path}_5_resource_use_steps.csv", index=True
+        )
+        queues.to_csv(path_or_buf=f"{extra_path}_6_queues.csv", index=True)
+        exit_steps.to_csv(path_or_buf=f"{extra_path}_7_exit_steps.csv", index=True)
+
     if len(resource_use) > 0:
-        processed_entities_df = pd.concat([queues, resource_use], ignore_index=True)
-        del resource_use, queues
+        processed_entities_df = pd.concat(
+            [queues, resource_use, exit_steps], ignore_index=True
+        )
+        del resource_use, queues, exit_steps
     else:
-        processed_entities_df = queues.copy()
-        del queues
+        processed_entities_df = pd.concat([queues, exit_steps], ignore_index=True)
+        del queues, exit_steps
 
     # Add the empty snapshots back into the main dataframe
     full_entity_df_plus_pos = pd.concat(
@@ -677,5 +726,22 @@ def generate_animation_df(
         )
 
     full_entity_df_plus_pos["opacity"] = 1.0
+
+    full_entity_df_plus_pos = full_entity_df_plus_pos.sort_values(
+        [entity_col_name, "snapshot_time"]
+    )
+
+    if save_intermediate_outputs is not False:
+        individual_entities.to_csv(
+            path_or_buf=f"{extra_path}_8_individual_entities.csv", index=True
+        )
+        full_entity_df_plus_pos.to_csv(
+            path_or_buf=f"{extra_path}_9_full_entity_df_plus_pos_all_cols.csv",
+            index=True,
+        )
+
+    # Drop any columns that are no longer strictly necessary (but may be useful to retain for debugging)
+    if minimize_output_df:
+        full_entity_df_plus_pos.drop(columns=["opacity", "x", "y", "index", "run"])
 
     return full_entity_df_plus_pos.dropna(axis=1, how="all")
