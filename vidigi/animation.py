@@ -4,49 +4,51 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from vidigi.prep import reshape_for_animations, generate_animation_df
-from vidigi.utils import html_color_to_rgba
+from vidigi.utils import html_color_to_rgba, _enforce_int_params
 import numpy as np
 from copy import deepcopy
 from collections import defaultdict
+from typing import Optional
 
 
+@_enforce_int_params(["plotly_height"])
 def generate_animation(
-    full_entity_df_plus_pos,
-    event_position_df,
-    scenario=None,
-    time_col_name="time",
-    entity_col_name="entity_id",
-    event_col_name="event",
-    resource_col_name="resource_id",
-    pathway_col_name=None,
-    simulation_time_unit="minutes",
-    plotly_height=900,
-    plotly_width=None,
-    include_play_button=True,
-    add_background_image=None,
-    display_stage_labels=True,
-    entity_icon_size=24,
-    text_size=24,
-    resource_icon_size=24,
-    override_x_max=None,
-    override_y_max=None,
-    time_display_units=None,
-    start_date=None,
-    start_time=None,
-    resource_opacity=0.8,
-    custom_resource_icon=None,
-    wrap_resources_at=20,
-    gap_between_resources=10,
-    gap_between_resource_rows=30,
-    setup_mode=False,
-    frame_duration=400,  # milliseconds
-    frame_transition_duration=600,  # milliseconds
-    debug_mode=False,
-    background_image_opacity=0.5,
-    overflow_text_color="black",
-    stage_label_text_colour="black",
-    backend="express",
-):
+    full_entity_df_plus_pos: pd.DataFrame,
+    event_position_df: pd.DataFrame,
+    scenario: Optional[object] = None,
+    time_col_name: str = "time",
+    entity_col_name: str = "entity_id",
+    event_col_name: str = "event",
+    resource_col_name: str = "resource_id",
+    pathway_col_name: Optional[str] = None,
+    simulation_time_unit: str = "minutes",
+    plotly_height: int = 900,
+    plotly_width: Optional[int] = None,
+    include_play_button: bool = True,
+    add_background_image: Optional[str] = None,
+    display_stage_labels: bool = True,
+    entity_icon_size: int = 24,
+    text_size: int = 24,
+    resource_icon_size: int = 24,
+    override_x_max: Optional[int] = None,
+    override_y_max: Optional[int] = None,
+    time_display_units: Optional[int] = None,
+    start_date: Optional[str] = None,
+    start_time: Optional[str] = None,
+    resource_opacity: float = 0.8,
+    custom_resource_icon: Optional[str] = None,
+    wrap_resources_at: int = 20,
+    gap_between_resources: int = 10,
+    gap_between_resource_rows: int = 30,
+    setup_mode: bool = False,
+    frame_duration: int = 400,  # milliseconds
+    frame_transition_duration: int = 600,  # milliseconds
+    debug_mode: bool = False,
+    background_image_opacity: float = 0.5,
+    overflow_text_color: str = "black",
+    stage_label_text_colour: str = "black",
+    backend: str = "express",
+) -> go.Figure:
     """
     Generate an animated visualization of patient flow through a system.
 
@@ -99,7 +101,7 @@ def generate_animation(
         Override the maximum x-coordinate (default is None).
     override_y_max : int, optional
         Override the maximum y-coordinate (default is None).
-        time_display_units : str, optional
+    time_display_units : str, optional
         Format for displaying time on the animation timeline. This affects how simulation time is
         converted into human-readable dates or clock formats. If `None` (default), the raw simulation
         time is used.
@@ -841,52 +843,52 @@ def generate_animation(
 
 
 def animate_activity_log(
-    event_log,
-    event_position_df,
-    scenario=None,
-    time_col_name="time",
-    entity_col_name="entity_id",
-    event_type_col_name="event_type",
-    event_col_name="event",
-    pathway_col_name=None,
-    resource_col_name="resource_id",
-    simulation_time_unit="minutes",
-    every_x_time_units=10,
-    wrap_queues_at=20,
-    wrap_resources_at=20,
-    step_snapshot_max=50,
-    limit_duration=10 * 60 * 24,
-    plotly_height=900,
-    plotly_width=None,
-    include_play_button=True,
-    add_background_image=None,
-    display_stage_labels=True,
-    entity_icon_size=24,
-    text_size=24,
-    resource_icon_size=24,
-    gap_between_entities=10,
-    gap_between_queue_rows=30,
-    gap_between_resource_rows=30,
-    gap_between_resources=10,
-    resource_opacity=0.8,
-    custom_resource_icon=None,
-    override_x_max=None,
-    override_y_max=None,
-    start_date=None,
-    start_time=None,
-    time_display_units=None,
-    setup_mode=False,
-    frame_duration=400,  # milliseconds
-    frame_transition_duration=600,  # milliseconds
-    debug_mode=False,
-    custom_entity_icon_list=None,
-    debug_write_intermediate_objects=False,
-    background_image_opacity=0.5,
-    overflow_text_color="black",
-    stage_label_text_colour="black",
-    backend="express",
+    event_log: pd.DataFrame,
+    event_position_df: pd.DataFrame,
+    scenario: Optional[object] = None,
+    time_col_name: str = "time",
+    entity_col_name: str = "entity_id",
+    event_type_col_name: str = "event_type",
+    event_col_name: str = "event",
+    pathway_col_name: Optional[str] = None,
+    resource_col_name: str = "resource_id",
+    simulation_time_unit: str = "minutes",
+    every_x_time_units: int = 10,
+    wrap_queues_at: int = 20,
+    wrap_resources_at: int = 20,
+    step_snapshot_max: int = 50,
+    limit_duration: int = 10 * 60 * 24,
+    plotly_height: int = 900,
+    plotly_width: Optional[int] = None,
+    include_play_button: bool = True,
+    add_background_image: Optional[str] = None,
+    display_stage_labels: bool = True,
+    entity_icon_size: int = 24,
+    text_size: int = 24,
+    resource_icon_size: int = 24,
+    gap_between_entities: int = 10,
+    gap_between_queue_rows: int = 30,
+    gap_between_resource_rows: int = 30,
+    gap_between_resources: int = 10,
+    resource_opacity: float = 0.8,
+    custom_resource_icon: Optional[str] = None,
+    override_x_max: Optional[int] = None,
+    override_y_max: Optional[int] = None,
+    start_date: Optional[str] = None,
+    start_time: Optional[str] = None,
+    time_display_units: Optional[str] = None,
+    setup_mode: bool = False,
+    frame_duration: int = 400,  # milliseconds
+    frame_transition_duration: int = 600,  # milliseconds
+    debug_mode: bool = False,
+    custom_entity_icon_list: Optional[list[str]] = None,
+    debug_write_intermediate_objects: bool = False,
+    background_image_opacity: float = 0.5,
+    overflow_text_color: str = "black",
+    stage_label_text_colour: str = "black",
+    backend: str = "express",
     step_snapshot_limit_gauges=False,
-):
+) -> go.Figure:
     """
     Generate an animated visualization of patient flow through a system.
 
@@ -998,6 +1000,9 @@ def animate_activity_log(
         EXPERIMENTAL. Whether to use the plotly express backend for the initial plot (default),
         or the experimental plotly go backend. The go approach is currently unstable and much slower.
         Use at your own risk.
+    step_snapshot_limit_gauges: bool, optional
+        If True, replaces the text '+ x more' with a gauge. The upper limit of the gauge is set
+        by the maximum queue length observed across the simulation.
 
     Returns
     -------

@@ -46,6 +46,7 @@ animation.animate_activity_log(
     overflow_text_color='black',
     stage_label_text_colour='black',
     backend='express',
+    step_snapshot_limit_gauges=False,
 )
 ```
 
@@ -161,6 +162,9 @@ animation.animate_activity_log(
         EXPERIMENTAL. Whether to use the plotly express backend for the initial plot (default),
         or the experimental plotly go backend. The go approach is currently unstable and much slower.
         Use at your own risk.
+    step_snapshot_limit_gauges: bool, optional
+        If True, replaces the text '+ x more' with a gauge. The upper limit of the gauge is set
+        by the maximum queue length observed across the simulation.
 
 ##     Returns {.doc-section .doc-section-----returns}
 
