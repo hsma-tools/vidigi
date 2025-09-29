@@ -287,7 +287,7 @@ def generate_animation_df(
     event_col_name: str = "event",
     resource_col_name: str = "resource_id",
     debug_mode: bool = False,
-    custom_entity_icon_list: Optional[list] = None,
+    custom_entity_icon_list: Optional[list[str]] = None,
     include_fun_emojis: bool = False,
 ):
     """
