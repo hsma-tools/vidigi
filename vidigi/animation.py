@@ -887,6 +887,7 @@ def animate_activity_log(
     overflow_text_color: str = "black",
     stage_label_text_colour: str = "black",
     backend: str = "express",
+    step_snapshot_limit_gauges=False,
 ) -> go.Figure:
     """
     Generate an animated visualization of patient flow through a system.
@@ -999,6 +1000,9 @@ def animate_activity_log(
         EXPERIMENTAL. Whether to use the plotly express backend for the initial plot (default),
         or the experimental plotly go backend. The go approach is currently unstable and much slower.
         Use at your own risk.
+    step_snapshot_limit_gauges: bool, optional
+        If True, replaces the text '+ x more' with a gauge. The upper limit of the gauge is set
+        by the maximum queue length observed across the simulation.
 
     Returns
     -------
@@ -1057,6 +1061,7 @@ def animate_activity_log(
         event_type_col_name=event_type_col_name,
         event_col_name=event_col_name,
         resource_col_name=resource_col_name,
+        step_snapshot_limit_gauges=step_snapshot_limit_gauges,
     )
 
     if debug_write_intermediate_objects:

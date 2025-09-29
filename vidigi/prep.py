@@ -439,6 +439,9 @@ def generate_animation_df(
         If True or a string, output a series of csvs with intermediate transformed dataframes.
         If a string is passed, this will be interpreted as the path to prefix the dataframes with.
         Default is False.
+    step_snapshot_limit_gauges: bool, optional
+        If True, replaces the text '+ x more' with a gauge. The upper limit of the gauge is set
+        by the maximum queue length observed across the simulation.
 
     Returns
     -------
