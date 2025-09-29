@@ -2,6 +2,7 @@ import gc
 import time
 import pandas as pd
 import numpy as np
+import re
 
 
 def reshape_for_animations(
@@ -169,7 +170,12 @@ def reshape_for_animations(
 
                 # ----------------------------------------------------------------------------- #
 
-                # Exclude event types that should not be part of snapshot logic
+                # 04/09/2025 Exclude event types that should not be part of snapshot logic
+                #
+                # 29/09/2025 This prevents odd behaviour occurring when the number of
+                # resources in use exceeds the universal step_snapshot_limit
+                # This behaviour may change in later versions of the package to allow this
+                # to be overriden or to be defined on a per-event or per-event-type basis
                 excluded_types = ["resource_use", "resource_use_end"]
 
                 # Apply snapshot logic per event (assuming 'event_id' identifies each event)
@@ -285,6 +291,7 @@ def generate_animation_df(
     debug_mode=False,
     custom_entity_icon_list=None,
     include_fun_emojis=False,
+    step_snapshot_limit_gauges=False,
 ):
     """
     Generate a DataFrame for animation purposes by adding position information to entity data.
@@ -576,9 +583,30 @@ def generate_animation_df(
             full_entity_df_plus_pos["additional"].notna()
         ].copy()
 
-        exceeded_snapshot_limit["icon"] = exceeded_snapshot_limit["additional"].apply(
-            lambda x: f"+ {int(x):5d} more"
-        )
+        if step_snapshot_limit_gauges:
+            max_count = max(exceeded_snapshot_limit["additional"])
+
+            if step_snapshot_max == 1:
+                display_fig_string = False
+            else:
+                display_fig_string = True
+
+            # Update the icon column conditionally
+            exceeded_snapshot_limit["icon"] = exceeded_snapshot_limit.apply(
+                lambda row: ascii_queue_icon(
+                    icon=row["icon"],
+                    count=row["additional"],
+                    max_count=max_count,
+                    bar_length=10,
+                    display_fig_string=display_fig_string,
+                ),
+                axis=1,
+            )
+
+        else:
+            exceeded_snapshot_limit["icon"] = exceeded_snapshot_limit[
+                "additional"
+            ].apply(lambda x: f"+ {int(x):5d} more")
 
         full_entity_df_plus_pos = pd.concat(
             [
@@ -591,3 +619,73 @@ def generate_animation_df(
     full_entity_df_plus_pos["opacity"] = 1.0
 
     return full_entity_df_plus_pos.dropna(axis=1, how="all")
+
+
+def ascii_queue_icon(
+    icon,
+    count,
+    max_count,
+    bar_length=10,
+    filled_char="█",
+    empty_char="░",
+    count_only=False,
+    display_fig_string=True,
+):
+    """
+    Generate an ASCII progress bar string representing the queue length.
+
+    This can optionally be called as part of the generate_animation_df function.
+
+    Alternatively, use that function with step_snapshot_limit_gauges set to False, and then
+    call this function on the output of generate_animation_df to allow for finer-grained control
+    over the output.
+
+    Parameters
+    ----------
+    icon: str
+        The current icon
+    count : int or str
+        The current entity count. If `count_only=True` and `count` is a string,
+        the string will be returned directly.
+    max_count : int
+        The maximum entity count in the data.
+    bar_length : int, optional
+        Total length of the bar in characters (default is 10).
+    filled_char : str, optional
+        Character used for filled segments (default is "█").
+    empty_char : str, optional
+        Character used for empty segments (default is "░").
+    count_only : bool, optional
+        If True, only return the total entities in the step rather than a bar
+        gauge (default is False).
+
+    Returns
+    -------
+    str
+        ASCII progress bar string representing the current queue, or the
+        count value if `count_only=True`.
+
+    Notes
+    -----
+    - If `max_count` is zero, a bar of only `empty_char` is returned to avoid
+      division by zero.
+    - If `count` is NaN, no bar is drawn.
+    - An example of applying this to the output of generate_animation_df to create bars only for
+    some steps can be found in
+    https://hsma-tools.github.io/vidigi/examples/example_17_resourceless_larger_queues/resourceless_longer_queues.html
+    """
+    if max_count == 0:
+        return empty_char * bar_length  # avoid division by zero
+
+    if not np.isnan(count):
+        if count_only:
+            return f"{count:.0f}"
+        else:
+            filled_len = int(round(bar_length * count / max_count))
+            bar = filled_char * filled_len + empty_char * (bar_length - filled_len)
+            if display_fig_string:
+                return f"[{bar}] + {count:.0f} more"
+            else:
+                return f"[{bar}]"
+    else:
+        return ""
