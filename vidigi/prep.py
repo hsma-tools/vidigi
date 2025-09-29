@@ -2,20 +2,23 @@ import gc
 import time
 import pandas as pd
 import numpy as np
+import warnings
+import numbers
+from typing import Optional
 
 
 def reshape_for_animations(
-    event_log,
-    every_x_time_units=10,
-    limit_duration=10 * 60 * 24,
-    step_snapshot_max=50,
-    time_col_name="time",
-    entity_col_name="entity_id",
-    event_type_col_name="event_type",
-    event_col_name="event",
-    pathway_col_name=None,
-    debug_mode=False,
-):
+    event_log: pd.DataFrame,
+    every_x_time_units: int = 10,
+    limit_duration: int = 10 * 60 * 24,
+    step_snapshot_max: int = 50,
+    time_col_name: str = "time",
+    entity_col_name: str = "entity_id",
+    event_type_col_name: str = "event_type",
+    event_col_name: str = "event",
+    pathway_col_name: Optional[str] = None,
+    debug_mode: bool = False,
+) -> pd.DataFrame:
     """
     Reshape event log data for animation purposes.
 
@@ -75,6 +78,7 @@ def reshape_for_animations(
     - Implement pathway order and precedence columns.
     - Fix the automatic exit at the end of the simulation run for all entities.
     """
+    # Begin logic
     entity_dfs = []
 
     if pathway_col_name is not None:
@@ -268,23 +272,23 @@ def reshape_for_animations(
 
 
 def generate_animation_df(
-    full_entity_df,
-    event_position_df,
-    wrap_queues_at=20,
-    wrap_resources_at=20,
-    step_snapshot_max=50,
-    gap_between_entities=10,
-    gap_between_resources=10,
-    gap_between_resource_rows=30,
-    gap_between_queue_rows=30,
-    time_col_name="time",
-    entity_col_name="entity_id",
-    event_type_col_name="event_type",
-    event_col_name="event",
-    resource_col_name="resource_id",
-    debug_mode=False,
-    custom_entity_icon_list=None,
-    include_fun_emojis=False,
+    full_entity_df: pd.DataFrame,
+    event_position_df: pd.DataFrame,
+    wrap_queues_at: int = 20,
+    wrap_resources_at: int = 20,
+    step_snapshot_max: int = 50,
+    gap_between_entities: int = 10,
+    gap_between_resources: int = 10,
+    gap_between_resource_rows: int = 30,
+    gap_between_queue_rows: int = 30,
+    time_col_name: str = "time",
+    entity_col_name: str = "entity_id",
+    event_type_col_name: str = "event_type",
+    event_col_name: str = "event",
+    resource_col_name: str = "resource_id",
+    debug_mode: bool = False,
+    custom_entity_icon_list: Optional[list] = None,
+    include_fun_emojis: bool = False,
 ):
     """
     Generate a DataFrame for animation purposes by adding position information to entity data.
