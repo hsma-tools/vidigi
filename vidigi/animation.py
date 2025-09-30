@@ -19,6 +19,7 @@ def generate_animation(
     time_col_name: str = "time",
     entity_col_name: str = "entity_id",
     event_col_name: str = "event",
+    event_type_col_name: str = "event_type",
     resource_col_name: str = "resource_id",
     pathway_col_name: Optional[str] = None,
     simulation_time_unit: str = "minutes",
@@ -74,6 +75,10 @@ def generate_animation(
         (e.g., "entity_id", "entity", "patient", "patient_id", "customer", "ID").
     event_col_name : str, default="event"
         Name of the column in `event_log` that specifies the actual event that occurred.
+    event_type_col_name : str, default="event_type"
+        Name of the column in `event_log` that specifies the category of the event.
+        Supported event types include 'arrival_departure', 'resource_use',
+        'resource_use_end', and 'queue'.
     pathway_col_name : str, optional, default=None
         Name of the column in `event_log` that identifies the specific pathway or
         process flow the entity is following. If `None`, it is assumed that pathway
@@ -419,17 +424,36 @@ def generate_animation(
         hovers = custom_hover_data.append(resource_col_name)
 
     else:
-        if scenario is not None:
-            hovers = [
-                entity_col_name,
-                time_col_name,
-                "snapshot_time",
-                "label",
-                resource_col_name,
-            ]
+        full_entity_df_plus_pos_copy["event_start"] = (
+            full_entity_df_plus_pos_copy.groupby([entity_col_name, event_col_name])[
+                time_col_name
+            ].transform("min")
+        )
+        full_entity_df_plus_pos_copy["time_in_event"] = (
+            full_entity_df_plus_pos_copy["snapshot_time_base"]
+            - full_entity_df_plus_pos_copy["event_start"]
+        )
 
-        else:
-            hovers = [entity_col_name, time_col_name, "snapshot_time", "label"]
+        full_entity_df_plus_pos_copy["queue_position"] = (
+            full_entity_df_plus_pos_copy.apply(
+                lambda x: f"<br>Queue Position: {x['rank']:.0f}"
+                if x[event_type_col_name] == "queue"
+                else "",
+                axis=1,
+            )
+        )
+
+        hovers = [
+            entity_col_name,
+            time_col_name,
+            "snapshot_time",
+            "label",
+            "time_in_event",
+            "queue_position",
+        ]
+
+        if scenario is not None:
+            hovers.append(resource_col_name)
 
     # Add opacity where not present for backwards compatibility prior to 1.0.1
     if "opacity" not in full_entity_df_plus_pos_copy:
@@ -480,7 +504,9 @@ def generate_animation(
                 hover_text = (
                     "<b>%{customdata[2]}</b>"
                     "<br><b>Entity ID:</b> %{customdata[0]}"
-                    "<br>Event '%{customdata[3]}' began at %{customdata[1]:.2f}"
+                    "<br>Event '%{customdata[3]}' began at time %{customdata[1]:.2f}"
+                    "<br>Time spent in event so far: %{customdata[4]:.2f}"
+                    "%{customdata[5]}"
                 )
             else:
                 hover_text = hover_text_entity
