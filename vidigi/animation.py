@@ -40,7 +40,7 @@ def generate_animation(
     start_time: Optional[str] = None,
     resource_opacity: float = 0.8,
     custom_resource_icon: Optional[str] = None,
-    wrap_resources_at: int = 20,
+    wrap_resources_at: Optional[int] = 20,
     gap_between_resources: int = 10,
     gap_between_resource_rows: int = 30,
     setup_mode: bool = False,
@@ -434,26 +434,80 @@ def generate_animation(
             - full_entity_df_plus_pos_copy["event_start"]
         )
 
-        full_entity_df_plus_pos_copy["queue_position"] = (
-            full_entity_df_plus_pos_copy.apply(
-                lambda x: f"<br>Queue Position: {x['rank']:.0f}"
-                if x[event_type_col_name] == "queue"
-                else "",
-                axis=1,
+        if "additional" in full_entity_df_plus_pos_copy:
+            full_entity_df_plus_pos_copy["queue_position"] = (
+                full_entity_df_plus_pos_copy.apply(
+                    lambda x: ""
+                    if x["additional"] > 1.0
+                    else f"<br>Queue Position: {x['rank']:.0f}"
+                    if x[event_type_col_name] == "queue"
+                    else "",
+                    axis=1,
+                )
             )
-        )
+        else:
+            full_entity_df_plus_pos_copy["queue_position"] = (
+                full_entity_df_plus_pos_copy.apply(
+                    lambda x: f"<br>Queue Position: {x['rank']:.0f}"
+                    if x[event_type_col_name] == "queue"
+                    else "",
+                    axis=1,
+                )
+            )
 
-        hovers = [
-            entity_col_name,
-            time_col_name,
-            "snapshot_time",
-            "label",
-            "time_in_event",
-            "queue_position",
-        ]
+        if "additional" in full_entity_df_plus_pos_copy:
+            full_entity_df_plus_pos_copy["entity_display_hover"] = (
+                full_entity_df_plus_pos_copy.apply(
+                    lambda x: "N/A" if x["additional"] > 1.0 else x[entity_col_name],
+                    axis=1,
+                )
+            )
+
+            full_entity_df_plus_pos_copy["time_hover"] = (
+                full_entity_df_plus_pos_copy.apply(
+                    lambda x: "N/A" if x["additional"] > 1.0 else x[time_col_name],
+                    axis=1,
+                )
+            )
+
+            full_entity_df_plus_pos_copy["time_in_event"] = (
+                full_entity_df_plus_pos_copy.apply(
+                    lambda x: "N/A" if x["additional"] > 1.0 else x["time_in_event"],
+                    axis=1,
+                )
+            )
+
+            hovers = hovers = [
+                "entity_display_hover",
+                "time_hover",
+                "snapshot_time",
+                "label",
+                "time_in_event",
+                "queue_position",
+            ]
+        else:
+            hovers = [
+                entity_col_name,
+                time_col_name,
+                "snapshot_time",
+                "label",
+                "time_in_event",
+                "queue_position",
+            ]
 
         if scenario is not None:
             hovers.append(resource_col_name)
+
+    if hover_text_entity == "default":
+        hover_text = (
+            "<b>%{customdata[2]}</b>"
+            "<br><b>Entity ID:</b> %{customdata[0]}"
+            "<br>Event '%{customdata[3]}' began at time %{customdata[1]:.2f}"
+            "<br>Time spent in event so far: %{customdata[4]:.2f}"
+            "%{customdata[5]}"
+        )
+    else:
+        hover_text = hover_text_entity
 
     # Add opacity where not present for backwards compatibility prior to 1.0.1
     if "opacity" not in full_entity_df_plus_pos_copy:
@@ -499,17 +553,6 @@ def generate_animation(
                 # This sets the opacity of the points that sit behind
                 opacity=0,
             )
-
-            if hover_text_entity == "default":
-                hover_text = (
-                    "<b>%{customdata[2]}</b>"
-                    "<br><b>Entity ID:</b> %{customdata[0]}"
-                    "<br>Event '%{customdata[3]}' began at time %{customdata[1]:.2f}"
-                    "<br>Time spent in event so far: %{customdata[4]:.2f}"
-                    "%{customdata[5]}"
-                )
-            else:
-                hover_text = hover_text_entity
 
             # update hover text in initial frame
             fig.update_traces(hovertemplate=hover_text)
@@ -930,8 +973,8 @@ def animate_activity_log(
     resource_col_name: str = "resource_id",
     simulation_time_unit: str = "minutes",
     every_x_time_units: int = 10,
-    wrap_queues_at: int = 20,
-    wrap_resources_at: int = 20,
+    wrap_queues_at: Optional[int] = 20,
+    wrap_resources_at: Optional[int] = 20,
     step_snapshot_max: int = 50,
     limit_duration: int = 10 * 60 * 24,
     plotly_height: int = 900,
@@ -965,7 +1008,9 @@ def animate_activity_log(
     overflow_text_color: str = "black",
     stage_label_text_colour: str = "black",
     backend: str = "express",
-    step_snapshot_limit_gauges=False,
+    step_snapshot_limit_gauges: bool = False,
+    gauge_segments: int = 10,
+    gauge_max_override: Optional[int | float] = None,
 ) -> go.Figure:
     """
     Generate an animated visualization of patient flow through a system.
@@ -1158,6 +1203,8 @@ def animate_activity_log(
         event_col_name=event_col_name,
         resource_col_name=resource_col_name,
         step_snapshot_limit_gauges=step_snapshot_limit_gauges,
+        gauge_max_override=gauge_max_override,
+        gauge_segments=gauge_segments,
     )
 
     if debug_write_intermediate_objects:

@@ -353,8 +353,6 @@ def reshape_for_animations(
 
 @_enforce_int_params(
     [
-        "wrap_queues_at",
-        "wrap_resources_at",
         "step_snapshot_max",
         "gap_between_entities",
         "gap_between_resources",
@@ -365,8 +363,8 @@ def reshape_for_animations(
 def generate_animation_df(
     full_entity_df: pd.DataFrame,
     event_position_df: pd.DataFrame,
-    wrap_queues_at: int = 20,
-    wrap_resources_at: int = 20,
+    wrap_queues_at: Optional[int] = 20,
+    wrap_resources_at: Optional[int] = 20,
     step_snapshot_max: int = 50,
     gap_between_entities: int = 10,
     gap_between_resources: int = 10,
@@ -383,6 +381,8 @@ def generate_animation_df(
     save_intermediate_outputs: Optional[Union[bool, str]] = False,
     minimize_output_df: bool = True,
     step_snapshot_limit_gauges=False,
+    gauge_segments: int = 10,
+    gauge_max_override: Optional[Union[int, float]] = None,
 ):
     """
     Generate a DataFrame for animation purposes by adding position information to entity data.
@@ -737,8 +737,10 @@ def generate_animation_df(
                 lambda row: ascii_queue_icon(
                     icon=row["icon"],
                     count=row["additional"],
-                    max_count=max_count,
-                    bar_length=10,
+                    max_count=max_count
+                    if gauge_max_override is None
+                    else gauge_max_override,
+                    bar_length=gauge_segments,
                     display_count_as_fig=True,
                     count_string_format=display_fig_string,
                 ),
@@ -783,7 +785,9 @@ def generate_animation_df(
 
     # Drop any columns that are no longer strictly necessary (but may be useful to retain for debugging)
     if minimize_output_df:
-        full_entity_df_plus_pos.drop(columns=["opacity", "x", "y", "index", "run"])
+        for col in ["opacity", "x", "y", "index", "run"]:
+            if col in full_entity_df_plus_pos.columns:
+                full_entity_df_plus_pos.drop(columns=col)
 
     return full_entity_df_plus_pos.dropna(axis=1, how="all")
 
