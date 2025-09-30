@@ -29,6 +29,8 @@ def generate_animation(
     display_stage_labels: bool = True,
     entity_icon_size: int = 24,
     text_size: int = 24,
+    hover_text_entity: Optional[str] = "default",
+    custom_hover_data: Optional[list[str]] = None,
     resource_icon_size: int = 24,
     override_x_max: Optional[int] = None,
     override_y_max: Optional[int] = None,
@@ -95,6 +97,24 @@ def generate_animation(
         Size of entity icons in the animation (default is 24).
     text_size : int, optional
         Size of text labels in the animation (default is 24).
+    hover_text_entity: str, optional
+        String to define the hover text.
+        If None, hover on entity icons will be disabled.
+        Default will display the entity ID, their current time in the system, etc.
+        Must be provided in the format "%{some_column_name} some text" etc.
+        See https://plotly.com/python/hover-text-and-formatting/#customizing-hover-text-with-a-hovertemplate
+        for full details.
+        All columns present in the initial dataframe are available to access by referencing
+        their name in the format "%{some_column_name}"
+    custom_hover_data: list of str, optional
+        A list of column names, which must be defined as strings.
+        If provided, becomes a list of additional columns that can be accessed as part of the string
+        defined within hover_text_entity.
+        customdata[0] is the first column specified
+        customdata[1] is the second
+        etc.
+        So e.g. if you pass in ["widgets_created_cumulative"] as your custom_hover_data,
+        your hover_text_entity may be "Widgets created so far: %{customdata[0]}"
     resource_icon_size : int, optional
         Size of resource icons in the animation (default is 24).
     override_x_max : int, optional
@@ -395,53 +415,83 @@ def generate_animation(
     # Because of the way plots animate in this, it deals with all of the difficulty
     # of paths between individual positions - so we just have to tell it where to put
     # people at each defined step of the process, and the scattergraph will move them
-    if scenario is not None:
-        if pathway_col_name is not None:
-            hovers = [
-                entity_col_name,
-                pathway_col_name,
-                time_col_name,
-                "snapshot_time",
-                resource_col_name,
-            ]
-        else:
+    if custom_hover_data:
+        hovers = custom_hover_data.append(resource_col_name)
+
+    else:
+        if scenario is not None:
             hovers = [
                 entity_col_name,
                 time_col_name,
                 "snapshot_time",
+                "label",
                 resource_col_name,
             ]
 
-    else:
-        if pathway_col_name is not None:
-            hovers = [entity_col_name, pathway_col_name, time_col_name, "snapshot_time"]
         else:
-            hovers = [entity_col_name, time_col_name, "snapshot_time"]
+            hovers = [entity_col_name, time_col_name, "snapshot_time", "label"]
 
     # Add opacity where not present for backwards compatibility prior to 1.0.1
     if "opacity" not in full_entity_df_plus_pos_copy:
         full_entity_df_plus_pos_copy["opacity"] = 1
 
     if str.lower(backend) in ["express", "px", "plotly express"]:
-        fig = px.scatter(
-            full_entity_df_plus_pos_copy.sort_values("snapshot_time_base"),
-            x="x_final",
-            y="y_final",
-            # Each frame is one step of time, with the gap being determined
-            # in the reshape_for_animation function
-            animation_frame="snapshot_time_display",
-            # Important to group by patient here
-            animation_group=entity_col_name,
-            text="icon",
-            hover_name=event_col_name,
-            hover_data=hovers,
-            range_x=[0, x_max],
-            range_y=[0, y_max],
-            height=plotly_height,
-            width=plotly_width,
-            # This sets the opacity of the points that sit behind
-            opacity=0,
-        )
+        if hover_text_entity is None:
+            fig = px.scatter(
+                full_entity_df_plus_pos_copy.sort_values("snapshot_time_base"),
+                x="x_final",
+                y="y_final",
+                # Each frame is one step of time, with the gap being determined
+                # in the reshape_for_animation function
+                animation_frame="snapshot_time_display",
+                # Important to group by patient here
+                animation_group=entity_col_name,
+                text="icon",
+                range_x=[0, x_max],
+                range_y=[0, y_max],
+                height=plotly_height,
+                width=plotly_width,
+                # This sets the opacity of the points that sit behind
+                opacity=0,
+                hoverinfo="none",
+            )
+        else:
+            fig = px.scatter(
+                full_entity_df_plus_pos_copy.sort_values("snapshot_time_base"),
+                x="x_final",
+                y="y_final",
+                # Each frame is one step of time, with the gap being determined
+                # in the reshape_for_animation function
+                animation_frame="snapshot_time_display",
+                # Important to group by patient here
+                animation_group=entity_col_name,
+                text="icon",
+                hover_name=event_col_name,
+                custom_data=hovers,
+                range_x=[0, x_max],
+                range_y=[0, y_max],
+                height=plotly_height,
+                width=plotly_width,
+                # This sets the opacity of the points that sit behind
+                opacity=0,
+            )
+
+            if hover_text_entity == "default":
+                hover_text = (
+                    "<b>%{customdata[2]}</b>"
+                    "<br><b>Entity ID:</b> %{customdata[0]}"
+                    "<br>Event '%{customdata[3]}' began at %{customdata[1]:.2f}"
+                )
+            else:
+                hover_text = hover_text_entity
+
+            # update hover text in initial frame
+            fig.update_traces(hovertemplate=hover_text)
+
+            # update hover text in subsequent frames
+            for frame in fig.frames:
+                for trace in frame.data:
+                    trace.hovertemplate = hover_text
 
     # EXPERIMENTAL
     elif backend in ["go", "graph objects", "plotly graph objects", "plotly go"]:
@@ -866,6 +916,8 @@ def animate_activity_log(
     entity_icon_size: int = 24,
     text_size: int = 24,
     resource_icon_size: int = 24,
+    hover_text_entity: Optional[str] = "default",
+    custom_hover_data: Optional[list[str]] = None,
     gap_between_entities: int = 10,
     gap_between_queue_rows: int = 30,
     gap_between_resource_rows: int = 30,
@@ -948,6 +1000,24 @@ def animate_activity_log(
         Size of entity icons in the animation (default is 24).
     text_size : int, optional
         Size of text labels in the animation (default is 24).
+    hover_text_entity: str, optional
+        String to define the hover text.
+        If None, hover on entity icons will be disabled.
+        Default will display the entity ID, their current time in the system, etc.
+        Must be provided in the format "%{some_column_name} some text" etc.
+        See https://plotly.com/python/hover-text-and-formatting/#customizing-hover-text-with-a-hovertemplate
+        for full details.
+        All columns present in the initial dataframe are available to access by referencing
+        their name in the format "%{some_column_name}"
+    custom_hover_data: list of str, optional
+        A list of column names, which must be defined as strings.
+        If provided, becomes a list of additional columns that can be accessed as part of the string
+        defined within hover_text_entity.
+        customdata[0] is the first column specified
+        customdata[1] is the second
+        etc.
+        So e.g. if you pass in ["widgets_created_cumulative"] as your custom_hover_data,
+        your hover_text_entity may be "Widgets created so far: %{customdata[0]}"
     resource_icon_size : int, optional
         Size of resource icons in the animation (default is 24).
     gap_between_entities : int, optional
@@ -1103,6 +1173,8 @@ def animate_activity_log(
         overflow_text_color=overflow_text_color,
         stage_label_text_colour=stage_label_text_colour,
         backend=backend,
+        hover_text_entity=hover_text_entity,
+        custom_hover_data=custom_hover_data,
     )
 
     if debug_mode:
