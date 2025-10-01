@@ -528,6 +528,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">logging.EventLogger</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/logging.TrialLogger.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">logging.TrialLogger</span></a>
+  </div>
+</li>
       </ul>
   </li>
           <li class="sidebar-item sidebar-item-section">
@@ -853,7 +859,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    event_col_name<span class="op">=</span><span class="st">'event'</span>,</span>
 <span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    pathway_col_name<span class="op">=</span><span class="va">None</span>,</span>
 <span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    debug_mode<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    save_intermediate_outputs<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Reshape event log data for animation purposes.</p>
 <p>This function processes an event log to create a series of snapshots at regular time intervals, suitable for creating animations of patient flow through a system.</p>
 <section id="parameters" class="level2 doc-section doc-section-parameters">
@@ -861,9 +868,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <table class="caption-top table">
 <colgroup>
 <col style="width: 9%">
-<col style="width: 6%">
-<col style="width: 77%">
-<col style="width: 6%">
+<col style="width: 10%">
+<col style="width: 74%">
+<col style="width: 5%">
 </colgroup>
 <thead>
 <tr class="header">
@@ -934,6 +941,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>If True, print debug information during processing (default is False).</td>
 <td><code>False</code></td>
 </tr>
+<tr class="odd">
+<td>save_intermediate_outputs</td>
+<td>Optional[Union[bool, str]]</td>
+<td>For debugging purposes. If True or a string, output a series of csvs with intermediate transformed dataframes. If a string is passed, this will be interpreted as the path to prefix the dataframes with. Default is False.</td>
+<td><code>False</code></td>
+</tr>
 </tbody>
 </table>
 </section>
@@ -968,6 +981,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>It handles entities who are present in the system at each snapshot time.</li>
 <li>Entities are ranked within each event based on their arrival order.</li>
 <li>A maximum number of patients per event can be set to limit the number of entities who will be displayed on screen within any one event type at a time.</li>
+<li>This function assumes entities only exist in one place/queue at a time. Simulations where this assumption does not hold may display unexpected behaviour.</li>
 <li>An ‘exit’ event is added for each entity at the end of their journey.</li>
 <li>The function uses memory management techniques (del and gc.collect()) to handle large datasets.</li>
 </ul>

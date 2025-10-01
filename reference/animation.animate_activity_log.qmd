@@ -25,6 +25,8 @@ animation.animate_activity_log(
     entity_icon_size=24,
     text_size=24,
     resource_icon_size=24,
+    hover_text_entity='default',
+    custom_hover_data=None,
     gap_between_entities=10,
     gap_between_queue_rows=30,
     gap_between_resource_rows=30,
@@ -46,6 +48,9 @@ animation.animate_activity_log(
     overflow_text_color='black',
     stage_label_text_colour='black',
     backend='express',
+    step_snapshot_limit_gauges=False,
+    gauge_segments=10,
+    gauge_max_override=None,
 )
 ```
 
@@ -107,6 +112,24 @@ animation.animate_activity_log(
         Size of entity icons in the animation (default is 24).
     text_size : int, optional
         Size of text labels in the animation (default is 24).
+    hover_text_entity: str, optional
+        String to define the hover text.
+        If None, hover on entity icons will be disabled.
+        Default will display the entity ID, their current time in the system, etc.
+        Must be provided in the format "%{some_column_name} some text" etc.
+        See https://plotly.com/python/hover-text-and-formatting/#customizing-hover-text-with-a-hovertemplate
+        for full details.
+        All columns present in the initial dataframe are available to access by referencing
+        their name in the format "%{some_column_name}"
+    custom_hover_data: list of str, optional
+        A list of column names, which must be defined as strings.
+        If provided, becomes a list of additional columns that can be accessed as part of the string
+        defined within hover_text_entity.
+        customdata[0] is the first column specified
+        customdata[1] is the second
+        etc.
+        So e.g. if you pass in ["widgets_created_cumulative"] as your custom_hover_data,
+        your hover_text_entity may be "Widgets created so far: %{customdata[0]}"
     resource_icon_size : int, optional
         Size of resource icons in the animation (default is 24).
     gap_between_entities : int, optional
@@ -161,6 +184,9 @@ animation.animate_activity_log(
         EXPERIMENTAL. Whether to use the plotly express backend for the initial plot (default),
         or the experimental plotly go backend. The go approach is currently unstable and much slower.
         Use at your own risk.
+    step_snapshot_limit_gauges: bool, optional
+        If True, replaces the text '+ x more' with a gauge. The upper limit of the gauge is set
+        by the maximum queue length observed across the simulation.
 
 ##     Returns {.doc-section .doc-section-----returns}
 

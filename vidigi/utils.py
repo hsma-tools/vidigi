@@ -2,6 +2,11 @@ import pandas as pd
 from pydantic import BaseModel, ValidationError
 from typing import List, Optional
 import webcolors
+import warnings
+import numbers
+import inspect
+from functools import wraps
+
 
 class EventPosition(BaseModel):
     """
@@ -26,11 +31,13 @@ class EventPosition(BaseModel):
         The optional resource associated with the event. Must match a resource name
         provided in your scenario object.
     """
+
     event: str
     x: int
     y: int
     label: str
     resource: Optional[str] = None
+
 
 def create_event_position_df(event_positions: List[EventPosition]) -> pd.DataFrame:
     """
@@ -53,12 +60,13 @@ def create_event_position_df(event_positions: List[EventPosition]) -> pd.DataFra
         df = pd.DataFrame(validated_data)
 
         # Reorder columns to match the desired output
-        df = df[['event', 'x', 'y', 'label', 'resource']]
+        df = df[["event", "x", "y", "label", "resource"]]
 
         return df
     except ValidationError as e:
         print(f"Error validating event position data: {e}")
         raise
+
 
 #'''''''''''''''''''''''''''''''''''''#
 # Webdev + visualisation helpers
@@ -168,3 +176,45 @@ def html_color_to_rgba(color_str, opacity):
         except ValueError:
             raise ValueError(f"Unknown color: {color_str}")
     return f"rgba({rgb.red}, {rgb.green}, {rgb.blue}, {opacity})"
+
+
+def _ensure_int(value, name: str) -> int:
+    if isinstance(value, numbers.Real):
+        if not isinstance(value, int):
+            rounded = round(value)
+            warnings.warn(
+                f"`{name}` was provided as {type(value).__name__} ({value}); "
+                f"rounding to nearest integer ({rounded}).",
+                UserWarning,
+                stacklevel=3,
+            )
+            return rounded
+        return int(value)
+    raise TypeError(
+        f"`{name}` must be an integer-like number, not {type(value).__name__}"
+    )
+
+
+def _enforce_int_params(param_names):
+    """Decorator to auto-check certain parameters are integer-like."""
+
+    def decorator(func):
+        sig = inspect.signature(func)
+
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            # bind args+kwargs to parameter names
+            bound = sig.bind(*args, **kwargs)
+            bound.apply_defaults()
+
+            # validate the chosen parameters
+            for name in param_names:
+                if name in bound.arguments:
+                    bound.arguments[name] = _ensure_int(bound.arguments[name], name)
+
+            # call original function with validated arguments
+            return func(*bound.args, **bound.kwargs)
+
+        return wrapper
+
+    return decorator

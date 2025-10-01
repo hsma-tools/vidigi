@@ -20,7 +20,7 @@ logging.EventLogger(self, event_model=BaseEvent, env=None, run_number=None)
 | [log_queue](#vidigi.logging.EventLogger.log_queue) | Log a queue event. The 'event' here can be any string describing the queue event. |
 | [log_resource_use_end](#vidigi.logging.EventLogger.log_resource_use_end) | Log the end of resource use. Requires resource_id. |
 | [log_resource_use_start](#vidigi.logging.EventLogger.log_resource_use_start) | Log the start of resource use. Requires resource_id. |
-| [plot_entity_timeline](#vidigi.logging.EventLogger.plot_entity_timeline) | Plot a timeline of events for a specific entity_id. |
+| [plot_entity_timeline](#vidigi.logging.EventLogger.plot_entity_timeline) | Plot a timeline of events for a given entity. |
 | [to_csv](#vidigi.logging.EventLogger.to_csv) | Write the log to a CSV file. |
 | [to_dataframe](#vidigi.logging.EventLogger.to_dataframe) | Convert the event log to a pandas DataFrame. |
 | [to_json](#vidigi.logging.EventLogger.to_json) | Write the event log to a JSON file or file-like buffer. |
@@ -151,10 +151,45 @@ Log the start of resource use. Requires resource_id.
 ### plot_entity_timeline { #vidigi.logging.EventLogger.plot_entity_timeline }
 
 ```python
-logging.EventLogger.plot_entity_timeline(entity_id)
+logging.EventLogger.plot_entity_timeline(
+    entity_id,
+    split_by_entity_type=False,
+    show_labels=False,
+)
 ```
 
-Plot a timeline of events for a specific entity_id.
+Plot a timeline of events for a given entity.
+
+This method visualizes the sequence of events for a specified entity
+from the event log as a scatter plot. The timeline is plotted using
+Plotly, with events displayed along the time axis. Events can be
+split vertically by their type or shown by event labels. Optionally,
+labels can be displayed directly on the plot.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name                 | Type   | Description                                                                                                       | Default    |
+|----------------------|--------|-------------------------------------------------------------------------------------------------------------------|------------|
+| entity_id            | any    | Identifier of the entity whose events should be plotted.                                                          | _required_ |
+| split_by_entity_type | bool   | If True, the y-axis shows event types to separate events vertically. If False, the y-axis shows the event labels. | `False`    |
+| show_labels          | bool   | If True, the event labels are displayed as text on the plot. If False, no labels are shown.                       | `False`    |
+
+#### Raises {.doc-section .doc-section-raises}
+
+| Name   | Type       | Description                                         |
+|--------|------------|-----------------------------------------------------|
+|        | ValueError | If the event log is empty.                          |
+|        | ValueError | If no events are found for the given ``entity_id``. |
+
+#### See Also {.doc-section .doc-section-see-also}
+
+to_dataframe : Convert the event log into a DataFrame for analysis.
+
+#### Notes {.doc-section .doc-section-notes}
+
+- The plot is displayed using `plotly.express.scatter`.
+- The y-axis is treated as categorical to improve readability.
+- Marker styling includes a fixed size and outline color for clarity.
 
 ### to_csv { #vidigi.logging.EventLogger.to_csv }
 

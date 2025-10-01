@@ -5,6 +5,23 @@ format:
         toc-expand: 3
 ---
 
+# 1.1.0
+
+- Add TrialLogger class, allowing storage of multiple EventLogger objects and access to new helper functions for trial summarisation and plotting
+- Fix plot_entity_timeline() method in EventLogger
+- Add from_csv() option for generating EventLogger object from existing dataframe, allowing access to EventLogger's helper functions even when you have not used it for the initial logging
+- Improve default hover tooltip for entities
+- Add support for custom hover tooltips for entities
+- Add helper function for including ASCII gauges to better visualise large queues
+- Added option to swap out '+ x more' text for an ASCII gauge in generate_animation and animate_activity_log
+- Improved how '+ x more' and ASCII gauges are handled as entities, preventing them from flying in/out on most frame updates
+- Various improvements to type hinting and documentation of functions
+- Added various warnings for incorrect types in core functions
+- Added warning when step_snapshot_limit is not a multiple of wrap_queues_at (which can cause odd behaviour for placement of the '+ x more' text or ASCII excess queue gauge)
+- Added and refined several documentation pages
+- Minor refactoring and efficiencies to reshape_for_animations function
+- Added some very basic tests for reshape_for_animations function
+
 # 1.0.2
 
 - Bump minimum Python version to 3.10 to simplify support for install across both conda-forge and python. 3.9 is no longer going to be supported after October 2025.

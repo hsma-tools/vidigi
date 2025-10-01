@@ -528,6 +528,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">logging.EventLogger</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/logging.TrialLogger.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">logging.TrialLogger</span></a>
+  </div>
+</li>
       </ul>
   </li>
           <li class="sidebar-item sidebar-item-section">
@@ -895,7 +901,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="odd">
 <td><a href="#vidigi.logging.EventLogger.plot_entity_timeline">plot_entity_timeline</a></td>
-<td>Plot a timeline of events for a specific entity_id.</td>
+<td>Plot a timeline of events for a given entity.</td>
 </tr>
 <tr class="even">
 <td><a href="#vidigi.logging.EventLogger.to_csv">to_csv</a></td>
@@ -1008,8 +1014,93 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="vidigi.logging.EventLogger.plot_entity_timeline" class="level3">
 <h3 class="anchored" data-anchor-id="vidigi.logging.EventLogger.plot_entity_timeline">plot_entity_timeline</h3>
-<div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.plot_entity_timeline(entity_id)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Plot a timeline of events for a specific entity_id.</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.plot_entity_timeline(</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    entity_id,</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    split_by_entity_type<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    show_labels<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Plot a timeline of events for a given entity.</p>
+<p>This method visualizes the sequence of events for a specified entity from the event log as a scatter plot. The timeline is plotted using Plotly, with events displayed along the time axis. Events can be split vertically by their type or shown by event labels. Optionally, labels can be displayed directly on the plot.</p>
+<section id="parameters" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 14%">
+<col style="width: 5%">
+<col style="width: 73%">
+<col style="width: 7%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>entity_id</td>
+<td>any</td>
+<td>Identifier of the entity whose events should be plotted.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>split_by_entity_type</td>
+<td>bool</td>
+<td>If True, the y-axis shows event types to separate events vertically. If False, the y-axis shows the event labels.</td>
+<td><code>False</code></td>
+</tr>
+<tr class="odd">
+<td>show_labels</td>
+<td>bool</td>
+<td>If True, the event labels are displayed as text on the plot. If False, no labels are shown.</td>
+<td><code>False</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="raises" class="level4 doc-section doc-section-raises">
+<h4 class="doc-section doc-section-raises anchored" data-anchor-id="raises">Raises</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 16%">
+<col style="width: 72%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>ValueError</td>
+<td>If the event log is empty.</td>
+</tr>
+<tr class="even">
+<td></td>
+<td>ValueError</td>
+<td>If no events are found for the given <code>entity_id</code>.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="see-also" class="level4 doc-section doc-section-see-also">
+<h4 class="doc-section doc-section-see-also anchored" data-anchor-id="see-also">See Also</h4>
+<p>to_dataframe : Convert the event log into a DataFrame for analysis.</p>
+</section>
+<section id="notes" class="level4 doc-section doc-section-notes">
+<h4 class="doc-section doc-section-notes anchored" data-anchor-id="notes">Notes</h4>
+<ul>
+<li>The plot is displayed using <code>plotly.express.scatter</code>.</li>
+<li>The y-axis is treated as categorical to improve readability.</li>
+<li>Marker styling includes a fixed size and outline color for clarity.</li>
+</ul>
+</section>
 </section>
 <section id="vidigi.logging.EventLogger.to_csv" class="level3">
 <h3 class="anchored" data-anchor-id="vidigi.logging.EventLogger.to_csv">to_csv</h3>

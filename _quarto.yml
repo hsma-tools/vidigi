@@ -129,6 +129,7 @@ quartodoc:
       desc: ""
       contents:
         - logging.EventLogger
+        - logging.TrialLogger
     - title: Event Positioning Utility Functions and Classes
       desc: ""
       contents:
