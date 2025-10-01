@@ -2,7 +2,7 @@
 
 [<img src="https://img.shields.io/pypi/v/vidigi?label=pypi%20package">](https://pypi.org/project/vidigi/)
 [![DOI](https://zenodo.org/badge/888169040.svg)](https://doi.org/10.5281/zenodo.14635602)
-
+[![All Contributors](https://img.shields.io/github/all-contributors/hsma-tools/vidigi?color=ee8449&style=flat-square)](#contributors)
 
 ---
 
@@ -92,6 +92,9 @@ https://github.com/health-data-science-OR/stochastic_systems/tree/master/labs/si
 
 # Contributors
 
+Thanks goes to all of the following people ([emoji key](https://allcontributors.org/docs/en/emoji-key)).
+
+
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
 <!-- prettier-ignore-start -->
 <!-- markdownlint-disable -->
@@ -108,4 +111,4 @@ https://github.com/health-data-science-OR/stochastic_systems/tree/master/labs/si
 
 <!-- ALL-CONTRIBUTORS-LIST:END -->
 
-[![All Contributors](https://img.shields.io/github/all-contributors/hsma-tools/vidigi?color=ee8449&style=flat-square)](#contributors)
+Contributors of any kind - not just code - are welcome!
