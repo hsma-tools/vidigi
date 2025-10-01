@@ -101,8 +101,9 @@ Thanks goes to all of the following people ([emoji key](https://allcontributors.
 <table>
   <tbody>
     <tr>
-      <td align="center" valign="top" width="14.28%"><a href="http://sammirosser.com"><img src="https://avatars.githubusercontent.com/u/29951987?v=4?s=100" width="100px;" alt="Sammi Rosser"/><br /><sub><b>Sammi Rosser</b></sub></a><br /><a href="#code-Bergam0t" title="Code">💻</a> <a href="#doc-Bergam0t" title="Documentation">📖</a> <a href="#test-Bergam0t" title="Tests">⚠️</a><a href="#code-Bergam0t" title="Ideas & Planning">🤔</a><a href="#code-Bergam0t" title="Maintenance">🚧</a><a href="#code-Bergam0t" title="Project Management">📆</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://www.linkedin.com/in/amyheather"><img src="https://avatars.githubusercontent.com/u/92166537?v=4?s=100" width="100px;" alt="Amy Heather"/><br /><sub><b>Amy Heather</b></sub></a><br /><a href="#doc-amyheather" title="Documentation">📖</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="http://hsma.co.uk"><img src="https://avatars.githubusercontent.com/u/29951987?v=4?s=100" width="100px;" alt="Sammi Rosser"/><br /><sub><b>Sammi Rosser</b></sub></a><br /><a href="#code-Bergam0t" title="Code">💻</a> <a href="#doc-Bergam0t" title="Documentation">📖</a> <a href="#test-Bergam0t" title="Tests">⚠️</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/helenajr"><img src="https://avatars.githubusercontent.com/u/63923671?v=4?s=100" width="100px;" alt="Helena Robinson"/><br /><sub><b>Helena Robinson</b></sub></a><br /><a href="#bug-helenajr" title="Bug reports">🐛</a></td>
     </tr>
   </tbody>
 </table>
