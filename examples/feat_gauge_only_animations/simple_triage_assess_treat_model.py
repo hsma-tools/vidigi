@@ -6,7 +6,7 @@ from vidigi.logging import EventLogger
 # Model parameters
 class g:
     # Arrival rates
-    mean_interarrival_time = 1.0 / (100.0 / 7.0)  # ~100 patients per week
+    mean_interarrival_time = 1.0 / (70.0 / 7.0)  # ~70 patients per week
 
     # Resource capacities
     n_initial_reviewers = 2
