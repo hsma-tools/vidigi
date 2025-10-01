@@ -60,6 +60,36 @@ https://github.com/Bergam0t/simpy_visualisation/assets/29951987/9f1378f3-1688-4f
 
 https://github.com/Bergam0t/simpy_visualisation/assets/29951987/1cfe48cf-310d-4dc0-bfc2-3c2185e02f0f
 
+# Test Coverage
+
+Vidigi is still in relatively early development, with test coverage being limited. More tests are being written all the time - but for now, please continue to sense-check your outputs!
+
+Fancy helping out? Consider submitting a pull request with some tests! It's a great way to get to know the codebase better.
+
+## Animation Functions
+
+![](https://img.shields.io/badge/vidigi.animation.animate__activity__log()-Not%20covered-orange?style=for-the-badge&logo=pytest)
+![](https://img.shields.io/badge/vidigi.animation.generate__animation()-Not%20covered-orange?style=for-the-badge&logo=pytest)
+![](https://img.shields.io/badge/vidigi.prep.generation__animation__df()-Not%20covered-orange?style=for-the-badge&logo=pytest)
+![](https://img.shields.io/badge/vidigi.prep.reshape__for__animation-Partially%20Covered-f6d661?style=for-the-badge&logo=pytest)
+
+## Resource Classes and Helper Functions
+
+![](https://img.shields.io/badge/vidigi.resources.CustomResource-Good%20Coverage-7ff661?style=for-the-badge&logo=pytest)
+![](https://img.shields.io/badge/vidigi.resources.VidigiStore-Good%20Coverage-7ff661?style=for-the-badge&logo=pytest)
+![](https://img.shields.io/badge/vidigi.resources.VidigiPriorityStore-Good%20Coverage-7ff661?style=for-the-badge&logo=pytest)
+![](https://img.shields.io/badge/vidigi.resources.populate__store()-Good%20Coverage-7ff661?style=for-the-badge&logo=pytest)
+
+## Logging Classes and Helpers
+![](https://img.shields.io/badge/vidigi.logger.EventLogger-Not%20Covered-orange?style=for-the-badge&logo=pytest)
+![](https://img.shields.io/badge/vidigi.logger.TrialLogger-Not%20Covered-orange?style=for-the-badge&logo=pytest)
+![](https://img.shields.io/badge/vidigi.ciw.event__log__from__ciw__recs()-Not%20Covered-orange?style=for-the-badge&logo=pytest)
+
+## Event Positioning Helpers
+![](https://img.shields.io/badge/vidigi.utils.EventPosition-Not%20Covered-orange?style=for-the-badge&logo=pytest)
+![](https://img.shields.io/badge/vidigi.utils.create__event__position__df()-Not%20Covered-orange?style=for-the-badge&logo=pytest)
+
+
 # Acknowledgements
 
 Thanks are due to
