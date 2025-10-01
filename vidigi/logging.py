@@ -8,6 +8,8 @@ from datetime import datetime
 import plotly.express as px
 import warnings
 import inspect
+from vidigi.prep import reshape_for_animations
+import plotly.graph_objects as go
 
 RECOGNIZED_EVENT_TYPES = {
     "arrival_departure",
@@ -559,13 +561,13 @@ class TrialLogger:
         if event_logs is not None:
             for log in event_logs:
                 self._event_logs.append(
-                    {"run_id": log._log[0]["run_number"], "run_data": log._log}
+                    {"run_id": log._log[0]["run_number"], "run_data": log}
                 )
 
         self._run_index = {r["run_id"]: r for r in self._event_logs}
 
         self._trial_dataframe = pd.concat(
-            [pd.DataFrame(log["run_data"]) for log in self._event_logs]
+            [pd.DataFrame(log["run_data"].to_dataframe()) for log in self._event_logs]
         )
 
     def add_log(self, event_log: EventLogger):
@@ -578,7 +580,7 @@ class TrialLogger:
             An `EventLogger` instance containing a log of events for a single run.
         """
         self._event_logs.append(
-            {"run_id": event_log._log[0]["run_number"], "run_data": event_log._log}
+            {"run_id": event_log._log[0]["run_number"], "run_data": event_log}
         )
         self._run_index = {r["run_id"]: r for r in self._event_logs}
 
@@ -785,6 +787,57 @@ class TrialLogger:
         interactive=True,
         **kwargs,
     ):
+        """
+        Plot a bar chart of event duration statistics for a list of event pairs.
+
+        This function computes a specified statistic (e.g., mean, median) of
+        durations between pairs of events and plots the results as a bar chart.
+        Interactive plotting is supported via Plotly.
+
+        Parameters
+        ----------
+        event_pair_list : list of dict
+            A list of dictionaries, each containing:
+
+            - ``"label"`` (str): A label for the event pair.
+            - ``"first_event"`` (str): The name of the first event.
+            - ``"second_event"`` (str): The name of the second event.
+        what : str, default="mean"
+            The statistic to compute on event durations. Supported values depend on
+            the implementation of ``get_event_duration_stat`` (e.g., "mean", "median").
+        exclude_incomplete : bool, default=True
+            If True, incomplete event durations (where the second event is missing)
+            are excluded from the calculation.
+        interactive : bool, default=True
+            If True, returns an interactive Plotly bar chart. If False, static
+            plotting is not currently supported (a message will be printed).
+        **kwargs : dict
+            Additional keyword arguments passed to ``plotly.express.bar``.
+
+        Returns
+        -------
+        plotly.graph_objs._figure.Figure or None
+            An interactive Plotly bar chart if ``interactive=True``.
+            Otherwise, prints a message and returns None.
+
+        See Also
+        --------
+        plot_queue_size : Plot the size of queues for events over time.
+
+        Notes
+        -----
+        This method relies on ``self.get_event_duration_stat`` to compute the
+        chosen statistic for each event pair.
+
+        Examples
+        --------
+        >>> event_pairs = [
+        ...     {"label": "Start to End", "first_event": "start", "second_event": "end"},
+        ...     {"label": "Check to Approve", "first_event": "check", "second_event": "approve"},
+        ... ]
+        >>> fig = obj.plot_metric_bar(event_pairs, what="mean")
+        >>> fig.show()
+        """
         results = []
         for event_pair in event_pair_list:
             results.append(
@@ -803,3 +856,171 @@ class TrialLogger:
 
         if interactive:
             return px.bar(results_df, x="label", y="value", **kwargs)
+        else:
+            print("Static plotting not currently supported - please use 'interactive'")
+
+    def plot_queue_size(
+        self,
+        event_list: list[str],
+        limit_duration,
+        every_x_time_units=1,
+        interactive=True,
+        show_all_runs=True,
+        shared_y_axis=True,
+        **kwargs,
+    ):
+        """
+        Plot the size of one or more queues over time across simulation runs.
+
+        This function processes logged simulation events, computes queue sizes
+        for specified event types, and visualizes the results. If multiple runs
+        are available, individual trajectories and/or their mean are shown.
+        Currently, only interactive Plotly-based plotting is supported.
+
+        Parameters
+        ----------
+        event_list : list of str
+            List of event types (e.g., `"queue_enter"`, `"queue_exit"`)
+            to include in the plot.
+        limit_duration : int or float
+            Maximum simulation duration (time units) to include in the plot.
+        every_x_time_units : int, default=1
+            Time granularity for snapshots. Larger values aggregate queue size
+            over coarser time intervals.
+        interactive : bool, default=True
+            If True, generates an interactive Plotly figure. Static plotting is
+            not currently implemented.
+        show_all_runs : bool, default=True
+            If True, plots all runs with semi-transparent lines and overlays
+            the mean trajectory. If False, only the mean trajectory is plotted.
+        **kwargs
+            Additional keyword arguments passed to `plotly.express.line`.
+
+        Returns
+        -------
+        fig : plotly.graph_objects.Figure
+            Interactive Plotly figure containing the queue size plot.
+
+        Notes
+        -----
+        - When multiple event types are specified, they are faceted in separate
+        panels if `show_all_runs=False`.
+        - The function relies on `reshape_for_animations` to transform raw
+        event logs into a time-indexed format suitable for plotting.
+        - If `interactive=False`, no plot is returned and a message is printed
+        instead.
+
+        See Also
+        --------
+        reshape_for_animations : Helper function for snapshotting simulation logs.
+
+        Examples
+        --------
+        >>> sim.plot_queue_size(
+        ...     event_list=["queue_enter", "queue_exit"],
+        ...     limit_duration=500,
+        ...     every_x_time_units=5,
+        ...     show_all_runs=True
+        ... )
+        <plotly.graph_objs._figure.Figure>
+        """
+        results = []
+
+        for run in self._event_logs:
+            df = reshape_for_animations(
+                run["run_data"].to_dataframe(),
+                every_x_time_units=every_x_time_units,
+                limit_duration=limit_duration,
+            )
+            df = df[df["event"].isin(event_list)]
+            results.append(df.groupby(["run_number", "event", "snapshot_time"]).size())
+
+        event_counts = pd.concat(results).reset_index(name="count")
+
+        mean_df = event_counts.groupby(["snapshot_time", "event"], as_index=False)[
+            "count"
+        ].mean()
+
+        if len(event_list) > 1:
+            faceting_variable = "event"
+        else:
+            faceting_variable = None
+
+        if interactive:
+            if show_all_runs:
+                fig = px.line(
+                    event_counts,
+                    x="snapshot_time",
+                    y="count",
+                    color="run_number",
+                    **kwargs,
+                    facet_row=faceting_variable,
+                )
+
+                fig.update_traces(opacity=0.2)
+                if not shared_y_axis:
+                    fig.update_yaxes(matches=None)
+
+                if faceting_variable is None:
+                    fig.add_trace(
+                        go.Scatter(
+                            x=mean_df["snapshot_time"],
+                            y=mean_df["count"],
+                            mode="lines",
+                            line=dict(color="black", width=3),
+                            name="Mean",
+                        )
+                    )
+                else:
+                    # Build mapping from event name -> subplot row index
+                    event_to_row = {}
+                    for i, ann in enumerate(fig.layout.annotations):
+                        if ann.text.startswith(
+                            "event="
+                        ):  # e.g. "event=MINORS_examination_begins"
+                            event_name = ann.text.split("=")[-1]
+                            # Use enumeration index + 1 for proper row indexing
+                            event_to_row[event_name] = i + 1
+
+                    # Add mean traces to the correct row
+                    for event_name, df_event in mean_df.groupby("event"):
+                        row_idx = event_to_row.get(event_name, 1)
+                        fig.add_trace(
+                            go.Scatter(
+                                x=df_event["snapshot_time"],
+                                y=df_event["count"],
+                                mode="lines",
+                                line=dict(color="black", width=3),
+                                name="Mean",
+                                showlegend=False,
+                            ),
+                            row=row_idx,
+                            col=1,
+                        )
+                    # Show legend for just one mean line
+                    if len(fig.data) > 0:
+                        fig.data[-1].showlegend = True
+
+                    fig.for_each_annotation(
+                        lambda a: a.update(text=a.text.split("=")[-1])
+                    )
+
+                return fig
+            else:
+                fig = px.line(
+                    mean_df,
+                    x="snapshot_time",
+                    y="count",
+                    facet_row=faceting_variable,
+                    **kwargs,
+                )
+
+                if not shared_y_axis:
+                    fig.update_yaxes(matches=None)
+
+                fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
+
+                return fig
+
+        else:
+            print("Static plotting not currently supported - please use 'interactive'")
