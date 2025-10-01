@@ -843,9 +843,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#section" id="toc-section" class="nav-link active" data-scroll-target="#section">1.0.2</a></li>
-  <li><a href="#section-1" id="toc-section-1" class="nav-link" data-scroll-target="#section-1">1.0.1</a></li>
-  <li><a href="#section-2" id="toc-section-2" class="nav-link" data-scroll-target="#section-2">1.0.0</a>
+  <li><a href="#section" id="toc-section" class="nav-link active" data-scroll-target="#section">1.1.0</a></li>
+  <li><a href="#section-1" id="toc-section-1" class="nav-link" data-scroll-target="#section-1">1.0.2</a></li>
+  <li><a href="#section-2" id="toc-section-2" class="nav-link" data-scroll-target="#section-2">1.0.1</a></li>
+  <li><a href="#section-3" id="toc-section-3" class="nav-link" data-scroll-target="#section-3">1.0.0</a>
   <ul class="collapse">
   <li><a href="#changelog" id="toc-changelog" class="nav-link" data-scroll-target="#changelog">Changelog</a>
   <ul class="collapse">
@@ -871,12 +872,31 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 <section id="section" class="level1">
+<h1>1.1.0</h1>
+<ul>
+<li>Add TrialLogger class, allowing storage of multiple EventLogger objects and access to new helper functions for trial summarisation and plotting</li>
+<li>Fix plot_entity_timeline() method in EventLogger</li>
+<li>Add from_csv() option for generating EventLogger object from existing dataframe, allowing access to EventLogger’s helper functions even when you have not used it for the initial logging</li>
+<li>Improve default hover tooltip for entities</li>
+<li>Add support for custom hover tooltips for entities</li>
+<li>Add helper function for including ASCII gauges to better visualise large queues</li>
+<li>Added option to swap out ‘+ x more’ text for an ASCII gauge in generate_animation and animate_activity_log</li>
+<li>Improved how ‘+ x more’ and ASCII gauges are handled as entities, preventing them from flying in/out on most frame updates</li>
+<li>Various improvements to type hinting and documentation of functions</li>
+<li>Added various warnings for incorrect types in core functions</li>
+<li>Added warning when step_snapshot_limit is not a multiple of wrap_queues_at (which can cause odd behaviour for placement of the ‘+ x more’ text or ASCII excess queue gauge)</li>
+<li>Added and refined several documentation pages</li>
+<li>Minor refactoring and efficiencies to reshape_for_animations function</li>
+<li>Added some very basic tests for reshape_for_animations function</li>
+</ul>
+</section>
+<section id="section-1" class="level1">
 <h1>1.0.2</h1>
 <ul>
 <li>Bump minimum Python version to 3.10 to simplify support for install across both conda-forge and python. 3.9 is no longer going to be supported after October 2025.</li>
 </ul>
 </section>
-<section id="section-1" class="level1">
+<section id="section-2" class="level1">
 <h1>1.0.1</h1>
 <ul>
 <li>Added ‘background_image_opacity’ argument to generate_animation and animate_activity_log. Default opacity is 0.5, which matches the previous hardcoded value.</li>
@@ -892,7 +912,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>Experimental: Added a graph objects backend (alternative to plotly express). This is not recommended for active use - it primarily exists to help explore ways in which further customisations could be applied to the plot.</li>
 </ul>
 </section>
-<section id="section-2" class="level1">
+<section id="section-3" class="level1">
 <h1>1.0.0</h1>
 <p>Migration guide below!</p>
 <section id="changelog" class="level2">
