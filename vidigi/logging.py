@@ -776,3 +776,30 @@ class TrialLogger:
             return {"stat": label, "value": result}
         else:
             return result
+
+    def plot_metric_bar(
+        self,
+        event_pair_list: list[dict],
+        what: str = "mean",
+        exclude_incomplete: bool = True,
+        interactive=True,
+        **kwargs,
+    ):
+        results = []
+        for event_pair in event_pair_list:
+            results.append(
+                {
+                    "label": event_pair["label"],
+                    "value": self.get_event_duration_stat(
+                        event_pair["first_event"],
+                        event_pair["second_event"],
+                        what=what,
+                        exclude_incomplete=exclude_incomplete,
+                    ),
+                }
+            )
+
+        results_df = pd.DataFrame(results)
+
+        if interactive:
+            return px.bar(results_df, x="label", y="value", **kwargs)
