@@ -1,0 +1,144 @@
+# logging.TrialLogger { #vidigi.logging.TrialLogger }
+
+```python
+logging.TrialLogger(self, event_logs=None)
+```
+
+A container and analysis utility for managing multiple event logs from repeated
+simulation runs or trials.
+
+The `TrialLogger` aggregates logs produced by `EventLogger` instances,
+indexes them by run ID, and provides utilities for retrieving logs,
+summarizing trial statistics, and computing event-to-event durations.
+
+Methods include
+add_log(event_log)
+    Add a new `EventLogger` log to the trial collection.
+get_log_by_run(run, as_df=False)
+    Retrieve the log for a specific run. Can return raw records or as a DataFrame.
+to_dataframe()
+    Return the full trial data as a pandas DataFrame.
+summary()
+    Return a simple summary of the number of runs in the trial.
+get_event_duration_stat(first_event, second_event, what="mean",
+                        exclude_incomplete=True, dp=2, label=None, **kwargs)
+    Compute statistics on durations between two event types across runs.
+
+## Parameters {.doc-section .doc-section-parameters}
+
+| Name       | Type                | Description                                                                | Default   |
+|------------|---------------------|----------------------------------------------------------------------------|-----------|
+| event_logs | list\[EventLogger\] | A list of vidigi `EventLogger` instances to initialize the trial log with. | `None`    |
+
+## Methods
+
+| Name | Description |
+| --- | --- |
+| [add_log](#vidigi.logging.TrialLogger.add_log) | Add a new event log to the trial collection. |
+| [get_event_duration_stat](#vidigi.logging.TrialLogger.get_event_duration_stat) | Compute statistics on durations between two event types across runs. |
+| [get_log_by_run](#vidigi.logging.TrialLogger.get_log_by_run) | Retrieve the log for a specific run. |
+| [summary](#vidigi.logging.TrialLogger.summary) | Summarize the trial logs. |
+| [to_dataframe](#vidigi.logging.TrialLogger.to_dataframe) | Return the full trial data as a single concatenated DataFrame. |
+
+### add_log { #vidigi.logging.TrialLogger.add_log }
+
+```python
+logging.TrialLogger.add_log(event_log)
+```
+
+Add a new event log to the trial collection.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name      | Type        | Description                                                            | Default    |
+|-----------|-------------|------------------------------------------------------------------------|------------|
+| event_log | EventLogger | An `EventLogger` instance containing a log of events for a single run. | _required_ |
+
+### get_event_duration_stat { #vidigi.logging.TrialLogger.get_event_duration_stat }
+
+```python
+logging.TrialLogger.get_event_duration_stat(
+    first_event,
+    second_event,
+    what='mean',
+    exclude_incomplete=True,
+    dp=2,
+    label=None,
+    **kwargs,
+)
+```
+
+Compute statistics on durations between two event types across runs.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name               | Type   | Description                                                                                                                                                                                                                                          | Default    |
+|--------------------|--------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------|
+| first_event        | str    | Name of the first event (start).                                                                                                                                                                                                                     | _required_ |
+| second_event       | str    | Name of the second event (end).                                                                                                                                                                                                                      | _required_ |
+| what               | str    | Statistic to compute. Options include: - Standard aggregations: {"mean", "median", "max", "min",   "quantile", "std", "var", "sum"} - Special aggregations: {"count", "unserved_count", "served_count",   "unserved_rate", "served_rate", "summary"} | `"mean"`   |
+| exclude_incomplete | bool   | If True, ignore cases where the second event is missing (NaN).                                                                                                                                                                                       | `True`     |
+| dp                 | int    | Number of decimal places to round numeric results to.                                                                                                                                                                                                | `2`        |
+| label              | str    | If provided, return the result as a dictionary with keys {"stat": label, "value": result}.                                                                                                                                                           | `None`     |
+| **kwargs           | dict   | Additional arguments passed to the pandas Series method corresponding to `what` (e.g., `quantile(q=0.9)`).                                                                                                                                           | `{}`       |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type          | Description                                                                                                                                                                                      |
+|--------|---------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|        | float or dict | The computed statistic, rounded to ``dp`` if numeric. If ``what="summary"``, returns a dictionary with multiple statistics. If ``label`` is provided, wraps the result in a dict with the label. |
+
+#### Raises {.doc-section .doc-section-raises}
+
+| Name   | Type       | Description                                        |
+|--------|------------|----------------------------------------------------|
+|        | ValueError | If `what` is not a supported aggregation function. |
+
+### get_log_by_run { #vidigi.logging.TrialLogger.get_log_by_run }
+
+```python
+logging.TrialLogger.get_log_by_run(run, as_df=False)
+```
+
+Retrieve the log for a specific run.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type       | Description                                                                                             | Default    |
+|--------|------------|---------------------------------------------------------------------------------------------------------|------------|
+| run    | int or str | The run identifier to fetch.                                                                            | _required_ |
+| as_df  | bool       | If True, return the log as a pandas DataFrame. Otherwise, return the raw event records (list of dicts). | `False`    |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                             | Description                                                  |
+|--------|----------------------------------|--------------------------------------------------------------|
+|        | list of dict or pandas.DataFrame | The requested run log, either as raw records or a DataFrame. |
+
+### summary { #vidigi.logging.TrialLogger.summary }
+
+```python
+logging.TrialLogger.summary()
+```
+
+Summarize the trial logs.
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                                                              |
+|--------|--------|----------------------------------------------------------------------------------------------------------|
+|        | dict   | Dictionary with summary information: - ``"number_of_runs"`` : int   The number of runs currently stored. |
+
+### to_dataframe { #vidigi.logging.TrialLogger.to_dataframe }
+
+```python
+logging.TrialLogger.to_dataframe()
+```
+
+Return the full trial data as a single concatenated DataFrame.
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type             | Description                                      |
+|--------|------------------|--------------------------------------------------|
+|        | pandas.DataFrame | A dataframe containing all events from all runs. |

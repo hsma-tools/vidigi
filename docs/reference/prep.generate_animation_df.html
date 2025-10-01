@@ -528,6 +528,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">logging.EventLogger</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/logging.TrialLogger.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">logging.TrialLogger</span></a>
+  </div>
+</li>
       </ul>
   </li>
           <li class="sidebar-item sidebar-item-section">
@@ -863,7 +869,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>    save_intermediate_outputs<span class="op">=</span><span class="va">False</span>,</span>
 <span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>    minimize_output_df<span class="op">=</span><span class="va">True</span>,</span>
 <span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>    step_snapshot_limit_gauges<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>    gauge_segments<span class="op">=</span><span class="dv">10</span>,</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>    gauge_max_override<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Generate a DataFrame for animation purposes by adding position information to entity data.</p>
 <p>This function takes entity event data and adds positional information for visualization, handling both queuing and resource use events.</p>
 <section id="parameters" class="level2 doc-section doc-section-parameters">

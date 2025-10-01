@@ -528,6 +528,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">logging.EventLogger</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/logging.TrialLogger.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">logging.TrialLogger</span></a>
+  </div>
+</li>
       </ul>
   </li>
           <li class="sidebar-item sidebar-item-section">
@@ -849,36 +855,39 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    time_col_name<span class="op">=</span><span class="st">'time'</span>,</span>
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    entity_col_name<span class="op">=</span><span class="st">'entity_id'</span>,</span>
 <span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    event_col_name<span class="op">=</span><span class="st">'event'</span>,</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    resource_col_name<span class="op">=</span><span class="st">'resource_id'</span>,</span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    pathway_col_name<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    simulation_time_unit<span class="op">=</span><span class="st">'minutes'</span>,</span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    plotly_height<span class="op">=</span><span class="dv">900</span>,</span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    plotly_width<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    include_play_button<span class="op">=</span><span class="va">True</span>,</span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    add_background_image<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    display_stage_labels<span class="op">=</span><span class="va">True</span>,</span>
-<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    entity_icon_size<span class="op">=</span><span class="dv">24</span>,</span>
-<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    text_size<span class="op">=</span><span class="dv">24</span>,</span>
-<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    resource_icon_size<span class="op">=</span><span class="dv">24</span>,</span>
-<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>    override_x_max<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>    override_y_max<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>    time_display_units<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>    start_date<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>    start_time<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>    resource_opacity<span class="op">=</span><span class="fl">0.8</span>,</span>
-<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>    custom_resource_icon<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>    wrap_resources_at<span class="op">=</span><span class="dv">20</span>,</span>
-<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>    gap_between_resources<span class="op">=</span><span class="dv">10</span>,</span>
-<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>    gap_between_resource_rows<span class="op">=</span><span class="dv">30</span>,</span>
-<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>    setup_mode<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>    frame_duration<span class="op">=</span><span class="dv">400</span>,</span>
-<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>    frame_transition_duration<span class="op">=</span><span class="dv">600</span>,</span>
-<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>    debug_mode<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>    background_image_opacity<span class="op">=</span><span class="fl">0.5</span>,</span>
-<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>    overflow_text_color<span class="op">=</span><span class="st">'black'</span>,</span>
-<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>    stage_label_text_colour<span class="op">=</span><span class="st">'black'</span>,</span>
-<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>    backend<span class="op">=</span><span class="st">'express'</span>,</span>
-<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    event_type_col_name<span class="op">=</span><span class="st">'event_type'</span>,</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    resource_col_name<span class="op">=</span><span class="st">'resource_id'</span>,</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    pathway_col_name<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    simulation_time_unit<span class="op">=</span><span class="st">'minutes'</span>,</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    plotly_height<span class="op">=</span><span class="dv">900</span>,</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    plotly_width<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    include_play_button<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    add_background_image<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    display_stage_labels<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    entity_icon_size<span class="op">=</span><span class="dv">24</span>,</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    text_size<span class="op">=</span><span class="dv">24</span>,</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>    hover_text_entity<span class="op">=</span><span class="st">'default'</span>,</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>    custom_hover_data<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>    resource_icon_size<span class="op">=</span><span class="dv">24</span>,</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>    override_x_max<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>    override_y_max<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>    time_display_units<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>    start_date<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>    start_time<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>    resource_opacity<span class="op">=</span><span class="fl">0.8</span>,</span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>    custom_resource_icon<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>    wrap_resources_at<span class="op">=</span><span class="dv">20</span>,</span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>    gap_between_resources<span class="op">=</span><span class="dv">10</span>,</span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>    gap_between_resource_rows<span class="op">=</span><span class="dv">30</span>,</span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>    setup_mode<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>    frame_duration<span class="op">=</span><span class="dv">400</span>,</span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>    frame_transition_duration<span class="op">=</span><span class="dv">600</span>,</span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>    debug_mode<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>    background_image_opacity<span class="op">=</span><span class="fl">0.5</span>,</span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>    overflow_text_color<span class="op">=</span><span class="st">'black'</span>,</span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>    stage_label_text_colour<span class="op">=</span><span class="st">'black'</span>,</span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>    backend<span class="op">=</span><span class="st">'express'</span>,</span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <pre><code>Generate an animated visualization of patient flow through a system.
 
 This function creates an interactive Plotly animation based on patient data and event positions.</code></pre>
@@ -900,6 +909,10 @@ entity_col_name : str, default="entity_id"
     (e.g., "entity_id", "entity", "patient", "patient_id", "customer", "ID").
 event_col_name : str, default="event"
     Name of the column in `event_log` that specifies the actual event that occurred.
+event_type_col_name : str, default="event_type"
+    Name of the column in `event_log` that specifies the category of the event.
+    Supported event types include 'arrival_departure', 'resource_use',
+    'resource_use_end', and 'queue'.
 pathway_col_name : str, optional, default=None
     Name of the column in `event_log` that identifies the specific pathway or
     process flow the entity is following. If `None`, it is assumed that pathway
@@ -923,6 +936,24 @@ entity_icon_size : int, optional
     Size of entity icons in the animation (default is 24).
 text_size : int, optional
     Size of text labels in the animation (default is 24).
+hover_text_entity: str, optional
+    String to define the hover text.
+    If None, hover on entity icons will be disabled.
+    Default will display the entity ID, their current time in the system, etc.
+    Must be provided in the format "%{some_column_name} some text" etc.
+    See https://plotly.com/python/hover-text-and-formatting/#customizing-hover-text-with-a-hovertemplate
+    for full details.
+    All columns present in the initial dataframe are available to access by referencing
+    their name in the format "%{some_column_name}"
+custom_hover_data: list of str, optional
+    A list of column names, which must be defined as strings.
+    If provided, becomes a list of additional columns that can be accessed as part of the string
+    defined within hover_text_entity.
+    customdata[0] is the first column specified
+    customdata[1] is the second
+    etc.
+    So e.g. if you pass in ["widgets_created_cumulative"] as your custom_hover_data,
+    your hover_text_entity may be "Widgets created so far: %{customdata[0]}"
 resource_icon_size : int, optional
     Size of resource icons in the animation (default is 24).
 override_x_max : int, optional

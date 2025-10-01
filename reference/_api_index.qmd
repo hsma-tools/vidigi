@@ -44,6 +44,7 @@
 | | |
 | --- | --- |
 | [logging.EventLogger](logging.EventLogger.qmd#vidigi.logging.EventLogger) |  |
+| [logging.TrialLogger](logging.TrialLogger.qmd#vidigi.logging.TrialLogger) | A container and analysis utility for managing multiple event logs from repeated |
 
 ## Event Positioning Utility Functions and Classes
 

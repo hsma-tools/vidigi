@@ -533,13 +533,7 @@ class TrialLogger:
     indexes them by run ID, and provides utilities for retrieving logs,
     summarizing trial statistics, and computing event-to-event durations.
 
-    Parameters
-    ----------
-    event_logs : list[EventLogger], optional
-        A list of vidigi `EventLogger` instances to initialize the trial log with.
-
-    Methods
-    -------
+    Methods include
     add_log(event_log)
         Add a new `EventLogger` log to the trial collection.
     get_log_by_run(run, as_df=False)
@@ -551,6 +545,12 @@ class TrialLogger:
     get_event_duration_stat(first_event, second_event, what="mean",
                             exclude_incomplete=True, dp=2, label=None, **kwargs)
         Compute statistics on durations between two event types across runs.
+
+    Parameters
+    ----------
+    event_logs : list[EventLogger], optional
+        A list of vidigi `EventLogger` instances to initialize the trial log with.
+
     """
 
     def __init__(self, event_logs: Optional[list[EventLogger]] = None):

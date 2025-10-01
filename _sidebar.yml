@@ -38,6 +38,7 @@ website:
         section: Simpy Resource Classes
       - contents:
         - reference/logging.EventLogger.qmd
+        - reference/logging.TrialLogger.qmd
         section: Event Logging Utility Functions and Classes
       - contents:
         - reference/utils.EventPosition.qmd

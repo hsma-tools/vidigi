@@ -22,6 +22,8 @@ prep.generate_animation_df(
     save_intermediate_outputs=False,
     minimize_output_df=True,
     step_snapshot_limit_gauges=False,
+    gauge_segments=10,
+    gauge_max_override=None,
 )
 ```
 
