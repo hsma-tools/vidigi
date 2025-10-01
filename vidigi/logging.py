@@ -7,6 +7,7 @@ from io import TextIOBase
 from datetime import datetime
 import plotly.express as px
 import warnings
+import inspect
 
 RECOGNIZED_EVENT_TYPES = {
     "arrival_departure",
@@ -429,15 +430,55 @@ class EventLogger:
     # Plotting from logs                               #
     ####################################################
 
-    def plot_entity_timeline(self, entity_id: any):
+    def plot_entity_timeline(
+        self,
+        entity_id: any,
+        split_by_entity_type: bool = False,
+        show_labels: bool = False,
+    ):
         """
-        Plot a timeline of events for a specific entity_id.
+        Plot a timeline of events for a given entity.
+
+        This method visualizes the sequence of events for a specified entity
+        from the event log as a scatter plot. The timeline is plotted using
+        Plotly, with events displayed along the time axis. Events can be
+        split vertically by their type or shown by event labels. Optionally,
+        labels can be displayed directly on the plot.
+
+        Parameters
+        ----------
+        entity_id : any
+            Identifier of the entity whose events should be plotted.
+        split_by_entity_type : bool, default=False
+            If True, the y-axis shows event types to separate events vertically.
+            If False, the y-axis shows the event labels.
+        show_labels : bool, default=False
+            If True, the event labels are displayed as text on the plot.
+            If False, no labels are shown.
+
+        Raises
+        ------
+        ValueError
+            If the event log is empty.
+        ValueError
+            If no events are found for the given ``entity_id``.
+
+        See Also
+        --------
+        to_dataframe : Convert the event log into a DataFrame for analysis.
+
+        Notes
+        -----
+        - The plot is displayed using `plotly.express.scatter`.
+        - The y-axis is treated as categorical to improve readability.
+        - Marker styling includes a fixed size and outline color for clarity.
         """
         if not self._log:
             raise ValueError("Event log is empty.")
 
         df = self.to_dataframe()
         entity_events = df[df["entity_id"] == entity_id]
+        print(entity_events)
 
         if entity_events.empty:
             raise ValueError(f"No events found for entity_id = {entity_id}")
@@ -445,17 +486,33 @@ class EventLogger:
         # Sort by time for timeline plot
         entity_events = entity_events.sort_values("time")
 
-        fig = px.scatter(
-            entity_events,
-            x="time",
-            y=[
-                "event_type"
-            ],  # y axis can show event_type to separate events vertically
-            color="event_type",
-            hover_data=["event", "pathway", "run_number"],
-            labels={"time": "Time", "event_type": "Event Type"},
-            title=f"Timeline of Events for Entity {entity_id}",
-        )
+        if not show_labels:
+            text_label = None
+        else:
+            text_label = "event"
+
+        if split_by_entity_type:
+            fig = px.scatter(
+                entity_events,
+                x="time",
+                y="event_type",  # y axis can show event_type to separate events vertically
+                color="event_type",
+                hover_data=["event", "run_number"],
+                labels={"time": "Time", "event_type": "Event Type"},
+                title=f"Timeline of Events for Entity {entity_id}",
+                text=text_label,
+            )
+        else:
+            fig = px.scatter(
+                entity_events,
+                x="time",
+                y="event",  # y axis can show event_type to separate events vertically
+                color="event_type",
+                hover_data=["event", "run_number"],
+                labels={"time": "Time", "event_type": "Event Type"},
+                title=f"Timeline of Events for Entity {entity_id}",
+                text=text_label,
+            )
 
         # Optional: jitter y axis for better visualization if multiple events at same time
         fig.update_traces(
@@ -465,3 +522,257 @@ class EventLogger:
         fig.update_yaxes(type="category")  # treat event_type as categorical on y-axis
 
         fig.show()
+
+
+class TrialLogger:
+    """
+    A container and analysis utility for managing multiple event logs from repeated
+    simulation runs or trials.
+
+    The `TrialLogger` aggregates logs produced by `EventLogger` instances,
+    indexes them by run ID, and provides utilities for retrieving logs,
+    summarizing trial statistics, and computing event-to-event durations.
+
+    Parameters
+    ----------
+    event_logs : list[EventLogger], optional
+        A list of vidigi `EventLogger` instances to initialize the trial log with.
+
+    Methods
+    -------
+    add_log(event_log)
+        Add a new `EventLogger` log to the trial collection.
+    get_log_by_run(run, as_df=False)
+        Retrieve the log for a specific run. Can return raw records or as a DataFrame.
+    to_dataframe()
+        Return the full trial data as a pandas DataFrame.
+    summary()
+        Return a simple summary of the number of runs in the trial.
+    get_event_duration_stat(first_event, second_event, what="mean",
+                            exclude_incomplete=True, dp=2, label=None, **kwargs)
+        Compute statistics on durations between two event types across runs.
+    """
+
+    def __init__(self, event_logs: Optional[list[EventLogger]] = None):
+        self._event_logs = []
+
+        if event_logs is not None:
+            for log in event_logs:
+                self._event_logs.append(
+                    {"run_id": log._log[0]["run_number"], "run_data": log._log}
+                )
+
+        self._run_index = {r["run_id"]: r for r in self._event_logs}
+
+        self._trial_dataframe = pd.concat(
+            [pd.DataFrame(log["run_data"]) for log in self._event_logs]
+        )
+
+    def add_log(self, event_log: EventLogger):
+        """
+        Add a new event log to the trial collection.
+
+        Parameters
+        ----------
+        event_log : EventLogger
+            An `EventLogger` instance containing a log of events for a single run.
+        """
+        self._event_logs.append(
+            {"run_id": event_log._log[0]["run_number"], "run_data": event_log._log}
+        )
+        self._run_index = {r["run_id"]: r for r in self._event_logs}
+
+    def get_log_by_run(self, run, as_df=False):
+        """
+        Retrieve the log for a specific run.
+
+        Parameters
+        ----------
+        run : int or str
+            The run identifier to fetch.
+        as_df : bool, default=False
+            If True, return the log as a pandas DataFrame.
+            Otherwise, return the raw event records (list of dicts).
+
+        Returns
+        -------
+        list of dict or pandas.DataFrame
+            The requested run log, either as raw records or a DataFrame.
+        """
+        if not as_df:
+            return self._run_index[run]["run_data"]
+        else:
+            return self._run_index[run]["run_data"]
+
+    def to_dataframe(self):
+        """
+        Return the full trial data as a single concatenated DataFrame.
+
+        Returns
+        -------
+        pandas.DataFrame
+            A dataframe containing all events from all runs.
+        """
+        return self._trial_dataframe
+
+    def summary(self):
+        """
+        Summarize the trial logs.
+
+        Returns
+        -------
+        dict
+            Dictionary with summary information:
+            - ``"number_of_runs"`` : int
+              The number of runs currently stored.
+        """
+        return {"number_of_runs": len(self._event_logs)}
+
+    def get_event_duration_stat(
+        self,
+        first_event,
+        second_event,
+        what="mean",
+        exclude_incomplete=True,
+        dp=2,
+        label=None,
+        **kwargs,
+    ):
+        """
+        Compute statistics on durations between two event types across runs.
+
+        Parameters
+        ----------
+        first_event : str
+            Name of the first event (start).
+        second_event : str
+            Name of the second event (end).
+        what : str, default="mean"
+            Statistic to compute. Options include:
+            - Standard aggregations: {"mean", "median", "max", "min",
+              "quantile", "std", "var", "sum"}
+            - Special aggregations: {"count", "unserved_count", "served_count",
+              "unserved_rate", "served_rate", "summary"}
+        exclude_incomplete : bool, default=True
+            If True, ignore cases where the second event is missing (NaN).
+        dp : int, default=2
+            Number of decimal places to round numeric results to.
+        label : str, optional
+            If provided, return the result as a dictionary with keys
+            {"stat": label, "value": result}.
+        **kwargs : dict
+            Additional arguments passed to the pandas Series method
+            corresponding to `what` (e.g., `quantile(q=0.9)`).
+
+        Returns
+        -------
+        float or dict
+            The computed statistic, rounded to ``dp`` if numeric.
+            If ``what="summary"``, returns a dictionary with multiple statistics.
+            If ``label`` is provided, wraps the result in a dict with the label.
+
+        Raises
+        ------
+        ValueError
+            If `what` is not a supported aggregation function.
+        """
+        event_df = self._trial_dataframe[
+            self._trial_dataframe["event"].isin([first_event, second_event])
+        ][["entity_id", "run_number", "event", "time"]].copy()
+
+        n_runs = len(event_df["run_number"].unique())
+
+        pivoted_df = event_df.pivot(
+            columns="event", index=["entity_id", "run_number"], values="time"
+        ).reset_index()[["entity_id", "run_number", first_event, second_event]]
+
+        pivoted_df["duration"] = pivoted_df[second_event] - pivoted_df[first_event]
+
+        series = pivoted_df["duration"]
+
+        # Define special cases
+        special_aggs = {
+            "count",
+            "unserved_count",
+            "served_count",
+            "unserved_rate",
+            "served_rate",
+            "summary",
+        }
+
+        # Collect allowed methods dynamically (only callables, no private methods)
+        allowed = {
+            "mean",
+            "median",
+            "max",
+            "min",
+            "quantile",
+            "std",
+            "var",
+            "sum",
+        } | special_aggs
+
+        # check if valid
+        if what not in allowed:
+            # Build helpful message
+            sigs = []
+            for name in sorted(allowed):
+                try:
+                    func = getattr(series, name)
+                    sig = str(inspect.signature(func))
+                except Exception:
+                    sig = "()"
+                sigs.append(f"  - {name}{sig}")
+            raise ValueError(
+                f"Unsupported aggregation: {what}.\n"
+                f"Allowed aggregations:\n" + "\n".join(sigs)
+            )
+
+        # Handle count separately
+        if what == "count":
+            if exclude_incomplete:
+                result = series.count()  # excludes NaN
+            else:
+                result = series.size  # includes NaN
+        elif what == "unserved_count":
+            result = series.size - series.count()
+        elif what == "served_count":
+            result = series.count()  # excludes NaN
+        elif what == "unserved_rate":
+            result = (series.size - series.count()) / series.size
+        elif what == "served_rate":
+            result = series.count() / series.size
+        elif what == "summary":
+            result = {
+                "mean (of complete)": series.mean(skipna=True),
+                "median (of complete)": series.median(skipna=True),
+                "min": series.min(),
+                "max": series.max(),
+                "unserved_count": series.size,
+                "served_count": series.count(),
+                "unserved_rate": (series.size - series.count()) / series.size,
+                "served_rate": series.count() / series.size,
+                "unserved_count_mean_per_run": series.size / n_runs,
+                "served_count_mean_per_run": series.count() / n_runs,
+            }
+
+        # Otherwise, use predefined methods
+        else:
+            method = getattr(series, what)
+
+            # Some methods accept skipna, others don't (like size, nunique with dropna instead).
+            try:
+                result = method(skipna=exclude_incomplete, **kwargs)
+            except TypeError:
+                # fallback if skipna isn't a parameter
+                result = method(**kwargs)
+
+        if what == "summary":
+            result = {k: round(v, dp) for k, v in result.items()}
+        else:
+            result = round(result, dp)
+
+        if label:
+            return {"stat": label, "value": result}
+        else:
+            return result
