@@ -500,10 +500,13 @@ def generate_animation(
 
     if hover_text_entity == "default":
         hover_text = (
-            "<b>%{customdata[2]}</b>"
+            "<b>%{customdata[2]}"
+            f" {simulation_time_unit}</b>"
             "<br><b>Entity ID:</b> %{customdata[0]}"
-            "<br>Event '%{customdata[3]}' began at time %{customdata[1]:.2f}"
+            "<br>Event '%{customdata[3]}' began at %{customdata[1]:.2f}"
+            f" {simulation_time_unit}"
             "<br>Time spent in event so far: %{customdata[4]:.2f}"
+            f" {simulation_time_unit}"
             "%{customdata[5]}"
         )
     else:
