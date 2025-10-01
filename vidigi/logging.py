@@ -352,6 +352,37 @@ class EventLogger:
         return pd.DataFrame(self._log).dropna(axis=1, how="all")
 
     ####################################################
+    # Creating a log from an existing dataframe        #
+    ####################################################
+
+    def from_csv(
+        self,
+        df: pd.DataFrame,
+        entity_col_name: str = "entity_id",
+        time_col_name: str = "time",
+        event_col_name: str = "event",
+        event_type_col_name: str = "event_type",
+        run_col_name: Optional[str] = None,
+        pathway_col_name: Optional[str] = None,
+    ):
+        df = df.rename(
+            columns={
+                entity_col_name: "entity_id",
+                time_col_name: "time",
+                event_col_name: "event",
+                event_type_col_name: "event_type",
+            }
+        )
+
+        if run_col_name is not None:
+            df = df.rename(columns={run_col_name: "run_number"})
+
+        if pathway_col_name is not None:
+            df = df.rename(columns={pathway_col_name: "pathway"})
+
+        self._log = df.copy()
+
+    ####################################################
     # Summarising Logs                                 #
     ####################################################
 
