@@ -102,6 +102,7 @@ Thanks goes to all of the following people ([emoji key](https://allcontributors.
   <tbody>
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://www.linkedin.com/in/amyheather"><img src="https://avatars.githubusercontent.com/u/92166537?v=4?s=100" width="100px;" alt="Amy Heather"/><br /><sub><b>Amy Heather</b></sub></a><br /><a href="#doc-amyheather" title="Documentation">📖</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="http://hsma.co.uk"><img src="https://avatars.githubusercontent.com/u/29951987?v=4?s=100" width="100px;" alt="Sammi Rosser"/><br /><sub><b>Sammi Rosser</b></sub></a><br /><a href="#code-Bergam0t" title="Code">💻</a> <a href="#doc-Bergam0t" title="Documentation">📖</a> <a href="#test-Bergam0t" title="Tests">⚠️</a></td>
     </tr>
   </tbody>
 </table>

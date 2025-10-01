@@ -16,6 +16,17 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "Bergam0t",
+      "name": "Sammi Rosser",
+      "avatar_url": "https://avatars.githubusercontent.com/u/29951987?v=4",
+      "profile": "http://hsma.co.uk",
+      "contributions": [
+        "code",
+        "doc",
+        "test"
+      ]
     }
   ]
 }
