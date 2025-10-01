@@ -1,4 +1,21 @@
 {
   "projectName": "vidigi",
-  "projectOwner": "hsma-tools"
+  "projectOwner": "hsma-tools",
+  "files": [
+    "README.md"
+  ],
+  "commitType": "docs",
+  "commitConvention": "angular",
+  "contributorsPerLine": 7,
+  "contributors": [
+    {
+      "login": "amyheather",
+      "name": "Amy Heather",
+      "avatar_url": "https://avatars.githubusercontent.com/u/92166537?v=4",
+      "profile": "https://www.linkedin.com/in/amyheather",
+      "contributions": [
+        "doc"
+      ]
+    }
+  ]
 }
