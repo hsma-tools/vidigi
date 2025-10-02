@@ -5,6 +5,11 @@ format:
         toc-expand: 3
 ---
 
+# 1.1.1
+
+- Fix minor bug with default hover text where incorrect/confusing time unit could display next to snapshot time in hover
+
+
 # 1.1.0
 
 - Add TrialLogger class, allowing storage of multiple EventLogger objects and access to new helper functions for trial summarisation and plotting

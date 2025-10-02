@@ -796,9 +796,9 @@ def ascii_queue_icon(
     icon,
     count,
     max_count,
-    bar_length=10,
     filled_char="█",
     empty_char="░",
+    bar_length=10,
     count_only=False,
     display_count_as_fig=True,
     count_string_format="more",
@@ -824,9 +824,9 @@ def ascii_queue_icon(
     bar_length : int, optional
         Total length of the bar in characters (default is 10).
     filled_char : str, optional
-        Character used for filled segments (default is "█").
+        Character used for filled segments.
     empty_char : str, optional
-        Character used for empty segments (default is "░").
+        Character used for empty segments.
     count_only : bool, optional
         If True, only return the total entities in the step rather than a bar
         gauge (default is False).

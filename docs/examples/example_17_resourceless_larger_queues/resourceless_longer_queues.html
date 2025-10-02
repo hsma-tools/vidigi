@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Ways of visualising larger queues – vidigi</title>
+<title>Deep Dive: Ways of visualising larger queues – vidigi</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -280,7 +280,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../examples/example_3_simplest_case_priority_resource/ex_3_simplest_case_priority_resource.html">Advanced Animation Examples</a></li><li class="breadcrumb-item"><a href="../../examples/example_17_resourceless_larger_queues/resourceless_longer_queues.html">Ways of visualising larger queues</a></li></ol></nav>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../examples/example_3_simplest_case_priority_resource/ex_3_simplest_case_priority_resource.html">Advanced Animation Examples</a></li><li class="breadcrumb-item"><a href="../../examples/example_17_resourceless_larger_queues/resourceless_longer_queues.html">Deep Dive: Ways of visualising larger queues</a></li></ol></nav>
         <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
         </a>
       <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
@@ -745,7 +745,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../examples/example_17_resourceless_larger_queues/resourceless_longer_queues.html" class="sidebar-item-text sidebar-link active">
- <span class="menu-text">Ways of visualising larger queues</span></a>
+ <span class="menu-text">Deep Dive: Ways of visualising larger queues</span></a>
   </div>
 </li>
       </ul>
@@ -852,9 +852,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <main class="content" id="quarto-document-content">
 
 
-<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../examples/example_3_simplest_case_priority_resource/ex_3_simplest_case_priority_resource.html">Advanced Animation Examples</a></li><li class="breadcrumb-item"><a href="../../examples/example_17_resourceless_larger_queues/resourceless_longer_queues.html">Ways of visualising larger queues</a></li></ol></nav>
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../examples/example_3_simplest_case_priority_resource/ex_3_simplest_case_priority_resource.html">Advanced Animation Examples</a></li><li class="breadcrumb-item"><a href="../../examples/example_17_resourceless_larger_queues/resourceless_longer_queues.html">Deep Dive: Ways of visualising larger queues</a></li></ol></nav>
 <div class="quarto-title">
-<h1 class="title">Ways of visualising larger queues</h1>
+<h1 class="title">Deep Dive: Ways of visualising larger queues</h1>
 </div>
 
 
@@ -871,10 +871,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p>While vidigi provides a simple way to see the size of larger queues (via the ‘+ x more’ text that appears when the snapshot max is exceeded), this is not particularly visually intuitive for understanding the magnitude of the different queues that are building up.</p>
+<p>While vidigi originally provided only a simple way to see the size of larger queues (via the ‘+ x more’ text that appears when the snapshot max is exceeded), this is not particularly visually intuitive for understanding the magnitude of the different queues that are building up.</p>
 <p>We could use the synchronised subplot approach from the <a href="https://hsma-tools.github.io/vidigi/examples/example_13_additional_synchronised_traces_method_1/synchronised_traces.html">Additional Synchronised Traces - Orthopaedic Ward - Hospital Efficiency Project</a> example or the <a href="https://hsma-tools.github.io/vidigi/examples/example_15_gas_station_refuelling/gas_station.html">gas station</a> example, but when we have multiple steps it could still be challenging to quickly get a sense of where the queues are as your users will have to look across at different parts of the page, and it can be quite a cumbersome thing to add in.</p>
 <p>Instead, it would be better to be able to quickly get a sense of queue size directly next to the relevant step. This poses some challenges in vidigi and there are some limitations - but it is possible!</p>
-<p>Some of what is shown in this example is planned to be incorporated into the package as an official alternative to the ‘+ x more’ snapshot as part of release 1.1.0. However, seeing under the hood will hopefully help you adapt this approach for your own more complex animations.</p>
+<p>Some of what is shown in this example has now been incorporated into vidigi as an official alternative to the ‘+ x more’ snapshot as part of release 1.1.0, and the ‘+ x more’ text can be swapped out for gauges simply by setting <code>step_snapshot_limit_gauges=True</code> in either <code>generate_animation_df()</code> or <code>animate_activity_log()</code>. There is also a helper function - prep.ascii_queue_icon() - that could be used to add gauges in manually between the <code>generate_animation_df()</code> and <code>generate_animation()</code> steps.</p>
+<p>However, seeing under the hood will hopefully help you adapt this approach for your own more complex animations.</p>
+<hr>
 <p>We’ll be working with some of the outputs from the first ‘resourceless’ animation example - the <a href="https://hsma-tools.github.io/vidigi/examples/example_11_resourceless_animation/ex_11_resourceless.html">mental health appointment booking</a> model.</p>
 <p>By the end of that model, we have some queues with as few as 28 people waiting, and some with as high as 462! But because of the way it’s displayed, it’s not easy to get a sense of that.</p>
 <p><img src="assets/2025-08-07-16-05-09.png" class="img-fluid"></p>
