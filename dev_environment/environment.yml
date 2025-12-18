@@ -3,7 +3,6 @@ channels:
   - conda-forge
 dependencies:
   - black
-  - ciw=3.2.5
   - flake8
   - hatch
   - ipywidgets=8.1.5
@@ -25,4 +24,5 @@ dependencies:
   - tox=4.25.0
   - webcolors=24.11.1
   - pip:
-    - -e .
+    - ciw==3.2.5
+    - -e ../vidigi
