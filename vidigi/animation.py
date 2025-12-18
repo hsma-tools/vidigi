@@ -21,7 +21,6 @@ def generate_animation(
     event_col_name: str = "event",
     event_type_col_name: str = "event_type",
     resource_col_name: str = "resource_id",
-    pathway_col_name: Optional[str] = None,
     simulation_time_unit: str = "minutes",
     plotly_height: int = 900,
     plotly_width: Optional[int] = None,
@@ -79,10 +78,6 @@ def generate_animation(
         Name of the column in `event_log` that specifies the category of the event.
         Supported event types include 'arrival_departure', 'resource_use',
         'resource_use_end', and 'queue'.
-    pathway_col_name : str, optional, default=None
-        Name of the column in `event_log` that identifies the specific pathway or
-        process flow the entity is following. If `None`, it is assumed that pathway
-        information is not present.
     resource_col_name : str, default="resource_id"
         Name of the column for the resource identifier. Used for 'resource_use' events.
     simulation_time_unit: string, optional
@@ -1242,7 +1237,6 @@ def animate_activity_log(
         time_col_name=time_col_name,
         entity_col_name=entity_col_name,
         event_col_name=event_col_name,
-        pathway_col_name=pathway_col_name,
         resource_col_name=resource_col_name,
         background_image_opacity=background_image_opacity,
         overflow_text_color=overflow_text_color,
