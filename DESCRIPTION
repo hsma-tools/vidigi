@@ -1,0 +1,12 @@
+Title: vidigi
+Imports:
+    bupaR
+    bupaverse
+    dplyr
+    DT
+    lubridate
+    processanimateR
+    psmineR
+    readr
+Remotes:
+    github::bupaverse/processanimateR
