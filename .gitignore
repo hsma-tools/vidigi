@@ -19,3 +19,4 @@ docs/examples/example_13_additional_synchronised_traces_method_1/synchronised_tr
 .vscode
 
 .Rproj.user/
+**/*.quarto_ipynb
