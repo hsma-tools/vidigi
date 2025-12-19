@@ -43,7 +43,11 @@ RUN conda tos accept --override-channels --channel https://repo.anaconda.com/pkg
 # Create the conda environment
 RUN conda env create -f dev_environment/environment.yml
 
-# Activate the conda environment and set as the Python path
+# Activate the conda environment and install the local package
+SHELL ["bash", "-lc"]
+RUN conda activate vidigi_package_dev && pip install -e /workspace
+
+# Make the environment active by default
 RUN echo "conda activate vidigi_package_dev" >> ~/.bashrc
 ENV PATH=/opt/conda/envs/vidigi_package_dev/bin:$PATH
 
