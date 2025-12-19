@@ -18,6 +18,8 @@ RUN apt-get update && \
         python3-venv \
         build-essential \
         pandoc \
+        libglpk-dev \
+        libx11-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Quarto CLI
@@ -53,9 +55,14 @@ ENV PATH=/opt/conda/envs/vidigi_package_dev/bin:$PATH
 # Set path to renv
 ENV RENV_PATHS_LIBRARY=/workspace/renv/library
 
-# Install renv and restore R packages
+# Install renv and restore R packages with rebuild
+# Why rebuild? Because rocker/r-ver:4.4.1 is based on Ubuntu LTS with an older
+# glibc, so the .so cannot be loaded. This means renv pulled a prebuilt binary
+# (from its cache or our lockfile metadata) that expects glibc 2.38, but the
+# base image's libc is older.
 RUN Rscript -e "install.packages('renv', repos='https://cloud.r-project.org')" \
-    && Rscript -e "renv::restore()"
+    && Rscript -e "Sys.setenv(RENV_CONFIG_CACHE_ENABLED = FALSE);" \
+    && Rscript -e "renv::restore(rebuild = TRUE)"
 
 # Set conda environment as default for reticulate
 ENV RETICULATE_PYTHON=/opt/conda/envs/vidigi_package_dev/bin/python
