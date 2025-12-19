@@ -1,8 +1,6 @@
 project:
   type: website
   output-dir: docs
-  pre-render:
-    - vidigi_docs/sync_docs.py
 
 website:
   title: vidigi
