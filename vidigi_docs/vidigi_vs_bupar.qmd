@@ -44,13 +44,9 @@ bupaR outputs could form part of a verification and validation strategy. They ca
 We will begin in Python, working to add a couple of columns to our vidigi event log to prepare it for use in bupaR.
 
 ```{python}
-#| echo: true
-
 from examples.example_2_branching_multistep.ex_2_model_classes import Trial, g
 import pandas as pd
 import os
-
-#| echo: true
 
 g.sim_duration = 3000
 g.number_of_runs = 1
@@ -65,8 +61,6 @@ g.number_of_runs = 1
 :::
 
 ```{python}
-#| echo: true
-
 my_trial = Trial()
 
 my_trial.run_trial()
@@ -83,8 +77,6 @@ my_trial.all_event_logs.event.value_counts()
 ```
 
 ```{python}
-#| echo: true
-
 # First, identify all patients who have a 'depart' event
 # patients_with_depart = my_trial.all_event_logs[my_trial.all_event_logs['event'].str.contains('depart')]['patient'].unique()
 
@@ -403,7 +395,6 @@ Vidigi can also more clearly highlight the impact of priority on resources throu
 ```{python}
 #| label: rerun-run-python-model
 #| eval: true
-#| echo: true
 
 from examples.example_2_branching_multistep.ex_2_model_classes import Trial, g
 from vidigi.animation import animate_activity_log
@@ -462,7 +453,6 @@ event_position_df = pd.DataFrame([
 
 ```{python}
 #| eval: false
-#| echo: true
 #| label: make-vidigi-anim-for-comparison
 
 animate_activity_log(
