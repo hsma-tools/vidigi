@@ -8,5 +8,6 @@ Imports:
     processanimateR
     psmineR
     readr
+    reticulate
 Remotes:
     github::bupaverse/processanimateR

@@ -53,6 +53,8 @@ remotes::install_github("bupaverse/processanimateR")
 
 **Warning:** This package can take a long time to install.
 
+**Note:** We use renv snapshot type `all` as `implicit` mode excludes packages it can't detect as dependencies, but we have `reticulate` which is necessary but doesn't appear like a typical dependency (e.g., `library(reticulate)`).
+
 ## Documentation
 
 The vidigi documentation is created using quarto. You can generate it locally by running:
