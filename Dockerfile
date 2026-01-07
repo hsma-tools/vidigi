@@ -62,14 +62,12 @@ WORKDIR /workspace
 COPY . /workspace
 RUN rm -f /workspace/.Renviron
 
+# Accept Anaconda ToS for required channels (non-interactive)
+RUN $CONDA_DIR/bin/conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main && \
+    $CONDA_DIR/bin/conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r [web:99][web:100]
+
 # Create conda environment using explicit path (NOT in PATH yet)
 RUN $CONDA_DIR/bin/conda env create -f dev_environment/environment.yml
-
-# Accept ToS if needed
-RUN $CONDA_DIR/bin/conda tos accept --override-channels \
-        --channel https://repo.anaconda.com/pkgs/main && \
-    $CONDA_DIR/bin/conda tos accept --override-channels \
-        --channel https://repo.anaconda.com/pkgs/r
 
 # Install Python package
 RUN /opt/conda/envs/vidigi_package_dev/bin/pip install -e /workspace
