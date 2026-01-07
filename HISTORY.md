@@ -1,3 +1,8 @@
+# 1.2.0
+
+- [EXPERIMENTAL] Add support for creating directly-follows-graphs from vidigi event logs in Graphviz.
+- [EXPERIMENTAL] Add support for creating directly-follows-graphs from vidigi event logs in jupyter notebooks using ipycytoscape.
+
 # 1.1.1
 
 - Fix minor bug with default hover text where incorrect/confusing time unit could display next to snapshot time in hover
