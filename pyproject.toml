@@ -45,5 +45,6 @@ include = [
 
 [project.optional-dependencies]
 streamlit = [
-  "st-javascript==0.1.5"
+  "st-javascript==0.1.5",
+  "st-cytoscape==0.0.5"
 ]

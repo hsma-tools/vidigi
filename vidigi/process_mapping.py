@@ -255,6 +255,55 @@ def dfg_to_graphviz(
         return dot.pipe(format=format)
 
 
+def process_nodes_and_edges_for_cytoscape(
+    nodes,
+    edges,
+    node_label: str = "activity",
+    time_unit: str = "minutes",
+    time_metric: str = "mean",
+    show_transition_probabilities: bool = True,
+    show_edge_counts: bool = True,
+    show_metric: bool = True,
+    show_node_counts: bool = True,
+):
+    # Cast all IDs to strings to ensure matching
+    cy_nodes = [
+        {
+            "data": {
+                "id": str(row[node_label]),
+                "label": str(row[node_label])
+                + (f"\nn={row['count']}" if show_node_counts else ""),
+            },
+            "classes": "multiline-manual",
+        }
+        for _, row in nodes.iterrows()
+    ]
+
+    cy_edges = [
+        {
+            "data": {
+                "source": str(row["source"]),
+                "target": str(row["target"]),
+                "label": (f"n={row.frequency}\n" if show_edge_counts else "")
+                + (
+                    f"p={row.probability:.2f}\n"
+                    if show_transition_probabilities
+                    else ""
+                )
+                + (
+                    f"avg={row[f'{time_metric}_time']:.1f} {time_unit}"
+                    if show_metric
+                    else ""
+                ),
+                "weight": row.probability,
+            }
+        }
+        for _, row in edges.iterrows()
+    ]
+
+    return cy_nodes, cy_edges
+
+
 def dfg_to_cytoscape(
     nodes,
     edges,
@@ -294,7 +343,8 @@ def dfg_to_cytoscape(
         Default: 'dagre'
     orientation: str
         Ignored if layout_name is not 'dagre' or 'breadthfirst'.
-        Valid inputs are 'TB', 'LR', 'RL', 'BT'
+        For dagre, valid inputs are 'TB', 'LR', 'RL', 'BT'
+        For breadthfirst, valid inputs are 'downward', 'upward', 'rightward', 'leftward'
 
     Returns
     -------
@@ -303,40 +353,17 @@ def dfg_to_cytoscape(
     # Filter low-frequency edges
     edges_filtered = edges[edges[edge_label] >= min_frequency]
 
-    # Cast all IDs to strings to ensure matching
-    cy_nodes = [
-        {
-            "data": {
-                "id": str(row[node_label]),
-                "label": str(row[node_label])
-                + (f"\nn={row['count']}" if show_node_counts else ""),
-            },
-            "classes": "multiline-manual",
-        }
-        for _, row in nodes.iterrows()
-    ]
-
-    cy_edges = [
-        {
-            "data": {
-                "source": str(row["source"]),
-                "target": str(row["target"]),
-                "label": (f"n={row.frequency}\n" if show_edge_counts else "")
-                + (
-                    f"p={row.probability:.2f}\n"
-                    if show_transition_probabilities
-                    else ""
-                )
-                + (
-                    f"avg={row[f'{time_metric}_time']:.1f} {time_unit}"
-                    if show_metric
-                    else ""
-                ),
-                "weight": row.probability,
-            }
-        }
-        for _, row in edges_filtered.iterrows()
-    ]
+    cy_nodes, cy_edges = process_nodes_and_edges_for_cytoscape(
+        nodes,
+        edges_filtered,
+        node_label=node_label,
+        time_unit=time_unit,
+        time_metric=time_metric,
+        show_transition_probabilities=show_transition_probabilities,
+        show_edge_counts=show_edge_counts,
+        show_metric=show_metric,
+        show_node_counts=show_node_counts,
+    )
 
     # Build widget
     cytoscapeobj = ipycytoscape.CytoscapeWidget()
@@ -408,3 +435,91 @@ def dfg_to_cytoscape(
     )
 
     return container
+
+
+def dfg_to_cytoscape_streamlit(
+    nodes,
+    edges,
+    edge_label: str = "frequency",
+    node_label: str = "activity",
+    min_frequency: int = 1,
+    layout_name: str = "breadthfirst",
+    layout_orientation: str = "rightward",
+    spacing_factor: float = 1.0,
+    time_unit: str = "minutes",
+    time_metric: str = "mean",
+    width: str = "1200px",
+    height: str = "600px",
+    show_transition_probabilities: bool = True,
+    show_edge_counts: bool = True,
+    show_metric: bool = True,
+    show_node_counts: bool = True,
+    **kwargs,
+):
+    from st_cytoscape import cytoscape as streamlit_cytoscape
+
+    # Filter low-frequency edges
+    edges_filtered = edges[edges[edge_label] >= min_frequency]
+
+    cy_nodes, cy_edges = process_nodes_and_edges_for_cytoscape(
+        nodes,
+        edges_filtered,
+        node_label=node_label,
+        time_unit=time_unit,
+        time_metric=time_metric,
+        show_transition_probabilities=show_transition_probabilities,
+        show_edge_counts=show_edge_counts,
+        show_metric=show_metric,
+        show_node_counts=show_node_counts,
+    )
+
+    elements = cy_nodes + cy_edges
+
+    print(elements)
+
+    stylesheet = [
+        {
+            "selector": "node",
+            "style": {
+                "content": "data(label)",
+                "background-color": "skyblue",
+                "text-valign": "center",
+                "text-halign": "center",
+                "width": "40px",
+                "height": "40px",
+                "font-size": "10px",
+                "text-wrap": "wrap",
+                "text-max-width": 40,
+            },
+        },
+        {
+            "selector": "edge",
+            "style": {
+                "content": "data(label)",
+                "curve-style": "bezier",
+                "target-arrow-shape": "triangle",
+                "line-color": "#9dbaea",
+                "target-arrow-color": "#9dbaea",
+                "font-size": "8px",
+                "text-wrap": "wrap",
+                "text-max-width": 80,
+                "width": "mapData(weight, 0, 1, 1, 6)",
+                # 'opacity': 'mapData(weight, 0, 1, 0.3, 1.0)',
+            },
+        },
+    ]
+
+    layout_options = {"name": layout_name}
+
+    if layout_name == "breadthfirst":
+        layout_options["direction"] = layout_orientation
+
+    return streamlit_cytoscape(
+        elements,
+        stylesheet,
+        key="graph",
+        width=width,
+        height=height,
+        layout=layout_options,
+        **kwargs,
+    )
