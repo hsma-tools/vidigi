@@ -64,7 +64,7 @@ RUN rm -f /workspace/.Renviron
 
 # Accept Anaconda ToS for required channels (non-interactive)
 RUN $CONDA_DIR/bin/conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main && \
-    $CONDA_DIR/bin/conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r [web:99][web:100]
+    $CONDA_DIR/bin/conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
 
 # Create conda environment using explicit path (NOT in PATH yet)
 RUN $CONDA_DIR/bin/conda env create -f dev_environment/environment.yml
