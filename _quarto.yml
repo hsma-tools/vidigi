@@ -88,6 +88,9 @@ quartodoc:
         - examples/feat_changing_sim_time/feat_changing_sim_time.ipynb
         - examples/feat_repeating_overlay/feat_repeating_overlay.ipynb
         - examples/feat_gauge_only_animations/feat_gauge_only_animations.ipynb
+      - section: "Process Map-Style Outputs (DFGs)"
+        contents:
+        - examples/feat_process_maps/process_maps.ipynb
       - section: "Miscellaneous"
         contents:
         - vidigi_docs/vidigi_vs_bupar.qmd
@@ -136,6 +139,15 @@ quartodoc:
       contents:
         - utils.EventPosition
         - utils.create_event_position_df
+    - title: Process Map-Style Outputs
+      desc: ""
+      contents:
+        - process_mapping.add_sim_timestamp
+        - process_mapping.discover_dfg
+        - process_mapping.dfg_to_graphviz
+        - process_mapping.process_nodes_and_edges_for_cytoscape
+        - process_mapping.dfg_to_cytoscape
+        - process_mapping.dfg_to_cytoscape_streamlit
     - title: Streamlit Utility Functions
       desc: ""
       contents:
