@@ -1,7 +1,12 @@
 # 1.2.0
 
-- [EXPERIMENTAL] Add support for creating directly-follows-graphs from vidigi event logs in Graphviz.
-- [EXPERIMENTAL] Add support for creating directly-follows-graphs from vidigi event logs in jupyter notebooks using ipycytoscape.
+- [EXPERIMENTAL] Add support for creating directly-follows-graphs (process maps) from vidigi event logs
+    - in Graphviz.
+    - in jupyter notebooks using ipycytoscape.
+    - Streamlit using streamlit-cytoscape.
+
+e.g.
+![](assets\2026-01-08-18-03-34.png)
 
 # 1.1.1
 
