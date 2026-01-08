@@ -1,0 +1,91 @@
+# process_mapping.dfg_to_cytoscape_streamlit { #vidigi.process_mapping.dfg_to_cytoscape_streamlit }
+
+```python
+process_mapping.dfg_to_cytoscape_streamlit(
+    nodes,
+    edges,
+    edge_label='frequency',
+    node_label='activity',
+    min_frequency=1,
+    layout_name='breadthfirst',
+    layout_orientation='rightward',
+    spacing_factor=1.0,
+    time_unit='minutes',
+    time_metric='mean',
+    width='1200px',
+    height='600px',
+    show_transition_probabilities=True,
+    show_edge_counts=True,
+    show_metric=True,
+    show_node_counts=True,
+    additional_layout_options=None,
+    **kwargs,
+)
+```
+
+Render a Directly-Follows Graph (DFG) interactively in Streamlit using Cytoscape.
+
+This function displays a Directly-Follows Graph derived from an event log
+inside a Streamlit application using the ``st-cytoscape`` component.
+Node and edge tables are converted into Cytoscape-compatible elements,
+styled, and rendered with a configurable layout.
+
+The visualization supports filtering low-frequency edges, displaying
+transition statistics in labels, and customising Cytoscape layout and
+rendering options.
+
+## Parameters {.doc-section .doc-section-parameters}
+
+| Name                          | Type                                         | Description                                                                                                                                                                                                                                                                                                                                                                                           | Default          |
+|-------------------------------|----------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------|
+| nodes                         | pandas.DataFrame                             | Node table describing activities. Must contain at least:  - ``node_label`` (default ``"activity"``) : str   Activity identifier. - ``count`` : int   Number of occurrences of the activity.                                                                                                                                                                                                           | _required_       |
+| edges                         | pandas.DataFrame                             | Edge table describing directly-follows relations. Must contain at least:  - ``source`` : str   Source activity. - ``target`` : str   Target activity. - ``edge_label`` (default ``"frequency"``) : int   Value used to filter edges by ``min_frequency``. - ``probability`` : float   Conditional transition probability. - ``<time_metric>_time`` : float   Time statistic used for edge annotation. | _required_       |
+| edge_label                    | str                                          | Name of the column in ``edges`` used for filtering by ``min_frequency``.                                                                                                                                                                                                                                                                                                                              | `"frequency"`    |
+| node_label                    | str                                          | Name of the column in ``nodes`` used as the node identifier and label.                                                                                                                                                                                                                                                                                                                                | `"activity"`     |
+| min_frequency                 | int                                          | Minimum value of ``edge_label`` required for an edge to be included in the visualization.                                                                                                                                                                                                                                                                                                             | `1`              |
+| layout_name                   | str                                          | Name of the Cytoscape layout algorithm to use (e.g. ``"breadthfirst"``, ``"circle"``, ``"grid"``, ``"cose"``, ``"dagre"`` if available).                                                                                                                                                                                                                                                              | `"breadthfirst"` |
+| layout_orientation            | (rightward, leftward, downward, upward)      | Direction used by the ``breadthfirst`` layout. Ignored for other layouts.                                                                                                                                                                                                                                                                                                                             | `"rightward"`    |
+| spacing_factor                | float                                        | Scaling factor controlling the spacing between nodes in the layout.                                                                                                                                                                                                                                                                                                                                   | `1.0`            |
+| time_unit                     | str                                          | Time unit label displayed alongside transition time statistics. This should match the unit used during DFG discovery.                                                                                                                                                                                                                                                                                 | `"minutes"`      |
+| time_metric                   | (mean, median, min, max, standard_deviation) | Time statistic to display on edges. Determines which ``<time_metric>_time`` column is used from ``edges``.                                                                                                                                                                                                                                                                                            | `"mean"`         |
+| width                         | str                                          | Width of the Cytoscape component in the Streamlit layout.                                                                                                                                                                                                                                                                                                                                             | `"1200px"`       |
+| height                        | str                                          | Height of the Cytoscape component in the Streamlit layout.                                                                                                                                                                                                                                                                                                                                            | `"600px"`        |
+| show_transition_probabilities | bool                                         | If True, include transition probabilities in edge labels.                                                                                                                                                                                                                                                                                                                                             | `True`           |
+| show_edge_counts              | bool                                         | If True, include transition frequencies in edge labels.                                                                                                                                                                                                                                                                                                                                               | `True`           |
+| show_metric                   | bool                                         | If True, include the selected time statistic in edge labels.                                                                                                                                                                                                                                                                                                                                          | `True`           |
+| show_node_counts              | bool                                         | If True, include activity occurrence counts in node labels.                                                                                                                                                                                                                                                                                                                                           | `True`           |
+| additional_layout_options     | dict or None                                 | Additional Cytoscape layout options to merge into the base layout configuration. Values in this dictionary override defaults.                                                                                                                                                                                                                                                                         | `None`           |
+| **kwargs                      |                                              | Additional keyword arguments passed directly to ``st_cytoscape.cytoscape``.                                                                                                                                                                                                                                                                                                                           | `{}`             |
+
+## Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                                                                                                                                           |
+|--------|--------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|        | result | Return value of ``st_cytoscape.cytoscape``. The exact type depends on the component configuration and may include information about user interactions (e.g. selected nodes or edges). |
+
+## Notes {.doc-section .doc-section-notes}
+
+- Low-frequency edges are filtered *before* conversion to Cytoscape
+  elements.
+- Edge widths are scaled using transition probabilities.
+- Node and edge labels support multiline text via Cytoscape classes.
+- This function assumes that the input node and edge tables are
+  consistent and originate from a compatible DFG discovery process.
+
+## See Also {.doc-section .doc-section-see-also}
+
+discover_dfg : Discover a directly-follows graph from an event log.
+process_nodes_and_edges_for_cytoscape :
+    Convert DFG tables into Cytoscape-compatible elements.
+dfg_to_graphviz : Render a DFG as a static Graphviz diagram.
+
+## Examples {.doc-section .doc-section-examples}
+
+```python
+>>> dfg_to_cytoscape_streamlit(
+...     nodes,
+...     edges,
+...     min_frequency=5,
+...     layout_name="breadthfirst",
+... )
+```

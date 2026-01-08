@@ -1,5 +1,7 @@
 import streamlit as st
 import pandas as pd
+import ast
+
 from vidigi.process_mapping import (
     dfg_to_cytoscape_streamlit,
     add_sim_timestamp,
@@ -62,7 +64,17 @@ tab1, tab2 = st.tabs(["Static", "Interactive"])
 with tab1:
     with st.spinner():
         st.subheader("Left to right")
-        st.image(dfg_to_graphviz(nodes, edges, return_image=True))
+        st.image(
+            dfg_to_graphviz(
+                nodes,
+                edges,
+                return_image=True,
+                size=[10, 5],
+                dpi=600,
+                show_metric=False,
+                wrap_node_labels_at=10,
+            )
+        )
 
         st.subheader("Top to bottom")
         st.image(dfg_to_graphviz(nodes, edges, return_image=True, direction="TD"))
@@ -77,16 +89,43 @@ with tab2:
             ["breadthfirst", "grid", "circle", "concentric", "cose", "fcose", "klay"],
         )
 
-        if layout == "breadthfirst":
-            orientation = st.selectbox(
-                "Select an orientation", ["downward", "upward", "rightward", "leftward"]
+        with st.expander("Advanced Options"):
+            st.caption(
+                "Enter additional arguments in the box below as a Python dictionary, e.g."
             )
-            selected = dfg_to_cytoscape_streamlit(
-                nodes, edges, layout_name=layout, layout_orientation=orientation
+            st.code("{'directed': True}")
+            additional_args = st.text_area(
+                "Add additional arguments", label_visibility="collapsed"
             )
 
+            if additional_args == "":
+                args = None
+            else:
+                try:
+                    args = ast.literal_eval(additional_args)
+                    if not isinstance(args, dict):
+                        raise ValueError("Input is not a dict")
+                    st.success("Parsed successfully")
+                    st.write(args)
+                except (ValueError, SyntaxError) as e:
+                    st.error(f"Invalid dictionary: {e}")
+
+        if layout == "breadthfirst":
+            orientation = st.selectbox(
+                "Select an orientation",
+                ["downward", "upward", "right-left", "left-right"],
+            )
+            selected = dfg_to_cytoscape_streamlit(
+                nodes,
+                edges,
+                layout_name=layout,
+                layout_orientation=orientation,
+                additional_layout_options=args,
+            )
         else:
-            selected = dfg_to_cytoscape_streamlit(nodes, edges, layout_name=layout)
+            selected = dfg_to_cytoscape_streamlit(
+                nodes, edges, layout_name=layout, additional_layout_options=args
+            )
 
         st.markdown("**Selected nodes**: %s" % (", ".join(selected["nodes"])))
         st.markdown("**Selected edges**: %s" % (", ".join(selected["edges"])))

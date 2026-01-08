@@ -55,6 +55,19 @@
 | [utils.EventPosition](utils.EventPosition.qmd#vidigi.utils.EventPosition) | Pydantic model for a single event position. |
 | [utils.create_event_position_df](utils.create_event_position_df.qmd#vidigi.utils.create_event_position_df) | Creates a DataFrame for event positions from a list of EventPosition objects. |
 
+## Process Map-Style Outputs
+
+
+
+| | |
+| --- | --- |
+| [process_mapping.add_sim_timestamp](process_mapping.add_sim_timestamp.qmd#vidigi.process_mapping.add_sim_timestamp) | Add a pseudo-timestamp column to a simulation event log. |
+| [process_mapping.discover_dfg](process_mapping.discover_dfg.qmd#vidigi.process_mapping.discover_dfg) | Discover a Directly-Follows Graph (DFG) from an event log. |
+| [process_mapping.dfg_to_graphviz](process_mapping.dfg_to_graphviz.qmd#vidigi.process_mapping.dfg_to_graphviz) | Render a Directly-Follows Graph (DFG) as a Graphviz diagram. |
+| [process_mapping.process_nodes_and_edges_for_cytoscape](process_mapping.process_nodes_and_edges_for_cytoscape.qmd#vidigi.process_mapping.process_nodes_and_edges_for_cytoscape) | Convert DFG node and edge tables into Cytoscape-compatible elements. |
+| [process_mapping.dfg_to_cytoscape](process_mapping.dfg_to_cytoscape.qmd#vidigi.process_mapping.dfg_to_cytoscape) | Convert DFG node/edge tables to interactive Cytoscape widget. |
+| [process_mapping.dfg_to_cytoscape_streamlit](process_mapping.dfg_to_cytoscape_streamlit.qmd#vidigi.process_mapping.dfg_to_cytoscape_streamlit) | Render a Directly-Follows Graph (DFG) interactively in Streamlit using Cytoscape. |
+
 ## Streamlit Utility Functions
 
 

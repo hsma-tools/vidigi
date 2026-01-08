@@ -1,0 +1,56 @@
+# process_mapping.dfg_to_cytoscape { #vidigi.process_mapping.dfg_to_cytoscape }
+
+```python
+process_mapping.dfg_to_cytoscape(
+    nodes,
+    edges,
+    edge_label='frequency',
+    node_label='activity',
+    min_frequency=1,
+    layout_name='dagre',
+    layout_orientation='LR',
+    spacing_factor=1.0,
+    time_unit='minutes',
+    time_metric='mean',
+    width=1200,
+    height=600,
+    show_transition_probabilities=True,
+    show_edge_counts=True,
+    show_metric=True,
+    show_node_counts=True,
+    line_color='#9dbaea',
+    edge_font_size=8,
+    node_font_size=10,
+)
+```
+
+Convert DFG node/edge tables to interactive Cytoscape widget.
+
+## Parameters {.doc-section .doc-section-parameters}
+
+| Name                          | Type                                         | Description                                                                                                                                                                                                                  | Default       |
+|-------------------------------|----------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------|
+| nodes                         | pd.DataFrame                                 | Must contain 'activity' (node ID) and optional 'count'                                                                                                                                                                       | _required_    |
+| edges                         | pd.DataFrame                                 | Must contain 'source', 'target', and edge_label column                                                                                                                                                                       | _required_    |
+| edge_label                    | str                                          | Column to use for edge labels (e.g., frequency, avg_time)                                                                                                                                                                    | `'frequency'` |
+| node_label                    | str                                          | Column to use for node labels                                                                                                                                                                                                | `'activity'`  |
+| min_frequency                 | int or None                                  | Filter edges below this frequency                                                                                                                                                                                            | `1`           |
+| layout_name                   | str                                          | Algorithm for layout to use. Supported variants include 'cose', 'cose-bilkent', 'breadthfirst', 'circle', 'grid', 'concentric', and 'dagre' Default: 'dagre'                                                                 | `'dagre'`     |
+| layout_orientation            | str                                          | Ignored if layout_name is not 'dagre' or 'breadthfirst'. For dagre, valid inputs are 'TB', 'LR', 'RL', 'BT' For breadthfirst, valid inputs are 'downward', 'upward', 'rightward', 'leftward'                                 | `'LR'`        |
+| spacing_factor                | float                                        | Scaling factor controlling the spacing between nodes in the layout. time_unit : str, default="minutes" Time unit label displayed alongside transition time statistics. This should match the unit used during DFG discovery. | `1.0`         |
+| time_metric                   | (mean, median, min, max, standard_deviation) | Time statistic to display on edges. Determines which ``<time_metric>_time`` column is used from ``edges``.                                                                                                                   | `"mean"`      |
+| width                         | int                                          | Width, in pixels, of output box                                                                                                                                                                                              | `1200`        |
+| height                        | int                                          | Height, in pixels, of output box                                                                                                                                                                                             | `600`         |
+| show_transition_probabilities | bool                                         | If True, include transition probabilities in edge labels.                                                                                                                                                                    | `True`        |
+| show_edge_counts              | bool                                         | If True, include transition frequencies in edge labels.                                                                                                                                                                      | `True`        |
+| show_metric                   | bool                                         | If True, include the selected time statistic in edge labels.                                                                                                                                                                 | `True`        |
+| show_node_counts              | bool                                         | If True, include activity occurrence counts in node labels.                                                                                                                                                                  | `True`        |
+| line_color                    | str                                          | Line colour as a hex colour string. Will also define colour of arrowhead.                                                                                                                                                    | `'#9dbaea'`   |
+| edge_font_size                | int                                          | Font size, in pixels, of edge labels                                                                                                                                                                                         | `8`           |
+| node_font_size                | int                                          | Font size, in pixels, of node labels                                                                                                                                                                                         | `10`          |
+
+## Returns {.doc-section .doc-section-returns}
+
+| Name   | Type           | Description   |
+|--------|----------------|---------------|
+|        | ipywidgets.Box |               |

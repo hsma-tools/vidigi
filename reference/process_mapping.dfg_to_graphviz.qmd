@@ -1,0 +1,120 @@
+# process_mapping.dfg_to_graphviz { #vidigi.process_mapping.dfg_to_graphviz }
+
+```python
+process_mapping.dfg_to_graphviz(
+    nodes,
+    edges,
+    min_frequency=None,
+    min_probability=None,
+    time_unit='minutes',
+    direction='LR',
+    time_metric='mean',
+    title=None,
+    title_font_size=20,
+    title_loc='t',
+    dashed_infrequent_paths=True,
+    infrequent_path_dash_threshold=0.1,
+    format='png',
+    return_image=False,
+    show_transition_probabilities=True,
+    show_edge_counts=True,
+    show_metric=True,
+    show_node_counts=True,
+    size=None,
+    dpi=None,
+    ratio=None,
+    wrap_node_labels=True,
+    wrap_node_labels_at=15,
+)
+```
+
+Render a Directly-Follows Graph (DFG) as a Graphviz diagram.
+
+This function converts node and edge tables (as produced by
+:func:`vidigi.process_mapping.discover_dfg`) into a Graphviz directed graph. Nodes represent
+activities and edges represent directly-follows relations, annotated
+with frequency, transition probability, and a selected time statistic.
+
+The resulting graph can be returned either as a Graphviz ``Digraph``
+object for further manipulation, or rendered directly to an image.
+
+## Parameters {.doc-section .doc-section-parameters}
+
+| Name                           | Type                                         | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | Default     |
+|--------------------------------|----------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------|
+| nodes                          | pandas.DataFrame                             | Node table describing activities. Must contain the following columns: - ``activity`` : str   Activity label. - ``count`` : int   Number of occurrences of the activity. This format of table is output from the :func:`vidigi.process_mapping.discover_dfg` function.                                                                                                                                                                                                                   | _required_  |
+| edges                          | pandas.DataFrame                             | Edge table describing directly-follows relations. Must contain at least the following columns: - ``source`` : str   Source activity. - ``target`` : str   Target activity. - ``frequency`` : int   Transition frequency. - ``probability`` : float   Conditional transition probability. - ``<time_metric>_time`` : float   Time statistic used for edge annotation (e.g. ``mean_time``). This format of table is output from the :func:`vidigi.process_mapping.discover_dfg` function. | _required_  |
+| min_frequency                  | int or None                                  | Minimum transition frequency required for an edge to be included. Edges with lower frequency are omitted.                                                                                                                                                                                                                                                                                                                                                                               | `None`      |
+| min_probability                | float or None                                | Minimum transition probability required for an edge to be included. Edges with lower probability are omitted.                                                                                                                                                                                                                                                                                                                                                                           | `None`      |
+| time_unit                      | (seconds, minutes, hours, days, weeks)       | Time unit label displayed on edges for transition time statistics. This does not rescale values, but should match the unit used when computing the DFG.                                                                                                                                                                                                                                                                                                                                 | `"seconds"` |
+| direction                      | (LR, RL, TB, BT)                             | Graph layout direction passed to Graphviz via ``rankdir``. For example, ``"LR"`` renders the graph left-to-right.                                                                                                                                                                                                                                                                                                                                                                       | `"LR"`      |
+| time_metric                    | (mean, median, min, max, standard_deviation) | Time statistic to display on edges. This value is used to select the corresponding ``<time_metric>_time`` column from ``edges``.                                                                                                                                                                                                                                                                                                                                                        | `"mean"`    |
+| title                          | str or None                                  | Optional title displayed above the graph.                                                                                                                                                                                                                                                                                                                                                                                                                                               | `None`      |
+| title_font_size                | int                                          | Font size used for the graph title.                                                                                                                                                                                                                                                                                                                                                                                                                                                     | `20`        |
+| title_loc                      | (t, b)                                       | Location of the title. ``"t"`` places the title at the top of the graph; ``"b"`` places it at the bottom.                                                                                                                                                                                                                                                                                                                                                                               | `"t"`       |
+| dashed_infrequent_paths        | bool                                         | If True, edges with low transition probability are rendered using a dashed line style.                                                                                                                                                                                                                                                                                                                                                                                                  | `True`      |
+| infrequent_path_dash_threshold | float                                        | Probability threshold below which edges are considered infrequent and rendered as dashed (if enabled).                                                                                                                                                                                                                                                                                                                                                                                  | `0.1`       |
+| format                         | str                                          | Output image format used when ``return_image=True``. Must be a Graphviz-supported format (e.g. ``"png"``, ``"svg"``, ``"pdf"``).                                                                                                                                                                                                                                                                                                                                                        | `"png"`     |
+| return_image                   | bool                                         | If False, return a Graphviz ``Digraph`` object. If True, render the graph and return the resulting image as raw bytes.                                                                                                                                                                                                                                                                                                                                                                  | `False`     |
+| show_transition_probabilities  | bool                                         | If True, include transition probabilities in edge labels.                                                                                                                                                                                                                                                                                                                                                                                                                               | `True`      |
+| show_edge_counts               | bool                                         | If True, include transition frequencies in edge labels.                                                                                                                                                                                                                                                                                                                                                                                                                                 | `True`      |
+| show_metric                    | bool                                         | If True, include the selected time statistic in edge labels.                                                                                                                                                                                                                                                                                                                                                                                                                            | `True`      |
+| show_node_counts               | bool                                         | If True, include activity occurrence counts in node labels.                                                                                                                                                                                                                                                                                                                                                                                                                             | `True`      |
+| size                           | tuple of float                               | Maximum size of the rendered graph in inches, given as ``(width, height)``. This value is passed to the Graphviz ``size`` graph attribute and acts as a *constraint* rather than a strict size. By default, Graphviz may produce a smaller graph to preserve aspect ratio. If either dimension is set to ``0``, that dimension is left unconstrained. For example, ``size=(15, 0)`` constrains the width only.                                                                          | `None`      |
+| ratio                          | (auto, fill, compress)                       | Controls how the graph is scaled to fit within the specified ``size``. - ``"auto"``: Use Graphviz default behavior (preserve aspect ratio). - ``"fill"``: Stretch the layout to fill the specified size exactly. - ``"compress"``: Tightly pack the layout to minimize unused space. This parameter is ignored if ``size`` is not specified.                                                                                                                                            | `"auto"`    |
+| dpi                            | int                                          | Resolution (dots per inch) used when rendering raster image formats such as PNG. Higher values produce sharper images at the cost of larger file sizes. This parameter has no effect when returning the ``Digraph`` object directly or when rendering vector formats such as SVG or PDF.                                                                                                                                                                                                | `None`      |
+| wrap_node_labels               | bool                                         | Default true                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | `True`      |
+| wrap_node_labels_at            | int                                          | Default 20 characters                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | `15`        |
+
+## Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                      | Description                                                                                                                                                      |
+|--------|---------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| graph  | graphviz.Digraph or bytes | If ``return_image=False``, returns a Graphviz ``Digraph`` object. If ``return_image=True``, returns the rendered image as a byte string in the specified format. |
+
+## Raises {.doc-section .doc-section-raises}
+
+| Name   | Type       | Description                                     |
+|--------|------------|-------------------------------------------------|
+|        | ValueError | If ``time_unit`` is not a supported value.      |
+|        | ValueError | If ``format`` is not a supported output format. |
+
+## Notes {.doc-section .doc-section-notes}
+
+- Edge widths are scaled proportionally to transition frequency.
+- Edge labels include frequency (``n``), probability (``p``), and the
+  selected time statistic.
+- Filtering by ``min_frequency`` and ``min_probability`` is applied
+  before rendering.
+- This function does not validate the internal consistency of the
+  node and edge tables; it assumes they originate from a compatible
+  DFG discovery process.
+
+## Examples {.doc-section .doc-section-examples}
+
+```python
+>>> dot = dfg_to_graphviz(nodes, edges, min_probability=0.05)
+>>> dot
+```
+
+```python
+>>> img = dfg_to_graphviz(
+...     nodes,
+...     edges,
+...     min_frequency=10,
+...     format="svg",
+...     return_image=True,
+... )
+```
+
+Constrain width only while allowing height to scale automatically::
+
+```python
+>>> generate_dfg(size=(15, 0))
+```
+
+Limit the graph to a fixed size for inclusion in a report::
+
+```python
+>>> generate_dfg(size=(12, 8), ratio="fill", dpi=200)
+```

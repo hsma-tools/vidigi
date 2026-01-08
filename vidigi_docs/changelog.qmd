@@ -5,6 +5,16 @@ format:
         toc-expand: 3
 ---
 
+# 1.2.0
+
+- [EXPERIMENTAL] Add support for creating directly-follows-graphs (process maps) from vidigi event logs
+    - in Graphviz.
+    - in jupyter notebooks using ipycytoscape.
+    - Streamlit using streamlit-cytoscape.
+
+e.g.
+![](assets\2026-01-08-18-03-34.png)
+
 # 1.1.1
 
 - Fix minor bug with default hover text where incorrect/confusing time unit could display next to snapshot time in hover
