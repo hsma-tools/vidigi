@@ -62,3 +62,19 @@ The vidigi documentation is created using quarto. You can generate it locally by
 ```
 quarto render vidigi_docs
 ```
+
+It is rendered via GitHub actions and hosted on GitHub pages. The action creates a Docker image hosted on GitHub Container Registry. This makes it more efficient, as it doesn't need to rebuild the environment when no changes have been made to the packages installed.
+
+To test rendering the quarto site in the docker container locally...
+
+Build image:
+
+```
+sudo docker build -t vidigi .
+```
+
+Render quarto project inside container:
+
+```
+docker run --rm vidigi quarto render
+```
