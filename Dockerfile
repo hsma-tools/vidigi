@@ -7,7 +7,13 @@ ENV DEBIAN_FRONTEND=noninteractive
 # ============================================================
 # This must happen before Conda to ensure R compiles against
 # system libraries, not conda libraries
-RUN apt-get update && \
+RUN set -eux; \
+    # retry apt-get update a few times in case mirrors are mid-sync
+    for i in 1 2 3; do \
+      apt-get update && break; \
+      echo "apt-get update failed, retrying ($i/3)..."; \
+      sleep 5; \
+    done; \
     apt-get install -y --no-install-recommends \
         # Basic utilities
         wget ca-certificates gnupg software-properties-common \
