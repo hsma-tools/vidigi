@@ -27,4 +27,3 @@ dependencies:
   - webcolors=24.11.1
   - pip:
     - ciw==3.2.5
-    - -e ../vidigi

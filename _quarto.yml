@@ -1,6 +1,9 @@
 project:
   type: website
   output-dir: docs
+  render:
+    - "**/*.qmd"
+    - "!examples/r_simmer/"  # Legacy code - don't render
 
 website:
   title: vidigi

@@ -20,3 +20,8 @@ docs/examples/example_13_additional_synchronised_traces_method_1/synchronised_tr
 
 .Rproj.user/
 **/*.quarto_ipynb
+
+_freeze/
+dist/
+docs/
+reference/
