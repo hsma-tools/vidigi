@@ -23,8 +23,6 @@ jobs:
     permissions:
       contents: read
       packages: write
-    env:
-      IMAGE_NAME: vidigi_docs_env
 
     steps:
       - name: Checkout
@@ -59,7 +57,7 @@ jobs:
         with:
           context: .
           tags: |
-            ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest
+            ghcr.io/${{ github.repository_owner }}/vidigi_docs_env:latest
           push: true
           build-args: |
             GIT_PAT=${{ secrets.GITHUB_TOKEN }}
@@ -67,10 +65,8 @@ jobs:
   build-deploy:
     runs-on: ubuntu-latest
     needs: [publish-docker]
-    env:
-      IMAGE_NAME: vidigi_docs_env
     container:
-      image: ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest
+      image: ghcr.io/${{ github.repository_owner }}/vidigi_docs_env:latest
       credentials:
         username: ${{ github.repository_owner }}
         password: ${{ secrets.GITHUB_TOKEN }}
