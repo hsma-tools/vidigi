@@ -2,6 +2,7 @@ name: Publish docker on GHCR, then render and deploy quarto on GitHub pages
 
 on:
   push:
+    branches: [main]
   workflow_dispatch:
     inputs:
       force_docker_build:
