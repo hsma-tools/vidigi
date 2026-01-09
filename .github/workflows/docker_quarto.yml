@@ -87,6 +87,10 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set lowercase owner
+        run: |
+          echo "OWNER_LC=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_ENV
+
       - name: Configure Git safe directory
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
