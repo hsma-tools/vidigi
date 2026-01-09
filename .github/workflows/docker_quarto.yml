@@ -58,6 +58,8 @@ jobs:
           tags: |
             ghcr.io/amyheather/vidigi_docs_env:latest
           push: true
+          build-args: |
+            GIT_PAT=${{ secrets.GITHUB_TOKEN }}
   
   build-deploy:
     runs-on: ubuntu-latest
