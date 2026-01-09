@@ -23,10 +23,16 @@ jobs:
     permissions:
       contents: read
       packages: write
+    env:
+      IMAGE_NAME: vidigi_docs_env
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Set lowercase owner
+        run: |
+          echo "OWNER_LC=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_ENV
 
       - name: Check if Docker build needed
         id: changes
@@ -46,7 +52,7 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ github.actor }}
+          username: ${{ env.OWNER_LC }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build the Docker image
@@ -57,7 +63,7 @@ jobs:
         with:
           context: .
           tags: |
-            ghcr.io/amyheather/vidigi_docs_env:latest
+            ghcr.io/${{ env.OWNER_LC }}/${{ env.IMAGE_NAME }}:latest
           push: true
           build-args: |
             GIT_PAT=${{ secrets.GITHUB_TOKEN }}
@@ -65,10 +71,12 @@ jobs:
   build-deploy:
     runs-on: ubuntu-latest
     needs: [publish-docker]
+    env:
+      IMAGE_NAME: vidigi_docs_env
     container:
-      image: ghcr.io/amyheather/vidigi_docs_env:latest
+      image: ghcr.io/${{ env.OWNER_LC }}/${{ env.IMAGE_NAME }}:latest
       credentials:
-        username: ${{ github.actor }}
+        username: ${{ env.OWNER_LC }}
         password: ${{ secrets.GITHUB_TOKEN }}
     permissions:
       contents: write
