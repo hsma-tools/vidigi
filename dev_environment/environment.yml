@@ -24,9 +24,10 @@ dependencies:
   - quartodoc=0.9.1
   - simpy=4.0.2
   - sim-tools=0.9.0
+  - streamlit=1.52.2
   - tox=4.25.0
   - webcolors=24.11.1
-  - streamlit=1.52.2
-  - st-cytoscape=0.0.5
   - pip:
     - ciw==3.2.5
+    - ipycytoscape==1.3.3
+    - st-cytoscape==0.0.5
