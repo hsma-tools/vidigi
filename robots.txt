@@ -1,0 +1,1 @@
+Sitemap: https://hsma-tools.github.io/vidigi/sitemap.xml
