@@ -29,6 +29,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Check if Docker build needed
+        if: ${{ !inputs.skip_docker_build && !inputs.force_docker_build }}
         id: changes
         uses: dorny/paths-filter@v3
         with:
