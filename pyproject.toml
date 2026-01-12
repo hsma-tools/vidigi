@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "vidigi"
-version = "1.1.1"
+version = "1.2.0"
 description = "A package for creating animated visualisations of queues and pathways from historical data or simulations"
 readme = "README.md"
 license = "MIT"
@@ -26,11 +26,15 @@ dependencies = [
     "pandas>=2.0.1,<3.0.0",
     "simpy>=4.0.0,<5.0.0",
     "pydantic>=2.0.0,<3.0.0",
-    "webcolors>=24.11.1"
+    "webcolors>=24.11.1",
+    "graphviz>=0.15,<1.0.0",
+    "ipywidgets>=8.0.0",
+    "ipycytoscape>=1.2.0,<2.0.0"
 ]
 
 [project.urls]
 Homepage = "https://github.com/hsma-tools/vidigi"
+Documentation = "http://hsma-tools.github.io/vidigi/vidigi_docs/"
 "Bug Tracker" = "https://github.com/hsma-tools/vidigi/issues"
 
 [tool.hatch.version]
@@ -43,5 +47,6 @@ include = [
 
 [project.optional-dependencies]
 streamlit = [
-  "st-javascript==0.1.5"
+  "st-javascript==0.1.5",
+  "st-cytoscape==0.0.5"
 ]

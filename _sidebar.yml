@@ -45,6 +45,14 @@ website:
         - reference/utils.create_event_position_df.qmd
         section: Event Positioning Utility Functions and Classes
       - contents:
+        - reference/process_mapping.add_sim_timestamp.qmd
+        - reference/process_mapping.discover_dfg.qmd
+        - reference/process_mapping.dfg_to_graphviz.qmd
+        - reference/process_mapping.process_nodes_and_edges_for_cytoscape.qmd
+        - reference/process_mapping.dfg_to_cytoscape.qmd
+        - reference/process_mapping.dfg_to_cytoscape_streamlit.qmd
+        section: Process Map-Style Outputs
+      - contents:
         - reference/utils.streamlit_play_all.qmd
         section: Streamlit Utility Functions
       - contents:
@@ -82,6 +90,9 @@ website:
       - examples/feat_repeating_overlay/feat_repeating_overlay.ipynb
       - examples/feat_gauge_only_animations/feat_gauge_only_animations.ipynb
       section: Feature Breakdowns
+    - contents:
+      - examples/feat_process_maps/process_maps.ipynb
+      section: Process Map-Style Outputs (DFGs)
     - contents:
       - vidigi_docs/vidigi_vs_bupar.qmd
       section: Miscellaneous
