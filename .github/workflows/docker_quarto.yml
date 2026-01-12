@@ -82,10 +82,15 @@ jobs:
       - name: Configure Git safe directory
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
+      - name: Build API docs with quartodoc
+        working-directory: vidigi_docs
+        run: quartodoc build
+
       - name: Render and publish to GitHub pages
         uses: quarto-dev/quarto-actions/publish@v2
         with:
           target: gh-pages
+          path: vidigi_docs
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   
