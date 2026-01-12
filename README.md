@@ -143,4 +143,4 @@ Thanks goes to all of the following people ([emoji key](https://allcontributors.
 
 <!-- ALL-CONTRIBUTORS-LIST:END -->
 
-Contributors of any kind - not just code - are welcome!
+Contributors of any kind - not just code - are welcome! Please see `CONTRIBUTING.md` for guidance.

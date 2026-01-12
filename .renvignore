@@ -1,0 +1,13 @@
+# Ignore everything by default
+/*
+
+# But keep the renv infra itself
+!/renv/
+!/renv.lock
+!/.Rprofile
+
+# Keep the R project file
+!/vidigi.Rproj
+
+# Keep the directory where you actually use R
+!/vidigi_docs/

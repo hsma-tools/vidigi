@@ -1,3 +1,0 @@
-# All Functions
-
-{{< include /reference/_api_index.qmd >}}
