@@ -1,6 +1,7 @@
 black
 ciw==3.2.5
 flake8
+griffe==0.49.0
 hatch
 ipywidgets==8.1.5
 jupyterlab==4.2.4
