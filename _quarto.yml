@@ -16,7 +16,7 @@ metadata-files:
 
 quartodoc:
   dir: reference
-  out_index: _api_index.qmd
+  out_index: index.qmd
   # the name used to import the package you want to create reference docs for
   package: vidigi
 

@@ -18,7 +18,7 @@ website:
       - examples/feat_vidigi_logging_class/feat_example_logging_class.ipynb
       section: Details
     - contents:
-      - reference/_api_index.qmd
+      - reference/index.qmd
       - contents:
         - reference/animation.animate_activity_log.qmd
         section: All-In-One Animation Functions
