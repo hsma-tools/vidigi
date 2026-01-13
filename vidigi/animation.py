@@ -64,27 +64,28 @@ def generate_animation(
     event_position_df : pd.DataFrame
         DataFrame specifying the positions of different events.
     scenario : object, optional
-        Object containing attributes for resource counts at different steps.
-    time_col_name : str, default="time"
+        Object containing attributes for resource counts at different steps
+        (default is None).
+    time_col_name : str, optional
         Name of the column in `event_log` that contains the timestamp of each
-        event. Timestamps should represent the number of time units since the
-        simulation began.
-    entity_col_name : str, default="entity_id"
+        event (default is "time"). Timestamps should represent the number of
+        time units since the simulation began.
+    entity_col_name : str, optional
         Name of the column in `event_log` that contains the unique identifier
         for each entity (e.g., "entity_id", "entity", "patient", "patient_id",
-        "customer", "ID").
-    event_col_name : str, default="event"
+        "customer", "ID") (default is "entity_id").
+    event_col_name : str, optional
         Name of the column in `event_log` that specifies the actual event that
-        occurred.
-    event_type_col_name : str, default="event_type"
+        occurred (default is "event").
+    event_type_col_name : str, optional
         Name of the column in `event_log` that specifies the category of the
-        event. Supported event types include 'arrival_departure',
-        'resource_use', 'resource_use_end', and 'queue'.
-    resource_col_name : str, default="resource_id"
-        Name of the column for the resource identifier. Used for
-        'resource_use' events.
-    simulation_time_unit: string, optional
-        Time unit used within the simulation (default is minutes). Possible
+        event (default is "event_type"). Supported event types include
+        'arrival_departure', 'resource_use', 'resource_use_end', and 'queue'.
+    resource_col_name : str, optional
+        Name of the column for the resource identifier (default is
+        "resource_id"). Used for 'resource_use' events.
+    simulation_time_unit: str, optional
+        Time unit used within the simulation (default is "minutes"). Possible
         values are 'seconds', 'minutes', 'hours', 'days', 'weeks', 'years'.
     plotly_height : int, optional
         Height of the Plotly figure in pixels (default is 900).
