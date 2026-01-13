@@ -4,10 +4,8 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from vidigi.prep import reshape_for_animations, generate_animation_df
-from vidigi.utils import html_color_to_rgba, _enforce_int_params
+from vidigi.utils import _enforce_int_params
 import numpy as np
-from copy import deepcopy
-from collections import defaultdict
 from typing import Optional
 
 
