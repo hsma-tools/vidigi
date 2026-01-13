@@ -737,9 +737,9 @@ def generate_animation_df(
                 lambda row: ascii_queue_icon(
                     icon=row["icon"],
                     count=row["additional"],
-                    max_count=max_count
-                    if gauge_max_override is None
-                    else gauge_max_override,
+                    max_count=(
+                        max_count if gauge_max_override is None else gauge_max_override
+                    ),
                     bar_length=gauge_segments,
                     display_count_as_fig=True,
                     count_string_format=display_fig_string,

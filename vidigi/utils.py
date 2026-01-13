@@ -98,7 +98,8 @@ def streamlit_play_all():
     try:
         from streamlit_javascript import st_javascript
 
-        st_javascript("""new Promise((resolve, reject) => {
+        st_javascript(
+            """new Promise((resolve, reject) => {
     console.log('You pressed the play button');
 
     const parentDocument = window.parent.document;
@@ -155,7 +156,8 @@ def streamlit_play_all():
     console.log(finalMessage);
     });
 
-    """)
+    """
+        )
 
     except ImportError:
         raise ImportError(

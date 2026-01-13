@@ -432,20 +432,26 @@ def generate_animation(
         if "additional" in full_entity_df_plus_pos_copy:
             full_entity_df_plus_pos_copy["queue_position"] = (
                 full_entity_df_plus_pos_copy.apply(
-                    lambda x: ""
-                    if x["additional"] > 1.0
-                    else f"<br>Queue Position: {x['rank']:.0f}"
-                    if x[event_type_col_name] == "queue"
-                    else "",
+                    lambda x: (
+                        ""
+                        if x["additional"] > 1.0
+                        else (
+                            f"<br>Queue Position: {x['rank']:.0f}"
+                            if x[event_type_col_name] == "queue"
+                            else ""
+                        )
+                    ),
                     axis=1,
                 )
             )
         else:
             full_entity_df_plus_pos_copy["queue_position"] = (
                 full_entity_df_plus_pos_copy.apply(
-                    lambda x: f"<br>Queue Position: {x['rank']:.0f}"
-                    if x[event_type_col_name] == "queue"
-                    else "",
+                    lambda x: (
+                        f"<br>Queue Position: {x['rank']:.0f}"
+                        if x[event_type_col_name] == "queue"
+                        else ""
+                    ),
                     axis=1,
                 )
             )
@@ -937,16 +943,16 @@ def generate_animation(
 
     # Adjust speed of animation
     try:
-        fig.layout.updatemenus[0].buttons[0].args[1]["frame"]["duration"] = (
-            frame_duration
-        )
+        fig.layout.updatemenus[0].buttons[0].args[1]["frame"][
+            "duration"
+        ] = frame_duration
     except IndexError:
         print("Error changing frame duration")
 
     try:
-        fig.layout.updatemenus[0].buttons[0].args[1]["transition"]["duration"] = (
-            frame_transition_duration
-        )
+        fig.layout.updatemenus[0].buttons[0].args[1]["transition"][
+            "duration"
+        ] = frame_transition_duration
     except IndexError:
         print("Error changing frame transition duration")
 
