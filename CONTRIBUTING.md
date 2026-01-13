@@ -93,9 +93,6 @@ We also run other linters to manually check and edit package style:
 # Checks PEP8-style, basic errors and code complexity
 flake8 vidigi
 
-# Docstring linter
-pydoclint vidigi
-
 # Run flake8 on .ipynb files
 nbqa flake8 examples
 ```
