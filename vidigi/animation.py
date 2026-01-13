@@ -58,15 +58,14 @@ def generate_animation(
     Parameters
     ----------
     full_entity_df_plus_pos : pd.DataFrame
-        DataFrame containing entity data with position information.
-        This will be the output of passing an event log through the
-        reshape_for_animations()
-        and generate_animation_df() functions
+        DataFrame containing entity data with position information. This will
+        be the output of passing an event log through the
+        reshape_for_animations() and generate_animation_df() functions.
     event_position_df : pd.DataFrame
         DataFrame specifying the positions of different events.
     scenario : object, optional
         Object containing attributes for resource counts at different steps.
-        time_col_name : str, default="time"
+    time_col_name : str, default="time"
         Name of the column in `event_log` that contains the timestamp of each
         event. Timestamps should represent the number of time units since the
         simulation began.
@@ -154,7 +153,7 @@ def generate_animation(
         Start date for the animation in 'YYYY-MM-DD' format. Only used when
         time_display_units is 'd' or 'dhm' (default is None).
     start_time : str, optional
-        Start date for the animation in 'HH:MM:SS' format. Only used when
+        Start time for the animation in 'HH:MM:SS' format. Only used when
         time_display_units is 'd' or 'dhm' (default is None).
     resource_opacity : float, optional
         Opacity of resource icons (default is 0.8).
@@ -181,6 +180,12 @@ def generate_animation(
     background_image_opacity : float, optional
         Opacity (0 is transparent, to 1, completely opaque) of the provided
         background image
+    overflow_text_color : str, optional
+        Color of the text displayed on top of entity icons in the animation
+        (default is black).
+    stage_label_text_colour : str, optional
+        Color of the stage label text added next to each event position when
+        display_stage_labels is True (default is black).
     backend: str, optional
         EXPERIMENTAL. Whether to use the plotly express backend for the initial
         plot (default), or the experimental plotly go backend. The go approach
@@ -1085,7 +1090,7 @@ def animate_activity_log(
         'event', 'x', and 'y'.
     scenario : object
         An object containing attributes for resource counts at different steps.
-        time_col_name : str, default="time"
+    time_col_name : str, default="time"
         Name of the column in `event_log` that contains the timestamp of each
         event. Timestamps should represent the number of time units since the
         simulation began.
@@ -1140,6 +1145,8 @@ def animate_activity_log(
         Size of entity icons in the animation (default is 24).
     text_size : int, optional
         Size of text labels in the animation (default is 24).
+    resource_icon_size : int, optional
+        Size of resource icons in the animation (default is 24).
     hover_text_entity: str, optional
         String to define the hover text. If None, hover on entity icons will
         be disabled. Default will display the entity ID, their current time in
@@ -1156,8 +1163,6 @@ def animate_activity_log(
         column specified, customdata[1] is the second, etc. So e.g. if you pass
         in ["widgets_created_cumulative"] as your custom_hover_data, your
         hover_text_entity may be "Widgets created so far: %{customdata[0]}".
-    resource_icon_size : int, optional
-        Size of resource icons in the animation (default is 24).
     gap_between_entities : int, optional
         Horizontal spacing between entities in pixels (default is 10).
     gap_between_queue_rows : int, optional
@@ -1174,6 +1179,12 @@ def animate_activity_log(
         Override the maximum x-coordinate of the plot (default is None).
     override_y_max : int, optional
         Override the maximum y-coordinate of the plot (default is None).
+    start_date : str, optional
+        Start date for the animation in 'YYYY-MM-DD' format. Only used when
+        time_display_units is 'd' or 'dhm' (default is None).
+    start_time : str, optional
+        Start time for the animation in 'HH:MM:SS' format. Only used when
+        time_display_units is 'd' or 'dhm' (default is None).
     time_display_units : str, optional
         Format for displaying time on the animation timeline. This affects how
         simulation time is converted into human-readable dates or clock
@@ -1212,9 +1223,19 @@ def animate_activity_log(
     custom_entity_icon_list: list, optional
         If given, overrides the default list of emojis used to represent
         entities
+    debug_write_intermediate_objects : bool, optional
+        If `True`, writes intermediate data objects (for example, the reshaped
+        event log and positional dataframe) to CSV files in the current working
+        directory.
     background_image_opacity : float, optional
         Opacity (0 is transparent, to 1, completely opaque) of the provided
         background image
+    overflow_text_color : str, optional
+        Color of the text displayed on top of entity icons in the animation
+        (default is black).
+    stage_label_text_colour : str, optional
+        Color of the stage label text added next to each event position when
+        display_stage_labels is True (default is black).
     backend: str, optional
         EXPERIMENTAL. Whether to use the plotly express backend for the
         initial plot (default), or the experimental plotly go backend. The go
@@ -1223,6 +1244,14 @@ def animate_activity_log(
         If True, replaces the text '+ x more' with a gauge. The upper limit of
         the gauge is set by the maximum queue length observed across the
         simulation.
+    gauge_segments : int, optional
+        Number of discrete segments used when rendering queue length gauges
+        in the animation. Higher values give a finer-grained visual indication
+        of queue length, while lower values produce chunkier segments.
+    gauge_max_override : int|float, optional
+        Manually specified maximum value for queue length gauges. If `None`,
+        the upper limit is determined from the maximum queue length observed in
+        the simulation when `step_snapshot_limit_gauges` is `True`.
 
     Returns
     -------
