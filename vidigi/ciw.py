@@ -73,7 +73,9 @@ def event_log_from_ciw_recs(ciw_recs_obj, node_name_list):
     event_logs = []
 
     for entity_id in entity_ids:
-        entity_tuples = [log for log in ciw_recs_obj if log.id_number == entity_id]
+        entity_tuples = [
+            log for log in ciw_recs_obj if log.id_number == entity_id
+        ]
 
         # Sort the events for this entity by service start time
         entity_tuples.sort(key=lambda x: x.service_start_date)

@@ -39,7 +39,9 @@ class EventPosition(BaseModel):
     resource: Optional[str] = None
 
 
-def create_event_position_df(event_positions: List[EventPosition]) -> pd.DataFrame:
+def create_event_position_df(
+    event_positions: List[EventPosition],
+) -> pd.DataFrame:
     """
     Creates a DataFrame for event positions from a list of EventPosition objects.
 
@@ -212,7 +214,9 @@ def _enforce_int_params(param_names):
             # validate the chosen parameters
             for name in param_names:
                 if name in bound.arguments:
-                    bound.arguments[name] = _ensure_int(bound.arguments[name], name)
+                    bound.arguments[name] = _ensure_int(
+                        bound.arguments[name], name
+                    )
 
             # call original function with validated arguments
             return func(*bound.args, **bound.kwargs)
