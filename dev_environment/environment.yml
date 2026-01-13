@@ -31,3 +31,4 @@ dependencies:
     - ciw==3.2.5
     - ipycytoscape==1.3.3
     - st-cytoscape==0.0.5
+    - -e .
