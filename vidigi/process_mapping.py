@@ -75,7 +75,9 @@ def add_sim_timestamp(
     else:
         sim_start = pd.to_datetime(sim_start)
 
-    df[timestamp_col] = sim_start + pd.to_timedelta(df[time_col], unit=time_unit)
+    df[timestamp_col] = sim_start + pd.to_timedelta(
+        df[time_col], unit=time_unit
+    )
 
     return df
 
@@ -206,18 +208,25 @@ def discover_dfg(
 
     # Transition duration
     if time_unit == "seconds":
-        dfg["delta_time"] = (dfg["next_time"] - dfg[timestamp_col]).dt.total_seconds()
+        dfg["delta_time"] = (
+            dfg["next_time"] - dfg[timestamp_col]
+        ).dt.total_seconds()
     elif time_unit == "minutes":
         dfg["delta_time"] = (
             (dfg["next_time"] - dfg[timestamp_col]).dt.total_seconds()
         ) / 60
     elif time_unit == "hours":
         dfg["delta_time"] = (
-            ((dfg["next_time"] - dfg[timestamp_col]).dt.total_seconds()) / 60 / 60
+            ((dfg["next_time"] - dfg[timestamp_col]).dt.total_seconds())
+            / 60
+            / 60
         )
     elif time_unit == "days":
         dfg["delta_time"] = (
-            ((dfg["next_time"] - dfg[timestamp_col]).dt.total_seconds()) / 60 / 60 / 24
+            ((dfg["next_time"] - dfg[timestamp_col]).dt.total_seconds())
+            / 60
+            / 60
+            / 24
         )
     elif time_unit == "weeks":
         dfg["delta_time"] = (
@@ -517,7 +526,11 @@ default="mean"
         # Label the edges
         label = (
             (f"n={row.frequency}\n" if show_edge_counts else "")
-            + (f"p={row.probability:.2f}\n" if show_transition_probabilities else "")
+            + (
+                f"p={row.probability:.2f}\n"
+                if show_transition_probabilities
+                else ""
+            )
             + (
                 f"{time_metric}={row[f'{time_metric}_time']:.1f} {time_unit}"
                 if show_metric
@@ -526,11 +539,17 @@ default="mean"
         )
 
         dot.edge(
-            row["source"], row["target"], label=label, penwidth=f"{pw:.2f}", style=style
+            row["source"],
+            row["target"],
+            label=label,
+            penwidth=f"{pw:.2f}",
+            style=style,
         )
 
     if title:
-        dot.attr(label=title, labelloc=title_loc, fontsize=f"{title_font_size}")
+        dot.attr(
+            label=title, labelloc=title_loc, fontsize=f"{title_font_size}"
+        )
 
     if not return_image:
         return dot
@@ -774,7 +793,9 @@ default="mean"
     cytoscapeobj.layout.width = f"{width - 20}px"
     cytoscapeobj.layout.height = f"{height - 20}px"
 
-    cytoscapeobj.graph.add_graph_from_json({"nodes": cy_nodes, "edges": cy_edges})
+    cytoscapeobj.graph.add_graph_from_json(
+        {"nodes": cy_nodes, "edges": cy_edges}
+    )
 
     cytoscapeobj.set_tooltip_source("label")
 
@@ -832,7 +853,9 @@ default="mean"
     container = widgets.Box(
         [cytoscapeobj],
         layout=widgets.Layout(
-            width=f"{width}px", height=f"{height}px", border="1px solid lightgray"
+            width=f"{width}px",
+            height=f"{height}px",
+            border="1px solid lightgray",
         ),
     )
 

@@ -78,3 +78,21 @@ Render quarto project inside container:
 ```
 docker run --rm vidigi quarto render
 ```
+
+## Linting
+
+We use Black to auto-format the vidigi package, setting the maximum line length to 79 to comply with PEP 8 - simply run:
+
+```
+black vidigi --line-length=79
+```
+
+We also run other linters to manually check and edit package style:
+
+```
+# Checks PEP8-style, basic errors and code complexity
+flake8 vidigi
+
+# Run flake8 on .ipynb files
+nbqa flake8 examples
+```
