@@ -16,7 +16,9 @@ A development environment is provided in `dev_environment/`. You can choose betw
 * A conda environment (`environment.yml`).
 * A virtualenv (`requirements.txt`).
 
-These will install your local vidigi package (`-e .`) and the required package for development. The conda environment will also install a suitable version of Python - if using virtualenv, you will need to configure this yourself.
+You will also want to install the local vidigi package by running `pip install -e .`.
+
+The conda environment will also install a suitable version of Python - if using virtualenv, you will need to configure this yourself.
 
 This environment differs from `vidigi`'s dependencies (`pyproject.toml`), as it contains the packages needed to e.g., generate documentation, run tests, lint code, and build the package.
 

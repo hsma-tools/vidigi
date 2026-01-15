@@ -26,4 +26,3 @@ st-cytoscape==0.0.5
 streamlit==1.52.2
 tox==4.25.0
 webcolors==24.11.1
--e .
