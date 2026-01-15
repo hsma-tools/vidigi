@@ -42,5 +42,8 @@ jobs:
         if: runner.os != 'Windows'
         run: pip install -r dev_environment/requirements.txt
 
+      - name: Install package
+        run: pip install -e .
+
       - name: Run tests
         run: pytest
