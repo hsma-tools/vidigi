@@ -26,7 +26,23 @@ on:
           - '3.12'
 
 jobs:
+  # Small job to decide whether to run each matrix job
+  filter:
+    runs-on: ubuntu-latest
+    outputs:
+      run: ${{ steps.set.outputs.run }}
+    steps:
+      - id: set
+        run: |
+          if [ "${{ github.event_name }}" != "workflow_dispatch" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+
   tests:
+    needs: filter
+    if: ${{ needs.filter.outputs.run == 'true' }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -43,19 +59,23 @@ jobs:
           - os: macos-latest
             python-version: '3.12'
 
-    # Only run the matrix entries that match the chosen OS/Python (or all)
-    if: ${{ github.event_name != 'workflow_dispatch' ||
-            (
-              (github.event.inputs.os == 'all' || github.event.inputs.os == matrix.os) &&
-              (github.event.inputs.python == 'all' || github.event.inputs.python == matrix.python-version)
-            )
-        }}
-
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      # Skip this matrix entry if it does not match the chosen OS/Python on workflow_dispatch
+      - name: Skip non-selected combinations
+        if: ${{ github.event_name == 'workflow_dispatch' &&
+                (github.event.inputs.os != 'all' && github.event.inputs.os != matrix.os ||
+                 github.event.inputs.python != 'all' && github.event.inputs.python != matrix.python-version) }}
+        run: |
+          echo "Skipping matrix job os=${{ matrix.os }}, python=${{ matrix.python-version }}"
+          exit 0
+
       - name: Install python and dependencies
+        if: ${{ github.event_name != 'workflow_dispatch' ||
+                (github.event.inputs.os == 'all' || github.event.inputs.os == matrix.os) &&
+                (github.event.inputs.python == 'all' || github.event.inputs.python == matrix.python-version) }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
