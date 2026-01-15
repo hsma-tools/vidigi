@@ -44,12 +44,12 @@ jobs:
             python-version: '3.12'
 
     # Only run the matrix entries that match the chosen OS/Python (or all)
-    if: >
-      (github.event_name != 'workflow_dispatch') ||
-      (
-        (github.event.inputs.os == 'all' || github.event.inputs.os == matrix.os) &&
-        (github.event.inputs.python == 'all' || github.event.inputs.python == matrix.python-version)
-      )
+    if: ${{ github.event_name != 'workflow_dispatch' ||
+            (
+              (github.event.inputs.os == 'all' || github.event.inputs.os == matrix.os) &&
+              (github.event.inputs.python == 'all' || github.event.inputs.python == matrix.python-version)
+            )
+        }}
 
     steps:
       - name: Check out repository
