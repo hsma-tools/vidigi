@@ -25,35 +25,25 @@ on:
           - '3.11'
           - '3.12'
 
-jobs:
-  # Small job to decide whether to run each matrix job
-  filter:
-    runs-on: ubuntu-latest
-    outputs:
-      run: ${{ steps.set.outputs.run }}
-    steps:
-      - id: set
-        run: |
-          if [ "${{ github.event_name }}" != "workflow_dispatch" ]; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "run=true" >> "$GITHUB_OUTPUT"
-          fi
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
 
+jobs:
   tests:
-    needs: filter
-    if: ${{ needs.filter.outputs.run == 'true' }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         include:
+          # Full matrix on Ubuntu (fastest feedback)
           - os: ubuntu-latest
             python-version: '3.10'
           - os: ubuntu-latest
             python-version: '3.11'
           - os: ubuntu-latest
             python-version: '3.12'
+          # Latest Python on other OSes
           - os: windows-latest
             python-version: '3.12'
           - os: macos-latest
@@ -63,34 +53,27 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      # Skip this matrix entry if it does not match the chosen OS/Python on workflow_dispatch
       - name: Skip non-selected combinations
-        if: ${{ github.event_name == 'workflow_dispatch' &&
-                (github.event.inputs.os != 'all' && github.event.inputs.os != matrix.os ||
-                 github.event.inputs.python != 'all' && github.event.inputs.python != matrix.python-version) }}
-        run: |
-          echo "Skipping matrix job os=${{ matrix.os }}, python=${{ matrix.python-version }}"
-          exit 0
+        if: |
+          github.event_name == 'workflow_dispatch' && (
+            (github.event.inputs.os != 'all' && github.event.inputs.os != matrix.os) ||
+            (github.event.inputs.python != 'all' && github.event.inputs.python != matrix.python-version)
+          )
+        run: exit 78  # GitHub Actions skip exit code
 
-      - name: Install python and dependencies
-        if: ${{ github.event_name != 'workflow_dispatch' ||
-                (github.event.inputs.os == 'all' || github.event.inputs.os == matrix.os) &&
-                (github.event.inputs.python == 'all' || github.event.inputs.python == matrix.python-version) }}
-        uses: actions/setup-python@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
-      
-      - name: Install requirements (Windows)
-        if: runner.os == 'Windows'
-        run: python -m pip install -r dev_environment/requirements.txt
-      
-      - name: Install requirements (Unix)
-        if: runner.os != 'Windows'
-        run: pip install -r dev_environment/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install -r dev_environment/requirements.txt
 
       - name: Install package
         run: pip install -e .
 
       - name: Run tests
-        run: pytest
+        run: pytest --verbose --tb=short
