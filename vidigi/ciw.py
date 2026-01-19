@@ -1,30 +1,36 @@
+from collections.abc import Iterable
+from typing import Any, Mapping, Sequence
+
 import pandas as pd
 
 
-def event_log_from_ciw_recs(ciw_recs_obj, node_name_list):
+def event_log_from_ciw_recs(
+    ciw_recs_obj: Iterable[Mapping[str, Any]],
+    node_name_list: Sequence[str],
+) -> pd.DataFrame:
     """
-    Given the ciw recs object, return a dataframe in the format expected by the vidigi
-    functions
-    - reshape_for_animation
-    OR
-    - animate_activity_log
+    Build an event log from a `ciw.data_record` object.
+
+    The returned dataframe is in the format expected by the vidigi functions
+    `reshape_for_animation` and `animate_activity_log`.
 
     Parameters
     ----------
-    ciw_recs_obj: list of tuples
-        The output of the .get_all_records() method run on the ciw simulation object.
-        This is a list of named tuples.
-        See https://ciw.readthedocs.io/en/latest/Tutorial/GettingStarted/part_3.html
-        and https://ciw.readthedocs.io/en/latest/Reference/results.html for more details.
-
-
-    node_name_list: list of strings
-        User-defined list of strings where each string relates to the resource or activity
-        that will take place at that ciw node
+    ciw_recs_obj: Iterable[CiwRecord]
+        An iterable `ciw.data_record` object. Output by
+        `Simulation.get_all_records()`. See
+        https://ciw.readthedocs.io/en/latest/Tutorial/GettingStarted/part_3.html
+        and https://ciw.readthedocs.io/en/latest/Reference/results.html for
+        more details.
+    node_name_list: Sequence[str]
+        User-defined list of strings where each string relates to the resource
+        or activity that will take place at that ciw node
 
     Returns
     -------
     pd.DataFrame
+        Event log with one row per event and the columns: `entity_id`,
+        `pathway`, `event_type`, `event`, `time`, and optionally `resource_id`.
 
     Notes
     -----
@@ -39,15 +45,17 @@ def event_log_from_ciw_recs(ciw_recs_obj, node_name_list):
     - the service end date is when the resource use ends
     - the server ID is the equivalent of a simpy resource use ID
 
-    A more complex multi-node example can be found in https://github.com/Bergam0t/ciw-example-animation
-    in the files
+    A more complex multi-node example can be found in
+    https://github.com/Bergam0t/ciw-example-animation in the files:
     - **ciw_model.py**
     - **vidigi_experiments.py**
 
     Examples
-    ------
-    # Example taken from https://ciw.readthedocs.io/en/latest/Tutorial/GettingStarted/part_3.html
-    # Let us interpret the servers as workers at aa bank, who can see one customer at a time
+    --------
+    # Example taken from:
+    # https://ciw.readthedocs.io/en/latest/Tutorial/GettingStarted/part_3.html
+    # Let us interpret the servers as workers at a bank, who can see one
+    # customer at a time
 
     import ciw
 
