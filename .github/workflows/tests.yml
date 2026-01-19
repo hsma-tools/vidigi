@@ -5,6 +5,29 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      os:
+        description: 'OS to run on'
+        type: choice
+        default: 'all'
+        options:
+          - all
+          - ubuntu-latest
+          - windows-latest
+          - macos-latest
+      python:
+        description: 'Python version to run'
+        type: choice
+        default: 'all'
+        options:
+          - all
+          - '3.10'
+          - '3.11'
+          - '3.12'
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   tests:
@@ -25,22 +48,45 @@ jobs:
             python-version: '3.12'
 
     steps:
+      - name: Decide if this combo should run
+        id: should_run
+        shell: bash   # required for windows-latest as uses powershell rather than bash by default
+        run: |
+          os_input="${{ github.event_name == 'workflow_dispatch' && github.event.inputs.os || 'all' }}"
+          py_input="${{ github.event_name == 'workflow_dispatch' && github.event.inputs.python || 'all' }}"
+
+          run_flag=true
+
+          if [ "$os_input" != "all" ] && [ "$os_input" != "${{ matrix.os }}" ]; then
+            run_flag=false
+          fi
+
+          if [ "$py_input" != "all" ] && [ "$py_input" != "${{ matrix.python-version }}" ]; then
+            run_flag=false
+          fi
+
+          echo "run=$run_flag" >> "$GITHUB_OUTPUT"
+
       - name: Check out repository
+        if: steps.should_run.outputs.run == 'true'
         uses: actions/checkout@v4
 
-      - name: Install python and dependencies
-        uses: actions/setup-python@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        if: steps.should_run.outputs.run == 'true'
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
-      
-      - name: Install requirements (Windows)
-        if: runner.os == 'Windows'
-        run: python -m pip install -r dev_environment/requirements.txt
-      
-      - name: Install requirements (Unix)
-        if: runner.os != 'Windows'
-        run: pip install -r dev_environment/requirements.txt
+
+      - name: Install dependencies
+        if: steps.should_run.outputs.run == 'true'
+        run: |
+          pip install -r dev_environment/requirements.txt
+
+      - name: Install package
+        if: steps.should_run.outputs.run == 'true'
+        run: pip install -e .
 
       - name: Run tests
-        run: pytest
+        if: steps.should_run.outputs.run == 'true'
+        run: pytest --verbose --tb=short
