@@ -31,6 +31,15 @@ concurrency:
 
 jobs:
   tests:
+    # Only run this matrix job when the selected inputs match, otherwise the
+    # whole matrix entry is marked as "skipped" and no steps (incl. checkout) run.
+    if: >
+      github.event_name != 'workflow_dispatch' ||
+      (
+        (github.event.inputs.os == 'all'     || github.event.inputs.os     == matrix.os) &&
+        (github.event.inputs.python == 'all' || github.event.inputs.python == matrix.python-version)
+      )
+
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -52,14 +61,6 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
-
-      - name: Skip non-selected combinations
-        if: |
-          github.event_name == 'workflow_dispatch' && (
-            (github.event.inputs.os != 'all' && github.event.inputs.os != matrix.os) ||
-            (github.event.inputs.python != 'all' && github.event.inputs.python != matrix.python-version)
-          )
-        run: exit 78  # GitHub Actions skip exit code
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
