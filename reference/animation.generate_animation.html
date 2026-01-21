@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.8.26">
+<meta name="generator" content="quarto-1.8.27">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -72,8 +72,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="../site_libs/quarto-html/anchor.min.js"></script>
 <link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting-587c61ba64f3a5504c4d52d930310e48.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting-dark-b758ccaa5987ceb1b75504551e579abf.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-dark-4d9afe2b8d18ee9fa5d0d57b5ed4214d.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
 <link href="../site_libs/bootstrap/bootstrap-6909b2888c0bd7fd16d1f6e991a71f6f.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
@@ -958,108 +958,286 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>    stage_label_text_colour<span class="op">=</span><span class="st">'black'</span>,</span>
 <span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>    backend<span class="op">=</span><span class="st">'express'</span>,</span>
 <span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre><code>Generate an animated visualization of patient flow through a system.
-
-This function creates an interactive Plotly animation based on patient data and event positions.</code></pre>
-<section id="parameters" class="level2 doc-section doc-section-----parameters">
-<h2 class="doc-section doc-section-----parameters anchored" data-anchor-id="parameters">Parameters</h2>
-<pre><code>full_entity_df_plus_pos : pd.DataFrame
-    DataFrame containing entity data with position information.
-    This will be the output of passing an event log through the reshape_for_animations()
-    and generate_animation_df() functions
-event_position_df : pd.DataFrame
-    DataFrame specifying the positions of different events.
-scenario : object, optional
-    Object containing attributes for resource counts at different steps.
-    time_col_name : str, default="time"
-    Name of the column in `event_log` that contains the timestamp of each event.
-    Timestamps should represent the number of time units since the simulation began.
-entity_col_name : str, default="entity_id"
-    Name of the column in `event_log` that contains the unique identifier for each entity
-    (e.g., "entity_id", "entity", "patient", "patient_id", "customer", "ID").
-event_col_name : str, default="event"
-    Name of the column in `event_log` that specifies the actual event that occurred.
-event_type_col_name : str, default="event_type"
-    Name of the column in `event_log` that specifies the category of the event.
-    Supported event types include 'arrival_departure', 'resource_use',
-    'resource_use_end', and 'queue'.
-resource_col_name : str, default="resource_id"
-    Name of the column for the resource identifier. Used for 'resource_use' events.
-simulation_time_unit: string, optional
-    Time unit used within the simulation (default is minutes).
-    Possible values are 'seconds', 'minutes', 'hours', 'days', 'weeks', 'years'
-plotly_height : int, optional
-    Height of the Plotly figure in pixels (default is 900).
-plotly_width : int, optional
-    Width of the Plotly figure in pixels (default is None).
-include_play_button : bool, optional
-    Whether to include a play button in the animation (default is True).
-add_background_image : str, optional
-    Path to a background image file to add to the animation (default is None).
-display_stage_labels : bool, optional
-    Whether to display labels for each stage (default is True).
-entity_icon_size : int, optional
-    Size of entity icons in the animation (default is 24).
-text_size : int, optional
-    Size of text labels in the animation (default is 24).
-hover_text_entity: str, optional
-    String to define the hover text.
-    If None, hover on entity icons will be disabled.
-    Default will display the entity ID, their current time in the system, etc.
-    Must be provided in the format "%{some_column_name} some text" etc.
-    See https://plotly.com/python/hover-text-and-formatting/#customizing-hover-text-with-a-hovertemplate
-    for full details.
-    All columns present in the initial dataframe are available to access by referencing
-    their name in the format "%{some_column_name}"
-custom_hover_data: list of str, optional
-    A list of column names, which must be defined as strings.
-    If provided, becomes a list of additional columns that can be accessed as part of the string
-    defined within hover_text_entity.
-    customdata[0] is the first column specified
-    customdata[1] is the second
-    etc.
-    So e.g. if you pass in ["widgets_created_cumulative"] as your custom_hover_data,
-    your hover_text_entity may be "Widgets created so far: %{customdata[0]}"
-resource_icon_size : int, optional
-    Size of resource icons in the animation (default is 24).
-override_x_max : int, optional
-    Override the maximum x-coordinate (default is None).
-override_y_max : int, optional
-    Override the maximum y-coordinate (default is None).
-time_display_units : str, optional
-    Format for displaying time on the animation timeline. This affects how simulation time is
-    converted into human-readable dates or clock formats. If `None` (default), the raw simulation
-    time is used.
-    Predefined options:
-    'dhms' : Day Month Year + HH:MM:SS (e.g., "06 June 2025 14:23:45")
-    'dhms_ampm' : Same as 'dhms', but in 12-hour format with AM/PM (e.g., "06 June 2025 02:23:45 PM")
-    'dhm'  : Day Month Year + HH:MM (e.g., "06 June 2025 14:23")
-    'dhm_ampm' : 12-hour format with AM/PM (e.g., "06 June 2025 02:23 PM")
-    'dh'   : Day Month Year + HH (e.g., "06 June 2025 14")
-    'dh_ampm' : 12-hour format with AM/PM (e.g., "06 June 2025 02 PM")
-    'd'    : Full weekday and date (e.g., "Friday 06 June 2025")
-    'm'    : Month and year (e.g., "June 2025")
-    'y'    : Year only (e.g., "2025")
-    'day_clock' or 'simulation_day_clock': Show simulation-relative day and time (e.g., "Simulation Day 3</code></pre>
-<p>14:15”) ‘day_clock_ampm’ or ‘simulation_day_clock_ampm’: Same as above, but time is shown in 12-hour clock with AM/PM (e.g., “Simulation Day 3 02:15 PM”) Alternatively, you can supply a custom <a href="https://strftime.org/">strftime</a> format string (e.g., ‘%Y-%m-%d %H’) to control the display manually. start_date : str, optional Start date for the animation in ‘YYYY-MM-DD’ format. Only used when time_display_units is ‘d’ or ‘dhm’ (default is None). start_time : str, optional Start date for the animation in ‘HH:MM:SS’ format. Only used when time_display_units is ‘d’ or ‘dhm’ (default is None). resource_opacity : float, optional Opacity of resource icons (default is 0.8). custom_resource_icon : str, optional Custom icon to use for resources (default is None). wrap_resources_at : int, optional Number of resources to show before wrapping to a new row (default is 20). If this has been set elsewhere, it is also important to set it in this function to ensure the visual indicators of the resources wrap in the same way the entities using those resources do. gap_between_resources : int, optional Spacing between resources in pixels (default is 10). gap_between_resource_rows : int, optional Vertical spacing between rows in pixels (default is 30). setup_mode : bool, optional Whether to run in setup mode, showing grid and tick marks (default is False). frame_duration : int, optional Duration of each frame in milliseconds (default is 400). frame_transition_duration : int, optional Duration of transition between frames in milliseconds (default is 600). debug_mode : bool, optional Whether to run in debug mode with additional output (default is False). background_image_opacity : float, optional Opacity (0 is transparent, to 1, completely opaque) of the provided background image backend: str, optional EXPERIMENTAL. Whether to use the plotly express backend for the initial plot (default), or the experimental plotly go backend. The go approach is currently unstable and much slower. Use at your own risk.</p>
+<p>Generate an animated visualization of patient flow through a system.</p>
+<p>This function creates an interactive Plotly animation based on patient data and event positions.</p>
+<section id="parameters" class="level2 doc-section doc-section-parameters">
+<h2 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 2%">
+<col style="width: 1%">
+<col style="width: 94%">
+<col style="width: 1%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>full_entity_df_plus_pos</td>
+<td>pd.DataFrame</td>
+<td>DataFrame containing entity data with position information. This will be the output of passing an event log through the reshape_for_animations() and generate_animation_df() functions.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>event_position_df</td>
+<td>pd.DataFrame</td>
+<td>DataFrame specifying the positions of different events.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="odd">
+<td>scenario</td>
+<td>object</td>
+<td>Object containing attributes for resource counts at different steps (default is None).</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>time_col_name</td>
+<td>str</td>
+<td>Name of the column in <code>event_log</code> that contains the timestamp of each event (default is “time”). Timestamps should represent the number of time units since the simulation began.</td>
+<td><code>'time'</code></td>
+</tr>
+<tr class="odd">
+<td>entity_col_name</td>
+<td>str</td>
+<td>Name of the column in <code>event_log</code> that contains the unique identifier for each entity (e.g., “entity_id”, “entity”, “patient”, “patient_id”, “customer”, “ID”) (default is “entity_id”).</td>
+<td><code>'entity_id'</code></td>
+</tr>
+<tr class="even">
+<td>event_col_name</td>
+<td>str</td>
+<td>Name of the column in <code>event_log</code> that specifies the actual event that occurred (default is “event”).</td>
+<td><code>'event'</code></td>
+</tr>
+<tr class="odd">
+<td>event_type_col_name</td>
+<td>str</td>
+<td>Name of the column in <code>event_log</code> that specifies the category of the event (default is “event_type”). Supported event types include ‘arrival_departure’, ‘resource_use’, ‘resource_use_end’, and ‘queue’.</td>
+<td><code>'event_type'</code></td>
+</tr>
+<tr class="even">
+<td>resource_col_name</td>
+<td>str</td>
+<td>Name of the column for the resource identifier (default is “resource_id”). Used for ‘resource_use’ events.</td>
+<td><code>'resource_id'</code></td>
+</tr>
+<tr class="odd">
+<td>simulation_time_unit</td>
+<td>str</td>
+<td>Time unit used within the simulation (default is “minutes”). Possible values are ‘seconds’, ‘minutes’, ‘hours’, ‘days’, ‘weeks’, ‘years’.</td>
+<td><code>'minutes'</code></td>
+</tr>
+<tr class="even">
+<td>plotly_height</td>
+<td>int</td>
+<td>Height of the Plotly figure in pixels (default is 900).</td>
+<td><code>900</code></td>
+</tr>
+<tr class="odd">
+<td>plotly_width</td>
+<td>int</td>
+<td>Width of the Plotly figure in pixels (default is None).</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>include_play_button</td>
+<td>bool</td>
+<td>Whether to include a play button in the animation (default is True).</td>
+<td><code>True</code></td>
+</tr>
+<tr class="odd">
+<td>add_background_image</td>
+<td>str</td>
+<td>Path to a background image file to add to the animation (default is None).</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>display_stage_labels</td>
+<td>bool</td>
+<td>Whether to display labels for each stage (default is True).</td>
+<td><code>True</code></td>
+</tr>
+<tr class="odd">
+<td>entity_icon_size</td>
+<td>int</td>
+<td>Size of entity icons in the animation (default is 24).</td>
+<td><code>24</code></td>
+</tr>
+<tr class="even">
+<td>text_size</td>
+<td>int</td>
+<td>Size of text labels in the animation (default is 24).</td>
+<td><code>24</code></td>
+</tr>
+<tr class="odd">
+<td>hover_text_entity</td>
+<td>Optional[str]</td>
+<td>String to define the hover text. If None, hover on entity icons will be disabled. Default will display the entity ID, their current time in the system, etc. Must be provided in the format “%{some_column_name} some text” etc. See https://plotly.com/python/hover-text-and-formatting/#customizing-hover-text-with-a-hovertemplate for full details. All columns present in the initial dataframe are available to access by referencing their name in the format “%{some_column_name}”</td>
+<td><code>'default'</code></td>
+</tr>
+<tr class="even">
+<td>custom_hover_data</td>
+<td>Optional[list[str]]</td>
+<td>A list of column names, which must be defined as strings. If provided, becomes a list of additional columns that can be accessed as part of the string defined within hover_text_entity. customdata[0] is the first column specified customdata[1] is the second etc. So e.g.&nbsp;if you pass in [“widgets_created_cumulative”] as your custom_hover_data, your hover_text_entity may be “Widgets created so far: %{customdata[0]}”.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="odd">
+<td>resource_icon_size</td>
+<td>int</td>
+<td>Size of resource icons in the animation (default is 24).</td>
+<td><code>24</code></td>
+</tr>
+<tr class="even">
+<td>override_x_max</td>
+<td>int</td>
+<td>Override the maximum x-coordinate (default is None).</td>
+<td><code>None</code></td>
+</tr>
+<tr class="odd">
+<td>override_y_max</td>
+<td>int</td>
+<td>Override the maximum y-coordinate (default is None).</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>time_display_units</td>
+<td>str</td>
+<td>Format for displaying time on the animation timeline. This affects how simulation time is converted into human-readable dates or clock formats. If <code>None</code> (default), the raw simulation time is used. Predefined options: - ‘dhms’ : Day Month Year + HH:MM:SS (e.g., “06 June 2025 14:23:45”) - ‘dhms_ampm’ : Same as ‘dhms’, but in 12-hour format with AM/PM (e.g., “06 June 2025 02:23:45 PM”) - ‘dhm’ : Day Month Year + HH:MM (e.g., “06 June 2025 14:23”) - ‘dhm_ampm’ : 12-hour format with AM/PM - (e.g., “06 June 2025 02:23 PM”) - ‘dh’ : Day Month Year + HH (e.g., “06 June 2025 14”) - ‘dh_ampm’ : 12-hour format with AM/PM (e.g., “06 June 2025 02 PM”) - ‘d’ : Full weekday and date (e.g., “Friday 06 June 2025”) - ‘m’ : Month and year (e.g., “June 2025”) - ‘y’ : Year only (e.g., “2025”) - ‘day_clock’ or ‘simulation_day_clock’ : Show simulation-relative day and time (e.g., “Simulation Day 3 14:15”) - ‘day_clock_ampm’ or ‘simulation_day_clock_ampm’ : Same as above, but time is shown in 12-hour clock with AM/PM (e.g., “Simulation Day 3 02:15 PM”) Alternatively, you can supply a custom strftime (https://strftime.org/) format string (e.g., ‘%Y-%m-%d %H’) to control the display manually.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="odd">
+<td>start_date</td>
+<td>str</td>
+<td>Start date for the animation in ‘YYYY-MM-DD’ format. Only used when time_display_units is ‘d’ or ‘dhm’ (default is None).</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>start_time</td>
+<td>str</td>
+<td>Start time for the animation in ‘HH:MM:SS’ format. Only used when time_display_units is ‘d’ or ‘dhm’ (default is None).</td>
+<td><code>None</code></td>
+</tr>
+<tr class="odd">
+<td>resource_opacity</td>
+<td>float</td>
+<td>Opacity of resource icons (default is 0.8).</td>
+<td><code>0.8</code></td>
+</tr>
+<tr class="even">
+<td>custom_resource_icon</td>
+<td>str</td>
+<td>Custom icon to use for resources (default is None).</td>
+<td><code>None</code></td>
+</tr>
+<tr class="odd">
+<td>wrap_resources_at</td>
+<td>int</td>
+<td>Number of resources to show before wrapping to a new row (default is 20). If this has been set elsewhere, it is also important to set it in this function to ensure the visual indicators of the resources wrap in the same way the entities using those resources do.</td>
+<td><code>20</code></td>
+</tr>
+<tr class="even">
+<td>gap_between_resources</td>
+<td>int</td>
+<td>Spacing between resources in pixels (default is 10).</td>
+<td><code>10</code></td>
+</tr>
+<tr class="odd">
+<td>gap_between_resource_rows</td>
+<td>int</td>
+<td>Vertical spacing between rows in pixels (default is 30).</td>
+<td><code>30</code></td>
+</tr>
+<tr class="even">
+<td>setup_mode</td>
+<td>bool</td>
+<td>Whether to run in setup mode, showing grid and tick marks (default is False).</td>
+<td><code>False</code></td>
+</tr>
+<tr class="odd">
+<td>frame_duration</td>
+<td>int</td>
+<td>Duration of each frame in milliseconds (default is 400).</td>
+<td><code>400</code></td>
+</tr>
+<tr class="even">
+<td>frame_transition_duration</td>
+<td>int</td>
+<td>Duration of transition between frames in milliseconds (default is 600).</td>
+<td><code>600</code></td>
+</tr>
+<tr class="odd">
+<td>debug_mode</td>
+<td>bool</td>
+<td>Whether to run in debug mode with additional output (default is False).</td>
+<td><code>False</code></td>
+</tr>
+<tr class="even">
+<td>background_image_opacity</td>
+<td>float</td>
+<td>Opacity (0 is transparent, to 1, completely opaque) of the provided background image</td>
+<td><code>0.5</code></td>
+</tr>
+<tr class="odd">
+<td>overflow_text_color</td>
+<td>str</td>
+<td>Color of the text displayed on top of entity icons in the animation (default is black).</td>
+<td><code>'black'</code></td>
+</tr>
+<tr class="even">
+<td>stage_label_text_colour</td>
+<td>str</td>
+<td>Color of the stage label text added next to each event position when display_stage_labels is True (default is black).</td>
+<td><code>'black'</code></td>
+</tr>
+<tr class="odd">
+<td>backend</td>
+<td>str</td>
+<td>EXPERIMENTAL. Whether to use the plotly express backend for the initial plot (default), or the experimental plotly go backend. The go approach is currently unstable and much slower. Use at your own risk.</td>
+<td><code>'express'</code></td>
+</tr>
+</tbody>
+</table>
 </section>
-<section id="returns" class="level2 doc-section doc-section-----returns">
-<h2 class="doc-section doc-section-----returns anchored" data-anchor-id="returns">Returns</h2>
-<pre><code>plotly.graph_objs._figure.Figure
-    An animated Plotly figure object representing the patient flow.</code></pre>
+<section id="returns" class="level2 doc-section doc-section-returns">
+<h2 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 7%">
+<col style="width: 31%">
+<col style="width: 60%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>plotly.graph_objs._figure.Figure</td>
+<td>An animated Plotly figure object representing the patient flow.</td>
+</tr>
+</tbody>
+</table>
 </section>
-<section id="notes" class="level2 doc-section doc-section-----notes">
-<h2 class="doc-section doc-section-----notes anchored" data-anchor-id="notes">Notes</h2>
-<pre><code>- The function uses Plotly Express to create an animated scatter plot.
-- Time can be displayed as actual dates or as model time units.
-- The animation supports customization of icon sizes, resource representation, and animation speed.
-- A background image can be added to provide context for the patient flow.
-- If `time_display_units` is specified, the simulation time is converted into real-world
-  datetimes using the `simulation_time_unit` and optionally `start_date` and `start_time`.
-- If `start_date` and/or `start_time` are not provided, a default offset from today's date
-  is used.
-- The `snapshot_time` column is transformed to datetime strings, and a `snapshot_time_display`
-  column is created for visual display.</code></pre>
+<section id="notes" class="level2 doc-section doc-section-notes">
+<h2 class="doc-section doc-section-notes anchored" data-anchor-id="notes">Notes</h2>
+<ul>
+<li>The function uses Plotly Express to create an animated scatter plot.</li>
+<li>Time can be displayed as actual dates or as model time units.</li>
+<li>The animation supports customization of icon sizes, resource representation, and animation speed.</li>
+<li>A background image can be added to provide context for the patient flow.</li>
+<li>If <code>time_display_units</code> is specified, the simulation time is converted into real-world datetimes using the <code>simulation_time_unit</code> and optionally <code>start_date</code> and <code>start_time</code>.</li>
+<li>If <code>start_date</code> and/or <code>start_time</code> are not provided, a default offset from today’s date is used.</li>
+<li>The <code>snapshot_time</code> column is transformed to datetime strings, and a <code>snapshot_time_display</code> column is created for visual display.</li>
+</ul>
 
 
 </section>

@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.8.26">
+<meta name="generator" content="quarto-1.8.27">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -72,8 +72,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="../site_libs/quarto-html/anchor.min.js"></script>
 <link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting-587c61ba64f3a5504c4d52d930310e48.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting-dark-b758ccaa5987ceb1b75504551e579abf.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-dark-4d9afe2b8d18ee9fa5d0d57b5ed4214d.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
 <link href="../site_libs/bootstrap/bootstrap-6909b2888c0bd7fd16d1f6e991a71f6f.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
@@ -920,14 +920,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="vidigi.ciw.event_log_from_ciw_recs" class="level1">
 <h1>ciw.event_log_from_ciw_recs</h1>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>ciw.event_log_from_ciw_recs(ciw_recs_obj, node_name_list)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Given the ciw recs object, return a dataframe in the format expected by the vidigi functions - reshape_for_animation OR - animate_activity_log</p>
+<p>Build an event log from a <code>ciw.data_record</code> object.</p>
+<p>The returned dataframe is in the format expected by the vidigi functions <code>reshape_for_animation</code> and <code>animate_activity_log</code>.</p>
 <section id="parameters" class="level2 doc-section doc-section-parameters">
 <h2 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h2>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 5%">
-<col style="width: 2%">
-<col style="width: 88%">
+<col style="width: 10%">
+<col style="width: 79%">
 <col style="width: 3%">
 </colgroup>
 <thead>
@@ -941,13 +942,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tbody>
 <tr class="odd">
 <td>ciw_recs_obj</td>
-<td></td>
-<td>The output of the .get_all_records() method run on the ciw simulation object. This is a list of named tuples. See https://ciw.readthedocs.io/en/latest/Tutorial/GettingStarted/part_3.html and https://ciw.readthedocs.io/en/latest/Reference/results.html for more details.</td>
+<td>Iterable[Mapping[str, Any]]</td>
+<td>An iterable <code>ciw.data_record</code> object. Output by <code>Simulation.get_all_records()</code>. See https://ciw.readthedocs.io/en/latest/Tutorial/GettingStarted/part_3.html and https://ciw.readthedocs.io/en/latest/Reference/results.html for more details.</td>
 <td><em>required</em></td>
 </tr>
 <tr class="even">
 <td>node_name_list</td>
-<td></td>
+<td>Sequence[str]</td>
 <td>User-defined list of strings where each string relates to the resource or activity that will take place at that ciw node</td>
 <td><em>required</em></td>
 </tr>
@@ -957,6 +958,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="returns" class="level2 doc-section doc-section-returns">
 <h2 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h2>
 <table class="caption-top table">
+<colgroup>
+<col style="width: 5%">
+<col style="width: 8%">
+<col style="width: 86%">
+</colgroup>
 <thead>
 <tr class="header">
 <th>Name</th>
@@ -968,7 +974,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tr class="odd">
 <td></td>
 <td>pd.DataFrame</td>
-<td></td>
+<td>Event log with one row per event and the columns: <code>entity_id</code>, <code>pathway</code>, <code>event_type</code>, <code>event</code>, <code>time</code>, and optionally <code>resource_id</code>.</td>
 </tr>
 </tbody>
 </table>
@@ -977,17 +983,23 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="doc-section doc-section-notes anchored" data-anchor-id="notes">Notes</h2>
 <p>Given the ciw recs object, if we know the nodes and what they relate to, we can build up a picture the arrival date for the first tuple for a given user ID is the arrival</p>
 <p>Then, for each node: - the arrival date for a given node is when they start queueing - the service start date is when they stop queueing - the service start date is when they begin using the resource - the service end date is when the resource use ends - the server ID is the equivalent of a simpy resource use ID</p>
-<p>A more complex multi-node example can be found in https://github.com/Bergam0t/ciw-example-animation in the files - <strong>ciw_model.py</strong> - <strong>vidigi_experiments.py</strong></p>
+<p>A more complex multi-node example can be found in https://github.com/Bergam0t/ciw-example-animation in the files: - <strong>ciw_model.py</strong> - <strong>vidigi_experiments.py</strong></p>
 </section>
 <section id="examples" class="level2 doc-section doc-section-examples">
 <h2 class="doc-section doc-section-examples anchored" data-anchor-id="examples">Examples</h2>
 </section>
 </section>
-<section id="example-taken-from-httpsciw.readthedocs.ioenlatesttutorialgettingstartedpart_3.html" class="level1">
-<h1>Example taken from https://ciw.readthedocs.io/en/latest/Tutorial/GettingStarted/part_3.html</h1>
+<section id="example-taken-from" class="level1">
+<h1>Example taken from:</h1>
 </section>
-<section id="let-us-interpret-the-servers-as-workers-at-aa-bank-who-can-see-one-customer-at-a-time" class="level1">
-<h1>Let us interpret the servers as workers at aa bank, who can see one customer at a time</h1>
+<section id="httpsciw.readthedocs.ioenlatesttutorialgettingstartedpart_3.html" class="level1">
+<h1>https://ciw.readthedocs.io/en/latest/Tutorial/GettingStarted/part_3.html</h1>
+</section>
+<section id="let-us-interpret-the-servers-as-workers-at-a-bank-who-can-see-one" class="level1">
+<h1>Let us interpret the servers as workers at a bank, who can see one</h1>
+</section>
+<section id="customer-at-a-time" class="level1">
+<h1>customer at a time</h1>
 <p>import ciw</p>
 <p>N = ciw.create_network( arrival_distributions=[ciw.dists.Exponential(rate=0.2)], service_distributions=[ciw.dists.Exponential(rate=0.1)], number_of_servers=[3] )</p>
 <p>ciw.seed(1)</p>
