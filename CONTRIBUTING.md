@@ -16,7 +16,9 @@ A development environment is provided in `dev_environment/`. You can choose betw
 * A conda environment (`environment.yml`).
 * A virtualenv (`requirements.txt`).
 
-These will install your local vidigi package (`-e .`) and the required package for development. The conda environment will also install a suitable version of Python - if using virtualenv, you will need to configure this yourself.
+You will also want to install the local vidigi package by running `pip install -e .`.
+
+The conda environment will also install a suitable version of Python - if using virtualenv, you will need to configure this yourself.
 
 This environment differs from `vidigi`'s dependencies (`pyproject.toml`), as it contains the packages needed to e.g., generate documentation, run tests, lint code, and build the package.
 
@@ -77,4 +79,22 @@ Render quarto project inside container:
 
 ```
 docker run --rm vidigi quarto render
+```
+
+## Linting
+
+We use Black to auto-format the vidigi package, setting the maximum line length to 79 to comply with PEP 8 - simply run:
+
+```
+black vidigi --line-length=79
+```
+
+We also run other linters to manually check and edit package style:
+
+```
+# Checks PEP8-style, basic errors and code complexity
+flake8 vidigi
+
+# Run flake8 on .ipynb files
+nbqa flake8 examples
 ```

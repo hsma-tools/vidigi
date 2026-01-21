@@ -1,4 +1,5 @@
-name: Publish docker on GHCR, then render and deploy quarto on GitHub pages
+name: Docker and Quarto
+run-name: Publish docker on GHCR, then render and deploy quarto on GitHub pages
 
 on:
   push:

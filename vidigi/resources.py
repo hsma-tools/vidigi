@@ -91,7 +91,9 @@ def populate_store(num_resources, simpy_store, sim_env):
     5
     """
     for i in range(num_resources):
-        simpy_store.put(VidigiResource(env=sim_env, capacity=1, id_attribute=i + 1))
+        simpy_store.put(
+            VidigiResource(env=sim_env, capacity=1, id_attribute=i + 1)
+        )
 
 
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\#
@@ -161,7 +163,9 @@ class VidigiStore:
         None
         """
         for i in range(num_resources):
-            self.put(VidigiResource(env=self.env, capacity=1, id_attribute=i + 1))
+            self.put(
+                VidigiResource(env=self.env, capacity=1, id_attribute=i + 1)
+            )
 
     def request(self):
         """
@@ -416,7 +420,9 @@ class VidigiPriorityStore:
         None
         """
         for i in range(num_resources):
-            self.put(VidigiResource(env=self.env, capacity=1, id_attribute=i + 1))
+            self.put(
+                VidigiResource(env=self.env, capacity=1, id_attribute=i + 1)
+            )
 
     def request(self, priority=0):
         """
@@ -483,7 +489,9 @@ class VidigiPriorityStore:
             # Space available - try to satisfy a waiting get request
             if self.get_queue:
                 # Get highest-priority waiting request (first item in sorted queue)
-                request = self.get_queue.pop(0)  # Get from front (highest priority)
+                request = self.get_queue.pop(
+                    0
+                )  # Get from front (highest priority)
                 # Directly trigger the request with this item
                 request.succeed(item)
                 # No need to add to items list as it's immediately consumed
@@ -597,7 +605,9 @@ class _OptimizedStoreRequest:
         self.store = store
         self.item = None
         self.priority = priority
-        self.get_event = store.get(priority=self.priority)  # Create the get event
+        self.get_event = store.get(
+            priority=self.priority
+        )  # Create the get event
 
     def __enter__(self):
         # Return the get event which will be yielded by the user

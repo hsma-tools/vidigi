@@ -10,7 +10,7 @@ dependencies:
   - jupyterlab=4.2.4
   - jupyterlab-spellchecker=0.8.4
   - libtiff=4.5.1
-  - matplotlib=3.9.1
+  - matplotlib=3.9.2
   - nbqa
   - numpy=1.26.2
   - pandas=2.0.1

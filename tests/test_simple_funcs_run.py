@@ -44,10 +44,10 @@ def test_prep_RESHAPE_FOR_ANIMATIONS():
             debug_mode=True,
         )
 
-        full_entity_df.to_csv(
-            "tests/outputs/simple_funcs_run/TEST_prep_RESHAPE_FOR_ANIMATIONS.csv",
-            index=False,
-        )
+        # full_entity_df.to_csv(
+        #     "tests/outputs/simple_funcs_run/TEST_prep_RESHAPE_FOR_ANIMATIONS.csv",
+        #     index=False,
+        # )
     except:
         pytest.fail(
             "prep.reshape_for_animations() function failed to run with default params"
@@ -69,10 +69,10 @@ def test_prep_GENERATE_ANIMATION_DF():
             debug_mode=True,
         )
 
-        full_entity_df_plus_pos.to_csv(
-            "tests/outputs/simple_funcs_run/TEST_prep_GENERATE_ANIMATION_DF.csv",
-            index=False,
-        )
+        # full_entity_df_plus_pos.to_csv(
+        #     "tests/outputs/simple_funcs_run/TEST_prep_GENERATE_ANIMATION_DF.csv",
+        #     index=False,
+        # )
 
     except:
         pytest.fail(
@@ -102,9 +102,9 @@ def test_prep_GENERATE_ANIMATION():
             debug_mode=True,
         )
 
-        fig.write_html(
-            "tests/outputs/simple_funcs_run/TEST_prep_GENERATE_ANIMATION.html"
-        )
+        # fig.write_html(
+        #     "tests/outputs/simple_funcs_run/TEST_prep_GENERATE_ANIMATION.html"
+        # )
 
     except:
         pytest.fail(
