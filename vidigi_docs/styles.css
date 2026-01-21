@@ -1,0 +1,116 @@
+.card-img {
+    max-width: min(99%, 100vw - 10px);
+    max-height: 300px;
+    object-fit: cover;
+}
+
+.quarto-title .quarto-categories .quarto-category {
+    font-size: .85em;
+    font-weight: 600;
+    opacity: 1;
+    color: #fff;
+    background-color: rgb(56, 59, 59);
+  }
+
+.abstract {
+  color: rgb(56, 59, 59);
+  background-color: #e4e2e2;
+  border: solid 1px;
+  padding: .25em .75em;
+  border-radius: .25rem;
+  font-size: .85em;
+  font-weight: 500;
+  opacity: 0.7;
+}
+
+.custom-grid-card {
+  flex: 1 1 auto;
+  -webkit-flex: 1 1 auto;
+  padding: var(--bs-card-spacer-y) var(--bs-card-spacer-x);
+  color: var(--bs-card-color);
+  /* max-height: 100% !important; */
+  --bs-card-title-spacer-y: 0.5rem;
+  --bs-card-title-color: ;
+  --bs-card-subtitle-color: ;
+  --bs-card-border-width: 1px;
+  --bs-card-border-color: rgba(0, 0, 0, 0.175);
+  --bs-card-border-radius: 0.25rem;
+  --bs-card-box-shadow: ;
+  --bs-card-inner-border-radius: calc(0.25rem - 1px);
+  --bs-card-cap-padding-y: 0.5rem;
+  --bs-card-cap-padding-x: 1rem;
+  --bs-card-cap-bg: rgba(52, 58, 64, 0.25);
+  --bs-card-cap-color: ;
+  --bs-card-height: ;
+  --bs-card-color: ;
+  --bs-card-bg: #2d2d2d;
+  --bs-card-img-overlay-padding: 1rem;
+  --bs-card-group-margin: 0.75rem;
+  position: relative;
+  display: flex;
+  display: -webkit-flex;
+  flex-direction: column;
+  -webkit-flex-direction: column;
+  min-width: 0;
+  height: var(--bs-card-height);
+  color: var(--bs-body-color);
+  word-wrap: break-word;
+  background-color: var(--bs-card-bg);
+  background-clip: border-box;
+  box-sizing: border-box;
+  border: var(--bs-card-border-width) solid var(--bs-card-border-color);
+  border-radius: var(--bs-card-border-radius);
+  max-width: min(99%, 100vw - 10px);
+}
+
+.main-card-content {
+  flex: 1;
+  max-width: min(99%, 100vw - 10px);
+  box-sizing: border-box;
+}
+
+.listing-abstract {
+  font-size: .85em;
+  font-weight: 200;
+  padding: 1rem 1rem;
+}
+
+.listing-title {
+  padding: 0.5rem 0.5rem;
+}
+
+.quarto-categories {
+  padding: 0.5rem 0.5rem;
+}
+
+.details-listing {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0px;
+  box-sizing: border-box;
+}
+
+.link-listing-button {
+  background-color: #216630;  /* Grey background */
+  color: rgb(218, 218, 218);               /* Off-White text */
+  border: 2px solid rgb(218, 218, 218);    /* Off-White border */
+  padding: 5px 5px;         /* Padding for better clickability */
+  margin: 2px 0px;
+  font-size: 11px;            /* Font size */
+  font-weight: bold;          /* Bold text */
+  text-align: center;         /* Center the text */
+  text-decoration: none;      /* Remove underline from text */
+  cursor: none;               /* Normal cursor on hover */
+}
+
+/* Hover effect */
+.custom-button:hover {
+  background-color: #92e296;    /* White background on hover */
+  color: #3d3d3d;              /* Grey text on hover */
+  border-color: white;      /* Blue border on hover */
+}
+
+/* Active state (when button is pressed) */
+.custom-button:active {
+  transform: scale(0.98);     /* Slightly reduce size when clicked */
+}

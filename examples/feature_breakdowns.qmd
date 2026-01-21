@@ -1,0 +1,19 @@
+---
+title: "Feature Breakdowns"
+subtitle: "Take a deep dive into key Vidigi Features"
+listing:
+  - id: feature_breakdowns
+    contents:
+      - "feat_*/*.ipynb"
+    type: grid # A list style instead of a grid
+    sort: false
+    grid-columns: 3
+    template: ../vidigi_docs/listing.ejs
+---
+
+## Feature Breakdowns
+
+The examples below dive into a particular feature of the vidigi package.
+
+::: {#feature_breakdowns}
+:::

@@ -10,6 +10,7 @@ format:
 filters:
   - quarto
   - line-highlight
+image: adding_vidigi_to_a_simple_simpy_model_hsma_structure.gif
 ---
 
 ```{python}

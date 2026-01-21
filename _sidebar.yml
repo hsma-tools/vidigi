@@ -2,127 +2,49 @@ website:
   sidebar:
   - collapse-level: 3
     contents:
-    - file: vidigi_docs/index.qmd
-      text: Welcome
-    - href: vidigi_docs/introduction.qmd
-      text: Introduction
-    - href: vidigi_docs/changelog.qmd
-      text: Changelog
+    - reference/index.qmd
     - contents:
-      - vidigi_docs/basic_example_with_vidigi_logger_helpers.qmd
-      - vidigi_docs/basic_example_with_vidigi_logger_helpers_multiple_servers.qmd
-      - vidigi_docs/basic_example_minimal_required_vidigi_functions.qmd
-      - vidigi_docs/adding_vidigi_to_a_simple_simpy_model_hsma_structure.qmd
-      section: Walkthroughs
+      - reference/animation.animate_activity_log.qmd
+      section: All-In-One Animation Functions
     - contents:
-      - examples/feat_vidigi_logging_class/feat_example_logging_class.ipynb
-      section: Details
+      - reference/prep.reshape_for_animations.qmd
+      - reference/prep.generate_animation_df.qmd
+      - reference/animation.generate_animation.qmd
+      section: Step-By-Step Functions
     - contents:
-      - reference/index.qmd
-      - contents:
-        - reference/animation.animate_activity_log.qmd
-        section: All-In-One Animation Functions
-      - contents:
-        - reference/prep.reshape_for_animations.qmd
-        - reference/prep.generate_animation_df.qmd
-        - reference/animation.generate_animation.qmd
-        section: Step-By-Step Functions
-      - contents:
-        - reference/animation.add_repeating_overlay.qmd
-        section: Animation Enhancers
-      - contents:
-        - reference/resources.VidigiResource.qmd
-        - reference/resources.VidigiStore.qmd
-        - reference/resources.VidigiPriorityStore.qmd
-        - reference/resources.populate_store.qmd
-        section: Simpy Resource Classes
-      - contents:
-        - reference/logging.EventLogger.qmd
-        - reference/logging.TrialLogger.qmd
-        section: Event Logging Utility Functions and Classes
-      - contents:
-        - reference/utils.EventPosition.qmd
-        - reference/utils.create_event_position_df.qmd
-        section: Event Positioning Utility Functions and Classes
-      - contents:
-        - reference/process_mapping.add_sim_timestamp.qmd
-        - reference/process_mapping.discover_dfg.qmd
-        - reference/process_mapping.dfg_to_graphviz.qmd
-        - reference/process_mapping.process_nodes_and_edges_for_cytoscape.qmd
-        - reference/process_mapping.dfg_to_cytoscape.qmd
-        - reference/process_mapping.dfg_to_cytoscape_streamlit.qmd
-        section: Process Map-Style Outputs
-      - contents:
-        - reference/utils.streamlit_play_all.qmd
-        section: Streamlit Utility Functions
-      - contents:
-        - reference/ciw.event_log_from_ciw_recs.qmd
-        section: ciw Utility Functions
-      - contents:
-        - reference/resources.VidigiPriorityStoreLegacy.qmd
-        section: legacy Functions
-      section: vidigi Function Reference
+      - reference/animation.add_repeating_overlay.qmd
+      section: Animation Enhancers
     - contents:
-      - examples/example_1_simplest_case/ex_1_simplest_case.ipynb
-      - examples/example_2_branching_multistep/ex_2_branching_multistep_case.ipynb
-      - examples/example_6_simplest_case_storewrapper/ex_6_simplest_case.ipynb
-      - examples/example_7_simplest_case_priority_resource_storewrapper/ex_7_simplest_case_priority_resource.ipynb
-      - examples/example_14_carwash/carwash.ipynb
-      section: SimPy Examples
+      - reference/resources.VidigiResource.qmd
+      - reference/resources.VidigiStore.qmd
+      - reference/resources.VidigiPriorityStore.qmd
+      - reference/resources.populate_store.qmd
+      section: Simpy Resource Classes
     - contents:
-      - examples/example_4_ciw/ex_4_ciw.ipynb
-      - examples/example_10_advanced_ciw/ex_10_ciw.ipynb
-      section: Ciw Examples
+      - reference/logging.EventLogger.qmd
+      - reference/logging.TrialLogger.qmd
+      section: Event Logging Utility Functions and Classes
     - contents:
-      - examples/example_3_simplest_case_priority_resource/ex_3_simplest_case_priority_resource.ipynb
-      - examples/example_5_simplest_case_wrapped_resources/ex_5_simplest_case_wrapped_resource.ipynb
-      - examples/example_8_wide_resource_spacing/ex_8_model.ipynb
-      - examples/example_9_wide_resource_spacing_multiple/ex_9_model.ipynb
-      - examples/example_11_resourceless_animation/ex_11_resourceless.ipynb
-      - examples/example_12_resourceless_with_back_and_forth/ex_12_resourceless_advanced.ipynb
-      - examples/example_13_additional_synchronised_traces_method_1/synchronised_traces.ipynb
-      - examples/example_15_gas_station_refuelling/gas_station.ipynb
-      - examples/example_16_packing_robot/packing_robot.ipynb
-      - examples/example_17_resourceless_larger_queues/resourceless_longer_queues.ipynb
-      section: Advanced Animation Examples
+      - reference/utils.EventPosition.qmd
+      - reference/utils.create_event_position_df.qmd
+      section: Event Positioning Utility Functions and Classes
     - contents:
-      - examples/feat_changing_sim_time/feat_changing_sim_time.ipynb
-      - examples/feat_repeating_overlay/feat_repeating_overlay.ipynb
-      - examples/feat_gauge_only_animations/feat_gauge_only_animations.ipynb
-      section: Feature Breakdowns
+      - reference/process_mapping.add_sim_timestamp.qmd
+      - reference/process_mapping.discover_dfg.qmd
+      - reference/process_mapping.dfg_to_graphviz.qmd
+      - reference/process_mapping.process_nodes_and_edges_for_cytoscape.qmd
+      - reference/process_mapping.dfg_to_cytoscape.qmd
+      - reference/process_mapping.dfg_to_cytoscape_streamlit.qmd
+      section: Process Map-Style Outputs
     - contents:
-      - examples/feat_process_maps/process_maps.ipynb
-      section: Process Map-Style Outputs (DFGs)
+      - reference/utils.streamlit_play_all.qmd
+      section: Streamlit Utility Functions
     - contents:
-      - vidigi_docs/vidigi_vs_bupar.qmd
-      section: Miscellaneous
+      - reference/ciw.event_log_from_ciw_recs.qmd
+      section: ciw Utility Functions
     - contents:
-      - vidigi_docs/adding_vidigi_to_a_simple_simpy_model_hsma_structure_old.qmd
-      - vidigi_docs/populating_event_logs.qmd
-      section: Working with older versions of vidigi
-    - contents:
-      - href: vidigi_docs/licence.qmd
-        text: Licence
-      - href: vidigi_docs/code_of_conduct.qmd
-        text: Contributor Code of Conduct
-      section: Package Details
+      - reference/resources.VidigiPriorityStoreLegacy.qmd
+      section: legacy Functions
     id: reference
-    search: true
     style: docked
-    subtitle: Pathway Animations For Simulations and Reality
-    title: vidigi
-    tools:
-    - icon: github
-      menu:
-      - href: https://github.com/hsma-tools/vidigi
-        target: _blank
-        text: Source Code
-      - href: https://github.com/hsma-tools/vidigi/issues
-        target: _blank
-        text: Report a Bug
-    - icon: box-fill
-      menu:
-      - href: https://pypi.org/project/vidigi/
-        target: _blank
-        text: Download on pypi
   - id: dummy-sidebar
