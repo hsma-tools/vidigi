@@ -10,6 +10,7 @@ format:
 filters:
   - quarto
   - line-highlight
+image: populating_event_logs.png
 ---
 
 ## Event types

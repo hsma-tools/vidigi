@@ -1,0 +1,83 @@
+---
+title: "Examples Gallery"
+subtitle: "Explore what's possible with vidigi through these hands-on examples."
+toc: true
+listing:
+  - id: simpy-examples
+    contents:
+      - "example_1_simplest_case/*.ipynb"
+      - "example_2_branching_multistep/*.ipynb"
+      - "example_6_simplest_case_storewrapper/*.ipynb"
+      - "example_7_simplest_case_priority_resource_storewrapper/*.ipynb"
+      - "example_14_carwash/*.ipynb"
+    type: grid
+    sort: "title"
+    grid-columns: 3
+    template: ../vidigi_docs/listing.ejs
+
+  - id: ciw-examples
+    contents:
+      - "example_4_ciw/*.ipynb"
+      - "example_10_advanced_ciw/*.ipynb"
+    type: grid # A list style instead of a grid
+    sort: "title"
+    grid-columns: 3
+    template: ../vidigi_docs/listing.ejs
+
+  - id: advanced-examples
+    contents:
+      - "example_3_simplest_case_priority_resource/ex_3_simplest_case_priority_resource.ipynb"
+      - "example_5_simplest_case_wrapped_resources/ex_5_simplest_case_wrapped_resource.ipynb"
+      - "example_8_wide_resource_spacing/ex_8_model.ipynb"
+      - "example_9_wide_resource_spacing_multiple/ex_9_model.ipynb"
+      - "example_11_resourceless_animation/ex_11_resourceless.ipynb"
+      - "example_12_resourceless_with_back_and_forth/ex_12_resourceless_advanced.ipynb"
+      - "example_13_additional_synchronised_traces_method_1/synchronised_traces.ipynb"
+      - "example_15_gas_station_refuelling/gas_station.ipynb"
+      - "example_16_packing_robot/packing_robot.ipynb"
+      - "example_17_resourceless_larger_queues/resourceless_longer_queues.ipynb"
+    type: grid # A list style instead of a grid
+    sort: "title"
+    grid-columns: 3
+    template: ../vidigi_docs/listing.ejs
+
+  - id: legacy-examples
+    contents:
+      - "../vidigi_docs/adding_vidigi_to_a_simple_simpy_model_hsma_structure_old.qmd"
+      - "../vidigi_docs/populating_event_logs.qmd"
+    type: grid # A list style instead of a grid
+    sort: false
+    grid-columns: 3
+    template: ../vidigi_docs/listing.ejs
+
+---
+
+## SimPy Examples
+
+A collection of models built using the SimPy framework.
+
+::: {#simpy-examples}
+:::
+
+## Ciw Examples
+
+Models built using the Ciw library.
+
+::: {#ciw-examples}
+:::
+
+
+## Advanced Examples
+
+Advanced examples with more complex elements introduced.
+These are primarily written in SimPy, but a lot of the principles could be applied to ciw or other examples too.
+
+::: {#advanced-examples}
+:::
+
+## Legacy Examples
+
+Old examples aimed at those using vidigi 0.0.4 and below.
+
+::: {#legacy-examples}
+:::

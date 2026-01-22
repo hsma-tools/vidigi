@@ -2,6 +2,7 @@
 filters:
   - quarto
   - line-highlight
+image: basic_example_minimal_required_vidigi_functions.png
 ---
 
 # A very simple example with one server - avoiding the vidigi logger class

@@ -5,6 +5,21 @@
 
 ---
 
+```{=html}
+<style>
+table {
+  border: 2px solid #57655E;   /* Outline around the entire table */
+  border-collapse: collapse; /* Makes borders look clean */
+}
+
+table td, table th {
+  border: 1px solid #555;   /* Inner cell borders */
+  padding: 8px;
+}
+
+</style>
+```
+
 Welcome to vidigi - a package for visualising real or simulated pathways.
 
 {{< video videos/vidigi.mp4 >}}
@@ -13,17 +28,47 @@ Primarily developed for healthcare simulation and intended to allow easy integra
 
 With just a minimal set of logs - with helper functions provided to make that easier than ever to integrate into existing SimPy or Ciw simulations - you can start generating and customising your visualisations in minutes.
 
-## Getting Started
+Install vidigi with the command
 
-- Install vidigi from PyPi with the command `pip install vidigi`
-- Read the [introduction](introduction.qmd) to get an overview of the core vidigi concepts
-- Read a step-by-step walkthrough of [adding vidigi to an existing SimPy model](adding_vidigi_to_a_simple_simpy_model_hsma_structure.qmd)
+```bash
+pip install vidigi
+```
 
-## Useful Links
+or
 
-The source code is available on GitHub: [github.com/hsma-tools/vidigi](https://github.com/hsma-tools/vidigi).
+```bash
+conda install vidigi
+```
 
-**Spotted a bug? Or just have a new feature you'd like to suggest? Raise an issue [here](https://github.com/hsma-tools/vidigi/issues/new)**
+```{=html}
+<div class="value-grid-2" style="justify-content:center; text-align:center;">
+  <a href="https://hsma-tools.github.io/vidigi/vidigi_docs/getting_started.html" class="value-box bg-green">
+    <div class="icon"><i class="fa-solid fa-circle-play"></i></div>
+    <div class="value">Getting Started</div>
+    <div class="details">Get an overview of how vidigi works</div>
+  </a>
+    <a href="https://hsma-tools.github.io/vidigi/examples/examples.html" class="value-box bg-green">
+    <div class="icon"><i class="fa-solid fa-lightbulb"></i></div>
+    <div class="value">Examples</div>
+    <div class="details">Take a look at our wide range of example animations using SimPy and Ciw</div>
+  </a>
+</div>
+```
+
+```{=html}
+<div class="value-grid-2" style="justify-content:center; text-align:center;">
+  <a href="https://hsma-tools.github.io/vidigi/examples/feature_breakdowns.html" class="value-box bg-green">
+    <div class="icon"><i class="bi bi-tools"></i></div>
+    <div class="value">Feature Breakdowns</div>
+    <div class="details">View detailed walkthroughs of some vidigi features</div>
+  </a>
+    <a href="https://hsma-tools.github.io/vidigi/reference/index.qmd" class="value-box bg-green">
+    <div class="icon"><i class="fa-solid fa-book-atlas"></i></div>
+    <div class="value">API Reference</div>
+    <div class="details">Browse the full list of vidigi classes and functions</div>
+  </a>
+</div>
+```
 
 
 ## What does the name mean?
@@ -34,20 +79,29 @@ vidigi is the [Esperanto](https://en.wikipedia.org/wiki/Esperanto) ![](Flag_of_E
 
 ## Acknowledgements
 
-Thanks are due to
+Thanks goes to all of the following people ([emoji key](https://allcontributors.org/docs/en/emoji-key)).
 
-- [Dr Daniel Chalk](https://github.com/hsma-chief-elf) for support and SimPy training on the HSMA programme
-- [Professor Tom Monks](https://github.com/TomMonks) for his extensive materials and teaching on the use of simpy in healthcare and his [material on converting code into packages](https://www.pythonhealthdatascience.com/content/03_mgt/03_mgt_front_page.html)
-- [Helena Robinson](https://github.com/helenajr) and Rey Tan for testing, suggestions and bugfinding
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://www.linkedin.com/in/amyheather"><img src="https://avatars.githubusercontent.com/u/92166537?v=4?s=100" width="100px;" alt="Amy Heather"/><br /><sub><b>Amy Heather</b></sub></a><br /><a href="#doc-amyheather" title="Documentation">📖</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="http://hsma.co.uk"><img src="https://avatars.githubusercontent.com/u/29951987?v=4?s=100" width="100px;" alt="Sammi Rosser"/><br /><sub><b>Sammi Rosser</b></sub></a><br /><a href="#code-Bergam0t" title="Code">💻</a> <a href="#doc-Bergam0t" title="Documentation">📖</a> <a href="#test-Bergam0t" title="Tests">⚠️</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/helenajr"><img src="https://avatars.githubusercontent.com/u/63923671?v=4?s=100" width="100px;" alt="Helena Robinson"/><br /><sub><b>Helena Robinson</b></sub></a><br /><a href="#bug-helenajr" title="Bug reports">🐛</a></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
 
 ## Licence
 
 Vidigi is released under the MIT licence.
 
-Copyright 2024 Sammi Rosser
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+{{< include ../LICENSE.md >}}

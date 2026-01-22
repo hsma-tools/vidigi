@@ -44,7 +44,7 @@ bupaR outputs could form part of a verification and validation strategy. They ca
 We will begin in Python, working to add a couple of columns to our vidigi event log to prepare it for use in bupaR.
 
 ```{python}
-from examples.example_2_branching_multistep.ex_2_model_classes import Trial, g
+from ex_2_model_classes import Trial, g
 import pandas as pd
 import os
 
@@ -55,7 +55,7 @@ g.number_of_runs = 1
 :::{.callout-note collapse="true"}
 ### View Imported Code, which has had logging steps added at the appropriate points in the 'model' class
 
-```{.python include="../examples/example_2_branching_multistep/ex_2_model_classes.py"}
+```{.python include="ex_2_model_classes.py"}
 ```
 
 :::
@@ -396,7 +396,7 @@ Vidigi can also more clearly highlight the impact of priority on resources throu
 #| label: rerun-run-python-model
 #| eval: true
 
-from examples.example_2_branching_multistep.ex_2_model_classes import Trial, g
+from ex_2_model_classes import Trial, g
 from vidigi.animation import animate_activity_log
 import pandas as pd
 import plotly.io as pio

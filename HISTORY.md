@@ -1,3 +1,9 @@
+# 1.2.1
+
+- Major redesign of documentation
+- Add `EventLogger.generate_dfg()` method that wraps the various dfg functions for convenient access.
+- Add extra debug print statement to show start time of first animation transformation step.
+
 # 1.2.0
 
 - [EXPERIMENTAL] Add support for creating directly-follows-graphs (process maps) from vidigi event logs

@@ -2,6 +2,7 @@
 filters:
   - quarto
   - line-highlight
+image: basic_example_with_vidigi_logger_helpers_multiple_servers.gif
 ---
 # A slightly more complex example with multiple servers
 

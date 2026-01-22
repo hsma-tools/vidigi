@@ -2,7 +2,8 @@
   "projectName": "vidigi",
   "projectOwner": "hsma-tools",
   "files": [
-    "README.md"
+    "README.md",
+    "vidigi_docs/index.qmd"
   ],
   "commitType": "docs",
   "commitConvention": "angular",
