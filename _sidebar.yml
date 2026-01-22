@@ -46,5 +46,5 @@ website:
       - reference/resources.VidigiPriorityStoreLegacy.qmd
       section: legacy Functions
     id: reference
-    style: docked
+    style: floating
   - id: dummy-sidebar

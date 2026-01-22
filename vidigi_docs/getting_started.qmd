@@ -4,7 +4,6 @@ subtitle: "New to Vidigi? Find your feet here."
 listing:
   - id: getting_started
     contents:
-      - "introduction.qmd"
       - "basic_example_with_vidigi_logger_helpers.qmd"
       - "basic_example_with_vidigi_logger_helpers_multiple_servers.qmd"
       - "basic_example_minimal_required_vidigi_functions.qmd"
@@ -14,10 +13,16 @@ listing:
     sort: false
     grid-columns: 3
     template: listing.ejs
-
+toc: true
 ---
 
-Are you new to vidigi? The examples below will walk you through some very simple examples of adding vidigi to simple simpy and ciw models.
+# Prefer to learn through worked examples?
+
+The examples below will walk you through some very simple examples of adding vidigi to simple simpy and ciw models.
 
 ::: {#getting_started}
 :::
+
+# Just want a high-level overview of the process?
+
+{{< include introduction.qmd >}}

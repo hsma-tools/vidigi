@@ -1,0 +1,45 @@
+# Attribution for models used as examples
+
+Various models written by other people have been used through the development of vidigi for testing and generation of visual examples to share. Details of these models are shared below.
+
+## Emergency department (Treatment Centre) model
+Monks.T, Harper.A, Anagnoustou. A, Allen.M, Taylor.S. (2022) Open Science for Computer Simulation
+
+https://github.com/TomMonks/treatment-centre-sim
+
+The layout code for the emergency department model: https://github.com/hsma-programme/Teaching_DES_Concepts_Streamlit
+
+## The hospital efficiency project model
+Harper, A., & Monks, T. Hospital Efficiency Project Orthopaedic Planning Model Discrete-Event Simulation [Computer software]. https://doi.org/10.5281/zenodo.7951080
+
+https://github.com/AliHarp/HEP/tree/main
+
+## Simulation model with scheduling example
+Monks, T.
+
+https://github.com/health-data-science-OR/stochastic_systems
+
+https://github.com/health-data-science-OR/stochastic_systems/tree/master/labs/simulation/lab5
+
+# Licences for adapted code
+
+Resource and Store code has been adapted from SimPy. Licence code for SimPy is provided below.
+
+The MIT License (MIT)
+
+Copyright (c) 2013 Ontje Lünsdorf and Stefan Scherfke (also see AUTHORS.txt)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+and associated documentation files (the “Software”), to deal in the Software without restriction,
+including without limitation the rights to use, copy, modify, merge, publish, distribute,
+sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or
+substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

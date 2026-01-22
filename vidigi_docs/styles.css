@@ -114,3 +114,89 @@
 .custom-button:active {
   transform: scale(0.98);     /* Slightly reduce size when clicked */
 }
+
+.value-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+/* Collapse to a single column on small screens */
+@media (max-width: 900px) {
+  .value-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+.value-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+/* Collapse to a single column on small screens */
+@media (max-width: 600px) {
+  .value-grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+.value-box-simple {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 1.5rem;
+  border-radius: 10px;
+  color: white;
+  min-height: 180px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  transition: transform 0.2s ease;
+  text-decoration: none;   /* remove underline on the whole card */
+}
+
+.value-box {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 1.5rem;
+  border-radius: 10px;
+  color: white;
+  min-height: 180px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  transition: transform 0.2s ease;
+  text-decoration: none;   /* remove underline on the whole card */
+}
+
+.value-box:hover {
+  transform: translateY(-4px);
+}
+
+.value-box .icon {
+  font-size: 4.5rem;   /* 👈 taille agrandie */
+  line-height: 1;
+  margin-bottom: 0.6rem;
+}
+
+.value-box .title {
+  font-weight: 600;
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+.value-box .value {
+  font-size: 2.2rem;
+  font-weight: bold;
+  margin: 0.2rem 0;
+}
+
+.value-box .details {
+  font-size: 0.9rem;
+  opacity: 0.9;
+  line-height: 1.3;
+}
+
+.bg-green { background-color: #216630; }

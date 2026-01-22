@@ -6,12 +6,25 @@ project:
     - "examples/**/*.ipynb"
     - "!examples/r_simmer/"
 
+# tell quarto to read the generated sidebar
+metadata-files:
+  - _sidebar.yml
+
 website:
   title: vidigi
   description: "Documentation for the vidigi pathway animation package"
-
+  back-to-top-navigation: true
+  page-footer:
+    center: |
+      [![](/vidigi_docs/assets/hsma_logo.png){width=150px}](https://www.hsma.co.uk/)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      [![](/vidigi_docs/assets/nihr_logo.png){width=250px}](https://arc-swp.nihr.ac.uk/)<br/><br/>
+      *This work is independent research supported by the National Institute for Health and Care Research Applied Research Collaboration South West Peninsula.<br/>
+      The views expressed in this publication are those of the author(s) and not necessarily those of the National Institute for Health and Care Research
+      or the Department of Health and Social Care.*
+      <br/><br/>
   # 1. TOP NAVIGATION BAR (High-level splits)
   navbar:
+    search: true
     left:
       - text: "Home"
         href: vidigi_docs/index.qmd
@@ -31,6 +44,7 @@ website:
             text: "Licence"
           - href: vidigi_docs/code_of_conduct.qmd
             text: "Code of Conduct"
+          - href: vidigi_docs/attribution_for_examples.qmd
     right:
       - icon: github
         href: https://github.com/hsma-tools/vidigi
@@ -45,6 +59,8 @@ website:
       match-path: "reference/*" # Matches the quartodoc output dir
       contents:
         - _sidebar.yml # Include the file quartodoc generates
+      style: floating
+
 
 # 3. QUARTODOC CONFIGURATION (Purely for API)
 quartodoc:
@@ -55,7 +71,7 @@ quartodoc:
   # Write the API structure to this file
   sidebar:
     file: "_sidebar.yml"
-    style: docked
+    style: floating
     collapse-level: 3
     # ONLY include the placeholder here. We moved the manual stuff up to `website`
     contents:
