@@ -4,6 +4,23 @@ run-name: Publish docker on GHCR, then render and deploy quarto on GitHub pages
 on:
   push:
     branches: [main]
+    paths:
+      - dev_environment/**
+      - pyproject.toml
+      - Dockerfile
+      - vidigi/**
+      - vidigi_docs/**
+      - examples/**
+      - CONTRIBUTING.md
+      - CODE_OF_CONDUCT.md
+      - LICENSE.md
+      - HISTORY.md
+      - theme-dark.scss
+      - theme-light.scss
+      - vidigi.Rproj
+      - renv/**
+      - .renvignore
+      - _extensions/**
   workflow_dispatch:
     inputs:
       force_docker_build:
@@ -63,7 +80,7 @@ jobs:
           push: true
           build-args: |
             GIT_PAT=${{ secrets.GITHUB_TOKEN }}
-  
+
   build-deploy:
     runs-on: ubuntu-latest
     needs: [publish-docker]
@@ -93,4 +110,3 @@ jobs:
           target: gh-pages
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  
