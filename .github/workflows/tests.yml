@@ -4,6 +4,15 @@ run-name: Run tests
 on:
   push:
     branches: [main]
+    paths:
+        - vidigi/**
+        - dev_environment/**
+        - tests/**
+        - pyproject.toml
+        - tox.ini
+        - .gitignore
+        - Dockerfile
+        - pytest.ini
   workflow_dispatch:
     inputs:
       os:
