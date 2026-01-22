@@ -62,7 +62,7 @@ conda install vidigi
     <div class="value">Feature Breakdowns</div>
     <div class="details">View detailed walkthroughs of some vidigi features</div>
   </a>
-    <a href="https://hsma-tools.github.io/vidigi/reference/index.qmd" class="value-box bg-green">
+    <a href="https://hsma-tools.github.io/vidigi/reference/" class="value-box bg-green">
     <div class="icon"><i class="fa-solid fa-book-atlas"></i></div>
     <div class="value">API Reference</div>
     <div class="details">Browse the full list of vidigi classes and functions</div>
