@@ -1,0 +1,46 @@
+[
+  {
+    "listing": "/vidigi_docs/getting_started.html",
+    "items": [
+      "/vidigi_docs/basic_example_with_vidigi_logger_helpers.html",
+      "/vidigi_docs/basic_example_with_vidigi_logger_helpers_multiple_servers.html",
+      "/vidigi_docs/basic_example_minimal_required_vidigi_functions.html",
+      "/vidigi_docs/adding_vidigi_to_a_simple_simpy_model_hsma_structure.html",
+      "/examples/example_4_ciw/ex_4_ciw.html"
+    ]
+  },
+  {
+    "listing": "/examples/examples.html",
+    "items": [
+      "/examples/example_1_simplest_case/ex_1_simplest_case.html",
+      "/examples/example_2_branching_multistep/ex_2_branching_multistep_case.html",
+      "/examples/example_14_carwash/carwash.html",
+      "/examples/example_7_simplest_case_priority_resource_storewrapper/ex_7_simplest_case_priority_resource.html",
+      "/examples/example_6_simplest_case_storewrapper/ex_6_simplest_case.html",
+      "/examples/example_10_advanced_ciw/ex_10_ciw.html",
+      "/examples/example_4_ciw/ex_4_ciw.html",
+      "/examples/example_13_additional_synchronised_traces_method_1/synchronised_traces.html",
+      "/examples/example_9_wide_resource_spacing_multiple/ex_9_model.html",
+      "/examples/example_8_wide_resource_spacing/ex_8_model.html",
+      "/examples/example_17_resourceless_larger_queues/resourceless_longer_queues.html",
+      "/examples/example_5_simplest_case_wrapped_resources/ex_5_simplest_case_wrapped_resource.html",
+      "/examples/example_11_resourceless_animation/ex_11_resourceless.html",
+      "/examples/example_12_resourceless_with_back_and_forth/ex_12_resourceless_advanced.html",
+      "/examples/example_16_packing_robot/packing_robot.html",
+      "/examples/example_3_simplest_case_priority_resource/ex_3_simplest_case_priority_resource.html",
+      "/examples/example_15_gas_station_refuelling/gas_station.html",
+      "/vidigi_docs/adding_vidigi_to_a_simple_simpy_model_hsma_structure_old.html",
+      "/vidigi_docs/populating_event_logs.html"
+    ]
+  },
+  {
+    "listing": "/examples/feature_breakdowns.html",
+    "items": [
+      "/examples/feat_changing_sim_time/feat_changing_sim_time.html",
+      "/examples/feat_gauge_only_animations/feat_gauge_only_animations.html",
+      "/examples/feat_process_maps/process_maps.html",
+      "/examples/feat_repeating_overlay/feat_repeating_overlay.html",
+      "/examples/feat_vidigi_logging_class/feat_example_logging_class.html"
+    ]
+  }
+]
