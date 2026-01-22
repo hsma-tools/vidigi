@@ -5,7 +5,7 @@ from pydantic import (
     model_validator,
     ValidationInfo,
 )
-from typing import Optional, Any, List, ClassVar, Set
+from typing import Optional, Any, List, ClassVar, Set, Literal, TypeAlias
 import json
 import pandas as pd
 from pathlib import Path
@@ -16,6 +16,13 @@ import warnings
 import inspect
 from vidigi.prep import reshape_for_animations
 import plotly.graph_objects as go
+from vidigi.process_mapping import (
+    discover_dfg,
+    add_sim_timestamp,
+    dfg_to_graphviz,
+    dfg_to_cytoscape,
+    dfg_to_cytoscape_streamlit,
+)
 
 RECOGNIZED_EVENT_TYPES = {
     "arrival_departure",
@@ -23,6 +30,11 @@ RECOGNIZED_EVENT_TYPES = {
     "resource_use_end",
     "queue",
 }
+
+
+DFGType: TypeAlias = Literal[
+    "graphviz-object", "graphviz-image", "cytoscape-jupyter", "cytoscape-streamlit"
+]
 
 
 class BaseEvent(BaseModel):
@@ -40,9 +52,7 @@ class BaseEvent(BaseModel):
 
     event: str = Field(..., description="Name of the specific event.")
 
-    time: float = Field(
-        ..., description="Simulation time or timestamp of event."
-    )
+    time: float = Field(..., description="Simulation time or timestamp of event.")
 
     # Optional commonly-used fields
     pathway: Optional[str] = None
@@ -144,9 +154,7 @@ class BaseEvent(BaseModel):
 
 
 class EventLogger:
-    def __init__(
-        self, event_model=BaseEvent, env: Any = None, run_number: int = None
-    ):
+    def __init__(self, event_model=BaseEvent, env: Any = None, run_number: int = None):
         self.event_model = event_model
         self.env = env  # Optional simulation env with .now
         self.run_number = run_number
@@ -166,9 +174,7 @@ class EventLogger:
                 event_data["run_number"] = self.run_number
 
         try:
-            event = self.event_model.model_validate(
-                event_data, context=context or {}
-            )
+            event = self.event_model.model_validate(event_data, context=context or {})
         except Exception as e:
             raise ValueError(f"Invalid event data: {e}")
 
@@ -199,9 +205,7 @@ class EventLogger:
             "run_number": run_number,
         }
         event_data.update(extra_fields)
-        self.log_event(
-            **{k: v for k, v in event_data.items() if v is not None}
-        )
+        self.log_event(**{k: v for k, v in event_data.items() if v is not None})
 
     def log_departure(
         self,
@@ -224,9 +228,7 @@ class EventLogger:
             "run_number": run_number,
         }
         event_data.update(extra_fields)
-        self.log_event(
-            **{k: v for k, v in event_data.items() if v is not None}
-        )
+        self.log_event(**{k: v for k, v in event_data.items() if v is not None})
 
     def log_queue(
         self,
@@ -250,9 +252,7 @@ class EventLogger:
             "run_number": run_number,
         }
         event_data.update(extra_fields)
-        self.log_event(
-            **{k: v for k, v in event_data.items() if v is not None}
-        )
+        self.log_event(**{k: v for k, v in event_data.items() if v is not None})
 
     def log_resource_use_start(
         self,
@@ -277,9 +277,7 @@ class EventLogger:
             "run_number": run_number,
         }
         event_data.update(extra_fields)
-        self.log_event(
-            **{k: v for k, v in event_data.items() if v is not None}
-        )
+        self.log_event(**{k: v for k, v in event_data.items() if v is not None})
 
     def log_resource_use_end(
         self,
@@ -304,9 +302,7 @@ class EventLogger:
             "run_number": run_number,
         }
         event_data.update(extra_fields)
-        self.log_event(
-            **{k: v for k, v in event_data.items() if v is not None}
-        )
+        self.log_event(**{k: v for k, v in event_data.items() if v is not None})
 
     def log_custom_event(
         self,
@@ -352,9 +348,7 @@ class EventLogger:
         """Return the event log as a pretty JSON string."""
         return json.dumps(self._log, indent=indent)
 
-    def to_json(
-        self, path_or_buffer: str | Path | TextIOBase, indent: int = 2
-    ) -> None:
+    def to_json(self, path_or_buffer: str | Path | TextIOBase, indent: int = 2) -> None:
         """Write the event log to a JSON file or file-like buffer."""
         if not self._log:
             raise ValueError("Event log is empty.")
@@ -434,37 +428,25 @@ class EventLogger:
     def get_events_by_run(self, run_number: Any, as_dataframe: bool = True):
         """Return all events associated with a specific entity_id."""
         filtered = [
-            event
-            for event in self._log
-            if event.get("run_number") == run_number
+            event for event in self._log if event.get("run_number") == run_number
         ]
         return pd.DataFrame(filtered) if as_dataframe else filtered
 
     def get_events_by_entity(self, entity_id: Any, as_dataframe: bool = True):
         """Return all events associated with a specific entity_id."""
+        filtered = [event for event in self._log if event.get("entity_id") == entity_id]
+        return pd.DataFrame(filtered) if as_dataframe else filtered
+
+    def get_events_by_event_type(self, event_type: str, as_dataframe: bool = True):
+        """Return all events of a specific event_type."""
         filtered = [
-            event for event in self._log if event.get("entity_id") == entity_id
+            event for event in self._log if event.get("event_type") == event_type
         ]
         return pd.DataFrame(filtered) if as_dataframe else filtered
 
-    def get_events_by_event_type(
-        self, event_type: str, as_dataframe: bool = True
-    ):
+    def get_events_by_event_name(self, event_name: str, as_dataframe: bool = True):
         """Return all events of a specific event_type."""
-        filtered = [
-            event
-            for event in self._log
-            if event.get("event_type") == event_type
-        ]
-        return pd.DataFrame(filtered) if as_dataframe else filtered
-
-    def get_events_by_event_name(
-        self, event_name: str, as_dataframe: bool = True
-    ):
-        """Return all events of a specific event_type."""
-        filtered = [
-            event for event in self._log if event.get("event") == event_name
-        ]
+        filtered = [event for event in self._log if event.get("event") == event_name]
         return pd.DataFrame(filtered) if as_dataframe else filtered
 
     ####################################################
@@ -560,11 +542,85 @@ class EventLogger:
             marker=dict(size=10, line=dict(width=1, color="DarkSlateGrey"))
         )
 
-        fig.update_yaxes(
-            type="category"
-        )  # treat event_type as categorical on y-axis
+        fig.update_yaxes(type="category")  # treat event_type as categorical on y-axis
 
         fig.show()
+
+    def generate_dfg(
+        self,
+        output_format: DFGType = "graphviz-object",
+        input_time_format="minutes",
+        **kwargs,
+    ):
+        """
+        Generate a Directly-Follows Graph (DFG) from the simulation data.
+
+        This method converts the object to a dataframe, appends simulation
+        timestamps, discovers transitions between activities, and renders
+        the result using the specified visualization backend.
+
+
+
+        Parameters
+        ----------
+        output_format : DFGType, optional
+            The format of the returned graph. Supported values are:
+            - "graphviz-object": Returns a Graphviz object for rendering.
+            - "graphviz-image": Returns a static image of the graph.
+            - "cytoscape-jupyter": Returns an interactive Cytoscape widget
+              for Jupyter notebooks.
+            - "cytoscape-streamlit": Returns a Cytoscape component
+              compatible with Streamlit.
+            By default "graphviz-object".
+        input_time_format : str, optional
+            The time unit used to calculate durations and timestamps,
+            by default "minutes".
+        **kwargs
+            Arbitrary keyword arguments passed to the underlying rendering
+            functions (`dfg_to_graphviz`, `dfg_to_cytoscape`, etc.).
+
+        Returns
+        -------
+        graphviz.Source or ipycytoscape.CytoscapeWidget or bytes
+            The rendered graph object in the format specified by `output_format`.
+
+        Raises
+        ------
+        ValueError
+            If the provided `output_format` is not a valid `DFGType`.
+
+        Notes
+        -----
+        This function is a wrapper. For detailed information on how nodes and
+        edges are calculated, or for specific rendering parameters available
+        in ``**kwargs``, please refer to the documentation for:
+
+        - :func:`discover_dfg`: For edge discovery logic.
+        - :func:`dfg_to_graphviz`: For Graphviz-specific styling kwargs.
+        - :func:`dfg_to_cytoscape`: For jupyter cytoscape styling kwargs.
+        - :func:`dfg_to_cytoscape_streamlit`: For streamlit cytoscape styling kwargs.
+
+        """
+        df = self.to_dataframe()
+        df = add_sim_timestamp(df, time_unit=input_time_format)
+        nodes, edges = discover_dfg(df, time_unit=input_time_format)
+
+        if output_format == "graphviz-object":
+            return dfg_to_graphviz(nodes, edges, time_unit=input_time_format, **kwargs)
+        elif output_format == "graphviz-image":
+            return dfg_to_graphviz(
+                nodes, edges, return_image=True, time_unit=input_time_format, **kwargs
+            )
+        elif output_format == "cytoscape-jupyter":
+            return dfg_to_cytoscape(nodes, edges, time_unit=input_time_format, **kwargs)
+        elif output_format == "cytoscape-streamlit":
+            return dfg_to_cytoscape_streamlit(
+                nodes, edges, time_unit=input_time_format, **kwargs
+            )
+        else:
+            raise ValueError(
+                f"Invalid output format passed. Valid formats are {DFGType}."
+            )
 
 
 class TrialLogger:
@@ -608,10 +664,7 @@ class TrialLogger:
         self._run_index = {r["run_id"]: r for r in self._event_logs}
 
         self._trial_dataframe = pd.concat(
-            [
-                pd.DataFrame(log["run_data"].to_dataframe())
-                for log in self._event_logs
-            ]
+            [pd.DataFrame(log["run_data"].to_dataframe()) for log in self._event_logs]
         )
 
     def add_log(self, event_log: EventLogger):
@@ -732,9 +785,7 @@ class TrialLogger:
             columns="event", index=["entity_id", "run_number"], values="time"
         ).reset_index()[["entity_id", "run_number", first_event, second_event]]
 
-        pivoted_df["duration"] = (
-            pivoted_df[second_event] - pivoted_df[first_event]
-        )
+        pivoted_df["duration"] = pivoted_df[second_event] - pivoted_df[first_event]
 
         series = pivoted_df["duration"]
 
@@ -903,9 +954,7 @@ class TrialLogger:
         if interactive:
             return px.bar(results_df, x="label", y="value", **kwargs)
         else:
-            print(
-                "Static plotting not currently supported - please use 'interactive'"
-            )
+            print("Static plotting not currently supported - please use 'interactive'")
 
     def plot_queue_size(
         self,
@@ -981,15 +1030,13 @@ class TrialLogger:
                 limit_duration=limit_duration,
             )
             df = df[df["event"].isin(event_list)]
-            results.append(
-                df.groupby(["run_number", "event", "snapshot_time"]).size()
-            )
+            results.append(df.groupby(["run_number", "event", "snapshot_time"]).size())
 
         event_counts = pd.concat(results).reset_index(name="count")
 
-        mean_df = event_counts.groupby(
-            ["snapshot_time", "event"], as_index=False
-        )["count"].mean()
+        mean_df = event_counts.groupby(["snapshot_time", "event"], as_index=False)[
+            "count"
+        ].mean()
 
         if len(event_list) > 1:
             faceting_variable = "event"
@@ -1068,13 +1115,9 @@ class TrialLogger:
                 if not shared_y_axis:
                     fig.update_yaxes(matches=None)
 
-                fig.for_each_annotation(
-                    lambda a: a.update(text=a.text.split("=")[-1])
-                )
+                fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
 
                 return fig
 
         else:
-            print(
-                "Static plotting not currently supported - please use 'interactive'"
-            )
+            print("Static plotting not currently supported - please use 'interactive'")
