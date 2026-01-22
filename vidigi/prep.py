@@ -474,6 +474,11 @@ def generate_animation_df(
             stacklevel=3,
         )
 
+    if debug_mode:
+        print(
+            f"Placement dataframe started construction at {time.strftime('%H:%M:%S', time.localtime())}"
+        )
+
     # Filter to only a single replication
 
     # TODO: Write a test  to ensure that no patient ID appears in multiple places at a single time unit
