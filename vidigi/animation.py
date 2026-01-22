@@ -4,10 +4,8 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from vidigi.prep import reshape_for_animations, generate_animation_df
-from vidigi.utils import html_color_to_rgba, _enforce_int_params
+from vidigi.utils import _enforce_int_params
 import numpy as np
-from copy import deepcopy
-from collections import defaultdict
 from typing import Optional
 
 
@@ -54,35 +52,41 @@ def generate_animation(
     """
     Generate an animated visualization of patient flow through a system.
 
-    This function creates an interactive Plotly animation based on patient data and event positions.
+    This function creates an interactive Plotly animation based on patient data
+    and event positions.
 
     Parameters
     ----------
     full_entity_df_plus_pos : pd.DataFrame
-        DataFrame containing entity data with position information.
-        This will be the output of passing an event log through the reshape_for_animations()
-        and generate_animation_df() functions
+        DataFrame containing entity data with position information. This will
+        be the output of passing an event log through the
+        reshape_for_animations() and generate_animation_df() functions.
     event_position_df : pd.DataFrame
         DataFrame specifying the positions of different events.
     scenario : object, optional
-        Object containing attributes for resource counts at different steps.
-        time_col_name : str, default="time"
-        Name of the column in `event_log` that contains the timestamp of each event.
-        Timestamps should represent the number of time units since the simulation began.
-    entity_col_name : str, default="entity_id"
-        Name of the column in `event_log` that contains the unique identifier for each entity
-        (e.g., "entity_id", "entity", "patient", "patient_id", "customer", "ID").
-    event_col_name : str, default="event"
-        Name of the column in `event_log` that specifies the actual event that occurred.
-    event_type_col_name : str, default="event_type"
-        Name of the column in `event_log` that specifies the category of the event.
-        Supported event types include 'arrival_departure', 'resource_use',
-        'resource_use_end', and 'queue'.
-    resource_col_name : str, default="resource_id"
-        Name of the column for the resource identifier. Used for 'resource_use' events.
-    simulation_time_unit: string, optional
-        Time unit used within the simulation (default is minutes).
-        Possible values are 'seconds', 'minutes', 'hours', 'days', 'weeks', 'years'
+        Object containing attributes for resource counts at different steps
+        (default is None).
+    time_col_name : str, optional
+        Name of the column in `event_log` that contains the timestamp of each
+        event (default is "time"). Timestamps should represent the number of
+        time units since the simulation began.
+    entity_col_name : str, optional
+        Name of the column in `event_log` that contains the unique identifier
+        for each entity (e.g., "entity_id", "entity", "patient", "patient_id",
+        "customer", "ID") (default is "entity_id").
+    event_col_name : str, optional
+        Name of the column in `event_log` that specifies the actual event that
+        occurred (default is "event").
+    event_type_col_name : str, optional
+        Name of the column in `event_log` that specifies the category of the
+        event (default is "event_type"). Supported event types include
+        'arrival_departure', 'resource_use', 'resource_use_end', and 'queue'.
+    resource_col_name : str, optional
+        Name of the column for the resource identifier (default is
+        "resource_id"). Used for 'resource_use' events.
+    simulation_time_unit: str, optional
+        Time unit used within the simulation (default is "minutes"). Possible
+        values are 'seconds', 'minutes', 'hours', 'days', 'weeks', 'years'.
     plotly_height : int, optional
         Height of the Plotly figure in pixels (default is 900).
     plotly_width : int, optional
@@ -90,7 +94,8 @@ def generate_animation(
     include_play_button : bool, optional
         Whether to include a play button in the animation (default is True).
     add_background_image : str, optional
-        Path to a background image file to add to the animation (default is None).
+        Path to a background image file to add to the animation (default is
+        None).
     display_stage_labels : bool, optional
         Whether to display labels for each stage (default is True).
     entity_icon_size : int, optional
@@ -98,23 +103,21 @@ def generate_animation(
     text_size : int, optional
         Size of text labels in the animation (default is 24).
     hover_text_entity: str, optional
-        String to define the hover text.
-        If None, hover on entity icons will be disabled.
-        Default will display the entity ID, their current time in the system, etc.
-        Must be provided in the format "%{some_column_name} some text" etc.
+        String to define the hover text. If None, hover on entity icons will be
+        disabled. Default will display the entity ID, their current time in the
+        system, etc. Must be provided in the format
+        "%{some_column_name} some text" etc.
         See https://plotly.com/python/hover-text-and-formatting/#customizing-hover-text-with-a-hovertemplate
-        for full details.
-        All columns present in the initial dataframe are available to access by referencing
-        their name in the format "%{some_column_name}"
+        for full details. All columns present in the initial dataframe are
+        available to access by referencing their name in the format
+        "%{some_column_name}"
     custom_hover_data: list of str, optional
-        A list of column names, which must be defined as strings.
-        If provided, becomes a list of additional columns that can be accessed as part of the string
-        defined within hover_text_entity.
-        customdata[0] is the first column specified
-        customdata[1] is the second
-        etc.
-        So e.g. if you pass in ["widgets_created_cumulative"] as your custom_hover_data,
-        your hover_text_entity may be "Widgets created so far: %{customdata[0]}"
+        A list of column names, which must be defined as strings. If provided,
+        becomes a list of additional columns that can be accessed as part of
+        the string defined within hover_text_entity. customdata[0] is the first
+        column specified customdata[1] is the second etc. So e.g. if you pass
+        in ["widgets_created_cumulative"] as your custom_hover_data, your
+        hover_text_entity may be "Widgets created so far: %{customdata[0]}".
     resource_icon_size : int, optional
         Size of resource icons in the animation (default is 24).
     override_x_max : int, optional
@@ -122,42 +125,53 @@ def generate_animation(
     override_y_max : int, optional
         Override the maximum y-coordinate (default is None).
     time_display_units : str, optional
-        Format for displaying time on the animation timeline. This affects how simulation time is
-        converted into human-readable dates or clock formats. If `None` (default), the raw simulation
-        time is used.
+        Format for displaying time on the animation timeline. This affects how
+        simulation time is converted into human-readable dates or clock
+        formats. If `None` (default), the raw simulation time is used.
+
         Predefined options:
-        'dhms' : Day Month Year + HH:MM:SS (e.g., "06 June 2025 14:23:45")
-        'dhms_ampm' : Same as 'dhms', but in 12-hour format with AM/PM (e.g., "06 June 2025 02:23:45 PM")
-        'dhm'  : Day Month Year + HH:MM (e.g., "06 June 2025 14:23")
-        'dhm_ampm' : 12-hour format with AM/PM (e.g., "06 June 2025 02:23 PM")
-        'dh'   : Day Month Year + HH (e.g., "06 June 2025 14")
-        'dh_ampm' : 12-hour format with AM/PM (e.g., "06 June 2025 02 PM")
-        'd'    : Full weekday and date (e.g., "Friday 06 June 2025")
-        'm'    : Month and year (e.g., "June 2025")
-        'y'    : Year only (e.g., "2025")
-        'day_clock' or 'simulation_day_clock': Show simulation-relative day and time (e.g., "Simulation Day 3\n14:15")
-        'day_clock_ampm' or 'simulation_day_clock_ampm': Same as above, but time is shown in 12-hour clock with AM/PM (e.g., "Simulation Day 3\n02:15 PM")
-        Alternatively, you can supply a custom [strftime](https://strftime.org/) format string
-        (e.g., '%Y-%m-%d %H') to control the display manually.
+
+        - 'dhms' : Day Month Year + HH:MM:SS (e.g., "06 June 2025 14:23:45")
+        - 'dhms_ampm' : Same as 'dhms', but in 12-hour format with AM/PM
+          (e.g., "06 June 2025 02:23:45 PM")
+        - 'dhm' : Day Month Year + HH:MM (e.g., "06 June 2025 14:23")
+        - 'dhm_ampm' : 12-hour format with AM/PM
+        - (e.g., "06 June 2025 02:23 PM")
+        - 'dh' : Day Month Year + HH (e.g., "06 June 2025 14")
+        - 'dh_ampm' : 12-hour format with AM/PM (e.g., "06 June 2025 02 PM")
+        - 'd' : Full weekday and date (e.g., "Friday 06 June 2025")
+        - 'm' : Month and year (e.g., "June 2025")
+        - 'y' : Year only (e.g., "2025")
+        - 'day_clock' or 'simulation_day_clock' : Show simulation-relative day
+           and time (e.g., "Simulation Day 3 14:15")
+        - 'day_clock_ampm' or 'simulation_day_clock_ampm' : Same as above, but
+           time is shown in 12-hour clock with AM/PM
+           (e.g., "Simulation Day 3 02:15 PM")
+
+        Alternatively, you can supply a custom strftime (https://strftime.org/)
+        format string (e.g., '%Y-%m-%d %H') to control the display manually.
     start_date : str, optional
-        Start date for the animation in 'YYYY-MM-DD' format. Only used when time_display_units is 'd' or 'dhm' (default is None).
+        Start date for the animation in 'YYYY-MM-DD' format. Only used when
+        time_display_units is 'd' or 'dhm' (default is None).
     start_time : str, optional
-        Start date for the animation in 'HH:MM:SS' format. Only used when time_display_units is 'd' or 'dhm' (default is None).
+        Start time for the animation in 'HH:MM:SS' format. Only used when
+        time_display_units is 'd' or 'dhm' (default is None).
     resource_opacity : float, optional
         Opacity of resource icons (default is 0.8).
     custom_resource_icon : str, optional
         Custom icon to use for resources (default is None).
     wrap_resources_at : int, optional
-        Number of resources to show before wrapping to a new row (default is 20).
-        If this has been set elsewhere, it is also important to set it in this function to ensure
-        the visual indicators of the resources wrap in the same way the entities using those
-        resources do.
+        Number of resources to show before wrapping to a new row (default is
+        20). If this has been set elsewhere, it is also important to set it in
+        this function to ensure the visual indicators of the resources wrap in
+        the same way the entities using those resources do.
     gap_between_resources : int, optional
         Spacing between resources in pixels (default is 10).
     gap_between_resource_rows : int, optional
         Vertical spacing between rows in pixels (default is 30).
     setup_mode : bool, optional
-        Whether to run in setup mode, showing grid and tick marks (default is False).
+        Whether to run in setup mode, showing grid and tick marks (default is
+        False).
     frame_duration : int, optional
         Duration of each frame in milliseconds (default is 400).
     frame_transition_duration : int, optional
@@ -165,11 +179,18 @@ def generate_animation(
     debug_mode : bool, optional
         Whether to run in debug mode with additional output (default is False).
     background_image_opacity : float, optional
-        Opacity (0 is transparent, to 1, completely opaque) of the provided background image
+        Opacity (0 is transparent, to 1, completely opaque) of the provided
+        background image
+    overflow_text_color : str, optional
+        Color of the text displayed on top of entity icons in the animation
+        (default is black).
+    stage_label_text_colour : str, optional
+        Color of the stage label text added next to each event position when
+        display_stage_labels is True (default is black).
     backend: str, optional
-        EXPERIMENTAL. Whether to use the plotly express backend for the initial plot (default),
-        or the experimental plotly go backend. The go approach is currently unstable and much slower.
-        Use at your own risk.
+        EXPERIMENTAL. Whether to use the plotly express backend for the initial
+        plot (default), or the experimental plotly go backend. The go approach
+        is currently unstable and much slower. Use at your own risk.
 
     Returns
     -------
@@ -180,14 +201,16 @@ def generate_animation(
     -----
     - The function uses Plotly Express to create an animated scatter plot.
     - Time can be displayed as actual dates or as model time units.
-    - The animation supports customization of icon sizes, resource representation, and animation speed.
+    - The animation supports customization of icon sizes, resource
+      representation, and animation speed.
     - A background image can be added to provide context for the patient flow.
-    - If `time_display_units` is specified, the simulation time is converted into real-world
-      datetimes using the `simulation_time_unit` and optionally `start_date` and `start_time`.
-    - If `start_date` and/or `start_time` are not provided, a default offset from today's date
-      is used.
-    - The `snapshot_time` column is transformed to datetime strings, and a `snapshot_time_display`
-      column is created for visual display.
+    - If `time_display_units` is specified, the simulation time is converted
+      into real-world datetimes using the `simulation_time_unit` and optionally
+      `start_date` and `start_time`.
+    - If `start_date` and/or `start_time` are not provided, a default offset
+      from today's date is used.
+    - The `snapshot_time` column is transformed to datetime strings, and a
+      `snapshot_time_display` column is created for visual display.
     """
     full_entity_df_plus_pos_copy = full_entity_df_plus_pos.copy()
 
@@ -201,14 +224,15 @@ def generate_animation(
     else:
         y_max = event_position_df["y"].max() * 1.1
 
-    # If we're displaying time as a clock instead of as units of whatever time our model
-    # is working in, create a snapshot_time_display column that will display as a psuedo datetime
+    # If we're displaying time as a clock instead of as units of whatever time
+    # our model is working in, create a snapshot_time_display column that will
+    # display as a pseudo datetime
 
-    # We need to keep the original snapshot time and exact time columns in existance because they're
-    # important for sorting
-    full_entity_df_plus_pos_copy["snapshot_time_base"] = full_entity_df_plus_pos_copy[
-        "snapshot_time"
-    ]
+    # We need to keep the original snapshot time and exact time columns in
+    # existence because they're important for sorting
+    full_entity_df_plus_pos_copy["snapshot_time_base"] = (
+        full_entity_df_plus_pos_copy["snapshot_time"]
+    )
 
     # Assuming time display units are set to something other
 
@@ -242,7 +266,9 @@ def generate_animation(
             )
 
         elif start_date is not None and start_time is None:
-            full_entity_df_plus_pos_copy["snapshot_time"] = dt.datetime.strptime(
+            full_entity_df_plus_pos_copy[
+                "snapshot_time"
+            ] = dt.datetime.strptime(
                 start_date, "%Y-%m-%d"
             ) + pd.TimedeltaIndex(
                 full_entity_df_plus_pos_copy["snapshot_time"], unit=unit
@@ -263,7 +289,8 @@ def generate_animation(
                     + pd.DateOffset(days=165)
                     + start_time_time_delta
                     + pd.TimedeltaIndex(
-                        full_entity_df_plus_pos_copy["snapshot_time"], unit=unit
+                        full_entity_df_plus_pos_copy["snapshot_time"],
+                        unit=unit,
                     )
                 )
 
@@ -272,7 +299,8 @@ def generate_animation(
                     dt.datetime.strptime(start_date, "%Y-%m-%d")
                     + start_time_time_delta
                     + pd.TimedeltaIndex(
-                        full_entity_df_plus_pos_copy["snapshot_time"], unit=unit
+                        full_entity_df_plus_pos_copy["snapshot_time"],
+                        unit=unit,
                     )
                 )
 
@@ -375,7 +403,9 @@ def generate_animation(
                 delta = t - pd.Timestamp(t.date())
                 sim_day = (
                     t.normalize()
-                    - full_entity_df_plus_pos_copy["snapshot_time"].min().normalize()
+                    - full_entity_df_plus_pos_copy["snapshot_time"]
+                    .min()
+                    .normalize()
                 ).days + 1
                 time_fmt = "%I:%M %p" if use_ampm else "%H:%M"
                 return f"Simulation Day {sim_day}\n{t.strftime(time_fmt)}"
@@ -412,17 +442,18 @@ def generate_animation(
 
     # We are effectively making use of an animated plotly express scatterplot
     # to do all of the heavy lifting
-    # Because of the way plots animate in this, it deals with all of the difficulty
-    # of paths between individual positions - so we just have to tell it where to put
-    # people at each defined step of the process, and the scattergraph will move them
+    # Because of the way plots animate in this, it deals with all of the
+    # difficulty of paths between individual positions - so we just have to
+    # tell it where to put people at each defined step of the process, and the
+    # scattergraph will move them
     if custom_hover_data:
         hovers = custom_hover_data.append(resource_col_name)
 
     else:
         full_entity_df_plus_pos_copy["event_start"] = (
-            full_entity_df_plus_pos_copy.groupby([entity_col_name, event_col_name])[
-                time_col_name
-            ].transform("min")
+            full_entity_df_plus_pos_copy.groupby(
+                [entity_col_name, event_col_name]
+            )[time_col_name].transform("min")
         )
         full_entity_df_plus_pos_copy["time_in_event"] = (
             full_entity_df_plus_pos_copy["snapshot_time_base"]
@@ -432,20 +463,26 @@ def generate_animation(
         if "additional" in full_entity_df_plus_pos_copy:
             full_entity_df_plus_pos_copy["queue_position"] = (
                 full_entity_df_plus_pos_copy.apply(
-                    lambda x: ""
-                    if x["additional"] > 1.0
-                    else f"<br>Queue Position: {x['rank']:.0f}"
-                    if x[event_type_col_name] == "queue"
-                    else "",
+                    lambda x: (
+                        ""
+                        if x["additional"] > 1.0
+                        else (
+                            f"<br>Queue Position: {x['rank']:.0f}"
+                            if x[event_type_col_name] == "queue"
+                            else ""
+                        )
+                    ),
                     axis=1,
                 )
             )
         else:
             full_entity_df_plus_pos_copy["queue_position"] = (
                 full_entity_df_plus_pos_copy.apply(
-                    lambda x: f"<br>Queue Position: {x['rank']:.0f}"
-                    if x[event_type_col_name] == "queue"
-                    else "",
+                    lambda x: (
+                        f"<br>Queue Position: {x['rank']:.0f}"
+                        if x[event_type_col_name] == "queue"
+                        else ""
+                    ),
                     axis=1,
                 )
             )
@@ -453,21 +490,27 @@ def generate_animation(
         if "additional" in full_entity_df_plus_pos_copy:
             full_entity_df_plus_pos_copy["entity_display_hover"] = (
                 full_entity_df_plus_pos_copy.apply(
-                    lambda x: "N/A" if x["additional"] > 1.0 else x[entity_col_name],
+                    lambda x: (
+                        "N/A" if x["additional"] > 1.0 else x[entity_col_name]
+                    ),
                     axis=1,
                 )
             )
 
             full_entity_df_plus_pos_copy["time_hover"] = (
                 full_entity_df_plus_pos_copy.apply(
-                    lambda x: "N/A" if x["additional"] > 1.0 else x[time_col_name],
+                    lambda x: (
+                        "N/A" if x["additional"] > 1.0 else x[time_col_name]
+                    ),
                     axis=1,
                 )
             )
 
             full_entity_df_plus_pos_copy["time_in_event"] = (
                 full_entity_df_plus_pos_copy.apply(
-                    lambda x: "N/A" if x["additional"] > 1.0 else x["time_in_event"],
+                    lambda x: (
+                        "N/A" if x["additional"] > 1.0 else x["time_in_event"]
+                    ),
                     axis=1,
                 )
             )
@@ -560,9 +603,16 @@ def generate_animation(
                     trace.hovertemplate = hover_text
 
     # EXPERIMENTAL
-    elif backend in ["go", "graph objects", "plotly graph objects", "plotly go"]:
+    elif backend in [
+        "go",
+        "graph objects",
+        "plotly graph objects",
+        "plotly go",
+    ]:
         # Get sorted lists of unique entities and animation frames
-        unique_entities = sorted(full_entity_df_plus_pos_copy[entity_col_name].unique())
+        unique_entities = sorted(
+            full_entity_df_plus_pos_copy[entity_col_name].unique()
+        )
         unique_frames = sorted(
             full_entity_df_plus_pos_copy["snapshot_time_display"].unique()
         )
@@ -571,7 +621,8 @@ def generate_animation(
         frames_data = {}
         for frame_time in unique_frames:
             frame_df = full_entity_df_plus_pos_copy[
-                full_entity_df_plus_pos_copy["snapshot_time_display"] == frame_time
+                full_entity_df_plus_pos_copy["snapshot_time_display"]
+                == frame_time
             ]
             frames_data[frame_time] = frame_df.groupby(entity_col_name)
 
@@ -596,7 +647,9 @@ def generate_animation(
                         name=entity,
                         text=entity_df["icon"],
                         mode="text",
-                        textfont=dict(size=16, color=f"rgba(0, 0, 0, {text_opacity})"),
+                        textfont=dict(
+                            size=16, color=f"rgba(0, 0, 0, {text_opacity})"
+                        ),
                         hovertemplate=(
                             f"<b>{entity_df[event_col_name].iloc[0]}</b><br><br>"
                             "x: %{x}<br>"
@@ -616,7 +669,9 @@ def generate_animation(
                         name=entity,
                         text=[""],
                         mode="text",
-                        textfont=dict(size=16, color=f"rgba(0, 0, 0, {text_opacity})"),
+                        textfont=dict(
+                            size=16, color=f"rgba(0, 0, 0, {text_opacity})"
+                        ),
                         hovertemplate="<extra></extra>",
                         customdata=[[""]],
                     )
@@ -627,7 +682,8 @@ def generate_animation(
 
         # Pre-calculate text opacities for all entities
         text_opacities = {
-            entity: 1.0 if entity == "Patient_0" else 0.5 for entity in unique_entities
+            entity: 1.0 if entity == "Patient_0" else 0.5
+            for entity in unique_entities
         }
 
         for frame_time in unique_frames:
@@ -703,7 +759,10 @@ def generate_animation(
                             "method": "animate",
                             "args": [
                                 None,
-                                {"frame": {"duration": 0}, "mode": "immediate"},
+                                {
+                                    "frame": {"duration": 0},
+                                    "mode": "immediate",
+                                },
                             ],
                         },
                         {
@@ -807,13 +866,14 @@ def generate_animation(
 
         # events_with_resources = events_with_resources.assign(resource_id=range(len(events_with_resources)))
         # After exploding
-        events_with_resources[resource_col_name] = events_with_resources.groupby(
-            [event_col_name]
-        ).cumcount()
+        events_with_resources[resource_col_name] = (
+            events_with_resources.groupby([event_col_name]).cumcount()
+        )
 
         if wrap_resources_at is not None:
             events_with_resources["row"] = np.floor(
-                (events_with_resources[resource_col_name]) / (wrap_resources_at)
+                (events_with_resources[resource_col_name])
+                / (wrap_resources_at)
             )
 
             events_with_resources["x_final"] = (
@@ -843,7 +903,10 @@ def generate_animation(
                     x=events_with_resources["x_final"].to_list(),
                     # Place these slightly below the y position for each entity
                     # that will be using the resource
-                    y=[i - 10 for i in events_with_resources["y_final"].to_list()],
+                    y=[
+                        i - 10
+                        for i in events_with_resources["y_final"].to_list()
+                    ],
                     mode="markers+text",
                     text=custom_resource_icon,
                     # Make the actual marker invisible
@@ -859,7 +922,10 @@ def generate_animation(
                     x=events_with_resources["x_final"].to_list(),
                     # Place these slightly below the y position for each entity
                     # that will be using the resource
-                    y=[i - 10 for i in events_with_resources["y_final"].to_list()],
+                    y=[
+                        i - 10
+                        for i in events_with_resources["y_final"].to_list()
+                    ],
                     mode="markers",
                     # Define what the marker will look like
                     marker=dict(color="LightSkyBlue", size=15),
@@ -937,16 +1003,16 @@ def generate_animation(
 
     # Adjust speed of animation
     try:
-        fig.layout.updatemenus[0].buttons[0].args[1]["frame"]["duration"] = (
-            frame_duration
-        )
+        fig.layout.updatemenus[0].buttons[0].args[1]["frame"][
+            "duration"
+        ] = frame_duration
     except IndexError:
         print("Error changing frame duration")
 
     try:
-        fig.layout.updatemenus[0].buttons[0].args[1]["transition"]["duration"] = (
-            frame_transition_duration
-        )
+        fig.layout.updatemenus[0].buttons[0].args[1]["transition"][
+            "duration"
+        ] = frame_transition_duration
     except IndexError:
         print("Error changing frame transition duration")
 
@@ -1012,82 +1078,92 @@ def animate_activity_log(
     """
     Generate an animated visualization of patient flow through a system.
 
-    This function processes event log data, adds positional information, and creates
-    an interactive Plotly animation representing patient movement through various stages.
+    This function processes event log data, adds positional information, and
+    creates an interactive Plotly animation representing patient movement
+    through various stages.
 
     Parameters
     ----------
     event_log : pd.DataFrame
         The log of events to be animated, containing patient activities.
     event_position_df : pd.DataFrame
-        DataFrame specifying the positions of different events, with columns 'event', 'x', and 'y'.
+        DataFrame specifying the positions of different events, with columns
+        'event', 'x', and 'y'.
     scenario : object
         An object containing attributes for resource counts at different steps.
-        time_col_name : str, default="time"
-        Name of the column in `event_log` that contains the timestamp of each event.
-        Timestamps should represent the number of time units since the simulation began.
+    time_col_name : str, default="time"
+        Name of the column in `event_log` that contains the timestamp of each
+        event. Timestamps should represent the number of time units since the
+        simulation began.
     entity_col_name : str, default="entity_id"
-        Name of the column in `event_log` that contains the unique identifier for each entity
-        (e.g., "entity_id",  "entity", "patient", "patient_id", "customer", "ID").
+        Name of the column in `event_log` that contains the unique identifier
+        for each entity (e.g., "entity_id",  "entity", "patient", "patient_id",
+        "customer", "ID").
     event_type_col_name : str, default="event_type"
-        Name of the column in `event_log` that specifies the category of the event.
-        Supported event types include 'arrival_departure', 'resource_use',
-        'resource_use_end', and 'queue'.
+        Name of the column in `event_log` that specifies the category of the
+        event. Supported event types include 'arrival_departure',
+        'resource_use', 'resource_use_end', and 'queue'.
     event_col_name : str, default="event"
-        Name of the column in `event_log` that specifies the actual event that occurred.
+        Name of the column in `event_log` that specifies the actual event that
+        occurred.
     pathway_col_name : str, optional, default=None
-        Name of the column in `event_log` that identifies the specific pathway or
-        process flow the entity is following. If `None`, it is assumed that pathway
-        information is not present.
+        Name of the column in `event_log` that identifies the specific pathway
+        or process flow the entity is following. If `None`, it is assumed that
+        pathway information is not present.
     resource_col_name : str, default="resource_id"
-        Name of the column for the resource identifier. Used for 'resource_use' events.
+        Name of the column for the resource identifier. Used for 'resource_use'
+        events.
     simulation_time_unit: string, optional
-        Time unit used within the simulation (default is minutes).
-        Possible values are 'seconds', 'minutes', 'hours', 'days', 'weeks', 'years'
+        Time unit used within the simulation (default is minutes). Possible
+        values are 'seconds', 'minutes', 'hours', 'days', 'weeks', 'years'
     every_x_time_units : int, optional
         Time interval between animation frames in minutes (default is 10).
     wrap_queues_at : int, optional
-        Maximum number of entities to display in a queue before wrapping to a new row (default is 20).
+        Maximum number of entities to display in a queue before wrapping to a
+        new row (default is 20).
     wrap_resources_at : int, optional
-        Number of resources to show before wrapping to a new row (default is 20).
+        Number of resources to show before wrapping to a new row (default is
+        20).
     step_snapshot_max : int, optional
-        Maximum number of patients to show in each snapshot per event (default is 50).
+        Maximum number of patients to show in each snapshot per event (default
+        is 50).
     limit_duration : int, optional
-        Maximum duration to animate in minutes (default is 10 days or 14400 minutes).
+        Maximum duration to animate in minutes (default is 10 days or 14400
+        minutes).
     plotly_height : int, optional
         Height of the Plotly figure in pixels (default is 900).
     plotly_width : int, optional
-        Width of the Plotly figure in pixels (default is None, which auto-adjusts).
+        Width of the Plotly figure in pixels (default is None, which
+        auto-adjusts).
     include_play_button : bool, optional
         Whether to include a play button in the animation (default is True).
     add_background_image : str, optional
-        Path to a background image file to add to the animation (default is None).
+        Path to a background image file to add to the animation (default is
+        None).
     display_stage_labels : bool, optional
         Whether to display labels for each stage (default is True).
     entity_icon_size : int, optional
         Size of entity icons in the animation (default is 24).
     text_size : int, optional
         Size of text labels in the animation (default is 24).
-    hover_text_entity: str, optional
-        String to define the hover text.
-        If None, hover on entity icons will be disabled.
-        Default will display the entity ID, their current time in the system, etc.
-        Must be provided in the format "%{some_column_name} some text" etc.
-        See https://plotly.com/python/hover-text-and-formatting/#customizing-hover-text-with-a-hovertemplate
-        for full details.
-        All columns present in the initial dataframe are available to access by referencing
-        their name in the format "%{some_column_name}"
-    custom_hover_data: list of str, optional
-        A list of column names, which must be defined as strings.
-        If provided, becomes a list of additional columns that can be accessed as part of the string
-        defined within hover_text_entity.
-        customdata[0] is the first column specified
-        customdata[1] is the second
-        etc.
-        So e.g. if you pass in ["widgets_created_cumulative"] as your custom_hover_data,
-        your hover_text_entity may be "Widgets created so far: %{customdata[0]}"
     resource_icon_size : int, optional
         Size of resource icons in the animation (default is 24).
+    hover_text_entity: str, optional
+        String to define the hover text. If None, hover on entity icons will
+        be disabled. Default will display the entity ID, their current time in
+        the system, etc. Must be provided in the format
+        "%{some_column_name} some text" etc.
+        See https://plotly.com/python/hover-text-and-formatting/#customizing-hover-text-with-a-hovertemplate
+        for full details. All columns present in the initial dataframe are
+        available to access by referencing their name in the format
+        "%{some_column_name}"
+    custom_hover_data: list of str, optional
+        A list of column names, which must be defined as strings. If provided,
+        becomes a list of additional columns that can be accessed as part of
+        the string defined within hover_text_entity. customdata[0] is the first
+        column specified, customdata[1] is the second, etc. So e.g. if you pass
+        in ["widgets_created_cumulative"] as your custom_hover_data, your
+        hover_text_entity may be "Widgets created so far: %{customdata[0]}".
     gap_between_entities : int, optional
         Horizontal spacing between entities in pixels (default is 10).
     gap_between_queue_rows : int, optional
@@ -1104,26 +1180,41 @@ def animate_activity_log(
         Override the maximum x-coordinate of the plot (default is None).
     override_y_max : int, optional
         Override the maximum y-coordinate of the plot (default is None).
+    start_date : str, optional
+        Start date for the animation in 'YYYY-MM-DD' format. Only used when
+        time_display_units is 'd' or 'dhm' (default is None).
+    start_time : str, optional
+        Start time for the animation in 'HH:MM:SS' format. Only used when
+        time_display_units is 'd' or 'dhm' (default is None).
     time_display_units : str, optional
-        Format for displaying time on the animation timeline. This affects how simulation time is
-        converted into human-readable dates or clock formats. If `None` (default), the raw simulation
-        time is used.
+        Format for displaying time on the animation timeline. This affects how
+        simulation time is converted into human-readable dates or clock
+        formats. If `None` (default), the raw simulation time is used.
+
         Predefined options:
-        'dhms' : Day Month Year + HH:MM:SS (e.g., "06 June 2025 14:23:45")
-        'dhms_ampm' : Same as 'dhms', but in 12-hour format with AM/PM (e.g., "06 June 2025 02:23:45 PM")
-        'dhm'  : Day Month Year + HH:MM (e.g., "06 June 2025 14:23")
-        'dhm_ampm' : 12-hour format with AM/PM (e.g., "06 June 2025 02:23 PM")
-        'dh'   : Day Month Year + HH (e.g., "06 June 2025 14")
-        'dh_ampm' : 12-hour format with AM/PM (e.g., "06 June 2025 02 PM")
-        'd'    : Full weekday and date (e.g., "Friday 06 June 2025")
-        'm'    : Month and year (e.g., "June 2025")
-        'y'    : Year only (e.g., "2025")
-        'day_clock' or 'simulation_day_clock': Show simulation-relative day and time (e.g., "Simulation Day 3\n14:15")
-        'day_clock_ampm' or 'simulation_day_clock_ampm': Same as above, but time is shown in 12-hour clock with AM/PM (e.g., "Simulation Day 3\n02:15 PM")
-        Alternatively, you can supply a custom [strftime](https://strftime.org/) format string
-        (e.g., '%Y-%m-%d %H') to control the display manually.
+
+        - 'dhms' : Day Month Year + HH:MM:SS (e.g., "06 June 2025 14:23:45")
+        - 'dhms_ampm' : Same as 'dhms', but in 12-hour format with AM/PM
+          (e.g., "06 June 2025 02:23:45 PM")
+        - 'dhm' : Day Month Year + HH:MM (e.g., "06 June 2025 14:23")
+        - 'dhm_ampm' : 12-hour format with AM/PM
+        - (e.g., "06 June 2025 02:23 PM")
+        - 'dh' : Day Month Year + HH (e.g., "06 June 2025 14")
+        - 'dh_ampm' : 12-hour format with AM/PM (e.g., "06 June 2025 02 PM")
+        - 'd' : Full weekday and date (e.g., "Friday 06 June 2025")
+        - 'm' : Month and year (e.g., "June 2025")
+        - 'y' : Year only (e.g., "2025")
+        - 'day_clock' or 'simulation_day_clock' : Show simulation-relative day
+           and time (e.g., "Simulation Day 3 14:15")
+        - 'day_clock_ampm' or 'simulation_day_clock_ampm' : Same as above, but
+           time is shown in 12-hour clock with AM/PM
+           (e.g., "Simulation Day 3 02:15 PM")
+
+        Alternatively, you can supply a custom strftime (https://strftime.org/)
+        format string (e.g., '%Y-%m-%d %H') to control the display manually.
     setup_mode : bool, optional
-        If True, display grid and tick marks for initial setup (default is False).
+        If True, display grid and tick marks for initial setup (default is
+        False).
     frame_duration : int, optional
         Duration of each frame in milliseconds (default is 400).
     frame_transition_duration : int, optional
@@ -1131,16 +1222,37 @@ def animate_activity_log(
     debug_mode : bool, optional
         If True, print debug information during processing (default is False).
     custom_entity_icon_list: list, optional
-        If given, overrides the default list of emojis used to represent entities
+        If given, overrides the default list of emojis used to represent
+        entities
+    debug_write_intermediate_objects : bool, optional
+        If `True`, writes intermediate data objects (for example, the reshaped
+        event log and positional dataframe) to CSV files in the current working
+        directory.
     background_image_opacity : float, optional
-        Opacity (0 is transparent, to 1, completely opaque) of the provided background image
+        Opacity (0 is transparent, to 1, completely opaque) of the provided
+        background image
+    overflow_text_color : str, optional
+        Color of the text displayed on top of entity icons in the animation
+        (default is black).
+    stage_label_text_colour : str, optional
+        Color of the stage label text added next to each event position when
+        display_stage_labels is True (default is black).
     backend: str, optional
-        EXPERIMENTAL. Whether to use the plotly express backend for the initial plot (default),
-        or the experimental plotly go backend. The go approach is currently unstable and much slower.
-        Use at your own risk.
+        EXPERIMENTAL. Whether to use the plotly express backend for the
+        initial plot (default), or the experimental plotly go backend. The go
+        approach is currently unstable and much slower. Use at your own risk.
     step_snapshot_limit_gauges: bool, optional
-        If True, replaces the text '+ x more' with a gauge. The upper limit of the gauge is set
-        by the maximum queue length observed across the simulation.
+        If True, replaces the text '+ x more' with a gauge. The upper limit of
+        the gauge is set by the maximum queue length observed across the
+        simulation.
+    gauge_segments : int, optional
+        Number of discrete segments used when rendering queue length gauges
+        in the animation. Higher values give a finer-grained visual indication
+        of queue length, while lower values produce chunkier segments.
+    gauge_max_override : int|float, optional
+        Manually specified maximum value for queue length gauges. If `None`,
+        the upper limit is determined from the maximum queue length observed in
+        the simulation when `step_snapshot_limit_gauges` is `True`.
 
     Returns
     -------
@@ -1149,8 +1261,10 @@ def animate_activity_log(
 
     Notes
     -----
-    - This function uses helper functions: reshape_for_animations, generate_animation_df, and generate_animation.
-    - The animation supports customization of icon sizes, resource representation, and animation speed.
+    - This function uses helper functions: reshape_for_animations,
+      generate_animation_df, and generate_animation.
+    - The animation supports customization of icon sizes, resource
+      representation, and animation speed.
     - Time can be displayed as actual dates or as model time units.
     - A background image can be added to provide context for the patient flow.
     - The function handles both queuing and resource use events.
@@ -1269,11 +1383,13 @@ def add_repeating_overlay(
     relative_text_position_y: int = 0.5,
 ) -> go.Figure:
     """
-     Add a repeating overlay (rectangle and text) to an animated Plotly figure using traces.
+     Add a repeating overlay (rectangle and text) to an animated Plotly figure
+     using traces.
 
-     This function adds overlay elements as additional traces rather than layout shapes/annotations,
-     which enables the overlay to work without requiring redraw=True during animation. The overlay
-     follows a repeating on/off pattern starting from a specified frame.
+     This function adds overlay elements as additional traces rather than
+     layout shapes/annotations, which enables the overlay to work without
+     requiring redraw=True during animation. The overlay follows a repeating
+     on/off pattern starting from a specified frame.
 
      Parameters
      ----------
@@ -1284,14 +1400,18 @@ def add_repeating_overlay(
      first_start_frame : int
          The frame index where the overlay first appears. Must be >= 0.
      on_duration_frames : float
-         The number of frames the overlay remains visible. Will be converted to int.
+         The number of frames the overlay remains visible. Will be converted
+         to int.
      off_duration_frames : float
-         The number of frames the overlay is hidden between appearances. Will be converted to int.
+         The number of frames the overlay is hidden between appearances. Will
+         be converted to int.
      rect_color : str, default 'grey'
-         The background color of the overlay rectangle. Accepts any valid CSS color string
+         The background color of the overlay rectangle. Accepts any valid CSS
+         color string
          (e.g., 'red', '#FF0000', 'rgba(255,0,0,0.5)').
      rect_opacity : float, default 0.5
-         The opacity of the overlay rectangle. Must be between 0 (transparent) and 1 (opaque).
+         The opacity of the overlay rectangle. Must be between 0 (transparent)
+         and 1 (opaque).
      text_size : int, default 40
          The font size of the overlay text in points.
      text_font_color : str, default 'white'
@@ -1306,24 +1426,28 @@ def add_repeating_overlay(
      Returns
      -------
      plotly.graph_objects.Figure
-         The modified Plotly figure object with the repeating overlay added as traces.
-         The original figure is modified in-place and also returned.
+         The modified Plotly figure object with the repeating overlay added as
+         traces. The original figure is modified in-place and also returned.
 
      Notes
      -----
-     - The overlay uses secondary axes (x2, y2) to position elements in paper coordinates
-       (0 to 1 range) independent of the main plot's data coordinates.
-     - The overlay pattern repeats with a cycle length of (on_duration_frames + off_duration_frames).
-     - Frame indexing is 0-based, so first_start_frame=0 means the overlay starts from the first frame.
-     - The condition `i > start_frame` ensures the overlay doesn't appear on the initial frame
-       unless explicitly specified.
-     - This implementation works without requiring redraw=True in animation configurations,
-       making it more efficient for complex animated plots.
+     - The overlay uses secondary axes (x2, y2) to position elements in paper
+       coordinates (0 to 1 range) independent of the main plot's data
+       coordinates.
+     - The overlay pattern repeats with a cycle length of (on_duration_frames
+       + off_duration_frames).
+     - Frame indexing is 0-based, so first_start_frame=0 means the overlay
+       starts from the first frame.
+     - The condition `i > start_frame` ensures the overlay doesn't appear on
+       the initial frame unless explicitly specified.
+     - This implementation works without requiring redraw=True in animation
+       configurations, making it more efficient for complex animated plots.
     - returns UserWarning
-         If the figure has no frames, a warning is printed and the figure is returned unchanged.
+         If the figure has no frames, a warning is printed and the figure is
+         returned unchanged.
      - returns UserWarning
-         If the sum of on_duration_frames and off_duration_frames is not positive,
-         a warning is printed and the figure is returned unchanged.
+         If the sum of on_duration_frames and off_duration_frames is not
+         positive, a warning is printed and the figure is returned unchanged.
     """
     on_frames = int(on_duration_frames)
     off_frames = int(off_duration_frames)
@@ -1453,7 +1577,9 @@ def add_repeating_overlay(
         else:
             # Overlay should be hidden (empty data)
             rect_data = go.Scatter(x=[], y=[], xaxis="x2", yaxis="y2")
-            text_data = go.Scatter(x=[], y=[], mode="text", xaxis="x2", yaxis="y2")
+            text_data = go.Scatter(
+                x=[], y=[], mode="text", xaxis="x2", yaxis="y2"
+            )
 
         # Extend frame data to include overlay traces
         frame_data = list(frame.data) if frame.data else []

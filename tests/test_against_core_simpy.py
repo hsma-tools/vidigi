@@ -215,15 +215,15 @@ def test_trial_equivalence(trial_1_config, trial_2_config, trial_id):
     df1 = run_trial(
         trial_cls=trial_1_config["trial_cls"],
         run_kwargs=trial_1_config.get("run_kwargs", {}),
-        drop_resource_id=trial_1_config.get("drop_resource_id", False),
-        filename=f"TEST_{trial_id}_df_1",
+        drop_resource_id=trial_1_config.get("drop_resource_id", False)
+        # filename=f"TEST_{trial_id}_df_1",
     )
 
     df2 = run_trial(
         trial_cls=trial_2_config["trial_cls"],
         run_kwargs=trial_2_config.get("run_kwargs", {}),
-        drop_resource_id=trial_2_config.get("drop_resource_id", False),
-        filename=f"TEST_{trial_id}_df_2",
+        drop_resource_id=trial_2_config.get("drop_resource_id", False)
+        # filename=f"TEST_{trial_id}_df_2",
     )
 
     try:

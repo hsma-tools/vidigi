@@ -2,17 +2,15 @@ import gc
 import time
 import pandas as pd
 import numpy as np
-import re
 import hashlib
 import warnings
-import numbers
 from typing import Optional, Union
-import inspect
-from functools import wraps
 from vidigi.utils import _enforce_int_params
 
 
-@_enforce_int_params(["every_x_time_units", "limit_duration", "step_snapshot_max"])
+@_enforce_int_params(
+    ["every_x_time_units", "limit_duration", "step_snapshot_max"]
+)
 def reshape_for_animations(
     event_log: pd.DataFrame,
     every_x_time_units: int = 10,
@@ -186,7 +184,9 @@ def reshape_for_animations(
                     )
                 ][entity_col_name].values
             except KeyError:
-                current_entities_in_moment = []  # Use an empty list for consistency
+                current_entities_in_moment = (
+                    []
+                )  # Use an empty list for consistency
 
             # If we do have any entities, they will have been passed as a list
             # so now just filter our event log down to the events these entities have been
@@ -197,7 +197,11 @@ def reshape_for_animations(
                 # Filter out any events that have taken place after the minute we are interested in
 
                 entity_minute_df = event_log[
-                    (event_log[entity_col_name].isin(current_entities_in_moment))
+                    (
+                        event_log[entity_col_name].isin(
+                            current_entities_in_moment
+                        )
+                    )
                     & (event_log[time_col_name] <= time_unit)
                 ]
 
@@ -221,16 +225,16 @@ def reshape_for_animations(
                 # visual queue position, which ensures consistent positioning and a 'queue-like'
                 # progression through the animation)
                 most_recent_events_time_unit_ungrouped["rank"] = (
-                    most_recent_events_time_unit_ungrouped.groupby([event_col_name])[
-                        "index"
-                    ].rank(method="first")
+                    most_recent_events_time_unit_ungrouped.groupby(
+                        [event_col_name]
+                    )["index"].rank(method="first")
                 )
 
                 # Calculate the total number of entities observed in this step
                 most_recent_events_time_unit_ungrouped["max"] = (
-                    most_recent_events_time_unit_ungrouped.groupby(event_col_name)[
-                        "rank"
-                    ].transform("max")
+                    most_recent_events_time_unit_ungrouped.groupby(
+                        event_col_name
+                    )["rank"].transform("max")
                 )
 
                 # ----------------------------------------------------------------------------- #
@@ -251,12 +255,19 @@ def reshape_for_animations(
                         df = df[df["rank"] <= (step_snapshot_max + 1)].copy()
 
                         # Identify max rank row (to possibly add 'additional' column)
-                        max_row = df[df["rank"] == float(step_snapshot_max + 1)].copy()
+                        max_row = df[
+                            df["rank"] == float(step_snapshot_max + 1)
+                        ].copy()
                         if len(max_row) > 0:
-                            max_row["additional"] = max_row["max"] - max_row["rank"]
+                            max_row["additional"] = (
+                                max_row["max"] - max_row["rank"]
+                            )
                             df = pd.concat(
                                 [
-                                    df[df["rank"] != float(step_snapshot_max + 1)],
+                                    df[
+                                        df["rank"]
+                                        != float(step_snapshot_max + 1)
+                                    ],
                                     max_row,
                                 ],
                                 ignore_index=True,
@@ -292,7 +303,9 @@ def reshape_for_animations(
 
     # Join together all entity dfs - so the dataframe created per time snapshot - are put into
     # one large dataframe
-    full_entity_df = (pd.concat(entity_dfs, ignore_index=True)).reset_index(drop=True)
+    full_entity_df = (pd.concat(entity_dfs, ignore_index=True)).reset_index(
+        drop=True
+    )
 
     if debug_mode:
         print(
@@ -300,8 +313,12 @@ def reshape_for_animations(
         )
 
     if save_intermediate_outputs is not False:
-        event_log.to_csv(path_or_buf=f"{extra_path}_0_event_log.csv", index=True)
-        pivoted_log.to_csv(path_or_buf=f"{extra_path}_1_pivoted_log.csv", index=True)
+        event_log.to_csv(
+            path_or_buf=f"{extra_path}_0_event_log.csv", index=True
+        )
+        pivoted_log.to_csv(
+            path_or_buf=f"{extra_path}_1_pivoted_log.csv", index=True
+        )
         full_entity_df.to_csv(
             path_or_buf=f"{extra_path}_2_full_entity_df.csv", index=True
         )
@@ -321,14 +338,18 @@ def reshape_for_animations(
 
     # First, get the last step for every single entity
     final_step = (
-        full_entity_df.sort_values([entity_col_name, "snapshot_time"], ascending=True)
+        full_entity_df.sort_values(
+            [entity_col_name, "snapshot_time"], ascending=True
+        )
         .groupby(entity_col_name)
         .tail(1)
         .copy()
     )
 
     # Propose their 'exit' time
-    final_step["snapshot_time"] = final_step["snapshot_time"] + every_x_time_units
+    final_step["snapshot_time"] = (
+        final_step["snapshot_time"] + every_x_time_units
+    )
     final_step[event_col_name] = "depart"
 
     # Only keep rows for people whose exit step will happen *before* the simulation end
@@ -487,9 +508,9 @@ def generate_animation_df(
     # 29/09/2025 - consider removing as this is already done in reshape_for_animation function
     # (though method is very slightly different, but should achieve the same output)
     # Order entities within event/time unit to determine their eventual position in the line
-    full_entity_df["rank"] = full_entity_df.groupby([event_col_name, "snapshot_time"])[
-        "snapshot_time"
-    ].rank(method="first")
+    full_entity_df["rank"] = full_entity_df.groupby(
+        [event_col_name, "snapshot_time"]
+    )["snapshot_time"].rank(method="first")
 
     full_entity_df_plus_pos = full_entity_df.merge(
         event_position_df, on=event_col_name, how="left"
@@ -510,7 +531,9 @@ def generate_animation_df(
         empty_snapshots.to_csv(
             path_or_buf=f"{extra_path}_3_empty_snapshots.csv", index=True
         )
-        entity_data.to_csv(path_or_buf=f"{extra_path}_4_entity_data.csv", index=True)
+        entity_data.to_csv(
+            path_or_buf=f"{extra_path}_4_entity_data.csv", index=True
+        )
 
     # Determine the position for any resource use steps
     resource_use = entity_data[
@@ -521,7 +544,8 @@ def generate_animation_df(
     if len(resource_use) > 0:
         resource_use = resource_use.rename(columns={"y": "y_final"})
         resource_use["x_final"] = (
-            resource_use["x"] - resource_use[resource_col_name] * gap_between_resources
+            resource_use["x"]
+            - resource_use[resource_col_name] * gap_between_resources
         )
 
         # If we want resources to wrap at a certain queue length, do this here
@@ -534,7 +558,11 @@ def generate_animation_df(
 
             resource_use["x_final"] = (
                 resource_use["x_final"]
-                + (wrap_resources_at * resource_use["row"] * gap_between_resources)
+                + (
+                    wrap_resources_at
+                    * resource_use["row"]
+                    * gap_between_resources
+                )
                 + gap_between_resources
             )
 
@@ -561,7 +589,9 @@ def generate_animation_df(
             + gap_between_entities
         )
 
-        queues["y_final"] = queues["y_final"] + (queues["row"] * gap_between_queue_rows)
+        queues["y_final"] = queues["y_final"] + (
+            queues["row"] * gap_between_queue_rows
+        )
 
     queues["x_final"] = np.where(
         queues["rank"] != step_snapshot_max + 1,
@@ -579,7 +609,9 @@ def generate_animation_df(
             path_or_buf=f"{extra_path}_5_resource_use_steps.csv", index=True
         )
         queues.to_csv(path_or_buf=f"{extra_path}_6_queues.csv", index=True)
-        exit_steps.to_csv(path_or_buf=f"{extra_path}_7_exit_steps.csv", index=True)
+        exit_steps.to_csv(
+            path_or_buf=f"{extra_path}_7_exit_steps.csv", index=True
+        )
 
     if len(resource_use) > 0:
         processed_entities_df = pd.concat(
@@ -587,7 +619,9 @@ def generate_animation_df(
         )
         del resource_use, queues, exit_steps
     else:
-        processed_entities_df = pd.concat([queues, exit_steps], ignore_index=True)
+        processed_entities_df = pd.concat(
+            [queues, exit_steps], ignore_index=True
+        )
         del queues, exit_steps
 
     # Add the empty snapshots back into the main dataframe
@@ -708,13 +742,18 @@ def generate_animation_df(
     else:
         icon_list = custom_entity_icon_list.copy()
 
-    full_icon_list = icon_list * int(np.ceil(len(individual_entities) / len(icon_list)))
+    full_icon_list = icon_list * int(
+        np.ceil(len(individual_entities) / len(icon_list))
+    )
 
     full_icon_list = full_icon_list[0 : len(individual_entities)]
 
     full_entity_df_plus_pos = full_entity_df_plus_pos.merge(
         pd.DataFrame(
-            {entity_col_name: list(individual_entities), "icon": full_icon_list}
+            {
+                entity_col_name: list(individual_entities),
+                "icon": full_icon_list,
+            }
         ),
         on=entity_col_name,
     )
@@ -742,9 +781,11 @@ def generate_animation_df(
                 lambda row: ascii_queue_icon(
                     icon=row["icon"],
                     count=row["additional"],
-                    max_count=max_count
-                    if gauge_max_override is None
-                    else gauge_max_override,
+                    max_count=(
+                        max_count
+                        if gauge_max_override is None
+                        else gauge_max_override
+                    ),
                     bar_length=gauge_segments,
                     display_count_as_fig=True,
                     count_string_format=display_fig_string,
@@ -767,7 +808,9 @@ def generate_animation_df(
 
         full_entity_df_plus_pos = pd.concat(
             [
-                full_entity_df_plus_pos[full_entity_df_plus_pos["additional"].isna()],
+                full_entity_df_plus_pos[
+                    full_entity_df_plus_pos["additional"].isna()
+                ],
                 exceeded_snapshot_limit,
             ],
             ignore_index=True,
@@ -866,7 +909,9 @@ def ascii_queue_icon(
             return f"{count:.0f}"
         else:
             filled_len = int(round(bar_length * count / max_count))
-            bar = filled_char * filled_len + empty_char * (bar_length - filled_len)
+            bar = filled_char * filled_len + empty_char * (
+                bar_length - filled_len
+            )
             if display_count_as_fig:
                 if count_string_format == "more":
                     return f"[{bar}] + {count:.0f} more"
