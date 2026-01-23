@@ -141,4 +141,7 @@ flake8 vidigi
 
 # Run flake8 on .ipynb files
 nbqa flake8 examples
+
+# Run flake8 on .qmd files
+lintquarto -l flake8 -p vidigi_docs
 ```
