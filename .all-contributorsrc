@@ -19,7 +19,8 @@
         "infra",
         "maintenance",
         "test",
-        "tutorial"
+        "tutorial",
+        "ideas"
       ]
     },
     {
@@ -30,7 +31,19 @@
       "contributions": [
         "code",
         "doc",
-        "test"
+        "test",
+        "bug",
+        "content",
+        "design",
+        "example",
+        "ideas",
+        "infra",
+        "maintenance",
+        "projectManagement",
+        "promotion",
+        "research",
+        "talk",
+        "tutorial"
       ]
     },
     {
