@@ -25,3 +25,5 @@ _freeze/
 dist/
 docs/
 reference/
+
+node_modules/

@@ -15,7 +15,11 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/92166537?v=4",
       "profile": "https://www.linkedin.com/in/amyheather",
       "contributions": [
-        "doc"
+        "doc",
+        "infra",
+        "maintenance",
+        "test",
+        "tutorial"
       ]
     },
     {
@@ -35,8 +39,40 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/63923671?v=4",
       "profile": "https://github.com/helenajr",
       "contributions": [
-        "bug"
+        "bug",
+        "ideas",
+        "userTesting"
+      ]
+    },
+    {
+      "login": "hsma-chief-elf",
+      "name": "Dr Daniel Chalk",
+      "avatar_url": "https://avatars.githubusercontent.com/u/43324262?v=4",
+      "profile": "https://sites.google.com/nihr.ac.uk/hsma",
+      "contributions": [
+        "mentoring"
+      ]
+    },
+    {
+      "login": "TomMonks",
+      "name": "Tom Monks",
+      "avatar_url": "https://avatars.githubusercontent.com/u/881493?v=4",
+      "profile": "https://experts.exeter.ac.uk/19244-thomas-monks",
+      "contributions": [
+        "mentoring"
+      ]
+    },
+    {
+      "login": "ReyTan8",
+      "name": "ReyTan8",
+      "avatar_url": "https://avatars.githubusercontent.com/u/167853430?v=4",
+      "profile": "https://github.com/ReyTan8",
+      "contributions": [
+        "bug",
+        "ideas",
+        "userTesting"
       ]
     }
-  ]
+  ],
+  "repoType": "github"
 }
