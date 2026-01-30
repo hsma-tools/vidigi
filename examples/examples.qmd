@@ -5,6 +5,10 @@ toc: true
 listing:
   - id: simpy-examples
     contents:
+      - "../vidigi_docs/basic_example_with_vidigi_logger_helpers.qmd"
+      - "../vidigi_docs/basic_example_with_vidigi_logger_helpers_multiple_servers.qmd"
+      - "../vidigi_docs/basic_example_minimal_required_vidigi_functions.qmd"
+      - "adding_vidigi_to_a_simple_simpy_model_hsma_structure.qmd"
       - "example_1_simplest_case/*.ipynb"
       - "example_2_branching_multistep/*.ipynb"
       - "example_6_simplest_case_storewrapper/*.ipynb"
