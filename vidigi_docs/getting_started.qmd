@@ -21,7 +21,7 @@ vidigi creates animations from **event logs** - records of what happens in your 
 2. **Define where events appear in your animation** (x and y coordinates).
 3. **Generate the animation** using vidigi's functions.
 
-That's it! The rest of this page walks you through each step.
+The rest of this page walks you through each step.
 
 ## Learn by example
 
@@ -31,7 +31,5 @@ The fastest way to understand vidigi is through worked examples. We recommend st
 :::
 
 **Want all examples in one place? [Browse the full example gallery →](/examples/examples.qmd)**
-
-## Step-by-step guide
 
 {{< include introduction.qmd >}}
