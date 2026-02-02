@@ -13,6 +13,9 @@
     "listing": "/examples/examples.html",
     "items": [
       "/examples/example_1_simplest_case/ex_1_simplest_case.html",
+      "/vidigi_docs/basic_example_with_vidigi_logger_helpers_multiple_servers.html",
+      "/vidigi_docs/basic_example_with_vidigi_logger_helpers.html",
+      "/vidigi_docs/basic_example_minimal_required_vidigi_functions.html",
       "/examples/example_2_branching_multistep/ex_2_branching_multistep_case.html",
       "/examples/example_14_carwash/carwash.html",
       "/examples/example_7_simplest_case_priority_resource_storewrapper/ex_7_simplest_case_priority_resource.html",

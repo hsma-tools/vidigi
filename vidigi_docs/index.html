@@ -365,30 +365,32 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 
-<section id="vidigi-visual-interactive-dynamics-and-integrated-graphical-insights" class="level1">
-<h1>vidigi (Visual Interactive Dynamics and Integrated Graphical Insights)</h1>
-<p><a href="https://pypi.org/project/vidigi/"><img src="https://img.shields.io/pypi/v/vidigi?label=pypi%20package"></a> <a href="https://doi.org/10.5281/zenodo.14635602"><img src="https://zenodo.org/badge/888169040.svg" class="img-fluid" alt="DOI"></a></p>
-<hr>
-<style>
-table {
-  border: 2px solid #57655E;   /* Outline around the entire table */
-  border-collapse: collapse; /* Makes borders look clean */
-}
-
-table td, table th {
-  border: 1px solid #555;   /* Inner cell borders */
-  padding: 8px;
-}
-
-</style>
-<p>Welcome to vidigi - a package for visualising real or simulated pathways.</p>
+<h1 style="text-align: center;">
+vidigi
+</h1>
+<p style="text-align: center; font-size: 22px;">
+Transform simulation event logs into engaging and flexible animations.
+</p>
+<p><strong>vidigi</strong> is designed to work easily with Python packages like SimPy, Ciw and Streamlit. Use it to see the impact of changes to simulation parameters in real time, in healthcare simulations and beyond.</p>
 <div class="quarto-video"><video id="video_shortcode_videojs_video1" class="video-js vjs-default-skin vjs-fluid" controls="" preload="auto" data-setup="{}" title=""><source src="videos/vidigi.mp4"></video></div>
-<p>Primarily developed for healthcare simulation and intended to allow easy integration with tools like Streamlit so users can see the impact of changes to simulation parameters in real-time, vidigi handles the conversion of your simulation event logs into engaging and flexible animations.</p>
-<p>With just a minimal set of logs - with helper functions provided to make that easier than ever to integrate into existing SimPy or Ciw simulations - you can start generating and customising your visualisations in minutes.</p>
-<p>Install vidigi with the command</p>
+<p><br></p>
+<div class="columns">
+<div class="column" style="width:20%;">
+
+</div><div class="column" style="width:60%;">
+<p style="text-align: center; font-size: 24px; font-weight: bold">
+Install with a single command
+</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install vidigi</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>or</p>
+<p style="text-align: center;;">
+or
+</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">conda</span> install vidigi</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div><div class="column" style="width:20%;">
+
+</div>
+</div>
+<p><br></p>
 <div class="value-grid-2" style="justify-content:center; text-align:center;">
   <a href="https://hsma-tools.github.io/vidigi/vidigi_docs/getting_started.html" class="value-box bg-green">
     <div class="icon"><i class="fa-solid fa-circle-play"></i></div>
@@ -413,10 +415,23 @@ table td, table th {
     <div class="details">Browse the full list of vidigi classes and functions</div>
   </a>
 </div>
+<p><br></p>
+<section id="why-did-we-develop-vidigi" class="level2">
+<h2 class="anchored" data-anchor-id="why-did-we-develop-vidigi">Why did we develop vidigi?</h2>
+<p>Visual displays of the outputs of discrete event simulations in SimPy have often been highlighted as a limitation, especially when compared with commercial DES tools or GUI-based FOSS alternatives such as JaamSim.</p>
+<blockquote class="blockquote">
+<p>“When compared to commercial DES software packages that are commonly used in health research, such as Simul8, or AnyLogic, a limitation of our approach is that we do not display a dynamic patient pathway or queuing network that updates as the model runs a single replication. This is termed Visual Interactive Simulation (VIS) and can help users understand where process problems and delays occur in a patient pathway; albeit with the caveat that single replications can be outliers. A potential FOSS solution compatible with a browser-based app could use a Python package that can represent a queuing network, such as NetworkX, and displaying results via matplotlib. If sophisticated VIS is essential for a FOSS model then researchers may need to look outside of web apps; for example, salabim provides a powerful FOSS solution for custom animation of DES models.”</p>
+<p><em>Monks T and Harper A. Improving the usability of open health service delivery simulation models using Python and web apps [version 2; peer review: 3 approved]. NIHR Open Res 2023, 3:48 (https://doi.org/10.3310/nihropenres.13467.2)</em></p>
+</blockquote>
+<p>The <strong>vidigi</strong> package was created to close this gap by providing visually appealing, flexible animations of how entities move through a pathway, using information already present in event logs from discrete event simulations.</p>
+<p>It is primarily tested with SimPy models, and has also been used with Ciw, but the underlying design is general enough to work with other DES packages - such as simmer or Salabim - provided that suitably detailed logs are available.</p>
+<p>By leveraging Plotly, vidigi produces browser-ready animations that can be customised, extended, and embedded into web frameworks like Streamlit, Dash, or Shiny for Python.</p>
+<p><br></p>
+</section>
 <section id="what-does-the-name-mean" class="level2">
 <h2 class="anchored" data-anchor-id="what-does-the-name-mean">What does the name mean?</h2>
-<p>vidigi is the <a href="https://en.wikipedia.org/wiki/Esperanto">Esperanto</a> <img src="Flag_of_Esperanto.svg.png" height="30"> for ‘to show’</p>
-<p>(or it’s the backronym ‘Visual Interactive Dynamics and Integrated Graphical Insights’ - whichever floats your boat)</p>
+<p><strong>vidigi</strong> is the <a href="https://en.wikipedia.org/wiki/Esperanto">Esperanto</a> <img src="Flag_of_Esperanto.svg.png" height="30"> word for “to show”. It can also be read as the backronym: “Visual Interactive Dynamics and Integrated Graphical Insights” - whichever floats your boat.</p>
+<p><br></p>
 </section>
 <section id="acknowledgements" class="level2">
 <h2 class="anchored" data-anchor-id="acknowledgements">Acknowledgements</h2>
@@ -451,6 +466,7 @@ table td, table th {
 <!-- markdownlint-restore -->
 <!-- prettier-ignore-end -->
 <!-- ALL-CONTRIBUTORS-LIST:END -->
+<p><br></p>
 </section>
 <section id="licence" class="level2">
 <h2 class="anchored" data-anchor-id="licence">Licence</h2>
@@ -462,7 +478,6 @@ table td, table th {
 <p>THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</p>
 
 
-</section>
 </section>
 
 <a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a></main> <!-- /main -->
