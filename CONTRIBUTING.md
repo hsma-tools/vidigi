@@ -101,9 +101,10 @@ remotes::install_github("bupaverse/processanimateR")
 
 ## Documentation
 
-The vidigi documentation is created using quarto. You can generate it locally by running:
+The vidigi documentation is created using quarto and `quartodoc`. You can generate it locally by running:
 
 ```
+quartodoc build
 quarto render vidigi_docs
 ```
 
