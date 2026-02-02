@@ -1,44 +1,48 @@
-# vidigi (Visual Interactive Dynamics and Integrated Graphical Insights)
+<h1 style="text-align: center;">vidigi</h1>
 
-[<img src="https://img.shields.io/pypi/v/vidigi?label=pypi%20package">](https://pypi.org/project/vidigi/)
-[![DOI](https://zenodo.org/badge/888169040.svg)](https://doi.org/10.5281/zenodo.14635602)
+<p style="text-align: center; font-size: 22px;">
+  Transform simulation event logs into engaging and flexible animations.
+</p>
 
----
-
-```{=html}
-<style>
-table {
-  border: 2px solid #57655E;   /* Outline around the entire table */
-  border-collapse: collapse; /* Makes borders look clean */
-}
-
-table td, table th {
-  border: 1px solid #555;   /* Inner cell borders */
-  padding: 8px;
-}
-
-</style>
-```
-
-Welcome to vidigi - a package for visualising real or simulated pathways.
+**vidigi** is designed to work easily with Python packages like SimPy, Ciw and Streamlit. Use it to see the impact of changes to simulation parameters in real time, in healthcare simulations and beyond.
 
 {{< video videos/vidigi.mp4 >}}
 
-Primarily developed for healthcare simulation and intended to allow easy integration with tools like Streamlit so users can see the impact of changes to simulation parameters in real-time, vidigi handles the conversion of your simulation event logs into engaging and flexible animations.
+<br>
 
-With just a minimal set of logs - with helper functions provided to make that easier than ever to integrate into existing SimPy or Ciw simulations - you can start generating and customising your visualisations in minutes.
+:::: {.columns}
 
-Install vidigi with the command
+::: {.column width='20%'}
 
-```bash
+:::
+
+::: {.column width='60%'}
+
+<p style="text-align: center; font-size: 24px; font-weight: bold">
+  Install with a single command
+</p>
+
+```{.bash}
 pip install vidigi
 ```
 
-or
+<p style="text-align: center;;">
+  or
+</p>
 
-```bash
+```{.bash}
 conda install vidigi
 ```
+
+:::
+
+::: {.column width='20%'}
+
+:::
+
+::::
+
+<br>
 
 ```{=html}
 <div class="value-grid-2" style="justify-content:center; text-align:center;">
@@ -70,12 +74,29 @@ conda install vidigi
 </div>
 ```
 
+<br>
+
+## Why did we develop vidigi?
+
+Visual displays of the outputs of discrete event simulations in SimPy have often been highlighted as a limitation, especially when compared with commercial DES tools or GUI-based FOSS alternatives such as JaamSim.
+
+> "When compared to commercial DES software packages that are commonly used in health research, such as Simul8, or AnyLogic, a limitation of our approach is that we do not display a dynamic patient pathway or queuing network that updates as the model runs a single replication. This is termed Visual Interactive Simulation (VIS) and can help users understand where process problems and delays occur in a patient pathway; albeit with the caveat that single replications can be outliers. A potential FOSS solution compatible with a browser-based app could use a Python package that can represent a queuing network, such as NetworkX, and displaying results via matplotlib. If sophisticated VIS is essential for a FOSS model then researchers may need to look outside of web apps; for example, salabim provides a powerful FOSS solution for custom animation of DES models."
+>
+> *Monks T and Harper A. Improving the usability of open health service delivery simulation models using Python and web apps [version 2; peer review: 3 approved]. NIHR Open Res 2023, 3:48 (https://doi.org/10.3310/nihropenres.13467.2)*
+
+The **vidigi** package was created to close this gap by providing visually appealing, flexible animations of how entities move through a pathway, using information already present in event logs from discrete event simulations.
+
+It is primarily tested with SimPy models, and has also been used with Ciw, but the underlying design is general enough to work with other DES packages - such as simmer or Salabim - provided that suitably detailed logs are available.
+
+By leveraging Plotly, vidigi produces browser-ready animations that can be customised, extended, and embedded into web frameworks like Streamlit, Dash, or Shiny for Python.
+
+<br>
 
 ## What does the name mean?
 
-vidigi is the [Esperanto](https://en.wikipedia.org/wiki/Esperanto) ![](Flag_of_Esperanto.svg.png){height=30px} for 'to show'
+**vidigi** is the [Esperanto](https://en.wikipedia.org/wiki/Esperanto) ![](Flag_of_Esperanto.svg.png){height=30px} word for "to show". It can also be read as the backronym: "Visual Interactive Dynamics and Integrated Graphical Insights" - whichever floats your boat.
 
-(or it's the backronym 'Visual Interactive Dynamics and Integrated Graphical Insights' - whichever floats your boat)
+<br>
 
 ## Acknowledgements
 
@@ -102,6 +123,8 @@ Thanks goes to all of the following people ([emoji key](https://allcontributors.
 <!-- prettier-ignore-end -->
 
 <!-- ALL-CONTRIBUTORS-LIST:END -->
+
+<br>
 
 ## Licence
 
