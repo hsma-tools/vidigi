@@ -229,9 +229,9 @@ def generate_animation(
 
     # We need to keep the original snapshot time and exact time columns in
     # existence because they're important for sorting
-    full_entity_df_plus_pos_copy["snapshot_time_base"] = (
-        full_entity_df_plus_pos_copy["snapshot_time"]
-    )
+    full_entity_df_plus_pos_copy["snapshot_time_base"] = full_entity_df_plus_pos_copy[
+        "snapshot_time"
+    ]
 
     # Assuming time display units are set to something other
 
@@ -265,9 +265,7 @@ def generate_animation(
             )
 
         elif start_date is not None and start_time is None:
-            full_entity_df_plus_pos_copy[
-                "snapshot_time"
-            ] = dt.datetime.strptime(
+            full_entity_df_plus_pos_copy["snapshot_time"] = dt.datetime.strptime(
                 start_date, "%Y-%m-%d"
             ) + pd.TimedeltaIndex(
                 full_entity_df_plus_pos_copy["snapshot_time"], unit=unit
@@ -402,9 +400,7 @@ def generate_animation(
                 delta = t - pd.Timestamp(t.date())
                 sim_day = (
                     t.normalize()
-                    - full_entity_df_plus_pos_copy["snapshot_time"]
-                    .min()
-                    .normalize()
+                    - full_entity_df_plus_pos_copy["snapshot_time"].min().normalize()
                 ).days + 1
                 time_fmt = "%I:%M %p" if use_ampm else "%H:%M"
                 return f"Simulation Day {sim_day}\n{t.strftime(time_fmt)}"
@@ -454,9 +450,9 @@ def generate_animation(
 
     else:
         full_entity_df_plus_pos_copy["event_start"] = (
-            full_entity_df_plus_pos_copy.groupby(
-                [entity_col_name, event_col_name]
-            )[time_col_name].transform("min")
+            full_entity_df_plus_pos_copy.groupby([entity_col_name, event_col_name])[
+                time_col_name
+            ].transform("min")
         )
         full_entity_df_plus_pos_copy["time_in_event"] = (
             full_entity_df_plus_pos_copy["snapshot_time_base"]
@@ -493,27 +489,21 @@ def generate_animation(
         if "additional" in full_entity_df_plus_pos_copy:
             full_entity_df_plus_pos_copy["entity_display_hover"] = (
                 full_entity_df_plus_pos_copy.apply(
-                    lambda x: (
-                        "N/A" if x["additional"] > 1.0 else x[entity_col_name]
-                    ),
+                    lambda x: ("N/A" if x["additional"] > 1.0 else x[entity_col_name]),
                     axis=1,
                 )
             )
 
             full_entity_df_plus_pos_copy["time_hover"] = (
                 full_entity_df_plus_pos_copy.apply(
-                    lambda x: (
-                        "N/A" if x["additional"] > 1.0 else x[time_col_name]
-                    ),
+                    lambda x: ("N/A" if x["additional"] > 1.0 else x[time_col_name]),
                     axis=1,
                 )
             )
 
             full_entity_df_plus_pos_copy["time_in_event"] = (
                 full_entity_df_plus_pos_copy.apply(
-                    lambda x: (
-                        "N/A" if x["additional"] > 1.0 else x["time_in_event"]
-                    ),
+                    lambda x: ("N/A" if x["additional"] > 1.0 else x["time_in_event"]),
                     axis=1,
                 )
             )
@@ -613,9 +603,7 @@ def generate_animation(
         "plotly go",
     ]:
         # Get sorted lists of unique entities and animation frames
-        unique_entities = sorted(
-            full_entity_df_plus_pos_copy[entity_col_name].unique()
-        )
+        unique_entities = sorted(full_entity_df_plus_pos_copy[entity_col_name].unique())
         unique_frames = sorted(
             full_entity_df_plus_pos_copy["snapshot_time_display"].unique()
         )
@@ -624,8 +612,7 @@ def generate_animation(
         frames_data = {}
         for frame_time in unique_frames:
             frame_df = full_entity_df_plus_pos_copy[
-                full_entity_df_plus_pos_copy["snapshot_time_display"]
-                == frame_time
+                full_entity_df_plus_pos_copy["snapshot_time_display"] == frame_time
             ]
             frames_data[frame_time] = frame_df.groupby(entity_col_name)
 
@@ -650,9 +637,7 @@ def generate_animation(
                         name=entity,
                         text=entity_df["icon"],
                         mode="text",
-                        textfont=dict(
-                            size=16, color=f"rgba(0, 0, 0, {text_opacity})"
-                        ),
+                        textfont=dict(size=16, color=f"rgba(0, 0, 0, {text_opacity})"),
                         hovertemplate=(
                             f"<b>{entity_df[event_col_name].iloc[0]}</b><br><br>"
                             "x: %{x}<br>"
@@ -672,9 +657,7 @@ def generate_animation(
                         name=entity,
                         text=[""],
                         mode="text",
-                        textfont=dict(
-                            size=16, color=f"rgba(0, 0, 0, {text_opacity})"
-                        ),
+                        textfont=dict(size=16, color=f"rgba(0, 0, 0, {text_opacity})"),
                         hovertemplate="<extra></extra>",
                         customdata=[[""]],
                     )
@@ -685,8 +668,7 @@ def generate_animation(
 
         # Pre-calculate text opacities for all entities
         text_opacities = {
-            entity: 1.0 if entity == "Patient_0" else 0.5
-            for entity in unique_entities
+            entity: 1.0 if entity == "Patient_0" else 0.5 for entity in unique_entities
         }
 
         for frame_time in unique_frames:
@@ -869,14 +851,13 @@ def generate_animation(
 
         # events_with_resources = events_with_resources.assign(resource_id=range(len(events_with_resources)))
         # After exploding
-        events_with_resources[resource_col_name] = (
-            events_with_resources.groupby([event_col_name]).cumcount()
-        )
+        events_with_resources[resource_col_name] = events_with_resources.groupby(
+            [event_col_name]
+        ).cumcount()
 
         if wrap_resources_at is not None:
             events_with_resources["row"] = np.floor(
-                (events_with_resources[resource_col_name])
-                / (wrap_resources_at)
+                (events_with_resources[resource_col_name]) / (wrap_resources_at)
             )
 
             events_with_resources["x_final"] = (
@@ -906,10 +887,7 @@ def generate_animation(
                     x=events_with_resources["x_final"].to_list(),
                     # Place these slightly below the y position for each entity
                     # that will be using the resource
-                    y=[
-                        i - 10
-                        for i in events_with_resources["y_final"].to_list()
-                    ],
+                    y=[i - 10 for i in events_with_resources["y_final"].to_list()],
                     mode="markers+text",
                     text=custom_resource_icon,
                     # Make the actual marker invisible
@@ -925,10 +903,7 @@ def generate_animation(
                     x=events_with_resources["x_final"].to_list(),
                     # Place these slightly below the y position for each entity
                     # that will be using the resource
-                    y=[
-                        i - 10
-                        for i in events_with_resources["y_final"].to_list()
-                    ],
+                    y=[i - 10 for i in events_with_resources["y_final"].to_list()],
                     mode="markers",
                     # Define what the marker will look like
                     marker=dict(color="LightSkyBlue", size=15),
@@ -1006,16 +981,16 @@ def generate_animation(
 
     # Adjust speed of animation
     try:
-        fig.layout.updatemenus[0].buttons[0].args[1]["frame"][
-            "duration"
-        ] = frame_duration
+        fig.layout.updatemenus[0].buttons[0].args[1]["frame"]["duration"] = (
+            frame_duration
+        )
     except IndexError:
         print("Error changing frame duration")
 
     try:
-        fig.layout.updatemenus[0].buttons[0].args[1]["transition"][
-            "duration"
-        ] = frame_transition_duration
+        fig.layout.updatemenus[0].buttons[0].args[1]["transition"]["duration"] = (
+            frame_transition_duration
+        )
     except IndexError:
         print("Error changing frame transition duration")
 
@@ -1580,9 +1555,7 @@ def add_repeating_overlay(
         else:
             # Overlay should be hidden (empty data)
             rect_data = go.Scatter(x=[], y=[], xaxis="x2", yaxis="y2")
-            text_data = go.Scatter(
-                x=[], y=[], mode="text", xaxis="x2", yaxis="y2"
-            )
+            text_data = go.Scatter(x=[], y=[], mode="text", xaxis="x2", yaxis="y2")
 
         # Extend frame data to include overlay traces
         frame_data = list(frame.data) if frame.data else []
