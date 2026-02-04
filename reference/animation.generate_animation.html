@@ -788,7 +788,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tr class="odd">
 <td>hover_text_entity</td>
 <td>Optional[str]</td>
-<td>String to define the hover text. If None, hover on entity icons will be disabled. Default will display the entity ID, their current time in the system, etc. Must be provided in the format “%{some_column_name} some text” etc. See https://plotly.com/python/hover-text-and-formatting/#customizing-hover-text-with-a-hovertemplate for full details. All columns present in the initial dataframe are available to access by referencing their name in the format “%{some_column_name}”</td>
+<td>String to define the hover text. If None, hover on entity icons will be disabled. Default will display the entity ID, their current time in the system, etc. Must be provided in the format “%{customdata[0]} some text” etc. See https://plotly.com/python/hover-text-and-formatting/#customizing-hover-text-with-a-hovertemplate for full details. It is recommended you pair this with custom_hover_data to have control over the order of column names present in the customdata list.</td>
 <td><code>'default'</code></td>
 </tr>
 <tr class="even">
