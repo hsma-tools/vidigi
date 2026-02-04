@@ -106,11 +106,10 @@ def generate_animation(
         String to define the hover text. If None, hover on entity icons will be
         disabled. Default will display the entity ID, their current time in the
         system, etc. Must be provided in the format
-        "%{some_column_name} some text" etc.
+        "%{customdata[0]} some text" etc.
         See https://plotly.com/python/hover-text-and-formatting/#customizing-hover-text-with-a-hovertemplate
-        for full details. All columns present in the initial dataframe are
-        available to access by referencing their name in the format
-        "%{some_column_name}"
+        for full details. It is recommended you pair this with custom_hover_data to have control
+        over the order of column names present in the customdata list.
     custom_hover_data: list of str, optional
         A list of column names, which must be defined as strings. If provided,
         becomes a list of additional columns that can be accessed as part of
@@ -446,8 +445,12 @@ def generate_animation(
     # difficulty of paths between individual positions - so we just have to
     # tell it where to put people at each defined step of the process, and the
     # scattergraph will move them
+
+    # If we have been passed a custom hover data list, use this
     if custom_hover_data:
-        hovers = custom_hover_data.append(resource_col_name)
+        hovers = custom_hover_data
+        if scenario:
+            hovers.append(resource_col_name)
 
     else:
         full_entity_df_plus_pos_copy["event_start"] = (
@@ -515,7 +518,7 @@ def generate_animation(
                 )
             )
 
-            hovers = hovers = [
+            hovers = [
                 "entity_display_hover",
                 "time_hover",
                 "snapshot_time",
