@@ -7,6 +7,46 @@ We welcome contributions to `vidigi`. You can either:
 
 This document contains guidance for working on this repository. Please be respectful and considerate - see the`CODE_OF_CONDUCT.md`.
 
+<br>
+
+## Updating the list of contributors
+
+Any contributors to the repository should be recognised via `all-contributors`. If your name or contributions are missing from the README, or if you contributed in ways not captured by the current role emojis, then please feel free to update these. There are two ways to do this:
+
+### 1. Via GitHub issues
+
+This is the simplest option. Just create an issue like this example:
+
+```
+@all-contributors please add @githubuser for ...
+```
+
+Then list appropriate contribution types from [allcontributors.org/docs/en/emoji-key](https://allcontributors.org/docs/en/emoji-key) (e.g., code, review, doc, content, bug, ideas, infra).
+
+### 2. Via the command line
+
+Alternatively, you can update it from the command line. This may be preferable, as the bot will send emails to anyone tagged, and requires making pull requests into main (which may trigger various GitHub actions).
+
+You'll need to install the [All-Contributors CLI tool](https://allcontributors.org/cli/installation/):
+
+```
+npm i -D all-contributors-cli
+```
+
+You can then run the following and select/enter relevant information when prompted:
+
+```
+npx all-contributors
+```
+
+If you want to remove specific contributions or people, edit the `.all-contributorsrc` file then run the following to regenerate the table in `README.md`. (Don't edit `README.md`, as it is just generated based on `.all-contributorsrc`).
+
+```
+npx all-contributors generate
+```
+
+<br>
+
 ## Development environment
 
 ### Python
@@ -57,11 +97,14 @@ remotes::install_github("bupaverse/processanimateR")
 
 **Note:** We use renv snapshot type `all` as `implicit` mode excludes packages it can't detect as dependencies, but we have `reticulate` which is necessary but doesn't appear like a typical dependency (e.g., `library(reticulate)`).
 
+<br>
+
 ## Documentation
 
-The vidigi documentation is created using quarto. You can generate it locally by running:
+The vidigi documentation is created using quarto and `quartodoc`. You can generate it locally by running:
 
 ```
+quartodoc build
 quarto render vidigi_docs
 ```
 
@@ -81,6 +124,8 @@ Render quarto project inside container:
 docker run --rm vidigi quarto render
 ```
 
+<br>
+
 ## Linting
 
 We use Black to auto-format the vidigi package, setting the maximum line length to 79 to comply with PEP 8 - simply run:
@@ -97,4 +142,7 @@ flake8 vidigi
 
 # Run flake8 on .ipynb files
 nbqa flake8 examples
+
+# Run flake8 on .qmd files
+lintquarto -l flake8 -p vidigi_docs
 ```

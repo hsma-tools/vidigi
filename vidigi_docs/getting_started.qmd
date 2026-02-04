@@ -1,6 +1,5 @@
 ---
 title: "Getting Started"
-subtitle: "New to Vidigi? Find your feet here."
 listing:
   - id: getting_started
     contents:
@@ -16,13 +15,21 @@ listing:
 toc: true
 ---
 
-# Prefer to learn through worked examples?
+vidigi creates animations from **event logs** - records of what happens in your simulation and when. Here's the basic process:
 
-The examples below will walk you through some very simple examples of adding vidigi to simple simpy and ciw models.
+1. **Log events** as your simulation runs (arrivals, queueing, resource use, departures).
+2. **Define where events appear in your animation** (x and y coordinates).
+3. **Generate the animation** using vidigi's functions.
+
+The rest of this page walks you through each step.
+
+## Learn by example
+
+The fastest way to understand vidigi is through worked examples. We recommend starting with these:
 
 ::: {#getting_started}
 :::
 
-# Just want a high-level overview of the process?
+**Want all examples in one place? [Browse the full example gallery →](/examples/examples.qmd)**
 
 {{< include introduction.qmd >}}
