@@ -45,6 +45,14 @@ listing:
     grid-columns: 3
     template: ../vidigi_docs/listing.ejs
 
+  - id: abs-examples
+    contents:
+      - "example_18_vidigi_with_mesa_abs/vidigi_abs.ipynb"
+    type: grid # A list style instead of a grid
+    sort: "title"
+    grid-columns: 3
+    template: ../vidigi_docs/listing.ejs
+
   - id: legacy-examples
     contents:
       - "../vidigi_docs/adding_vidigi_to_a_simple_simpy_model_hsma_structure_old.qmd"
@@ -77,6 +85,13 @@ Advanced examples with more complex elements introduced.
 These are primarily written in SimPy, but a lot of the principles could be applied to ciw or other examples too.
 
 ::: {#advanced-examples}
+:::
+
+## Agent Based Simulation (ABS) Examples
+
+These examples look at how vidigi could be used for agent based simulation instead.
+
+::: {#abs-examples}
 :::
 
 ## Legacy Examples
