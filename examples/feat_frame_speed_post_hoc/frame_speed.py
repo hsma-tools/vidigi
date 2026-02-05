@@ -115,7 +115,7 @@ event_position_df = create_event_position_df(
 run_button = st.button("Press to run simulation")
 
 if run_button:
-    g.arrival_df = "examples/feaat_frame_speed_post_hoc/ed_arrivals_more_frequent.csv"
+    g.arrival_df = "examples/feat_frame_speed_post_hoc/ed_arrivals_more_frequent.csv"
     my_trial = Trial()
 
     my_trial.run_trial()
