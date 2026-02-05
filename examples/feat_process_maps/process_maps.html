@@ -401,16 +401,22 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>However, there are a lot of useful visualisations that we can borrow from the process mining world and adapt for simulation, aiding in communicating processes with non-technical stakeholders, as well as verifying and debugging our model at various levels of granularity.</p>
 <p>What do we mean by a process map? Well, it could be an output like this:</p>
 <p><img src="process_map_image.png" class="img-fluid"></p>
-<p>This gives us a quick overview of - the number of entities that reach each stage (the numbers in the ‘nodes’ - the boxes) - the number of people moving between each stage (the numbers on the ‘edges’ - the links) - all of the possible pathways observed through the system - the relative likeliness of each branch at each point (the thickness of the lines between the ‘edges’)</p>
+<p>This gives us a quick overview of</p>
+<ul>
+<li>the number of entities that reach each stage (the numbers in the ‘nodes’ - the boxes)</li>
+<li>the number of people moving between each stage (the numbers on the ‘edges’ - the links)</li>
+<li>all of the possible pathways observed through the system</li>
+<li>the relative likeliness of each branch at each point (the thickness of the lines between the ‘edges’)</li>
+</ul>
 <p>Vidigi allows for the creation of these types of outputs in three different ways: - static outputs using the Graphviz library - interactive outputs in jupyter notebooks using ipycytoscape - interactive outputs in streamlit web apps using streamlit-cytoscape</p>
 <p>In this section, we’ll explore each of these.</p>
 <p>We’ll start with a set of standard imports.</p>
-<div id="782cbe09" class="cell" data-execution_count="11">
+<div id="782cbe09" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <section id="example-1---a-simple-linear-pathway" class="level2">
 <h2 class="anchored" data-anchor-id="example-1---a-simple-linear-pathway">Example 1 - A simple linear pathway</h2>
-<div id="afb713cf" class="cell" data-execution_count="12">
+<div id="afb713cf" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> examples.feat_process_maps.logger_model <span class="im">import</span> Trial, g</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="callout callout-style-default callout-note callout-titled">
@@ -674,7 +680,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-<div id="3d0fe14e" class="cell" data-execution_count="14">
+<div id="3d0fe14e" class="cell" data-execution_count="5">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>my_trial <span class="op">=</span> Trial()</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>my_trial.run_trial()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
@@ -686,17 +692,17 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 <p>Because of how this model has been set up, we have an attribute containing a list of EventLogger objects. We’ll pull back the first one, representing the first run.</p>
-<div id="781f11f9" class="cell" data-execution_count="15">
+<div id="781f11f9" class="cell" data-execution_count="6">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>single_run <span class="op">=</span> my_trial.all_event_logs[<span class="dv">0</span>]</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>single_run</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-display" data-execution_count="15">
-<pre><code>&lt;vidigi.logging.EventLogger at 0x1d24aec8210&gt;</code></pre>
+<div class="cell-output cell-output-display" data-execution_count="6">
+<pre><code>&lt;vidigi.logging.EventLogger at 0x21725df5b90&gt;</code></pre>
 </div>
 </div>
-<div id="d9e1d19c" class="cell" data-execution_count="16">
+<div id="d9e1d19c" class="cell" data-execution_count="7">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>single_run.generate_dfg()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-display" data-execution_count="16">
+<div class="cell-output cell-output-display" data-execution_count="7">
 <div>
 <figure class="figure">
 <p><img src="process_maps_files/figure-html/cell-8-output-1.svg" class="img-fluid figure-img"></p>
@@ -706,12 +712,16 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <p>We can generate a different type of graph, passing in any arguments accepted by the relevant function.</p>
 <p>The accepted arguments can be found in the following places:</p>
-<p>Graphviz outputs: (here)[../../reference/process_mapping.dfg_to_graphviz.qmd] Jupyter cytoscape outputs: (here)[../../reference/process_mapping.dfg_to_cytoscape.qmd] Streamlit cytoscape outputs: (here)[../../reference/process_mapping.dfg_to_cytoscape_streamlit.qmd]</p>
-<div id="e4cbdc60" class="cell" data-execution_count="17">
+<ul>
+<li>Graphviz outputs: <a href="../../reference/process_mapping.dfg_to_graphviz.html">here</a></li>
+<li>Jupyter cytoscape outputs: <a href="../../reference/process_mapping.dfg_to_cytoscape.html">here</a></li>
+<li>Streamlit cytoscape outputs: <a href="../../reference/process_mapping.dfg_to_cytoscape_streamlit.html">here</a></li>
+</ul>
+<div id="e4cbdc60" class="cell" data-execution_count="8">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>single_run.generate_dfg(output_format<span class="op">=</span><span class="st">"cytoscape-jupyter"</span>, spacing_factor<span class="op">=</span><span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display">
 <script type="application/vnd.jupyter.widget-view+json">
-{"model_id":"a55d43a0e03b44239e793af92e13ef34","version_major":2,"version_minor":0,"quarto_mimetype":"application/vnd.jupyter.widget-view+json"}
+{"model_id":"d67775f5f468416981c2629a66c820bd","version_major":2,"version_minor":0,"quarto_mimetype":"application/vnd.jupyter.widget-view+json"}
 </script>
 </div>
 </div>
@@ -719,21 +729,21 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="example-2---a-simple-linear-pathway---without-eventlogger-or-for-fine-control-over-the-dfg-functions" class="level2">
 <h2 class="anchored" data-anchor-id="example-2---a-simple-linear-pathway---without-eventlogger-or-for-fine-control-over-the-dfg-functions">Example 2 - A simple linear pathway - Without EventLogger, or for fine control over the DFG functions</h2>
 <p>First, we will need some extra imports.</p>
-<div id="6b914e2a" class="cell" data-execution_count="18">
+<div id="6b914e2a" class="cell" data-execution_count="9">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> vidigi.process_mapping <span class="im">import</span> add_sim_timestamp, discover_dfg, dfg_to_graphviz, dfg_to_cytoscape</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>First, let’s read in an event log. This is a standard vidigi event log created with the EventLogger class, with the dataframe saved as a csv for easy portability.</p>
-<div id="6f249b98" class="cell" data-execution_count="19">
+<div id="6f249b98" class="cell" data-execution_count="10">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>event_log <span class="op">=</span> pd.read_csv(<span class="st">"sample_event_log_10_day_10_run.csv"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p><strong>IMPORTANT</strong> - we must filter any event log down to just a single run!</p>
 <p>If we don’t, we’ll get very odd behaviour because the entity IDs are reused across runs, and as entities will arrive at different points or take different paths in different runs, it will start to look like they’ve moved back and forth between different stages.</p>
 <p>Alternatively, you could create a new entity ID column where it takes account of the run number as well, and pass this through when we use the <code>discover_dfg()</code> vidigi function.</p>
-<div id="f7d983fe" class="cell" data-execution_count="20">
+<div id="f7d983fe" class="cell" data-execution_count="11">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>event_log_single <span class="op">=</span> event_log[event_log[<span class="st">"run"</span>]<span class="op">==</span><span class="dv">1</span>]</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>event_log_single.head()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-display" data-execution_count="20">
+<div class="cell-output cell-output-display" data-execution_count="11">
 <div>
 
 
@@ -826,10 +836,10 @@ Note
 <p>This is because the functions are designed to work regardless of the unit of time you’ve used for your simulation - but it’s a lot easier if we encode that at the beginning of the process, and allows the dfg to calculate various summary statistics.</p>
 <p>The defaults for column names reflect vidigi’s EventLogger default, so if we’ve used EventLogger, we won’t need to specify column names here.</p>
 <p>If we have a simulation where we don’t really have a date in mind - for example, a simulation that shows no seasonality across the year - then we can leave the <code>sim_start</code> parameter blank, and it will choose a dummy date of 12am on the 1st January, 2000. This won’t be displayed anywhere in the later visualisations, so you don’t have to worry too much about it!</p>
-<div id="ae959896" class="cell" data-execution_count="21">
+<div id="ae959896" class="cell" data-execution_count="12">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>df_timestamp <span class="op">=</span> add_sim_timestamp(event_log_single, time_unit<span class="op">=</span><span class="st">"minutes"</span>)</span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>df_timestamp.head()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-display" data-execution_count="21">
+<div class="cell-output cell-output-display" data-execution_count="12">
 <div>
 
 
@@ -910,13 +920,13 @@ Note
 </div>
 </div>
 <p>Now we can use the <code>discover_dfg</code> function to turn the event log into the format required by the various static and interactive visualisation functions.</p>
-<div id="9cb722d2" class="cell" data-execution_count="22">
+<div id="9cb722d2" class="cell" data-execution_count="13">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>nodes, edges <span class="op">=</span> discover_dfg(df_timestamp)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Let’s explore what our nodes look like.</p>
-<div id="bc8e425e" class="cell" data-execution_count="23">
+<div id="bc8e425e" class="cell" data-execution_count="14">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>nodes</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-display" data-execution_count="23">
+<div class="cell-output cell-output-display" data-execution_count="14">
 <div>
 
 
@@ -961,9 +971,9 @@ Note
 </div>
 </div>
 <p>The edges dataframe then calculates the frequency of various transitions between nodes, the probability of each - here 1.0 as there are no branching steps - and various time-based metrics for each transition.</p>
-<div id="4684b51b" class="cell" data-execution_count="24">
+<div id="4684b51b" class="cell" data-execution_count="15">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>edges</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-display" data-execution_count="24">
+<div class="cell-output cell-output-display" data-execution_count="15">
 <div>
 
 
@@ -1038,12 +1048,12 @@ Note
 </div>
 </div>
 <p>Finally, we can display the output.</p>
-<div id="3df524ef" class="cell" data-execution_count="25">
+<div id="3df524ef" class="cell" data-execution_count="16">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>dfg_to_graphviz(</span>
 <span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>    nodes,</span>
 <span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    edges,</span>
 <span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-display" data-execution_count="25">
+<div class="cell-output cell-output-display" data-execution_count="16">
 <div>
 <figure class="figure">
 <p><img src="process_maps_files/figure-html/cell-17-output-1.svg" class="img-fluid figure-img"></p>
@@ -1052,13 +1062,13 @@ Note
 </div>
 </div>
 <p>By default, it will display the mean time between steps. We could instead ask for the median:</p>
-<div id="c67a8955" class="cell" data-execution_count="26">
+<div id="c67a8955" class="cell" data-execution_count="17">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>dfg_to_graphviz(</span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>    nodes,</span>
 <span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    edges,</span>
 <span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>    time_metric<span class="op">=</span><span class="st">"median"</span></span>
 <span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-display" data-execution_count="26">
+<div class="cell-output cell-output-display" data-execution_count="17">
 <div>
 <figure class="figure">
 <p><img src="process_maps_files/figure-html/cell-18-output-1.svg" class="img-fluid figure-img"></p>
@@ -1066,13 +1076,13 @@ Note
 </div>
 </div>
 </div>
-<div id="204aea57" class="cell" data-execution_count="27">
+<div id="204aea57" class="cell" data-execution_count="18">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>dfg_to_graphviz(</span>
 <span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>    nodes,</span>
 <span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    edges,</span>
 <span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    time_metric<span class="op">=</span><span class="st">"standard_deviation"</span></span>
 <span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-display" data-execution_count="27">
+<div class="cell-output cell-output-display" data-execution_count="18">
 <div>
 <figure class="figure">
 <p><img src="process_maps_files/figure-html/cell-19-output-1.svg" class="img-fluid figure-img"></p>
@@ -1080,13 +1090,13 @@ Note
 </div>
 </div>
 </div>
-<div id="275ef65b" class="cell" data-execution_count="28">
+<div id="275ef65b" class="cell" data-execution_count="19">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>dfg_to_graphviz(</span>
 <span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>    nodes,</span>
 <span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>    edges,</span>
 <span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>    time_metric<span class="op">=</span><span class="st">"max"</span></span>
 <span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-display" data-execution_count="28">
+<div class="cell-output cell-output-display" data-execution_count="19">
 <div>
 <figure class="figure">
 <p><img src="process_maps_files/figure-html/cell-20-output-1.svg" class="img-fluid figure-img"></p>
@@ -1094,13 +1104,13 @@ Note
 </div>
 </div>
 </div>
-<div id="cc25200a" class="cell" data-execution_count="29">
+<div id="cc25200a" class="cell" data-execution_count="20">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>dfg_to_graphviz(</span>
 <span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>    nodes,</span>
 <span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    edges,</span>
 <span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>    time_metric<span class="op">=</span><span class="st">"min"</span></span>
 <span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-display" data-execution_count="29">
+<div class="cell-output cell-output-display" data-execution_count="20">
 <div>
 <figure class="figure">
 <p><img src="process_maps_files/figure-html/cell-21-output-1.svg" class="img-fluid figure-img"></p>
@@ -1112,14 +1122,14 @@ Note
 <section id="a-more-complex-example---stroke-dataset---without-eventlogger" class="level1">
 <h1>A more complex example - stroke dataset - without EventLogger</h1>
 <p>Again, make sure we’ve imported the relevant functions.</p>
-<div id="77d2dc6e" class="cell" data-execution_count="30">
+<div id="77d2dc6e" class="cell" data-execution_count="21">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> vidigi.process_mapping <span class="im">import</span> add_sim_timestamp, discover_dfg, dfg_to_graphviz, dfg_to_cytoscape</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Let’s do the same for a more complex example - a stroke ward with multiple branching pathways and patient types.</p>
-<div id="cbb60024" class="cell" data-execution_count="31">
+<div id="cbb60024" class="cell" data-execution_count="22">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>stroke_df <span class="op">=</span> pd.read_csv(<span class="st">"event_log_stroke.csv"</span>)</span>
 <span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>stroke_df.head()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-display" data-execution_count="31">
+<div class="cell-output cell-output-display" data-execution_count="22">
 <div>
 
 
@@ -1234,17 +1244,17 @@ Note
 </div>
 <p>Let’s tidy it up a bit!</p>
 <p>The event names use underscores, which won’t wrap onto new lines, so we’ll replace those with spaces. We can also remove _time everywhere it appears, as in this case it’s not adding anything useful.</p>
-<div id="6b998b3c" class="cell" data-execution_count="32">
+<div id="6b998b3c" class="cell" data-execution_count="23">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>stroke_df[<span class="st">"event"</span>] <span class="op">=</span> stroke_df[<span class="st">"event"</span>].<span class="bu">apply</span>(<span class="kw">lambda</span> x: x.replace(<span class="st">"_time"</span>,<span class="st">""</span>).replace(<span class="st">"_"</span>, <span class="st">" "</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Again, we’ll add our timestamp, then get our nodes and edges.</p>
-<div id="05f02417" class="cell" data-execution_count="33">
+<div id="05f02417" class="cell" data-execution_count="24">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>stroke_df_timestamp <span class="op">=</span> add_sim_timestamp(stroke_df)</span>
 <span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>nodes, edges <span class="op">=</span> discover_dfg(stroke_df_timestamp, case_col<span class="op">=</span><span class="st">"id"</span>)</span>
 <span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>nodes</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-display" data-execution_count="33">
+<div class="cell-output cell-output-display" data-execution_count="24">
 <div>
 
 
@@ -1323,9 +1333,9 @@ Note
 </div>
 </div>
 </div>
-<div id="a64f998c" class="cell" data-execution_count="34">
+<div id="a64f998c" class="cell" data-execution_count="25">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>edges</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-display" data-execution_count="34">
+<div class="cell-output cell-output-display" data-execution_count="25">
 <div>
 
 
@@ -1533,7 +1543,7 @@ Note
 </div>
 <p>Let’s see what this looks like.</p>
 <p>We’ll also make use of a couple of extra parameters, filtering out any very infrequent paths.</p>
-<div id="2bd6f070" class="cell" data-execution_count="35">
+<div id="2bd6f070" class="cell" data-execution_count="26">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>g <span class="op">=</span> dfg_to_graphviz(</span>
 <span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>    nodes,</span>
 <span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>    edges,</span>
@@ -1541,7 +1551,7 @@ Note
 <span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a>g</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-display" data-execution_count="35">
+<div class="cell-output cell-output-display" data-execution_count="26">
 <div>
 <figure class="figure">
 <p><img src="process_maps_files/figure-html/cell-27-output-1.svg" class="img-fluid figure-img"></p>
@@ -1550,14 +1560,14 @@ Note
 </div>
 </div>
 <p>Let’s take a quick look at what our output actually is.</p>
-<div id="a3623ea4" class="cell" data-execution_count="36">
+<div id="a3623ea4" class="cell" data-execution_count="27">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="bu">type</span>(g)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-display" data-execution_count="36">
+<div class="cell-output cell-output-display" data-execution_count="27">
 <pre><code>graphviz.graphs.Digraph</code></pre>
 </div>
 </div>
 <p>It’s a graphviz Digraph object, which we could continue to modify if we wanted to.</p>
-<div id="af4e9728" class="cell" data-execution_count="37">
+<div id="af4e9728" class="cell" data-execution_count="28">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> g.subgraph(name<span class="op">=</span><span class="st">'cluster_0'</span>) <span class="im">as</span> c:</span>
 <span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>    c.attr(color<span class="op">=</span><span class="st">'blue'</span>)</span>
 <span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>    c.node_attr[<span class="st">'style'</span>] <span class="op">=</span> <span class="st">'filled'</span></span>
@@ -1567,7 +1577,7 @@ Note
 <span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>    c.attr(label<span class="op">=</span><span class="st">'Arrival and Triage'</span>)</span>
 <span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a>g</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-display" data-execution_count="37">
+<div class="cell-output cell-output-display" data-execution_count="28">
 <div>
 <figure class="figure">
 <p><img src="process_maps_files/figure-html/cell-29-output-1.svg" class="img-fluid figure-img"></p>
@@ -1576,7 +1586,7 @@ Note
 </div>
 </div>
 <p>We can also output to an image type - but note it will output as a series of bytes that will need to be converted into an image in some other way depending on your intended use.</p>
-<div id="a667624d" class="cell" data-execution_count="38">
+<div id="a667624d" class="cell" data-execution_count="29">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb31"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>g_png <span class="op">=</span> dfg_to_graphviz(</span>
 <span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>    nodes,</span>
 <span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>    edges,</span>
@@ -1586,15 +1596,15 @@ Note
 <span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb31-9"><a href="#cb31-9" aria-hidden="true" tabindex="-1"></a><span class="bu">type</span>(g_png)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-display" data-execution_count="38">
+<div class="cell-output cell-output-display" data-execution_count="29">
 <pre><code>bytes</code></pre>
 </div>
 </div>
-<div id="4a8cccf7" class="cell" data-execution_count="39">
+<div id="4a8cccf7" class="cell" data-execution_count="30">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb33"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> Image</span>
 <span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>Image(g_png)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-display" data-execution_count="39">
+<div class="cell-output cell-output-display" data-execution_count="30">
 <div>
 <figure class="figure">
 <p><img src="process_maps_files/figure-html/cell-31-output-1.png" class="img-fluid figure-img"></p>
@@ -1603,14 +1613,14 @@ Note
 </div>
 </div>
 <p>We can also change the orientation of the output.</p>
-<div id="3aea474d" class="cell" data-execution_count="40">
+<div id="3aea474d" class="cell" data-execution_count="31">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb34"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>dfg_to_graphviz(</span>
 <span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>    nodes,</span>
 <span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>    edges,</span>
 <span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>    min_frequency<span class="op">=</span><span class="dv">5</span>,</span>
 <span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>    direction<span class="op">=</span><span class="st">"TD"</span></span>
 <span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-display" data-execution_count="40">
+<div class="cell-output cell-output-display" data-execution_count="31">
 <div>
 <figure class="figure">
 <p><img src="process_maps_files/figure-html/cell-32-output-1.svg" class="img-fluid figure-img"></p>
@@ -1621,7 +1631,7 @@ Note
 <p>While the early parts of the process are easy to interpret in minutes, it’s hard to interpret the ward stay durations, which are much longer.</p>
 <p>We might actually want to split these into two separate graphs by filtering the node and edges table.</p>
 <p>For now, though, we’re going to rediscover our dfg using a unit of days, recalculate our timestamp and node/edge dataframes, and visualise this again. Note where ‘minutes’ has changed to ‘days’.</p>
-<div id="0fd849e5" class="cell" data-execution_count="41">
+<div id="0fd849e5" class="cell" data-execution_count="32">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb35"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>nodes, edges <span class="op">=</span> discover_dfg(stroke_df_timestamp, case_col<span class="op">=</span><span class="st">"id"</span>, time_unit<span class="op">=</span><span class="st">"days"</span>)</span>
 <span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>dfg_to_graphviz(</span>
@@ -1630,7 +1640,7 @@ Note
 <span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>    min_frequency<span class="op">=</span><span class="dv">5</span>,</span>
 <span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a>    time_unit<span class="op">=</span><span class="st">"days"</span>,</span>
 <span id="cb35-8"><a href="#cb35-8" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-display" data-execution_count="41">
+<div class="cell-output cell-output-display" data-execution_count="32">
 <div>
 <figure class="figure">
 <p><img src="process_maps_files/figure-html/cell-33-output-1.svg" class="img-fluid figure-img"></p>
@@ -1643,7 +1653,7 @@ Note
 <p>While a lot of value can be obtained from just checking that your model is behaving as expected, you can get even more out of these outputs by faceting by different elements.</p>
 <p>For example, here we expect patients with different stroke types to have different lengths of stay.</p>
 <p>We need to import the <code>display</code> function from <code>IPython.display</code> and explicitly call this to ensure it’s included.</p>
-<div id="3ec26f28" class="cell" data-execution_count="42">
+<div id="3ec26f28" class="cell" data-execution_count="33">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb36"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> display</span>
 <span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> stroke_df_timestamp[<span class="st">"patient_diagnosis_type"</span>].unique():</span>
@@ -1695,7 +1705,7 @@ Note
 </div>
 </div>
 <p>We could do what we talked about earlier and try filtering the nodes and edges.</p>
-<div id="623c5ec2" class="cell" data-execution_count="43">
+<div id="623c5ec2" class="cell" data-execution_count="34">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb37"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> display</span>
 <span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> stroke_df_timestamp[<span class="st">"patient_diagnosis_type"</span>].unique():</span>
@@ -1756,7 +1766,7 @@ Note
 </div>
 </div>
 <p>We could check out the maximum durations too.</p>
-<div id="7c36cdb1" class="cell" data-execution_count="44">
+<div id="7c36cdb1" class="cell" data-execution_count="35">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb38"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> stroke_df_timestamp[<span class="st">"patient_diagnosis_type"</span>].unique():</span>
 <span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>    df <span class="op">=</span> stroke_df_timestamp[stroke_df_timestamp[<span class="st">"patient_diagnosis_type"</span>]<span class="op">==</span>i]</span>
@@ -1811,7 +1821,7 @@ Note
 <h3 class="anchored" data-anchor-id="interactive-outputs">Interactive outputs</h3>
 <p>Finally, let’s take a look at an interactive output.</p>
 <p>Here, we pass in the same nodes and edges. However, we need to choose a layout; ‘dagre’ is often the best option for getting something that looks similar to graphviz.</p>
-<div id="5249124d" class="cell" data-execution_count="45">
+<div id="5249124d" class="cell" data-execution_count="36">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb39"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>nodes, edges <span class="op">=</span> discover_dfg(stroke_df_timestamp, case_col<span class="op">=</span><span class="st">"id"</span>, timestamp_col<span class="op">=</span><span class="st">"timestamp"</span>, time_unit<span class="op">=</span><span class="st">"days"</span>)</span>
 <span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>op <span class="op">=</span> dfg_to_cytoscape(</span>
@@ -1827,10 +1837,12 @@ Note
 <span id="cb39-13"><a href="#cb39-13" aria-hidden="true" tabindex="-1"></a>display(op)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display">
 <script type="application/vnd.jupyter.widget-view+json">
-{"model_id":"27eaec5612d04d30bfe4b8ed88936c02","version_major":2,"version_minor":0,"quarto_mimetype":"application/vnd.jupyter.widget-view+json"}
+{"model_id":"1ae48f4050f7416a9575b74d8494555a","version_major":2,"version_minor":0,"quarto_mimetype":"application/vnd.jupyter.widget-view+json"}
 </script>
 </div>
 </div>
+<p>You can also try this out in the following Streamlit app.</p>
+<iframe width="780" height="500" src="https://vidigi-dfg-demo.streamlit.app/?embed=true" title="Demo app"></iframe>
 
 
 </section>
