@@ -33,6 +33,12 @@ format:
 </style>
 ```
 
+:::{.callout-tip}
+Since this deep dive was originally written, vidigi has gained a key new feature - the generation of process maps (directly-follows graphs), so now has more overlaps with what bupaR can do.
+
+This page has been left here as it still feels like a valuable dive into the capabilities of bupaR and how you can bring vidigi logs into it, but you may wish to explore [the process mapping (DFG) page instead](../feat_process_maps/process_maps.ipynb).
+:::
+
 The title of this section is perhaps misleading! As the author of the package, I think the visuals produced by the two packages occupy slightly different niches, and the use of both can benefit your project.
 
 As an additional bonus, the process of creating the logs you require for a vidigi project give you the perfect dataset for your bupaR visuals too!

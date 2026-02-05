@@ -2,6 +2,8 @@
 image: example.png
 ---
 
+## Changing the play speed (frame duration and frame transition duration) without regenerating the animation
+
 Vidigi provides a way for you to change the frame speed (how long each frame reamins on the screen) and the frame transition speed (the time allowed for each entity to move from its position in one frame to the next) when you initialise the animation.
 
 However, because of the way the frame speed changes are carried out, you can actually change this after the animation has been created without having to completely rerun the animation generation code.
