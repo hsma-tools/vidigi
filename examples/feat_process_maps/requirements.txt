@@ -1,1 +1,2 @@
 vidigi
+streamlit[charts]
