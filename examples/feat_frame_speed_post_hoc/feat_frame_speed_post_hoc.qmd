@@ -1,0 +1,23 @@
+---
+image: example.png
+---
+
+Vidigi provides a way for you to change the frame speed (how long each frame reamins on the screen) and the frame transition speed (the time allowed for each entity to move from its position in one frame to the next) when you initialise the animation.
+
+However, because of the way the frame speed changes are carried out, you can actually change this after the animation has been created without having to completely rerun the animation generation code.
+
+Try this out in the app below.
+
+You could take this further and set some predefined combinations of frame and transition speed to approximate having a 1x, 2x, 5x and 10x speed option.
+
+```{=html}
+<iframe width='780' height='500' src='https://vidigi-frame-duration-demo.streamlit.app/?embed=true' title='Demo app'></iframe>
+```
+
+:::{.callout-tip expand="false"}
+### Click here to view the full code for the streamlit app
+
+```python
+{{< include frame_speed.py >}}
+```
+:::
