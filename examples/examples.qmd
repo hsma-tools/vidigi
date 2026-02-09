@@ -40,6 +40,7 @@ listing:
       - "example_15_gas_station_refuelling/gas_station.ipynb"
       - "example_16_packing_robot/packing_robot.ipynb"
       - "example_17_resourceless_larger_queues/resourceless_longer_queues.ipynb"
+      - "example_19_moving_resource/moving_resource.ipynb"
     type: grid # A list style instead of a grid
     sort: "title"
     grid-columns: 3
