@@ -1,14 +1,12 @@
 [
   {
-    "listing": "/examples/feature_breakdowns.html",
+    "listing": "/vidigi_docs/getting_started.html",
     "items": [
-      "/examples/feat_changing_sim_time/feat_changing_sim_time.html",
-      "/examples/feat_gauge_only_animations/feat_gauge_only_animations.html",
-      "/examples/feat_process_maps/process_maps.html",
-      "/examples/feat_repeating_overlay/feat_repeating_overlay.html",
-      "/examples/feat_vidigi_logging_class/feat_example_logging_class.html",
-      "/examples/feat_frame_speed_post_hoc/feat_frame_speed_post_hoc.html",
-      "/examples/feat_vidigi_vs_bupar/vidigi_vs_bupar.html"
+      "/vidigi_docs/basic_example_with_vidigi_logger_helpers.html",
+      "/vidigi_docs/basic_example_with_vidigi_logger_helpers_multiple_servers.html",
+      "/vidigi_docs/basic_example_minimal_required_vidigi_functions.html",
+      "/vidigi_docs/adding_vidigi_to_a_simple_simpy_model_hsma_structure.html",
+      "/examples/example_4_ciw/ex_4_ciw.html"
     ]
   },
   {
@@ -33,6 +31,7 @@
       "/examples/example_12_resourceless_with_back_and_forth/ex_12_resourceless_advanced.html",
       "/examples/example_16_packing_robot/packing_robot.html",
       "/examples/example_3_simplest_case_priority_resource/ex_3_simplest_case_priority_resource.html",
+      "/examples/example_19_moving_resource/moving_resource.html",
       "/examples/example_15_gas_station_refuelling/gas_station.html",
       "/examples/example_18_vidigi_with_mesa_abs/vidigi_abs.html",
       "/vidigi_docs/adding_vidigi_to_a_simple_simpy_model_hsma_structure_old.html",
@@ -40,13 +39,15 @@
     ]
   },
   {
-    "listing": "/vidigi_docs/getting_started.html",
+    "listing": "/examples/feature_breakdowns.html",
     "items": [
-      "/vidigi_docs/basic_example_with_vidigi_logger_helpers.html",
-      "/vidigi_docs/basic_example_with_vidigi_logger_helpers_multiple_servers.html",
-      "/vidigi_docs/basic_example_minimal_required_vidigi_functions.html",
-      "/vidigi_docs/adding_vidigi_to_a_simple_simpy_model_hsma_structure.html",
-      "/examples/example_4_ciw/ex_4_ciw.html"
+      "/examples/feat_changing_sim_time/feat_changing_sim_time.html",
+      "/examples/feat_gauge_only_animations/feat_gauge_only_animations.html",
+      "/examples/feat_process_maps/process_maps.html",
+      "/examples/feat_repeating_overlay/feat_repeating_overlay.html",
+      "/examples/feat_vidigi_logging_class/feat_example_logging_class.html",
+      "/examples/feat_frame_speed_post_hoc/feat_frame_speed_post_hoc.html",
+      "/examples/feat_vidigi_vs_bupar/vidigi_vs_bupar.html"
     ]
   }
 ]
