@@ -7,7 +7,7 @@ ipywidgets==8.1.5
 ipycytoscape==1.3.3
 jupyterlab==4.2.4
 jupyterlab-spellchecker==0.8.4
-lintquarto==0.7.0
+lintquarto==0.8.0
 matplotlib==3.9.2
 nbqa
 numpy==1.26.2
@@ -19,6 +19,7 @@ pydantic==2.10.4
 pytest==8.3.2
 pytest-html==4.1.1
 quartodoc==0.9.1
+setuptools
 simpy==4.0.2
 sim-tools==0.9.0
 st-cytoscape==0.0.5
