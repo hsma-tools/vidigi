@@ -209,3 +209,9 @@ body.quarto-dark .custom-grid-card {
 }
 
 .bg-green { background-color: #216630; }
+
+body.quarto-light .footer,
+body.quarto-light .nav-footer {
+  background-color: #216630;
+  color: #ffffff;
+}
