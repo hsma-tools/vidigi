@@ -9,6 +9,7 @@ jupyterlab==4.2.4
 jupyterlab-spellchecker==0.8.4
 lintquarto==0.8.0
 matplotlib==3.9.2
+mesa==2.3.0
 nbqa
 numpy==1.26.2
 pandas==2.0.1

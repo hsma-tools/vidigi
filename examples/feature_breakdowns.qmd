@@ -5,6 +5,7 @@ listing:
   - id: feature_breakdowns
     contents:
       - "feat_*/*.ipynb"
+      - "feat_*/*.qmd"
     type: grid # A list style instead of a grid
     sort: false
     grid-columns: 3

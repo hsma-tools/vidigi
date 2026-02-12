@@ -1,3 +1,13 @@
+# 1.2.2
+
+### Examples
+- New example available of how to use vidigi to visualise an agent based simulation
+
+### Fixes
+- Fixes to custom hover data assignment so that custom hover fields are now available
+- Fixes to custom hover data assignment in case of no scenario being specified
+- Fixes to docstring around custom hover text definition (incorrectly said to use column names rather than customdata[0] notation)
+
 # 1.2.1
 
 - Major redesign of documentation

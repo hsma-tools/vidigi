@@ -13,7 +13,10 @@ st.set_page_config(layout="wide")
 
 st.title("Vidigi Process Map Output Showcase")
 
-stroke_df = pd.read_csv("dev/event_log_stroke.csv")
+try:
+    stroke_df = pd.read_csv("event_log_stroke.csv")
+except FileNotFoundError:
+    stroke_df = pd.read_csv("examples/feat_process_maps/event_log_stroke.csv")
 
 with st.expander("Click to view the original event log"):
     st.dataframe(stroke_df)
