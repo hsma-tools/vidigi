@@ -43,7 +43,6 @@
   --bs-card-cap-color: ;
   --bs-card-height: ;
   --bs-card-color: ;
-  --bs-card-bg: #2d2d2d;
   --bs-card-img-overlay-padding: 1rem;
   --bs-card-group-margin: 0.75rem;
   position: relative;
@@ -61,6 +60,16 @@
   border: var(--bs-card-border-width) solid var(--bs-card-border-color);
   border-radius: var(--bs-card-border-radius);
   max-width: min(99%, 100vw - 10px);
+}
+
+/* Card background colour differs between light and dark mode */
+body.quarto-light .custom-grid-card {
+  --bs-card-bg: #f6fff0;
+  background-color: var(--bs-card-bg);
+}
+body.quarto-dark .custom-grid-card {
+  --bs-card-bg: #2d2d2d;
+  background-color: var(--bs-card-bg);
 }
 
 .main-card-content {
@@ -200,3 +209,9 @@
 }
 
 .bg-green { background-color: #216630; }
+
+body.quarto-light .footer,
+body.quarto-light .nav-footer {
+  background-color: #216630;
+  color: #ffffff;
+}

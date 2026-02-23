@@ -10,7 +10,7 @@ dependencies:
   - jupyterlab=4.2.4
   - jupyterlab-spellchecker=0.8.4
   - libtiff=4.5.1
-  - lintquarto=0.7.0
+  - lintquarto=0.8.0
   - matplotlib=3.9.2
   - nbqa
   - numpy=1.26.2
@@ -23,7 +23,7 @@ dependencies:
   - pytest=8.3.2
   - pytest-html=4.1.1
   - quartodoc=0.9.1
-  - simpy=4.0.2
+  - simpy=4.1.1
   - sim-tools=0.9.0
   - streamlit=1.52.2
   - tox=4.25.0
