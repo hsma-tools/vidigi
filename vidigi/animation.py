@@ -1017,7 +1017,7 @@ def animate_activity_log(
     wrap_queues_at: Optional[int] = 20,
     wrap_resources_at: Optional[int] = 20,
     step_snapshot_max: int = 50,
-    limit_duration: int = 10 * 60 * 24,
+    limit_duration: Optional[int] = None,
     plotly_height: int = 900,
     plotly_width: Optional[int] = None,
     include_play_button: bool = True,
@@ -1106,8 +1106,8 @@ def animate_activity_log(
         Maximum number of patients to show in each snapshot per event (default
         is 50).
     limit_duration : int, optional
-        Maximum duration to animate in minutes (default is 10 days or 14400
-        minutes).
+        Maximum duration to animate in minutes (default is None, which
+        auto-adjusts to the maximum time in the provided event log).
     plotly_height : int, optional
         Height of the Plotly figure in pixels (default is 900).
     plotly_width : int, optional
@@ -1252,6 +1252,9 @@ def animate_activity_log(
         print(
             f"Animation function called at {time.strftime('%H:%M:%S', time.localtime())}"
         )
+
+    if limit_duration is None:
+        limit_duration = round(max(event_log["time"]))
 
     full_entity_df = reshape_for_animations(
         event_log,
