@@ -1,5 +1,6 @@
 ---
 title: A Simple Salabim Model
+image: bank.gif
 filters:
   - line-highlight
 ---
@@ -21,7 +22,7 @@ from vidigi.animation import animate_activity_log
 
 ## Original Salabim model
 
-This is the original model code from Salabim (though with `trace=False` and shorter run-time than the original):
+This is the original model code from Salabim (though with `trace=False`, more frequent arrivals, and shorter run-time than the original):
 
 ```{python}
 # Source: https://www.salabim.org/manual/Modelling.html#a-bank-example
@@ -35,7 +36,7 @@ class CustomerGenerator(sim.Component):
     def process(self):
         while True:
             Customer()
-            self.hold(sim.Uniform(5, 15).sample())
+            self.hold(sim.Uniform(3, 12).sample())
 
 
 class Customer(sim.Component):
@@ -80,7 +81,7 @@ class CustomerGenerator(sim.Component):
     def process(self):
         while True:
             Customer()
-            self.hold(sim.Uniform(5, 15).sample())
+            self.hold(sim.Uniform(3, 12).sample())
 
 class Customer(sim.Component):
     def process(self):
@@ -142,10 +143,10 @@ class Scenario:
     n_clerks = 3
 
 event_position_df = create_event_position_df([
-    EventPosition(event="arrival", x=25, y=250, label="Arrival"),
-    EventPosition(event="wait_for_clerk", x=150, y=180, label="Waiting Line"),
-    EventPosition(event="service_begins", x=270, y=150, label="Being Served", resource="n_clerks"),
-    EventPosition(event="depart", x=270, y=70, label="Exit"),
+    EventPosition(event="arrival", x=25, y=200, label="Arrival"),
+    EventPosition(event="wait_for_clerk", x=160, y=130, label="Waiting Line"),
+    EventPosition(event="service_begins", x=280, y=130, label="Being Served", resource="n_clerks"),
+    EventPosition(event="depart", x=325, y=50, label="Exit"),
 ])
 
 fig = animate_activity_log(
@@ -154,9 +155,16 @@ fig = animate_activity_log(
     scenario=Scenario(),
     every_x_time_units=5,
     plotly_height=800,
-    plotly_width=1000,
-    setup_mode=True,
-    add_background_image="examples/salabim_bank/bank_background.drawio.png"
+    plotly_width=900,
+    override_x_max=350,
+    override_y_max = 275,
+    resource_icon_size=50,
+    gap_between_resources=20,
+    wrap_queues_at=12,
+    gap_between_queue_rows=10,
+    display_stage_labels=False,
+    add_background_image="examples/salabim_bank/bank_background.drawio.png",
+    background_image_opacity=1
 )
 
 fig
