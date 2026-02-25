@@ -1016,7 +1016,7 @@ def animate_activity_log(
     every_x_time_units: int = 10,
     wrap_queues_at: Optional[int] = 20,
     wrap_resources_at: Optional[int] = 20,
-    step_snapshot_max: int = 50,
+    step_snapshot_max: int = 60,
     limit_duration: Optional[int] = None,
     plotly_height: int = 900,
     plotly_width: Optional[int] = None,
@@ -1104,7 +1104,7 @@ def animate_activity_log(
         20).
     step_snapshot_max : int, optional
         Maximum number of patients to show in each snapshot per event (default
-        is 50).
+        is 60).
     limit_duration : int, optional
         Maximum duration to animate in minutes (default is None, which
         auto-adjusts to the maximum time in the provided event log).
