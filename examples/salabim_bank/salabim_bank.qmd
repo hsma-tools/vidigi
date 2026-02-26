@@ -14,6 +14,7 @@ It is a model of a bank with three clerks. Customers arrival following a uniform
 The required imports for this page:
 
 ```{python}
+import os
 import salabim as sim
 from vidigi.logging import EventLogger
 from vidigi.utils import EventPosition, create_event_position_df
@@ -149,6 +150,11 @@ event_position_df = create_event_position_df([
     EventPosition(event="depart", x=325, y=50, label="Exit"),
 ])
 
+project_dir = os.environ["QUARTO_PROJECT_DIR"]
+background_image = os.path.join(
+    project_dir, "examples", "salabim_bank", "bank_background.drawio.png"
+)
+
 fig = animate_activity_log(
     event_log=event_log_df,
     event_position_df=event_position_df,
@@ -163,7 +169,7 @@ fig = animate_activity_log(
     wrap_queues_at=12,
     gap_between_queue_rows=10,
     display_stage_labels=False,
-    add_background_image="bank_background.drawio.png",
+    add_background_image=background_image,
     background_image_opacity=1
 )
 
