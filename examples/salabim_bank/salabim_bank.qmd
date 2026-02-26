@@ -146,14 +146,10 @@ class Scenario:
 event_position_df = create_event_position_df([
     EventPosition(event="arrival", x=25, y=200, label="Arrival"),
     EventPosition(event="wait_for_clerk", x=160, y=130, label="Waiting Line"),
-    EventPosition(event="service_begins", x=280, y=130, label="Being Served", resource="n_clerks"),
+    EventPosition(event="service_begins", x=280, y=130, label="Being Served",
+                  resource="n_clerks"),
     EventPosition(event="depart", x=325, y=50, label="Exit"),
 ])
-
-project_dir = os.environ["QUARTO_PROJECT_DIR"]
-background_image = os.path.join(
-    project_dir, "examples", "salabim_bank", "bank_background.drawio.png"
-)
 
 fig = animate_activity_log(
     event_log=event_log_df,
@@ -161,7 +157,7 @@ fig = animate_activity_log(
     scenario=Scenario(),
     every_x_time_units=5,
     plotly_height=800,
-    plotly_width=900,
+    plotly_width=850,
     override_x_max=350,
     override_y_max = 275,
     resource_icon_size=50,
@@ -169,7 +165,7 @@ fig = animate_activity_log(
     wrap_queues_at=12,
     gap_between_queue_rows=10,
     display_stage_labels=False,
-    add_background_image=background_image,
+    add_background_image="examples/salabim_bank/bank_background.drawio.png",
     background_image_opacity=1
 )
 
