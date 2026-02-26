@@ -157,7 +157,7 @@ fig = animate_activity_log(
     scenario=Scenario(),
     every_x_time_units=5,
     plotly_height=800,
-    plotly_width=850,
+    plotly_width=900,
     override_x_max=350,
     override_y_max = 275,
     resource_icon_size=50,
@@ -165,7 +165,7 @@ fig = animate_activity_log(
     wrap_queues_at=12,
     gap_between_queue_rows=10,
     display_stage_labels=False,
-    add_background_image="examples/salabim_bank/bank_background.drawio.png",
+    add_background_image="https://raw.githubusercontent.com/amyheather/vidigi/refs/heads/main/examples/salabim_bank/bank_background.drawio.png",
     background_image_opacity=1
 )
 
