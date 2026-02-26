@@ -7,6 +7,50 @@ from vidigi.prep import reshape_for_animations, generate_animation_df
 from vidigi.utils import _enforce_int_params
 import numpy as np
 from typing import Optional
+import base64
+import mimetypes
+from pathlib import Path
+
+
+def process_background_image_path(source):
+    """
+    Prepare a background image reference so it works reliably with Plotly.
+
+    Plain local file paths are fragile and often fail when code runs from a
+    different working directory or on another machine. This helper turns local
+    paths into `data:` URIs so that background images are embedded directly
+    in the figure and work consistently across environments. URLs and
+    existing `data:` URIs are left unchanged.
+
+    Parameters
+    ----------
+    source : str or pathlib.Path
+        Local path to an image file, an HTTP(S) URL, or a `data:` URI.
+
+    Returns
+    -------
+    str
+        Value to use as the `source` argument to
+        `Figure.add_layout_image`.
+    """
+    # Leave URLs and existing data URIs unchanged
+    if (
+        isinstance(source, str) and
+        source.startswith(("http://", "https://", "data:"))
+    ):
+        return source
+
+    # Treat everything else as a local path
+    path = Path(source)
+    data = path.read_bytes()
+
+    mime, _ = mimetypes.guess_type(path.name)
+    if mime is None:
+        # Fallback if the extension is unknown
+        mime = "application/octet-stream"
+
+    b64 = base64.b64encode(data).decode("ascii")
+    return f"data:{mime};base64,{b64}"
 
 
 @_enforce_int_params(["plotly_height"])
@@ -930,9 +974,10 @@ def generate_animation(
     # to the next stage
 
     if add_background_image is not None:
+        image_path = process_background_image_path(add_background_image)
         fig.add_layout_image(
             dict(
-                source=add_background_image,
+                source=image_path,
                 xref="x domain",
                 yref="y domain",
                 x=1,
