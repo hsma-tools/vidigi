@@ -571,7 +571,7 @@ def generate_animation_df(
             )
 
     # Determine the position for any queuing steps
-    queues = entity_data[entity_data["event_type"] == "queue"].copy()
+    queues = entity_data[entity_data[event_type_col_name] == "queue"].copy()
 
     # queues['y_final'] =  queues['y']
     queues = queues.rename(columns={"y": "y_final"})
@@ -609,18 +609,23 @@ def generate_animation_df(
             path_or_buf=f"{extra_path}_5_resource_use_steps.csv", index=True
         )
         queues.to_csv(path_or_buf=f"{extra_path}_6_queues.csv", index=True)
-        exit_steps.to_csv(
-            path_or_buf=f"{extra_path}_7_exit_steps.csv", index=True
-        )
+        exit_steps.to_csv(path_or_buf=f"{extra_path}_7_exit_steps.csv", index=True)
+
+    # Handle any additional steps
+    other = entity_data[
+        ~(entity_data[event_type_col_name].isin(["queue", "resource_use", "exit"]))
+    ].copy()
+    other["x_final"] = other["x"]
+    other["y_final"] = other["y"]
 
     if len(resource_use) > 0:
         processed_entities_df = pd.concat(
-            [queues, resource_use, exit_steps], ignore_index=True
+            [queues, resource_use, exit_steps, other], ignore_index=True
         )
         del resource_use, queues, exit_steps
     else:
         processed_entities_df = pd.concat(
-            [queues, exit_steps], ignore_index=True
+            [queues, exit_steps, other], ignore_index=True
         )
         del queues, exit_steps
 
