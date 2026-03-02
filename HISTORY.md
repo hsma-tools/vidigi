@@ -1,3 +1,19 @@
+
+# 1.3.0
+
+### Enhancements
+- Adjust how environment time is accessed to allow salabim environments to work with logger (thanks [Amy](https://github.com/amyheather)!)
+- Allow passing of local background image (thanks [Amy](https://github.com/amyheather)!)
+    - There may still be some issues when trying to render outputs via GitHub actions
+
+### Fixes
+- Changes to generate_animation_df to fix bug where entities would sometimes seem to reappear from the top left for their final exit step
+- Change default for step_snapshot_max to 60 (from 50) so that if you use the default for this and wrap_queues_at (20), you won't end up triggering a warning (thanks [Amy](https://github.com/amyheather)!)
+- Add a better default for the set_limit_duration parameter. This now defaults to the maximum time seen in the simulation rather than 1440, which was equivalent to 1 day in minutes (thanks [Amy](https://github.com/amyheather)!)
+
+### New examples
+- Example added of using vidigi with Salabim (thanks [Amy](https://github.com/amyheather)!)
+
 # 1.2.2
 
 ### Examples
