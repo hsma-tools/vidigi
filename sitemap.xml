@@ -2,274 +2,274 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://hsma-tools.github.io/vidigi/examples/feat_vidigi_logging_class/feat_example_logging_class.html</loc>
-    <lastmod>2026-03-02T10:51:29.516Z</lastmod>
+    <lastmod>2026-03-02T11:43:21.390Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/examples/feat_process_maps/process_maps.html</loc>
-    <lastmod>2026-03-02T10:51:29.443Z</lastmod>
+    <lastmod>2026-03-02T11:43:21.317Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/examples/feat_changing_sim_time/feat_changing_sim_time.html</loc>
-    <lastmod>2026-03-02T10:51:29.313Z</lastmod>
+    <lastmod>2026-03-02T11:43:21.188Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/examples/example_8_wide_resource_spacing/ex_8_model.html</loc>
-    <lastmod>2026-03-02T10:51:29.047Z</lastmod>
+    <lastmod>2026-03-02T11:43:20.923Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/examples/example_6_simplest_case_storewrapper/ex_6_simplest_case.html</loc>
-    <lastmod>2026-03-02T10:51:28.963Z</lastmod>
+    <lastmod>2026-03-02T11:43:20.840Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/examples/example_4_ciw/ex_4_ciw.html</loc>
-    <lastmod>2026-03-02T10:51:28.764Z</lastmod>
+    <lastmod>2026-03-02T11:43:20.637Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/examples/example_2_branching_multistep/ex_2_branching_multistep_case.html</loc>
-    <lastmod>2026-03-02T10:51:28.663Z</lastmod>
+    <lastmod>2026-03-02T11:43:20.538Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/examples/example_19_moving_resource/moving_resource.html</loc>
-    <lastmod>2026-03-02T10:51:28.525Z</lastmod>
+    <lastmod>2026-03-02T11:43:20.401Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/examples/example_17_resourceless_larger_queues/resourceless_longer_queues.html</loc>
-    <lastmod>2026-03-02T10:51:28.242Z</lastmod>
+    <lastmod>2026-03-02T11:43:20.086Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/examples/example_15_gas_station_refuelling/gas_station.html</loc>
-    <lastmod>2026-03-02T10:51:28.143Z</lastmod>
+    <lastmod>2026-03-02T11:43:19.981Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/examples/example_13_additional_synchronised_traces_method_1/synchronised_traces.html</loc>
-    <lastmod>2026-03-02T10:51:28.047Z</lastmod>
+    <lastmod>2026-03-02T11:43:19.886Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/examples/example_11_resourceless_animation/ex_11_resourceless.html</loc>
-    <lastmod>2026-03-02T10:51:27.954Z</lastmod>
+    <lastmod>2026-03-02T11:43:19.792Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/vidigi_docs/roadmap.html</loc>
-    <lastmod>2026-03-02T10:51:29.676Z</lastmod>
+    <lastmod>2026-03-02T11:43:21.559Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/vidigi_docs/populating_event_logs.html</loc>
-    <lastmod>2026-03-02T10:51:29.676Z</lastmod>
+    <lastmod>2026-03-02T11:43:21.558Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/vidigi_docs/introduction.html</loc>
-    <lastmod>2026-03-02T10:51:29.675Z</lastmod>
+    <lastmod>2026-03-02T11:43:21.558Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/vidigi_docs/getting_started.html</loc>
-    <lastmod>2026-03-02T10:51:29.542Z</lastmod>
+    <lastmod>2026-03-02T11:43:21.418Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/vidigi_docs/changelog.html</loc>
-    <lastmod>2026-03-02T10:51:29.542Z</lastmod>
+    <lastmod>2026-03-02T11:43:21.418Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/vidigi_docs/basic_example_with_vidigi_logger_helpers.html</loc>
-    <lastmod>2026-03-02T10:51:29.533Z</lastmod>
+    <lastmod>2026-03-02T11:43:21.410Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/vidigi_docs/attribution_for_examples.html</loc>
-    <lastmod>2026-03-02T10:51:29.532Z</lastmod>
+    <lastmod>2026-03-02T11:43:21.408Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/vidigi_docs/adding_vidigi_to_a_simple_simpy_model_hsma_structure.html</loc>
-    <lastmod>2026-03-02T10:51:29.531Z</lastmod>
+    <lastmod>2026-03-02T11:43:21.407Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/reference/utils.create_event_position_df.html</loc>
-    <lastmod>2026-03-02T10:51:31.798Z</lastmod>
+    <lastmod>2026-03-02T11:43:23.689Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/reference/resources.populate_store.html</loc>
-    <lastmod>2026-03-02T10:51:31.704Z</lastmod>
+    <lastmod>2026-03-02T11:43:23.596Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/reference/resources.VidigiResource.html</loc>
-    <lastmod>2026-03-02T10:51:31.658Z</lastmod>
+    <lastmod>2026-03-02T11:43:23.551Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/reference/resources.VidigiPriorityStore.html</loc>
-    <lastmod>2026-03-02T10:51:31.698Z</lastmod>
+    <lastmod>2026-03-02T11:43:23.591Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/reference/process_mapping.discover_dfg.html</loc>
-    <lastmod>2026-03-02T10:51:31.811Z</lastmod>
+    <lastmod>2026-03-02T11:43:23.702Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/reference/process_mapping.dfg_to_cytoscape_streamlit.html</loc>
-    <lastmod>2026-03-02T10:51:31.863Z</lastmod>
+    <lastmod>2026-03-02T11:43:23.754Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/reference/process_mapping.add_sim_timestamp.html</loc>
-    <lastmod>2026-03-02T10:51:31.803Z</lastmod>
+    <lastmod>2026-03-02T11:43:23.695Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/reference/prep.generate_animation_df.html</loc>
-    <lastmod>2026-03-02T10:51:31.627Z</lastmod>
+    <lastmod>2026-03-02T11:43:23.521Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/reference/logging.EventLogger.html</loc>
-    <lastmod>2026-03-02T10:51:31.755Z</lastmod>
+    <lastmod>2026-03-02T11:43:23.647Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/reference/ciw.event_log_from_ciw_recs.html</loc>
-    <lastmod>2026-03-02T10:51:31.871Z</lastmod>
+    <lastmod>2026-03-02T11:43:23.762Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/reference/animation.animate_activity_log.html</loc>
-    <lastmod>2026-03-02T10:51:31.604Z</lastmod>
+    <lastmod>2026-03-02T11:43:23.498Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/notes.html</loc>
-    <lastmod>2026-03-02T10:51:29.524Z</lastmod>
+    <lastmod>2026-03-02T11:43:21.400Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/examples/feature_breakdowns.html</loc>
-    <lastmod>2026-03-02T10:51:29.518Z</lastmod>
+    <lastmod>2026-03-02T11:43:21.392Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/examples/feat_frame_speed_post_hoc/feat_frame_speed_post_hoc.html</loc>
-    <lastmod>2026-03-02T10:51:29.315Z</lastmod>
+    <lastmod>2026-03-02T11:43:21.189Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/examples/examples.html</loc>
-    <lastmod>2026-03-02T10:51:29.196Z</lastmod>
+    <lastmod>2026-03-02T11:43:21.071Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/examples/feat_vidigi_vs_bupar/vidigi_vs_bupar.html</loc>
-    <lastmod>2026-03-02T10:51:29.518Z</lastmod>
+    <lastmod>2026-03-02T11:43:21.392Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/examples/salabim_bank/salabim_bank.html</loc>
-    <lastmod>2026-03-02T10:51:29.524Z</lastmod>
+    <lastmod>2026-03-02T11:43:21.399Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/reference/animation.add_repeating_overlay.html</loc>
-    <lastmod>2026-03-02T10:51:31.655Z</lastmod>
+    <lastmod>2026-03-02T11:43:23.548Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/reference/animation.generate_animation.html</loc>
-    <lastmod>2026-03-02T10:51:31.650Z</lastmod>
+    <lastmod>2026-03-02T11:43:23.543Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/reference/index.html</loc>
-    <lastmod>2026-03-02T10:51:31.555Z</lastmod>
+    <lastmod>2026-03-02T11:43:23.451Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/reference/logging.TrialLogger.html</loc>
-    <lastmod>2026-03-02T10:51:31.792Z</lastmod>
+    <lastmod>2026-03-02T11:43:23.683Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/reference/prep.reshape_for_animations.html</loc>
-    <lastmod>2026-03-02T10:51:31.613Z</lastmod>
+    <lastmod>2026-03-02T11:43:23.507Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/reference/process_mapping.dfg_to_cytoscape.html</loc>
-    <lastmod>2026-03-02T10:51:31.850Z</lastmod>
+    <lastmod>2026-03-02T11:43:23.741Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/reference/process_mapping.dfg_to_graphviz.html</loc>
-    <lastmod>2026-03-02T10:51:31.829Z</lastmod>
+    <lastmod>2026-03-02T11:43:23.720Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/reference/process_mapping.process_nodes_and_edges_for_cytoscape.html</loc>
-    <lastmod>2026-03-02T10:51:31.837Z</lastmod>
+    <lastmod>2026-03-02T11:43:23.729Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/reference/resources.VidigiPriorityStoreLegacy.html</loc>
-    <lastmod>2026-03-02T10:51:31.873Z</lastmod>
+    <lastmod>2026-03-02T11:43:23.764Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/reference/resources.VidigiStore.html</loc>
-    <lastmod>2026-03-02T10:51:31.677Z</lastmod>
+    <lastmod>2026-03-02T11:43:23.570Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/reference/utils.EventPosition.html</loc>
-    <lastmod>2026-03-02T10:51:31.796Z</lastmod>
+    <lastmod>2026-03-02T11:43:23.687Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/reference/utils.streamlit_play_all.html</loc>
-    <lastmod>2026-03-02T10:51:31.866Z</lastmod>
+    <lastmod>2026-03-02T11:43:23.757Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/vidigi_docs/adding_vidigi_to_a_simple_simpy_model_hsma_structure_old.html</loc>
-    <lastmod>2026-03-02T10:51:29.531Z</lastmod>
+    <lastmod>2026-03-02T11:43:21.407Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/vidigi_docs/basic_example_minimal_required_vidigi_functions.html</loc>
-    <lastmod>2026-03-02T10:51:29.532Z</lastmod>
+    <lastmod>2026-03-02T11:43:21.409Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/vidigi_docs/basic_example_with_vidigi_logger_helpers_multiple_servers.html</loc>
-    <lastmod>2026-03-02T10:51:29.540Z</lastmod>
+    <lastmod>2026-03-02T11:43:21.416Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/vidigi_docs/code_of_conduct.html</loc>
-    <lastmod>2026-03-02T10:51:29.542Z</lastmod>
+    <lastmod>2026-03-02T11:43:21.418Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/vidigi_docs/index.html</loc>
-    <lastmod>2026-03-02T10:51:29.675Z</lastmod>
+    <lastmod>2026-03-02T11:43:21.557Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/vidigi_docs/licence.html</loc>
-    <lastmod>2026-03-02T10:51:29.676Z</lastmod>
+    <lastmod>2026-03-02T11:43:21.558Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/vidigi_docs/release_notes.html</loc>
-    <lastmod>2026-03-02T10:51:29.676Z</lastmod>
+    <lastmod>2026-03-02T11:43:21.558Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/examples/example_10_advanced_ciw/ex_10_ciw.html</loc>
-    <lastmod>2026-03-02T10:51:27.810Z</lastmod>
+    <lastmod>2026-03-02T11:43:19.645Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/examples/example_12_resourceless_with_back_and_forth/ex_12_resourceless_advanced.html</loc>
-    <lastmod>2026-03-02T10:51:28.008Z</lastmod>
+    <lastmod>2026-03-02T11:43:19.846Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/examples/example_14_carwash/carwash.html</loc>
-    <lastmod>2026-03-02T10:51:28.075Z</lastmod>
+    <lastmod>2026-03-02T11:43:19.914Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/examples/example_16_packing_robot/packing_robot.html</loc>
-    <lastmod>2026-03-02T10:51:28.181Z</lastmod>
+    <lastmod>2026-03-02T11:43:20.018Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/examples/example_18_vidigi_with_mesa_abs/vidigi_abs.html</loc>
-    <lastmod>2026-03-02T10:51:28.482Z</lastmod>
+    <lastmod>2026-03-02T11:43:20.352Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/examples/example_1_simplest_case/ex_1_simplest_case.html</loc>
-    <lastmod>2026-03-02T10:51:28.646Z</lastmod>
+    <lastmod>2026-03-02T11:43:20.520Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/examples/example_3_simplest_case_priority_resource/ex_3_simplest_case_priority_resource.html</loc>
-    <lastmod>2026-03-02T10:51:28.704Z</lastmod>
+    <lastmod>2026-03-02T11:43:20.577Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/examples/example_5_simplest_case_wrapped_resources/ex_5_simplest_case_wrapped_resource.html</loc>
-    <lastmod>2026-03-02T10:51:28.826Z</lastmod>
+    <lastmod>2026-03-02T11:43:20.699Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/examples/example_7_simplest_case_priority_resource_storewrapper/ex_7_simplest_case_priority_resource.html</loc>
-    <lastmod>2026-03-02T10:51:29.011Z</lastmod>
+    <lastmod>2026-03-02T11:43:20.887Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/examples/example_9_wide_resource_spacing_multiple/ex_9_model.html</loc>
-    <lastmod>2026-03-02T10:51:29.194Z</lastmod>
+    <lastmod>2026-03-02T11:43:21.069Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/examples/feat_gauge_only_animations/feat_gauge_only_animations.html</loc>
-    <lastmod>2026-03-02T10:51:29.401Z</lastmod>
+    <lastmod>2026-03-02T11:43:21.276Z</lastmod>
   </url>
   <url>
     <loc>https://hsma-tools.github.io/vidigi/examples/feat_repeating_overlay/feat_repeating_overlay.html</loc>
-    <lastmod>2026-03-02T10:51:29.507Z</lastmod>
+    <lastmod>2026-03-02T11:43:21.381Z</lastmod>
   </url>
 </urlset>
