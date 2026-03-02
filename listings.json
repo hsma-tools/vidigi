@@ -10,6 +10,18 @@
     ]
   },
   {
+    "listing": "/examples/feature_breakdowns.html",
+    "items": [
+      "/examples/feat_changing_sim_time/feat_changing_sim_time.html",
+      "/examples/feat_gauge_only_animations/feat_gauge_only_animations.html",
+      "/examples/feat_process_maps/process_maps.html",
+      "/examples/feat_repeating_overlay/feat_repeating_overlay.html",
+      "/examples/feat_vidigi_logging_class/feat_example_logging_class.html",
+      "/examples/feat_frame_speed_post_hoc/feat_frame_speed_post_hoc.html",
+      "/examples/feat_vidigi_vs_bupar/vidigi_vs_bupar.html"
+    ]
+  },
+  {
     "listing": "/examples/examples.html",
     "items": [
       "/examples/example_1_simplest_case/ex_1_simplest_case.html",
@@ -22,6 +34,7 @@
       "/examples/example_6_simplest_case_storewrapper/ex_6_simplest_case.html",
       "/examples/example_10_advanced_ciw/ex_10_ciw.html",
       "/examples/example_4_ciw/ex_4_ciw.html",
+      "/examples/salabim_bank/salabim_bank.html",
       "/examples/example_13_additional_synchronised_traces_method_1/synchronised_traces.html",
       "/examples/example_9_wide_resource_spacing_multiple/ex_9_model.html",
       "/examples/example_8_wide_resource_spacing/ex_8_model.html",
@@ -36,18 +49,6 @@
       "/examples/example_18_vidigi_with_mesa_abs/vidigi_abs.html",
       "/vidigi_docs/adding_vidigi_to_a_simple_simpy_model_hsma_structure_old.html",
       "/vidigi_docs/populating_event_logs.html"
-    ]
-  },
-  {
-    "listing": "/examples/feature_breakdowns.html",
-    "items": [
-      "/examples/feat_changing_sim_time/feat_changing_sim_time.html",
-      "/examples/feat_gauge_only_animations/feat_gauge_only_animations.html",
-      "/examples/feat_process_maps/process_maps.html",
-      "/examples/feat_repeating_overlay/feat_repeating_overlay.html",
-      "/examples/feat_vidigi_logging_class/feat_example_logging_class.html",
-      "/examples/feat_frame_speed_post_hoc/feat_frame_speed_post_hoc.html",
-      "/examples/feat_vidigi_vs_bupar/vidigi_vs_bupar.html"
     ]
   }
 ]
