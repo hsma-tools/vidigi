@@ -28,6 +28,14 @@ listing:
     grid-columns: 3
     template: ../vidigi_docs/listing.ejs
 
+  - id: salabim-examples
+    contents:
+      - "salabim_bank/salabim_bank.qmd"
+    type: grid
+    sort: "title"
+    grid-columns: 3
+    template: ../vidigi_docs/listing.ejs
+
   - id: advanced-examples
     contents:
       - "example_3_simplest_case_priority_resource/ex_3_simplest_case_priority_resource.ipynb"
@@ -79,6 +87,12 @@ Models built using the Ciw library.
 ::: {#ciw-examples}
 :::
 
+## Salabim Examples
+
+Models built using the Salabim package.
+
+::: {#salabim-examples}
+:::
 
 ## Advanced Examples
 

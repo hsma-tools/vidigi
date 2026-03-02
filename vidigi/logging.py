@@ -163,7 +163,10 @@ class EventLogger:
     def log_event(self, context: Optional[dict] = None, **event_data):
         if "time" not in event_data:
             if self.env is not None and hasattr(self.env, "now"):
-                event_data["time"] = self.env.now
+                now_attr = self.env.now
+                event_data["time"] = (
+                    now_attr() if callable(now_attr) else now_attr
+                )
             else:
                 raise ValueError(
                     "Missing 'time' and no simulation environment provided."

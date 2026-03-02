@@ -5,6 +5,7 @@ dependencies:
   - black
   - flake8
   - griffe=0.49.0
+  - greenlet=3.3.2
   - hatch
   - ipywidgets=8.1.5
   - jupyterlab=4.2.4
@@ -23,6 +24,7 @@ dependencies:
   - pytest=8.3.2
   - pytest-html=4.1.1
   - quartodoc=0.9.1
+  - salabim=26.0.1
   - simpy=4.1.1
   - sim-tools=0.9.0
   - streamlit=1.52.2

@@ -1,0 +1,173 @@
+---
+title: A Simple Salabim Model
+image: bank.gif
+filters:
+  - line-highlight
+---
+
+Using a Salabim model with vidigi follows the same process as a SimPy model. To demonstrate how it is set-up, we will use an example model from the [Salabim documentation](https://www.salabim.org/manual/Modelling.html#a-bank-example). Salabim is licensed under MIT.
+
+It is a model of a bank with three clerks. Customers arrival following a uniform distribution, wait in a first in first out (FIFO) queue, and then are served by a clerk which has a fixed time of 30.
+
+## Imports
+
+The required imports for this page:
+
+```{python}
+import os
+import salabim as sim
+from vidigi.logging import EventLogger
+from vidigi.utils import EventPosition, create_event_position_df
+from vidigi.animation import animate_activity_log
+```
+
+## Original Salabim model
+
+This is the original model code from Salabim (though with `trace=False`, more frequent arrivals, and shorter run-time than the original):
+
+```{python}
+# Source: https://www.salabim.org/manual/Modelling.html#a-bank-example
+# License: MIT
+# Copyright holder: salabim contributors
+
+# Bank, 3 clerks.py
+
+
+class CustomerGenerator(sim.Component):
+    def process(self):
+        while True:
+            Customer()
+            self.hold(sim.Uniform(3, 12).sample())
+
+
+class Customer(sim.Component):
+    def process(self):
+        self.enter(waitingline)
+        for clerk in clerks:
+            if clerk.ispassive():
+                clerk.activate()
+                break  # activate at most one clerk
+        self.passivate()
+
+
+class Clerk(sim.Component):
+    def process(self):
+        while True:
+            while len(waitingline) == 0:
+                self.passivate()
+            self.customer = waitingline.pop()
+            self.hold(30)
+            self.customer.activate()
+
+
+env = sim.Environment(trace=False)
+CustomerGenerator()
+clerks = [Clerk() for _ in range(3)]
+
+waitingline = sim.Queue("waitingline")
+
+env.run(till=500)
+```
+
+## Modified Salabim model to generate event log
+
+To create a vidigi animation, we need to use `EventLogger` from `vidigi.logger` to record when customers arrive, queue, are served and depart.
+
+When we log resource use, we need to provide an id for the resource, so we also add `clerk_id` to the `Clerk` class, and set these to `1, 2, 3` when we create our instances of `Clerk`.
+
+After running the simulation, we generate the event log dataframe by calling `logger.to_dataframe()`.
+
+```{python}
+class CustomerGenerator(sim.Component):
+    def process(self):
+        while True:
+            Customer()
+            self.hold(sim.Uniform(3, 12).sample())
+
+class Customer(sim.Component):
+    def process(self):
+        logger.log_arrival(entity_id=self.name()) #<<
+        self.enter(waitingline)
+        logger.log_queue(entity_id=self.name(), event="wait_for_clerk") #<<
+        for clerk in clerks:
+            if clerk.ispassive():
+                clerk.activate()
+                break
+        self.passivate()
+        logger.log_departure(entity_id=self.name()) #<<
+
+class Clerk(sim.Component):
+    def setup(self, clerk_id): #<<
+        self.clerk_id = clerk_id #<<
+
+    def process(self):
+        while True:
+            while len(waitingline) == 0:
+                self.passivate()
+            self.customer = waitingline.pop()
+
+            logger.log_resource_use_start( #<<
+                entity_id=self.customer.name(), #<<
+                resource_id=self.clerk_id, #<<
+                event="service_begins" #<<
+            ) #<<
+            self.hold(30)
+            self.customer.activate()
+
+            logger.log_resource_use_end( #<<
+                entity_id=self.customer.name(), #<<
+                resource_id=self.clerk_id, #<<
+                event="service_ends" #<<
+            ) #<<
+
+env = sim.Environment(trace=False)
+logger = EventLogger(env=env) #<<
+CustomerGenerator()
+clerks = [Clerk(clerk_id=i + 1) for i in range(3)] #<<
+
+waitingline = sim.Queue("waitingline")
+
+env.run(till=500) #<<
+
+event_log_df = logger.to_dataframe() #<<
+event_log_df #<<
+```
+
+## Creating the animation
+
+Now, we simply generate the animation from our event log.
+
+The `animate_activity_log()` function requires a class with the number of clerks, so we create `Scenario` with `n_clerks=3`.
+
+```{python}
+class Scenario:
+    n_clerks = 3
+
+event_position_df = create_event_position_df([
+    EventPosition(event="arrival", x=25, y=200, label="Arrival"),
+    EventPosition(event="wait_for_clerk", x=160, y=130, label="Waiting Line"),
+    EventPosition(event="service_begins", x=280, y=130, label="Being Served",
+                  resource="n_clerks"),
+    EventPosition(event="depart", x=325, y=50, label="Exit"),
+])
+
+fig = animate_activity_log(
+    event_log=event_log_df,
+    event_position_df=event_position_df,
+    scenario=Scenario(),
+    every_x_time_units=5,
+    plotly_height=800,
+    plotly_width=900,
+    override_x_max=350,
+    override_y_max = 275,
+    resource_icon_size=50,
+    gap_between_resources=20,
+    wrap_queues_at=12,
+    gap_between_queue_rows=10,
+    display_stage_labels=False,
+    add_background_image="https://raw.githubusercontent.com/amyheather/vidigi/refs/heads/main/examples/salabim_bank/bank_background.drawio.png",
+    background_image_opacity=1
+)
+
+fig
+```

@@ -7,6 +7,50 @@ from vidigi.prep import reshape_for_animations, generate_animation_df
 from vidigi.utils import _enforce_int_params
 import numpy as np
 from typing import Optional
+import base64
+import mimetypes
+from pathlib import Path
+
+
+def process_background_image_path(source):
+    """
+    Prepare a background image reference so it works reliably with Plotly.
+
+    Plain local file paths are fragile and often fail when code runs from a
+    different working directory or on another machine. This helper turns local
+    paths into `data:` URIs so that background images are embedded directly
+    in the figure and work consistently across environments. URLs and
+    existing `data:` URIs are left unchanged.
+
+    Parameters
+    ----------
+    source : str or pathlib.Path
+        Local path to an image file, an HTTP(S) URL, or a `data:` URI.
+
+    Returns
+    -------
+    str
+        Value to use as the `source` argument to
+        `Figure.add_layout_image`.
+    """
+    # Leave URLs and existing data URIs unchanged
+    if (
+        isinstance(source, str) and
+        source.startswith(("http://", "https://", "data:"))
+    ):
+        return source
+
+    # Treat everything else as a local path
+    path = Path(source)
+    data = path.read_bytes()
+
+    mime, _ = mimetypes.guess_type(path.name)
+    if mime is None:
+        # Fallback if the extension is unknown
+        mime = "application/octet-stream"
+
+    b64 = base64.b64encode(data).decode("ascii")
+    return f"data:{mime};base64,{b64}"
 
 
 @_enforce_int_params(["plotly_height"])
@@ -930,9 +974,10 @@ def generate_animation(
     # to the next stage
 
     if add_background_image is not None:
+        image_path = process_background_image_path(add_background_image)
         fig.add_layout_image(
             dict(
-                source=add_background_image,
+                source=image_path,
                 xref="x domain",
                 yref="y domain",
                 x=1,
@@ -1016,8 +1061,8 @@ def animate_activity_log(
     every_x_time_units: int = 10,
     wrap_queues_at: Optional[int] = 20,
     wrap_resources_at: Optional[int] = 20,
-    step_snapshot_max: int = 50,
-    limit_duration: int = 10 * 60 * 24,
+    step_snapshot_max: int = 60,
+    limit_duration: Optional[int] = None,
     plotly_height: int = 900,
     plotly_width: Optional[int] = None,
     include_play_button: bool = True,
@@ -1104,10 +1149,10 @@ def animate_activity_log(
         20).
     step_snapshot_max : int, optional
         Maximum number of patients to show in each snapshot per event (default
-        is 50).
+        is 60).
     limit_duration : int, optional
-        Maximum duration to animate in minutes (default is 10 days or 14400
-        minutes).
+        Maximum duration to animate in minutes (default is None, which
+        auto-adjusts to the maximum time in the provided event log).
     plotly_height : int, optional
         Height of the Plotly figure in pixels (default is 900).
     plotly_width : int, optional
@@ -1252,6 +1297,9 @@ def animate_activity_log(
         print(
             f"Animation function called at {time.strftime('%H:%M:%S', time.localtime())}"
         )
+
+    if limit_duration is None:
+        limit_duration = round(max(event_log["time"]))
 
     full_entity_df = reshape_for_animations(
         event_log,
