@@ -886,10 +886,12 @@ from vidigi.utils import create_event_position_df, EventPosition
 
 # Create a list of EventPosition objects
 event_position_df = create_event_position_df([
-    EventPosition(event='arrival', x=50, y=450, label="Arrival"),
-    EventPosition(event='treatment_wait_begins', x=205, y=275, label="Waiting for Treatment"),
-    EventPosition(event='treatment_begins', x=205, y=175, label="Being Treated", resource='n_cubicles'),
-    EventPosition(event='depart', x=270, y=70, label="Exit")
+    EventPosition(event="arrival", x=50, y=450, label="Arrival"),
+    EventPosition(event="treatment_wait_begins", x=205, y=275,
+                  label="Waiting for Treatment"),
+    EventPosition(event="treatment_begins", x=205, y=175,
+                  label="Being Treated", resource="n_cubicles"),
+    EventPosition(event="depart", x=270, y=70, label="Exit")
 ])
 ```
 
@@ -968,7 +970,6 @@ animate_activity_log(
 ```{python}
 #| eval: true
 
-import random
 import numpy as np
 import pandas as pd
 import simpy
@@ -978,20 +979,22 @@ from vidigi.logging import EventLogger #<<
 from vidigi.utils import EventPosition, create_event_position_df #<<
 from vidigi.animation import animate_activity_log #<<
 
+
 # Class to store global parameter values.  We don't create an instance of this
 # class - we just refer to the class blueprint itself to access the numbers
 # inside.
 class g:
-    n_cubicles = 3 # The number of treatment cubicles
-    trauma_treat_mean = 40 # Mean of the trauma cubicle treatment distribution (Lognormal)
-    trauma_treat_var = 5 # Variance of the trauma cubicle treatment distribution (Lognormal)
+    n_cubicles = 3  # The number of treatment cubicles
+    trauma_treat_mean = 40  # Mean of the trauma cubicle treatment distribution (Lognormal)
+    trauma_treat_var = 5  # Variance of the trauma cubicle treatment distribution (Lognormal)
 
-    arrival_rate = 5 # mean of the exponential distribution for sampling the inter-arrival time of entities
+    arrival_rate = 5  # mean of the exponential distribution for sampling the inter-arrival time of entities
 
     # Simulation running parameters
-    sim_duration = 600 # The number of time units the simulation will run for
-    number_of_runs = 100 # The number of times the simulation will be run with different random number streams
-    random_number_set = 42 # Control the randomness in our distributions
+    sim_duration = 600  # The number of time units the simulation will run for
+    number_of_runs = 100  # The number of times the simulation will be run with different random number streams
+    random_number_set = 42  # Control the randomness in our distributions
+
 
 # Class representing patients coming in to the clinic.
 class Patient:
@@ -1001,6 +1004,7 @@ class Patient:
         self.wait_treat = -np.inf
         self.total_time = -np.inf
         self.treat_duration = -np.inf
+
 
 # Class representing our model of the clinic.
 class Model:
@@ -1033,17 +1037,17 @@ class Model:
         # Create our distributions
         # 1. for patient inter-arrival time
         self.patient_inter_arrival_dist = Exponential(
-            mean = g.arrival_rate,
+            mean=g.arrival_rate,
             # Set a random seed that will vary across runs
             # (this isn't the best way to set this - but will do for this example!)
-            random_seed = (self.run_number + 1) * g.random_number_set
-            )
+            random_seed=(self.run_number + 1) * g.random_number_set
+        )
         # 2. for the duration of patient treatments
         self.treat_dist = Lognormal(
-            mean = g.trauma_treat_mean,
-            stdev = g.trauma_treat_var,
-            random_seed = (self.run_number + 1) * g.random_number_set
-            )
+            mean=g.trauma_treat_mean,
+            stdev=g.trauma_treat_var,
+            random_seed=(self.run_number + 1) * g.random_number_set
+        )
 
         # By passing in the env we've created, the logger will default to the simulation  #<<
         # time when populating the time column of our event logs  #<<
@@ -1169,11 +1173,12 @@ class Model:
         # Run the model for the duration specified in g class
         self.env.run(until=g.sim_duration)
 
+
 # Class representing a Trial for our simulation - a batch of simulation runs.
 class Trial:
     # The constructor sets up a pandas dataframe that will store the key
     # results from each run against run number, with run number as the index.
-    def  __init__(self):
+    def __init__(self):
         self.df_trial_results = pd.DataFrame()
         self.df_trial_results["Run Number"] = [0]
         self.df_trial_results["Mean Queue Time Cubicle"] = [0.0]
@@ -1191,14 +1196,14 @@ class Trial:
             self.df_trial_results.loc[run] = (
                 # take the mean average (add up all values and divide by the number of values)
                 np.mean(
-                    [patient.wait_treat # grab the individual patient's wait time...
-                    for patient # for every patient...
-                    in my_model.patients] # in our list of patient objects
-                    )
+                    [patient.wait_treat  # grab the individual patient's wait time...
+                     for patient  # for every patient...
+                     in my_model.patients]  # in our list of patient objects
+                )
             )
 
-            # For each run, we append the logger object (which is of class EventLogger)  #<<
-            # to our list all_event_logs, which started out empty  #<<
+            # For each run, we append the logger object (which is of class  #<<
+            # EventLogger) to our list all_event_logs, which started out empty  #<<
             self.all_event_logs.append(my_model.logger) #<<
 
         # At the end, we create one large pandas dataframe of the results from every run
@@ -1231,59 +1236,69 @@ And finally, let's see what the animation looks like!
 #| eval: true
 #| echo: false
 # Filter our dataframe down to a single run
-single_run_event_log_df = my_trial.all_event_logs_df[my_trial.all_event_logs_df['run_number']==1]
+single_run_event_log_df = my_trial.all_event_logs_df[
+    my_trial.all_event_logs_df["run_number"] == 1
+]
 
 animate_activity_log(
-        # Pass in our filtered event log
-        event_log=single_run_event_log_df,
-        # Pass in our event position dataframe
-        event_position_df= event_position_df,
-        # Use an instance of the g class as our scenario so that it can access the required
-        # information about how many resources are available
-        scenario=g(),
-        # How long should the animation last? We can pass in any value here - but I've chosen to
-        # make it last as long as our originally defined simulation duration
-        limit_duration=g.sim_duration,
-        # Turn on logging messages
-        debug_mode=True,
-        # Turn on axis units - this can help with honing your event_position_df iteratively
-        setup_mode=True,
-        # How big should the time steps be? Here,
-        every_x_time_units=1,
-        # Should the animation allow you to just drag a slider to progress through the animation,
-        # or should it include a play button?
-        include_play_button=True,
-        # How big should the icons representing our entities be?
-        entity_icon_size=20,
-        # How big should the icons representing our resources be?
-        resource_icon_size=20,
-        # How big should the gap between our entities be when they are queueing?
-        gap_between_entities=6,
-        # When we wrap the entities to fit more neatly on the screen, how big should the vertical
-        # gap be between these rows?
-        gap_between_queue_rows=25,
-        # How tall, in pixels, should the plotly plot be?
-        plotly_height=600,
-        # How wide, in pixels, should the plotly plot be?
-        plotly_width=1000,
-        # How long, in milliseconds, should each frame last?
-        frame_duration=200,
-        # How long, in milliseconds, should the transition between each pair of frames be?
-        frame_transition_duration=600,
-        # How wide, in coordinates, should our plot's internal coordinate system be?
-        override_x_max=300,
-        # How tall, in coordinates, should our plot's internal coordinate system be?
-        override_y_max=500,
-        # How long should a queue be before it starts wrapping vertically?
-        wrap_queues_at=25,
-        # What are the maximum numbers of entities that should be displayed in any queueing steps
-        # before displaying additional entities as a text string like '+ 37 more'
-        step_snapshot_max=125,
-        # What should the time display units be underneath the simulation?
-        time_display_units="simulation_day_clock_ampm",
-        # display our Label column from our event_position_df to identify the position of each icon
-        display_stage_labels=True
-    )
+    # Pass in our filtered event log
+    event_log=single_run_event_log_df,
+    # Pass in our event position dataframe
+    event_position_df=event_position_df,
+    # Use an instance of the g class as our scenario so that it can access the
+    # required information about how many resources are available
+    scenario=g(),
+    # How long should the animation last? We can pass in any value here - but
+    # I've chosen to make it last as long as our originally defined simulation
+    # duration
+    limit_duration=g.sim_duration,
+    # Turn on logging messages
+    debug_mode=True,
+    # Turn on axis units - this can help with honing your event_position_df
+    # iteratively
+    setup_mode=True,
+    # How big should the time steps be? Here,
+    every_x_time_units=1,
+    # Should the animation allow you to just drag a slider to progress through
+    # the animation, or should it include a play button?
+    include_play_button=True,
+    # How big should the icons representing our entities be?
+    entity_icon_size=20,
+    # How big should the icons representing our resources be?
+    resource_icon_size=20,
+    # How big should the gap between our entities be when they are queueing?
+    gap_between_entities=6,
+    # When we wrap the entities to fit more neatly on the screen, how big
+    # should the vertical
+    # gap be between these rows?
+    gap_between_queue_rows=25,
+    # How tall, in pixels, should the plotly plot be?
+    plotly_height=600,
+    # How wide, in pixels, should the plotly plot be?
+    plotly_width=1000,
+    # How long, in milliseconds, should each frame last?
+    frame_duration=200,
+    # How long, in milliseconds, should the transition between each pair of
+    # frames be?
+    frame_transition_duration=600,
+    # How wide, in coordinates, should our plot's internal coordinate system
+    # be?
+    override_x_max=300,
+    # How tall, in coordinates, should our plot's internal coordinate system
+    # be?
+    override_y_max=500,
+    # How long should a queue be before it starts wrapping vertically?
+    wrap_queues_at=25,
+    # What are the maximum numbers of entities that should be displayed in any
+    # queueing steps before displaying additional entities as a text string
+    # like '+ 37 more'
+    step_snapshot_max=125,
+    # What should the time display units be underneath the simulation?
+    time_display_units="simulation_day_clock_ampm",
+    # display our Label column from our event_position_df to identify the
+    # position of each icon
+    display_stage_labels=True
+)
 ```
 
 When you have finished tweaking the layout, you can further enhance your output.
@@ -1291,29 +1306,34 @@ When you have finished tweaking the layout, you can further enhance your output.
 ```{python}
 #| eval: true
 animate_activity_log(
-        event_log=single_run_event_log_df,
-        event_position_df= event_position_df,
-        scenario=g(),
-        limit_duration=g.sim_duration,
-        debug_mode=False, # Turn off logging messages
-        setup_mode=False, # Turn off axis units
-        every_x_time_units=1,
-        include_play_button=True,
-        entity_icon_size=20,
-        resource_icon_size=20,
-        gap_between_entities=6,
-        gap_between_queue_rows=25,
-        plotly_height=600,
-        frame_duration=200,
-        plotly_width=1000,
-        override_x_max=300,
-        override_y_max=500,
-        wrap_queues_at=25,
-        step_snapshot_max=125,
-        time_display_units="simulation_day_clock_ampm",
-        display_stage_labels=False, # hide our Label column from our event_position_df
-        # Add a local or web-hosted image as our background
-        add_background_image="https://raw.githubusercontent.com/hsma-tools/vidigi/refs/heads/main/examples/example_1_simplest_case/Simplest%20Model%20Background%20Image%20-%20Horizontal%20Layout.drawio.png")
+    event_log=single_run_event_log_df,
+    event_position_df=event_position_df,
+    scenario=g(),
+    limit_duration=g.sim_duration,
+    debug_mode=False,  # Turn off logging messages
+    setup_mode=False,  # Turn off axis units
+    every_x_time_units=1,
+    include_play_button=True,
+    entity_icon_size=20,
+    resource_icon_size=20,
+    gap_between_entities=6,
+    gap_between_queue_rows=25,
+    plotly_height=600,
+    frame_duration=200,
+    plotly_width=1000,
+    override_x_max=300,
+    override_y_max=500,
+    wrap_queues_at=25,
+    step_snapshot_max=125,
+    time_display_units="simulation_day_clock_ampm",
+    display_stage_labels=False,  # hide Label column from event_position_df
+    # Add a local or web-hosted image as our background
+    add_background_image=(
+        "https://raw.githubusercontent.com/hsma-tools/vidigi/refs/heads/main/"
+        "examples/example_1_simplest_case/Simplest%20Model%20Background%20"
+        "Image%20-%20Horizontal%20Layout.drawio.png"
+    )
+)
 ```
 
 We can then rerun our animation, passing in different parameters - though make sure to rerun your trial if you do so!
@@ -1328,30 +1348,37 @@ my_trial = Trial()
 
 my_trial.run_trial()
 
-single_run_event_log_df = my_trial.all_event_logs_df[my_trial.all_event_logs_df['run_number']==1]
+single_run_event_log_df = my_trial.all_event_logs_df[
+    my_trial.all_event_logs_df["run_number"] == 1
+]
 
 animate_activity_log(
-        event_log=single_run_event_log_df,
-        event_position_df= event_position_df,
-        scenario=g(),
-        limit_duration=g.sim_duration,
-        debug_mode=False, # Turn off logging messages
-        setup_mode=False, # Turn off axis units
-        every_x_time_units=1,
-        include_play_button=True,
-        entity_icon_size=20,
-        resource_icon_size=20,
-        gap_between_entities=6,
-        gap_between_queue_rows=25,
-        plotly_height=600,
-        frame_duration=200,
-        plotly_width=1000,
-        override_x_max=300,
-        override_y_max=500,
-        wrap_queues_at=25,
-        step_snapshot_max=125,
-        time_display_units="simulation_day_clock_ampm",
-        display_stage_labels=False, # hide our Label column from our event_position_df
-        # Add a local or web-hosted image as our background
-        add_background_image="https://raw.githubusercontent.com/hsma-tools/vidigi/refs/heads/main/examples/example_1_simplest_case/Simplest%20Model%20Background%20Image%20-%20Horizontal%20Layout.drawio.png")
+    event_log=single_run_event_log_df,
+    event_position_df=event_position_df,
+    scenario=g(),
+    limit_duration=g.sim_duration,
+    debug_mode=False,  # Turn off logging messages
+    setup_mode=False,  # Turn off axis units
+    every_x_time_units=1,
+    include_play_button=True,
+    entity_icon_size=20,
+    resource_icon_size=20,
+    gap_between_entities=6,
+    gap_between_queue_rows=25,
+    plotly_height=600,
+    frame_duration=200,
+    plotly_width=1000,
+    override_x_max=300,
+    override_y_max=500,
+    wrap_queues_at=25,
+    step_snapshot_max=125,
+    time_display_units="simulation_day_clock_ampm",
+    display_stage_labels=False,  # hide Label column from event_position_df
+    # Add a local or web-hosted image as our background
+    add_background_image=(
+        "https://raw.githubusercontent.com/hsma-tools/vidigi/refs/heads/main/"
+        "examples/example_1_simplest_case/Simplest%20Model%20Background%20"
+        "Image%20-%20Horizontal%20Layout.drawio.png"
+    )
+)
 ```
