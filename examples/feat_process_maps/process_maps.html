@@ -418,6 +418,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="anchored" data-anchor-id="example-1---a-simple-linear-pathway">Example 1 - A simple linear pathway</h2>
 <div id="afb713cf" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> examples.feat_process_maps.logger_model <span class="im">import</span> Trial, g</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>/opt/conda/envs/vidigi_package_dev/lib/python3.11/site-packages/sim_tools/output_analysis.py:18: UserWarning:
+
+A NumPy version &gt;=1.26.4 and &lt;2.7.0 is required for this version of SciPy (detected version 1.26.2)
+</code></pre>
+</div>
 </div>
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
@@ -431,259 +437,259 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <div id="callout-1" class="callout-1-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> simpy</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> vidigi.logging <span class="im">import</span> EventLogger</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> vidigi.resources <span class="im">import</span> VidigiStore</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sim_tools.distributions <span class="im">import</span> Lognormal, Exponential</span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> random</span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Class to store global parameter values.  We don't create an instance of this</span></span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="co"># class - we just refer to the class blueprint itself to access the numbers</span></span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="co"># inside.</span></span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> g:</span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""</span></span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="co">    Create a scenario to parameterise the simulation model</span></span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="co">    Parameters:</span></span>
-<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="co">    -----------</span></span>
-<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a><span class="co">    random_number_set: int, optional (default=DEFAULT_RNG_SET)</span></span>
-<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a><span class="co">        Set to control the initial seeds of each stream of pseudo</span></span>
-<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a><span class="co">        random numbers used in the model.</span></span>
-<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a><span class="co">    n_cubicles: int</span></span>
-<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a><span class="co">        The number of treatment cubicles</span></span>
-<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a><span class="co">    trauma_treat_mean: float</span></span>
-<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a><span class="co">        Mean of the trauma cubicle treatment distribution (Lognormal)</span></span>
-<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a><span class="co">    trauma_treat_var: float</span></span>
-<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a><span class="co">        Variance of the trauma cubicle treatment distribution (Lognormal)</span></span>
-<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a><span class="co">    arrival_rate: float</span></span>
-<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a><span class="co">        Set the mean of the exponential distribution that is used to sample the</span></span>
-<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a><span class="co">        inter-arrival time of patients</span></span>
-<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a><span class="co">    sim_duration: int</span></span>
-<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a><span class="co">        The number of time units the simulation will run for</span></span>
-<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a><span class="co">    number_of_runs: int</span></span>
-<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a><span class="co">        The number of times the simulation will be run with different random number streams</span></span>
-<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a><span class="co">    """</span></span>
-<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a>    random_number_set <span class="op">=</span> <span class="dv">42</span></span>
-<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a>    n_cubicles <span class="op">=</span> <span class="dv">4</span></span>
-<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a>    trauma_treat_mean <span class="op">=</span> <span class="dv">40</span></span>
-<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a>    trauma_treat_var <span class="op">=</span> <span class="dv">5</span></span>
-<span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-50"><a href="#cb3-50" aria-hidden="true" tabindex="-1"></a>    arrival_rate <span class="op">=</span> <span class="dv">5</span></span>
-<span id="cb3-51"><a href="#cb3-51" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-52"><a href="#cb3-52" aria-hidden="true" tabindex="-1"></a>    sim_duration <span class="op">=</span> <span class="dv">600</span></span>
-<span id="cb3-53"><a href="#cb3-53" aria-hidden="true" tabindex="-1"></a>    number_of_runs <span class="op">=</span> <span class="dv">100</span></span>
-<span id="cb3-54"><a href="#cb3-54" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-55"><a href="#cb3-55" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-56"><a href="#cb3-56" aria-hidden="true" tabindex="-1"></a><span class="co"># | code-fold: true</span></span>
-<span id="cb3-57"><a href="#cb3-57" aria-hidden="true" tabindex="-1"></a><span class="co"># | code-summary: "Show the patient class code"</span></span>
-<span id="cb3-58"><a href="#cb3-58" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Patient:</span>
-<span id="cb3-59"><a href="#cb3-59" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""</span></span>
-<span id="cb3-60"><a href="#cb3-60" aria-hidden="true" tabindex="-1"></a><span class="co">    Class defining details for a patient entity</span></span>
-<span id="cb3-61"><a href="#cb3-61" aria-hidden="true" tabindex="-1"></a><span class="co">    """</span></span>
-<span id="cb3-62"><a href="#cb3-62" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-63"><a href="#cb3-63" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, p_id):</span>
-<span id="cb3-64"><a href="#cb3-64" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""</span></span>
-<span id="cb3-65"><a href="#cb3-65" aria-hidden="true" tabindex="-1"></a><span class="co">        Constructor method</span></span>
-<span id="cb3-66"><a href="#cb3-66" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-67"><a href="#cb3-67" aria-hidden="true" tabindex="-1"></a><span class="co">        Params:</span></span>
-<span id="cb3-68"><a href="#cb3-68" aria-hidden="true" tabindex="-1"></a><span class="co">        -----</span></span>
-<span id="cb3-69"><a href="#cb3-69" aria-hidden="true" tabindex="-1"></a><span class="co">        identifier: int</span></span>
-<span id="cb3-70"><a href="#cb3-70" aria-hidden="true" tabindex="-1"></a><span class="co">            a numeric identifier for the patient.</span></span>
-<span id="cb3-71"><a href="#cb3-71" aria-hidden="true" tabindex="-1"></a><span class="co">        """</span></span>
-<span id="cb3-72"><a href="#cb3-72" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.<span class="bu">id</span> <span class="op">=</span> p_id</span>
-<span id="cb3-73"><a href="#cb3-73" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.arrival <span class="op">=</span> <span class="op">-</span>np.inf</span>
-<span id="cb3-74"><a href="#cb3-74" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.wait_treat <span class="op">=</span> <span class="op">-</span>np.inf</span>
-<span id="cb3-75"><a href="#cb3-75" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.total_time <span class="op">=</span> <span class="op">-</span>np.inf</span>
-<span id="cb3-76"><a href="#cb3-76" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.treat_duration <span class="op">=</span> <span class="op">-</span>np.inf</span>
-<span id="cb3-77"><a href="#cb3-77" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-78"><a href="#cb3-78" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-79"><a href="#cb3-79" aria-hidden="true" tabindex="-1"></a><span class="co"># Class representing our model of the clinic.</span></span>
-<span id="cb3-80"><a href="#cb3-80" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Model:</span>
-<span id="cb3-81"><a href="#cb3-81" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""</span></span>
-<span id="cb3-82"><a href="#cb3-82" aria-hidden="true" tabindex="-1"></a><span class="co">    Simulates the simplest minor treatment process for a patient</span></span>
-<span id="cb3-83"><a href="#cb3-83" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-84"><a href="#cb3-84" aria-hidden="true" tabindex="-1"></a><span class="co">    1. Arrive</span></span>
-<span id="cb3-85"><a href="#cb3-85" aria-hidden="true" tabindex="-1"></a><span class="co">    2. Examined/treated by nurse when one available</span></span>
-<span id="cb3-86"><a href="#cb3-86" aria-hidden="true" tabindex="-1"></a><span class="co">    3. Discharged</span></span>
-<span id="cb3-87"><a href="#cb3-87" aria-hidden="true" tabindex="-1"></a><span class="co">    """</span></span>
-<span id="cb3-88"><a href="#cb3-88" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-89"><a href="#cb3-89" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Constructor to set up the model for a run.  We pass in a run number when</span></span>
-<span id="cb3-90"><a href="#cb3-90" aria-hidden="true" tabindex="-1"></a>    <span class="co"># we create a new model.</span></span>
-<span id="cb3-91"><a href="#cb3-91" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, run_number):</span>
-<span id="cb3-92"><a href="#cb3-92" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Create a SimPy environment in which everything will live</span></span>
-<span id="cb3-93"><a href="#cb3-93" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.env <span class="op">=</span> simpy.Environment()</span>
-<span id="cb3-94"><a href="#cb3-94" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-95"><a href="#cb3-95" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Store the passed in run number</span></span>
-<span id="cb3-96"><a href="#cb3-96" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.run_number <span class="op">=</span> run_number</span>
-<span id="cb3-97"><a href="#cb3-97" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-98"><a href="#cb3-98" aria-hidden="true" tabindex="-1"></a>        <span class="co"># By passing in the env we've created, the logger will default to the simulation</span></span>
-<span id="cb3-99"><a href="#cb3-99" aria-hidden="true" tabindex="-1"></a>        <span class="co"># time when populating the time column of our event logs</span></span>
-<span id="cb3-100"><a href="#cb3-100" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.logger <span class="op">=</span> EventLogger(env<span class="op">=</span><span class="va">self</span>.env, run_number<span class="op">=</span><span class="va">self</span>.run_number)</span>
-<span id="cb3-101"><a href="#cb3-101" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-102"><a href="#cb3-102" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Create a patient counter (which we'll use as a patient ID)</span></span>
-<span id="cb3-103"><a href="#cb3-103" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.patient_counter <span class="op">=</span> <span class="dv">0</span></span>
-<span id="cb3-104"><a href="#cb3-104" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-105"><a href="#cb3-105" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Create an empty list to hold our patients</span></span>
-<span id="cb3-106"><a href="#cb3-106" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.patients <span class="op">=</span> []</span>
-<span id="cb3-107"><a href="#cb3-107" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-108"><a href="#cb3-108" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Create our distributions</span></span>
-<span id="cb3-109"><a href="#cb3-109" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.init_distributions()</span>
-<span id="cb3-110"><a href="#cb3-110" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-111"><a href="#cb3-111" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Create our resources</span></span>
-<span id="cb3-112"><a href="#cb3-112" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.init_resources()</span>
-<span id="cb3-113"><a href="#cb3-113" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-114"><a href="#cb3-114" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> init_distributions(<span class="va">self</span>):</span>
-<span id="cb3-115"><a href="#cb3-115" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.patient_inter_arrival_dist <span class="op">=</span> Exponential(</span>
-<span id="cb3-116"><a href="#cb3-116" aria-hidden="true" tabindex="-1"></a>            mean<span class="op">=</span>g.arrival_rate, random_seed<span class="op">=</span><span class="va">self</span>.run_number <span class="op">*</span> g.random_number_set</span>
-<span id="cb3-117"><a href="#cb3-117" aria-hidden="true" tabindex="-1"></a>        )</span>
-<span id="cb3-118"><a href="#cb3-118" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-119"><a href="#cb3-119" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.treat_dist <span class="op">=</span> Lognormal(</span>
-<span id="cb3-120"><a href="#cb3-120" aria-hidden="true" tabindex="-1"></a>            mean<span class="op">=</span>g.trauma_treat_mean,</span>
-<span id="cb3-121"><a href="#cb3-121" aria-hidden="true" tabindex="-1"></a>            stdev<span class="op">=</span>g.trauma_treat_var,</span>
-<span id="cb3-122"><a href="#cb3-122" aria-hidden="true" tabindex="-1"></a>            random_seed<span class="op">=</span><span class="va">self</span>.run_number <span class="op">*</span> g.random_number_set,</span>
-<span id="cb3-123"><a href="#cb3-123" aria-hidden="true" tabindex="-1"></a>        )</span>
-<span id="cb3-124"><a href="#cb3-124" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-125"><a href="#cb3-125" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> init_resources(<span class="va">self</span>):</span>
-<span id="cb3-126"><a href="#cb3-126" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""</span></span>
-<span id="cb3-127"><a href="#cb3-127" aria-hidden="true" tabindex="-1"></a><span class="co">        Init the number of resources</span></span>
-<span id="cb3-128"><a href="#cb3-128" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-129"><a href="#cb3-129" aria-hidden="true" tabindex="-1"></a><span class="co">        Resource list:</span></span>
-<span id="cb3-130"><a href="#cb3-130" aria-hidden="true" tabindex="-1"></a><span class="co">            1. Nurses/treatment bays (same thing in this model)</span></span>
-<span id="cb3-131"><a href="#cb3-131" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-132"><a href="#cb3-132" aria-hidden="true" tabindex="-1"></a><span class="co">        """</span></span>
-<span id="cb3-133"><a href="#cb3-133" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.treatment_cubicles <span class="op">=</span> VidigiStore(<span class="va">self</span>.env, num_resources<span class="op">=</span>g.n_cubicles)</span>
-<span id="cb3-134"><a href="#cb3-134" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-135"><a href="#cb3-135" aria-hidden="true" tabindex="-1"></a>    <span class="co"># A generator function that represents the DES generator for patient</span></span>
-<span id="cb3-136"><a href="#cb3-136" aria-hidden="true" tabindex="-1"></a>    <span class="co"># arrivals</span></span>
-<span id="cb3-137"><a href="#cb3-137" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> generator_patient_arrivals(<span class="va">self</span>):</span>
-<span id="cb3-138"><a href="#cb3-138" aria-hidden="true" tabindex="-1"></a>        <span class="co"># We use an infinite loop here to keep doing this indefinitely whilst</span></span>
-<span id="cb3-139"><a href="#cb3-139" aria-hidden="true" tabindex="-1"></a>        <span class="co"># the simulation runs</span></span>
-<span id="cb3-140"><a href="#cb3-140" aria-hidden="true" tabindex="-1"></a>        <span class="cf">while</span> <span class="va">True</span>:</span>
-<span id="cb3-141"><a href="#cb3-141" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Increment the patient counter by 1 (this means our first patient</span></span>
-<span id="cb3-142"><a href="#cb3-142" aria-hidden="true" tabindex="-1"></a>            <span class="co"># will have an ID of 1)</span></span>
-<span id="cb3-143"><a href="#cb3-143" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.patient_counter <span class="op">+=</span> <span class="dv">1</span></span>
-<span id="cb3-144"><a href="#cb3-144" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-145"><a href="#cb3-145" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Create a new patient - an instance of the Patient Class we</span></span>
-<span id="cb3-146"><a href="#cb3-146" aria-hidden="true" tabindex="-1"></a>            <span class="co"># defined above.  Remember, we pass in the ID when creating a</span></span>
-<span id="cb3-147"><a href="#cb3-147" aria-hidden="true" tabindex="-1"></a>            <span class="co"># patient - so here we pass the patient counter to use as the ID.</span></span>
-<span id="cb3-148"><a href="#cb3-148" aria-hidden="true" tabindex="-1"></a>            p <span class="op">=</span> Patient(<span class="va">self</span>.patient_counter)</span>
-<span id="cb3-149"><a href="#cb3-149" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-150"><a href="#cb3-150" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Store patient in list for later easy access</span></span>
-<span id="cb3-151"><a href="#cb3-151" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.patients.append(p)</span>
-<span id="cb3-152"><a href="#cb3-152" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-153"><a href="#cb3-153" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Tell SimPy to start up the attend_clinic generator function with</span></span>
-<span id="cb3-154"><a href="#cb3-154" aria-hidden="true" tabindex="-1"></a>            <span class="co"># this patient (the generator function that will model the</span></span>
-<span id="cb3-155"><a href="#cb3-155" aria-hidden="true" tabindex="-1"></a>            <span class="co"># patient's journey through the system)</span></span>
-<span id="cb3-156"><a href="#cb3-156" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.env.process(<span class="va">self</span>.attend_clinic(p))</span>
-<span id="cb3-157"><a href="#cb3-157" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-158"><a href="#cb3-158" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Randomly sample the time to the next patient arriving.  Here, we</span></span>
-<span id="cb3-159"><a href="#cb3-159" aria-hidden="true" tabindex="-1"></a>            <span class="co"># sample from an exponential distribution (common for inter-arrival</span></span>
-<span id="cb3-160"><a href="#cb3-160" aria-hidden="true" tabindex="-1"></a>            <span class="co"># times), and pass in a lambda value of 1 / mean.  The mean</span></span>
-<span id="cb3-161"><a href="#cb3-161" aria-hidden="true" tabindex="-1"></a>            <span class="co"># inter-arrival time is stored in the g class.</span></span>
-<span id="cb3-162"><a href="#cb3-162" aria-hidden="true" tabindex="-1"></a>            sampled_inter <span class="op">=</span> <span class="va">self</span>.patient_inter_arrival_dist.sample()</span>
-<span id="cb3-163"><a href="#cb3-163" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-164"><a href="#cb3-164" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Freeze this instance of this function in place until the</span></span>
-<span id="cb3-165"><a href="#cb3-165" aria-hidden="true" tabindex="-1"></a>            <span class="co"># inter-arrival time we sampled above has elapsed.  Note - time in</span></span>
-<span id="cb3-166"><a href="#cb3-166" aria-hidden="true" tabindex="-1"></a>            <span class="co"># SimPy progresses in "Time Units", which can represent anything</span></span>
-<span id="cb3-167"><a href="#cb3-167" aria-hidden="true" tabindex="-1"></a>            <span class="co"># you like (just make sure you're consistent within the model)</span></span>
-<span id="cb3-168"><a href="#cb3-168" aria-hidden="true" tabindex="-1"></a>            <span class="cf">yield</span> <span class="va">self</span>.env.timeout(sampled_inter)</span>
-<span id="cb3-169"><a href="#cb3-169" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-170"><a href="#cb3-170" aria-hidden="true" tabindex="-1"></a>    <span class="co"># A generator function that represents the pathway for a patient going</span></span>
-<span id="cb3-171"><a href="#cb3-171" aria-hidden="true" tabindex="-1"></a>    <span class="co"># through the clinic.</span></span>
-<span id="cb3-172"><a href="#cb3-172" aria-hidden="true" tabindex="-1"></a>    <span class="co"># The patient object is passed in to the generator function so we can</span></span>
-<span id="cb3-173"><a href="#cb3-173" aria-hidden="true" tabindex="-1"></a>    <span class="co"># extract information from / record information to it</span></span>
-<span id="cb3-174"><a href="#cb3-174" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> attend_clinic(<span class="va">self</span>, patient):</span>
-<span id="cb3-175"><a href="#cb3-175" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.logger.log_arrival(entity_id<span class="op">=</span>patient.<span class="bu">id</span>)</span>
-<span id="cb3-176"><a href="#cb3-176" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-177"><a href="#cb3-177" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.arrival <span class="op">=</span> <span class="va">self</span>.env.now</span>
-<span id="cb3-178"><a href="#cb3-178" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-179"><a href="#cb3-179" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.logger.log_queue(entity_id<span class="op">=</span>patient.<span class="bu">id</span>, event<span class="op">=</span><span class="st">"treatment_wait_begins"</span>)</span>
-<span id="cb3-180"><a href="#cb3-180" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-181"><a href="#cb3-181" aria-hidden="true" tabindex="-1"></a>        <span class="cf">with</span> <span class="va">self</span>.treatment_cubicles.request() <span class="im">as</span> req:</span>
-<span id="cb3-182"><a href="#cb3-182" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Seize a treatment resource when available</span></span>
-<span id="cb3-183"><a href="#cb3-183" aria-hidden="true" tabindex="-1"></a>            treatment_resource <span class="op">=</span> <span class="cf">yield</span> req</span>
-<span id="cb3-184"><a href="#cb3-184" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-185"><a href="#cb3-185" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.logger.log_resource_use_start(</span>
-<span id="cb3-186"><a href="#cb3-186" aria-hidden="true" tabindex="-1"></a>                entity_id<span class="op">=</span>patient.<span class="bu">id</span>,</span>
-<span id="cb3-187"><a href="#cb3-187" aria-hidden="true" tabindex="-1"></a>                event<span class="op">=</span><span class="st">"treatment_begins"</span>,</span>
-<span id="cb3-188"><a href="#cb3-188" aria-hidden="true" tabindex="-1"></a>                resource_id<span class="op">=</span>treatment_resource.id_attribute,</span>
-<span id="cb3-189"><a href="#cb3-189" aria-hidden="true" tabindex="-1"></a>            )</span>
-<span id="cb3-190"><a href="#cb3-190" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-191"><a href="#cb3-191" aria-hidden="true" tabindex="-1"></a>            <span class="co"># sample treatment duration</span></span>
-<span id="cb3-192"><a href="#cb3-192" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.treat_duration <span class="op">=</span> <span class="va">self</span>.treat_dist.sample()</span>
-<span id="cb3-193"><a href="#cb3-193" aria-hidden="true" tabindex="-1"></a>            <span class="cf">yield</span> <span class="va">self</span>.env.timeout(<span class="va">self</span>.treat_duration)</span>
-<span id="cb3-194"><a href="#cb3-194" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-195"><a href="#cb3-195" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.logger.log_resource_use_end(</span>
-<span id="cb3-196"><a href="#cb3-196" aria-hidden="true" tabindex="-1"></a>                entity_id<span class="op">=</span>patient.<span class="bu">id</span>,</span>
-<span id="cb3-197"><a href="#cb3-197" aria-hidden="true" tabindex="-1"></a>                event<span class="op">=</span><span class="st">"treatment_complete"</span>,</span>
-<span id="cb3-198"><a href="#cb3-198" aria-hidden="true" tabindex="-1"></a>                resource_id<span class="op">=</span>treatment_resource.id_attribute,</span>
-<span id="cb3-199"><a href="#cb3-199" aria-hidden="true" tabindex="-1"></a>            )</span>
-<span id="cb3-200"><a href="#cb3-200" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-201"><a href="#cb3-201" aria-hidden="true" tabindex="-1"></a>        <span class="co"># total time in system</span></span>
-<span id="cb3-202"><a href="#cb3-202" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.total_time <span class="op">=</span> <span class="va">self</span>.env.now <span class="op">-</span> <span class="va">self</span>.arrival</span>
-<span id="cb3-203"><a href="#cb3-203" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-204"><a href="#cb3-204" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.logger.log_departure(entity_id<span class="op">=</span>patient.<span class="bu">id</span>)</span>
-<span id="cb3-205"><a href="#cb3-205" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-206"><a href="#cb3-206" aria-hidden="true" tabindex="-1"></a>    <span class="co"># The run method starts up the DES entity generators, runs the simulation,</span></span>
-<span id="cb3-207"><a href="#cb3-207" aria-hidden="true" tabindex="-1"></a>    <span class="co"># and in turns calls anything we need to generate results for the run</span></span>
-<span id="cb3-208"><a href="#cb3-208" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> run(<span class="va">self</span>):</span>
-<span id="cb3-209"><a href="#cb3-209" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Start up our DES entity generators that create new patients.  We've</span></span>
-<span id="cb3-210"><a href="#cb3-210" aria-hidden="true" tabindex="-1"></a>        <span class="co"># only got one in this model, but we'd need to do this for each one if</span></span>
-<span id="cb3-211"><a href="#cb3-211" aria-hidden="true" tabindex="-1"></a>        <span class="co"># we had multiple generators.</span></span>
-<span id="cb3-212"><a href="#cb3-212" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.env.process(<span class="va">self</span>.generator_patient_arrivals())</span>
-<span id="cb3-213"><a href="#cb3-213" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-214"><a href="#cb3-214" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Run the model for the duration specified in g class</span></span>
-<span id="cb3-215"><a href="#cb3-215" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.env.run(until<span class="op">=</span>g.sim_duration)</span>
-<span id="cb3-216"><a href="#cb3-216" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-217"><a href="#cb3-217" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-218"><a href="#cb3-218" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Trial:</span>
-<span id="cb3-219"><a href="#cb3-219" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>):</span>
-<span id="cb3-220"><a href="#cb3-220" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.all_event_logs <span class="op">=</span> []</span>
-<span id="cb3-221"><a href="#cb3-221" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.trial_results_df <span class="op">=</span> pd.DataFrame()</span>
-<span id="cb3-222"><a href="#cb3-222" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-223"><a href="#cb3-223" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.run_trial()</span>
-<span id="cb3-224"><a href="#cb3-224" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-225"><a href="#cb3-225" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Method to run a trial</span></span>
-<span id="cb3-226"><a href="#cb3-226" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> run_trial(<span class="va">self</span>):</span>
-<span id="cb3-227"><a href="#cb3-227" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>g<span class="sc">.</span>n_cubicles<span class="sc">}</span><span class="ss"> nurses"</span>)</span>
-<span id="cb3-228"><a href="#cb3-228" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="st">""</span>)  <span class="co">## Print a blank line</span></span>
-<span id="cb3-229"><a href="#cb3-229" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-230"><a href="#cb3-230" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Run the simulation for the number of runs specified in g class.</span></span>
-<span id="cb3-231"><a href="#cb3-231" aria-hidden="true" tabindex="-1"></a>        <span class="co"># For each run, we create a new instance of the Model class and call its</span></span>
-<span id="cb3-232"><a href="#cb3-232" aria-hidden="true" tabindex="-1"></a>        <span class="co"># run method, which sets everything else in motion.  Once the run has</span></span>
-<span id="cb3-233"><a href="#cb3-233" aria-hidden="true" tabindex="-1"></a>        <span class="co"># completed, we grab out the stored run results (just mean queuing time</span></span>
-<span id="cb3-234"><a href="#cb3-234" aria-hidden="true" tabindex="-1"></a>        <span class="co"># here) and store it against the run number in the trial results</span></span>
-<span id="cb3-235"><a href="#cb3-235" aria-hidden="true" tabindex="-1"></a>        <span class="co"># dataframe.</span></span>
-<span id="cb3-236"><a href="#cb3-236" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> run <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">1</span>, g.number_of_runs <span class="op">+</span> <span class="dv">1</span>):</span>
-<span id="cb3-237"><a href="#cb3-237" aria-hidden="true" tabindex="-1"></a>            random.seed(run)</span>
-<span id="cb3-238"><a href="#cb3-238" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-239"><a href="#cb3-239" aria-hidden="true" tabindex="-1"></a>            my_model <span class="op">=</span> Model(run)</span>
-<span id="cb3-240"><a href="#cb3-240" aria-hidden="true" tabindex="-1"></a>            my_model.run()</span>
-<span id="cb3-241"><a href="#cb3-241" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-242"><a href="#cb3-242" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.all_event_logs.append(my_model.logger)</span>
-<span id="cb3-243"><a href="#cb3-243" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-244"><a href="#cb3-244" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.trial_results <span class="op">=</span> pd.concat(</span>
-<span id="cb3-245"><a href="#cb3-245" aria-hidden="true" tabindex="-1"></a>            [run_results.to_dataframe() <span class="cf">for</span> run_results <span class="kw">in</span> <span class="va">self</span>.all_event_logs]</span>
-<span id="cb3-246"><a href="#cb3-246" aria-hidden="true" tabindex="-1"></a>        )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> simpy</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> vidigi.logging <span class="im">import</span> EventLogger</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> vidigi.resources <span class="im">import</span> VidigiStore</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sim_tools.distributions <span class="im">import</span> Lognormal, Exponential</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> random</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Class to store global parameter values.  We don't create an instance of this</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="co"># class - we just refer to the class blueprint itself to access the numbers</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="co"># inside.</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> g:</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="co">    Create a scenario to parameterise the simulation model</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a><span class="co">    Parameters:</span></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a><span class="co">    -----------</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a><span class="co">    random_number_set: int, optional (default=DEFAULT_RNG_SET)</span></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a><span class="co">        Set to control the initial seeds of each stream of pseudo</span></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a><span class="co">        random numbers used in the model.</span></span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a><span class="co">    n_cubicles: int</span></span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a><span class="co">        The number of treatment cubicles</span></span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a><span class="co">    trauma_treat_mean: float</span></span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a><span class="co">        Mean of the trauma cubicle treatment distribution (Lognormal)</span></span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a><span class="co">    trauma_treat_var: float</span></span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a><span class="co">        Variance of the trauma cubicle treatment distribution (Lognormal)</span></span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a><span class="co">    arrival_rate: float</span></span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a><span class="co">        Set the mean of the exponential distribution that is used to sample the</span></span>
+<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a><span class="co">        inter-arrival time of patients</span></span>
+<span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-36"><a href="#cb4-36" aria-hidden="true" tabindex="-1"></a><span class="co">    sim_duration: int</span></span>
+<span id="cb4-37"><a href="#cb4-37" aria-hidden="true" tabindex="-1"></a><span class="co">        The number of time units the simulation will run for</span></span>
+<span id="cb4-38"><a href="#cb4-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-39"><a href="#cb4-39" aria-hidden="true" tabindex="-1"></a><span class="co">    number_of_runs: int</span></span>
+<span id="cb4-40"><a href="#cb4-40" aria-hidden="true" tabindex="-1"></a><span class="co">        The number of times the simulation will be run with different random number streams</span></span>
+<span id="cb4-41"><a href="#cb4-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-42"><a href="#cb4-42" aria-hidden="true" tabindex="-1"></a><span class="co">    """</span></span>
+<span id="cb4-43"><a href="#cb4-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-44"><a href="#cb4-44" aria-hidden="true" tabindex="-1"></a>    random_number_set <span class="op">=</span> <span class="dv">42</span></span>
+<span id="cb4-45"><a href="#cb4-45" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-46"><a href="#cb4-46" aria-hidden="true" tabindex="-1"></a>    n_cubicles <span class="op">=</span> <span class="dv">4</span></span>
+<span id="cb4-47"><a href="#cb4-47" aria-hidden="true" tabindex="-1"></a>    trauma_treat_mean <span class="op">=</span> <span class="dv">40</span></span>
+<span id="cb4-48"><a href="#cb4-48" aria-hidden="true" tabindex="-1"></a>    trauma_treat_var <span class="op">=</span> <span class="dv">5</span></span>
+<span id="cb4-49"><a href="#cb4-49" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-50"><a href="#cb4-50" aria-hidden="true" tabindex="-1"></a>    arrival_rate <span class="op">=</span> <span class="dv">5</span></span>
+<span id="cb4-51"><a href="#cb4-51" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-52"><a href="#cb4-52" aria-hidden="true" tabindex="-1"></a>    sim_duration <span class="op">=</span> <span class="dv">600</span></span>
+<span id="cb4-53"><a href="#cb4-53" aria-hidden="true" tabindex="-1"></a>    number_of_runs <span class="op">=</span> <span class="dv">100</span></span>
+<span id="cb4-54"><a href="#cb4-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-55"><a href="#cb4-55" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-56"><a href="#cb4-56" aria-hidden="true" tabindex="-1"></a><span class="co"># | code-fold: true</span></span>
+<span id="cb4-57"><a href="#cb4-57" aria-hidden="true" tabindex="-1"></a><span class="co"># | code-summary: "Show the patient class code"</span></span>
+<span id="cb4-58"><a href="#cb4-58" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Patient:</span>
+<span id="cb4-59"><a href="#cb4-59" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""</span></span>
+<span id="cb4-60"><a href="#cb4-60" aria-hidden="true" tabindex="-1"></a><span class="co">    Class defining details for a patient entity</span></span>
+<span id="cb4-61"><a href="#cb4-61" aria-hidden="true" tabindex="-1"></a><span class="co">    """</span></span>
+<span id="cb4-62"><a href="#cb4-62" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-63"><a href="#cb4-63" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, p_id):</span>
+<span id="cb4-64"><a href="#cb4-64" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""</span></span>
+<span id="cb4-65"><a href="#cb4-65" aria-hidden="true" tabindex="-1"></a><span class="co">        Constructor method</span></span>
+<span id="cb4-66"><a href="#cb4-66" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-67"><a href="#cb4-67" aria-hidden="true" tabindex="-1"></a><span class="co">        Params:</span></span>
+<span id="cb4-68"><a href="#cb4-68" aria-hidden="true" tabindex="-1"></a><span class="co">        -----</span></span>
+<span id="cb4-69"><a href="#cb4-69" aria-hidden="true" tabindex="-1"></a><span class="co">        identifier: int</span></span>
+<span id="cb4-70"><a href="#cb4-70" aria-hidden="true" tabindex="-1"></a><span class="co">            a numeric identifier for the patient.</span></span>
+<span id="cb4-71"><a href="#cb4-71" aria-hidden="true" tabindex="-1"></a><span class="co">        """</span></span>
+<span id="cb4-72"><a href="#cb4-72" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.<span class="bu">id</span> <span class="op">=</span> p_id</span>
+<span id="cb4-73"><a href="#cb4-73" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.arrival <span class="op">=</span> <span class="op">-</span>np.inf</span>
+<span id="cb4-74"><a href="#cb4-74" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.wait_treat <span class="op">=</span> <span class="op">-</span>np.inf</span>
+<span id="cb4-75"><a href="#cb4-75" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.total_time <span class="op">=</span> <span class="op">-</span>np.inf</span>
+<span id="cb4-76"><a href="#cb4-76" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.treat_duration <span class="op">=</span> <span class="op">-</span>np.inf</span>
+<span id="cb4-77"><a href="#cb4-77" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-78"><a href="#cb4-78" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-79"><a href="#cb4-79" aria-hidden="true" tabindex="-1"></a><span class="co"># Class representing our model of the clinic.</span></span>
+<span id="cb4-80"><a href="#cb4-80" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Model:</span>
+<span id="cb4-81"><a href="#cb4-81" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""</span></span>
+<span id="cb4-82"><a href="#cb4-82" aria-hidden="true" tabindex="-1"></a><span class="co">    Simulates the simplest minor treatment process for a patient</span></span>
+<span id="cb4-83"><a href="#cb4-83" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-84"><a href="#cb4-84" aria-hidden="true" tabindex="-1"></a><span class="co">    1. Arrive</span></span>
+<span id="cb4-85"><a href="#cb4-85" aria-hidden="true" tabindex="-1"></a><span class="co">    2. Examined/treated by nurse when one available</span></span>
+<span id="cb4-86"><a href="#cb4-86" aria-hidden="true" tabindex="-1"></a><span class="co">    3. Discharged</span></span>
+<span id="cb4-87"><a href="#cb4-87" aria-hidden="true" tabindex="-1"></a><span class="co">    """</span></span>
+<span id="cb4-88"><a href="#cb4-88" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-89"><a href="#cb4-89" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Constructor to set up the model for a run.  We pass in a run number when</span></span>
+<span id="cb4-90"><a href="#cb4-90" aria-hidden="true" tabindex="-1"></a>    <span class="co"># we create a new model.</span></span>
+<span id="cb4-91"><a href="#cb4-91" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, run_number):</span>
+<span id="cb4-92"><a href="#cb4-92" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Create a SimPy environment in which everything will live</span></span>
+<span id="cb4-93"><a href="#cb4-93" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.env <span class="op">=</span> simpy.Environment()</span>
+<span id="cb4-94"><a href="#cb4-94" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-95"><a href="#cb4-95" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Store the passed in run number</span></span>
+<span id="cb4-96"><a href="#cb4-96" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.run_number <span class="op">=</span> run_number</span>
+<span id="cb4-97"><a href="#cb4-97" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-98"><a href="#cb4-98" aria-hidden="true" tabindex="-1"></a>        <span class="co"># By passing in the env we've created, the logger will default to the simulation</span></span>
+<span id="cb4-99"><a href="#cb4-99" aria-hidden="true" tabindex="-1"></a>        <span class="co"># time when populating the time column of our event logs</span></span>
+<span id="cb4-100"><a href="#cb4-100" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.logger <span class="op">=</span> EventLogger(env<span class="op">=</span><span class="va">self</span>.env, run_number<span class="op">=</span><span class="va">self</span>.run_number)</span>
+<span id="cb4-101"><a href="#cb4-101" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-102"><a href="#cb4-102" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Create a patient counter (which we'll use as a patient ID)</span></span>
+<span id="cb4-103"><a href="#cb4-103" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.patient_counter <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb4-104"><a href="#cb4-104" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-105"><a href="#cb4-105" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Create an empty list to hold our patients</span></span>
+<span id="cb4-106"><a href="#cb4-106" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.patients <span class="op">=</span> []</span>
+<span id="cb4-107"><a href="#cb4-107" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-108"><a href="#cb4-108" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Create our distributions</span></span>
+<span id="cb4-109"><a href="#cb4-109" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.init_distributions()</span>
+<span id="cb4-110"><a href="#cb4-110" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-111"><a href="#cb4-111" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Create our resources</span></span>
+<span id="cb4-112"><a href="#cb4-112" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.init_resources()</span>
+<span id="cb4-113"><a href="#cb4-113" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-114"><a href="#cb4-114" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> init_distributions(<span class="va">self</span>):</span>
+<span id="cb4-115"><a href="#cb4-115" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.patient_inter_arrival_dist <span class="op">=</span> Exponential(</span>
+<span id="cb4-116"><a href="#cb4-116" aria-hidden="true" tabindex="-1"></a>            mean<span class="op">=</span>g.arrival_rate, random_seed<span class="op">=</span><span class="va">self</span>.run_number <span class="op">*</span> g.random_number_set</span>
+<span id="cb4-117"><a href="#cb4-117" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb4-118"><a href="#cb4-118" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-119"><a href="#cb4-119" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.treat_dist <span class="op">=</span> Lognormal(</span>
+<span id="cb4-120"><a href="#cb4-120" aria-hidden="true" tabindex="-1"></a>            mean<span class="op">=</span>g.trauma_treat_mean,</span>
+<span id="cb4-121"><a href="#cb4-121" aria-hidden="true" tabindex="-1"></a>            stdev<span class="op">=</span>g.trauma_treat_var,</span>
+<span id="cb4-122"><a href="#cb4-122" aria-hidden="true" tabindex="-1"></a>            random_seed<span class="op">=</span><span class="va">self</span>.run_number <span class="op">*</span> g.random_number_set,</span>
+<span id="cb4-123"><a href="#cb4-123" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb4-124"><a href="#cb4-124" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-125"><a href="#cb4-125" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> init_resources(<span class="va">self</span>):</span>
+<span id="cb4-126"><a href="#cb4-126" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""</span></span>
+<span id="cb4-127"><a href="#cb4-127" aria-hidden="true" tabindex="-1"></a><span class="co">        Init the number of resources</span></span>
+<span id="cb4-128"><a href="#cb4-128" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-129"><a href="#cb4-129" aria-hidden="true" tabindex="-1"></a><span class="co">        Resource list:</span></span>
+<span id="cb4-130"><a href="#cb4-130" aria-hidden="true" tabindex="-1"></a><span class="co">            1. Nurses/treatment bays (same thing in this model)</span></span>
+<span id="cb4-131"><a href="#cb4-131" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-132"><a href="#cb4-132" aria-hidden="true" tabindex="-1"></a><span class="co">        """</span></span>
+<span id="cb4-133"><a href="#cb4-133" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.treatment_cubicles <span class="op">=</span> VidigiStore(<span class="va">self</span>.env, num_resources<span class="op">=</span>g.n_cubicles)</span>
+<span id="cb4-134"><a href="#cb4-134" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-135"><a href="#cb4-135" aria-hidden="true" tabindex="-1"></a>    <span class="co"># A generator function that represents the DES generator for patient</span></span>
+<span id="cb4-136"><a href="#cb4-136" aria-hidden="true" tabindex="-1"></a>    <span class="co"># arrivals</span></span>
+<span id="cb4-137"><a href="#cb4-137" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> generator_patient_arrivals(<span class="va">self</span>):</span>
+<span id="cb4-138"><a href="#cb4-138" aria-hidden="true" tabindex="-1"></a>        <span class="co"># We use an infinite loop here to keep doing this indefinitely whilst</span></span>
+<span id="cb4-139"><a href="#cb4-139" aria-hidden="true" tabindex="-1"></a>        <span class="co"># the simulation runs</span></span>
+<span id="cb4-140"><a href="#cb4-140" aria-hidden="true" tabindex="-1"></a>        <span class="cf">while</span> <span class="va">True</span>:</span>
+<span id="cb4-141"><a href="#cb4-141" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Increment the patient counter by 1 (this means our first patient</span></span>
+<span id="cb4-142"><a href="#cb4-142" aria-hidden="true" tabindex="-1"></a>            <span class="co"># will have an ID of 1)</span></span>
+<span id="cb4-143"><a href="#cb4-143" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.patient_counter <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb4-144"><a href="#cb4-144" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-145"><a href="#cb4-145" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Create a new patient - an instance of the Patient Class we</span></span>
+<span id="cb4-146"><a href="#cb4-146" aria-hidden="true" tabindex="-1"></a>            <span class="co"># defined above.  Remember, we pass in the ID when creating a</span></span>
+<span id="cb4-147"><a href="#cb4-147" aria-hidden="true" tabindex="-1"></a>            <span class="co"># patient - so here we pass the patient counter to use as the ID.</span></span>
+<span id="cb4-148"><a href="#cb4-148" aria-hidden="true" tabindex="-1"></a>            p <span class="op">=</span> Patient(<span class="va">self</span>.patient_counter)</span>
+<span id="cb4-149"><a href="#cb4-149" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-150"><a href="#cb4-150" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Store patient in list for later easy access</span></span>
+<span id="cb4-151"><a href="#cb4-151" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.patients.append(p)</span>
+<span id="cb4-152"><a href="#cb4-152" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-153"><a href="#cb4-153" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Tell SimPy to start up the attend_clinic generator function with</span></span>
+<span id="cb4-154"><a href="#cb4-154" aria-hidden="true" tabindex="-1"></a>            <span class="co"># this patient (the generator function that will model the</span></span>
+<span id="cb4-155"><a href="#cb4-155" aria-hidden="true" tabindex="-1"></a>            <span class="co"># patient's journey through the system)</span></span>
+<span id="cb4-156"><a href="#cb4-156" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.env.process(<span class="va">self</span>.attend_clinic(p))</span>
+<span id="cb4-157"><a href="#cb4-157" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-158"><a href="#cb4-158" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Randomly sample the time to the next patient arriving.  Here, we</span></span>
+<span id="cb4-159"><a href="#cb4-159" aria-hidden="true" tabindex="-1"></a>            <span class="co"># sample from an exponential distribution (common for inter-arrival</span></span>
+<span id="cb4-160"><a href="#cb4-160" aria-hidden="true" tabindex="-1"></a>            <span class="co"># times), and pass in a lambda value of 1 / mean.  The mean</span></span>
+<span id="cb4-161"><a href="#cb4-161" aria-hidden="true" tabindex="-1"></a>            <span class="co"># inter-arrival time is stored in the g class.</span></span>
+<span id="cb4-162"><a href="#cb4-162" aria-hidden="true" tabindex="-1"></a>            sampled_inter <span class="op">=</span> <span class="va">self</span>.patient_inter_arrival_dist.sample()</span>
+<span id="cb4-163"><a href="#cb4-163" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-164"><a href="#cb4-164" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Freeze this instance of this function in place until the</span></span>
+<span id="cb4-165"><a href="#cb4-165" aria-hidden="true" tabindex="-1"></a>            <span class="co"># inter-arrival time we sampled above has elapsed.  Note - time in</span></span>
+<span id="cb4-166"><a href="#cb4-166" aria-hidden="true" tabindex="-1"></a>            <span class="co"># SimPy progresses in "Time Units", which can represent anything</span></span>
+<span id="cb4-167"><a href="#cb4-167" aria-hidden="true" tabindex="-1"></a>            <span class="co"># you like (just make sure you're consistent within the model)</span></span>
+<span id="cb4-168"><a href="#cb4-168" aria-hidden="true" tabindex="-1"></a>            <span class="cf">yield</span> <span class="va">self</span>.env.timeout(sampled_inter)</span>
+<span id="cb4-169"><a href="#cb4-169" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-170"><a href="#cb4-170" aria-hidden="true" tabindex="-1"></a>    <span class="co"># A generator function that represents the pathway for a patient going</span></span>
+<span id="cb4-171"><a href="#cb4-171" aria-hidden="true" tabindex="-1"></a>    <span class="co"># through the clinic.</span></span>
+<span id="cb4-172"><a href="#cb4-172" aria-hidden="true" tabindex="-1"></a>    <span class="co"># The patient object is passed in to the generator function so we can</span></span>
+<span id="cb4-173"><a href="#cb4-173" aria-hidden="true" tabindex="-1"></a>    <span class="co"># extract information from / record information to it</span></span>
+<span id="cb4-174"><a href="#cb4-174" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> attend_clinic(<span class="va">self</span>, patient):</span>
+<span id="cb4-175"><a href="#cb4-175" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.logger.log_arrival(entity_id<span class="op">=</span>patient.<span class="bu">id</span>)</span>
+<span id="cb4-176"><a href="#cb4-176" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-177"><a href="#cb4-177" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.arrival <span class="op">=</span> <span class="va">self</span>.env.now</span>
+<span id="cb4-178"><a href="#cb4-178" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-179"><a href="#cb4-179" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.logger.log_queue(entity_id<span class="op">=</span>patient.<span class="bu">id</span>, event<span class="op">=</span><span class="st">"treatment_wait_begins"</span>)</span>
+<span id="cb4-180"><a href="#cb4-180" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-181"><a href="#cb4-181" aria-hidden="true" tabindex="-1"></a>        <span class="cf">with</span> <span class="va">self</span>.treatment_cubicles.request() <span class="im">as</span> req:</span>
+<span id="cb4-182"><a href="#cb4-182" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Seize a treatment resource when available</span></span>
+<span id="cb4-183"><a href="#cb4-183" aria-hidden="true" tabindex="-1"></a>            treatment_resource <span class="op">=</span> <span class="cf">yield</span> req</span>
+<span id="cb4-184"><a href="#cb4-184" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-185"><a href="#cb4-185" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.logger.log_resource_use_start(</span>
+<span id="cb4-186"><a href="#cb4-186" aria-hidden="true" tabindex="-1"></a>                entity_id<span class="op">=</span>patient.<span class="bu">id</span>,</span>
+<span id="cb4-187"><a href="#cb4-187" aria-hidden="true" tabindex="-1"></a>                event<span class="op">=</span><span class="st">"treatment_begins"</span>,</span>
+<span id="cb4-188"><a href="#cb4-188" aria-hidden="true" tabindex="-1"></a>                resource_id<span class="op">=</span>treatment_resource.id_attribute,</span>
+<span id="cb4-189"><a href="#cb4-189" aria-hidden="true" tabindex="-1"></a>            )</span>
+<span id="cb4-190"><a href="#cb4-190" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-191"><a href="#cb4-191" aria-hidden="true" tabindex="-1"></a>            <span class="co"># sample treatment duration</span></span>
+<span id="cb4-192"><a href="#cb4-192" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.treat_duration <span class="op">=</span> <span class="va">self</span>.treat_dist.sample()</span>
+<span id="cb4-193"><a href="#cb4-193" aria-hidden="true" tabindex="-1"></a>            <span class="cf">yield</span> <span class="va">self</span>.env.timeout(<span class="va">self</span>.treat_duration)</span>
+<span id="cb4-194"><a href="#cb4-194" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-195"><a href="#cb4-195" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.logger.log_resource_use_end(</span>
+<span id="cb4-196"><a href="#cb4-196" aria-hidden="true" tabindex="-1"></a>                entity_id<span class="op">=</span>patient.<span class="bu">id</span>,</span>
+<span id="cb4-197"><a href="#cb4-197" aria-hidden="true" tabindex="-1"></a>                event<span class="op">=</span><span class="st">"treatment_complete"</span>,</span>
+<span id="cb4-198"><a href="#cb4-198" aria-hidden="true" tabindex="-1"></a>                resource_id<span class="op">=</span>treatment_resource.id_attribute,</span>
+<span id="cb4-199"><a href="#cb4-199" aria-hidden="true" tabindex="-1"></a>            )</span>
+<span id="cb4-200"><a href="#cb4-200" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-201"><a href="#cb4-201" aria-hidden="true" tabindex="-1"></a>        <span class="co"># total time in system</span></span>
+<span id="cb4-202"><a href="#cb4-202" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.total_time <span class="op">=</span> <span class="va">self</span>.env.now <span class="op">-</span> <span class="va">self</span>.arrival</span>
+<span id="cb4-203"><a href="#cb4-203" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-204"><a href="#cb4-204" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.logger.log_departure(entity_id<span class="op">=</span>patient.<span class="bu">id</span>)</span>
+<span id="cb4-205"><a href="#cb4-205" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-206"><a href="#cb4-206" aria-hidden="true" tabindex="-1"></a>    <span class="co"># The run method starts up the DES entity generators, runs the simulation,</span></span>
+<span id="cb4-207"><a href="#cb4-207" aria-hidden="true" tabindex="-1"></a>    <span class="co"># and in turns calls anything we need to generate results for the run</span></span>
+<span id="cb4-208"><a href="#cb4-208" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> run(<span class="va">self</span>):</span>
+<span id="cb4-209"><a href="#cb4-209" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Start up our DES entity generators that create new patients.  We've</span></span>
+<span id="cb4-210"><a href="#cb4-210" aria-hidden="true" tabindex="-1"></a>        <span class="co"># only got one in this model, but we'd need to do this for each one if</span></span>
+<span id="cb4-211"><a href="#cb4-211" aria-hidden="true" tabindex="-1"></a>        <span class="co"># we had multiple generators.</span></span>
+<span id="cb4-212"><a href="#cb4-212" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.env.process(<span class="va">self</span>.generator_patient_arrivals())</span>
+<span id="cb4-213"><a href="#cb4-213" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-214"><a href="#cb4-214" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Run the model for the duration specified in g class</span></span>
+<span id="cb4-215"><a href="#cb4-215" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.env.run(until<span class="op">=</span>g.sim_duration)</span>
+<span id="cb4-216"><a href="#cb4-216" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-217"><a href="#cb4-217" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-218"><a href="#cb4-218" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Trial:</span>
+<span id="cb4-219"><a href="#cb4-219" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>):</span>
+<span id="cb4-220"><a href="#cb4-220" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.all_event_logs <span class="op">=</span> []</span>
+<span id="cb4-221"><a href="#cb4-221" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.trial_results_df <span class="op">=</span> pd.DataFrame()</span>
+<span id="cb4-222"><a href="#cb4-222" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-223"><a href="#cb4-223" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.run_trial()</span>
+<span id="cb4-224"><a href="#cb4-224" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-225"><a href="#cb4-225" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Method to run a trial</span></span>
+<span id="cb4-226"><a href="#cb4-226" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> run_trial(<span class="va">self</span>):</span>
+<span id="cb4-227"><a href="#cb4-227" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>g<span class="sc">.</span>n_cubicles<span class="sc">}</span><span class="ss"> nurses"</span>)</span>
+<span id="cb4-228"><a href="#cb4-228" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="st">""</span>)  <span class="co">## Print a blank line</span></span>
+<span id="cb4-229"><a href="#cb4-229" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-230"><a href="#cb4-230" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Run the simulation for the number of runs specified in g class.</span></span>
+<span id="cb4-231"><a href="#cb4-231" aria-hidden="true" tabindex="-1"></a>        <span class="co"># For each run, we create a new instance of the Model class and call its</span></span>
+<span id="cb4-232"><a href="#cb4-232" aria-hidden="true" tabindex="-1"></a>        <span class="co"># run method, which sets everything else in motion.  Once the run has</span></span>
+<span id="cb4-233"><a href="#cb4-233" aria-hidden="true" tabindex="-1"></a>        <span class="co"># completed, we grab out the stored run results (just mean queuing time</span></span>
+<span id="cb4-234"><a href="#cb4-234" aria-hidden="true" tabindex="-1"></a>        <span class="co"># here) and store it against the run number in the trial results</span></span>
+<span id="cb4-235"><a href="#cb4-235" aria-hidden="true" tabindex="-1"></a>        <span class="co"># dataframe.</span></span>
+<span id="cb4-236"><a href="#cb4-236" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> run <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">1</span>, g.number_of_runs <span class="op">+</span> <span class="dv">1</span>):</span>
+<span id="cb4-237"><a href="#cb4-237" aria-hidden="true" tabindex="-1"></a>            random.seed(run)</span>
+<span id="cb4-238"><a href="#cb4-238" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-239"><a href="#cb4-239" aria-hidden="true" tabindex="-1"></a>            my_model <span class="op">=</span> Model(run)</span>
+<span id="cb4-240"><a href="#cb4-240" aria-hidden="true" tabindex="-1"></a>            my_model.run()</span>
+<span id="cb4-241"><a href="#cb4-241" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-242"><a href="#cb4-242" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.all_event_logs.append(my_model.logger)</span>
+<span id="cb4-243"><a href="#cb4-243" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-244"><a href="#cb4-244" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.trial_results <span class="op">=</span> pd.concat(</span>
+<span id="cb4-245"><a href="#cb4-245" aria-hidden="true" tabindex="-1"></a>            [run_results.to_dataframe() <span class="cf">for</span> run_results <span class="kw">in</span> <span class="va">self</span>.all_event_logs]</span>
+<span id="cb4-246"><a href="#cb4-246" aria-hidden="true" tabindex="-1"></a>        )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </div>
 </div>
 <div id="3d0fe14e" class="cell" data-execution_count="5">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>my_trial <span class="op">=</span> Trial()</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>my_trial.run_trial()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>my_trial <span class="op">=</span> Trial()</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>my_trial.run_trial()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>4 nurses
 
@@ -693,15 +699,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <p>Because of how this model has been set up, we have an attribute containing a list of EventLogger objects. We’ll pull back the first one, representing the first run.</p>
 <div id="781f11f9" class="cell" data-execution_count="6">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>single_run <span class="op">=</span> my_trial.all_event_logs[<span class="dv">0</span>]</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>single_run</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>single_run <span class="op">=</span> my_trial.all_event_logs[<span class="dv">0</span>]</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>single_run</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display" data-execution_count="6">
-<pre><code>&lt;vidigi.logging.EventLogger at 0x21725df5b90&gt;</code></pre>
+<pre><code>&lt;vidigi.logging.EventLogger at 0x7f25ac70d850&gt;</code></pre>
 </div>
 </div>
 <div id="d9e1d19c" class="cell" data-execution_count="7">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>single_run.generate_dfg()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>single_run.generate_dfg()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display" data-execution_count="7">
 <div>
 <figure class="figure">
@@ -718,10 +724,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>Streamlit cytoscape outputs: <a href="../../reference/process_mapping.dfg_to_cytoscape_streamlit.html">here</a></li>
 </ul>
 <div id="e4cbdc60" class="cell" data-execution_count="8">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>single_run.generate_dfg(output_format<span class="op">=</span><span class="st">"cytoscape-jupyter"</span>, spacing_factor<span class="op">=</span><span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-display">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>single_run.generate_dfg(output_format<span class="op">=</span><span class="st">"cytoscape-jupyter"</span>, spacing_factor<span class="op">=</span><span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display" data-execution_count="8">
 <script type="application/vnd.jupyter.widget-view+json">
-{"model_id":"d67775f5f468416981c2629a66c820bd","version_major":2,"version_minor":0,"quarto_mimetype":"application/vnd.jupyter.widget-view+json"}
+{"model_id":"e1c666d11976481ba988d97ce1b4d77c","version_major":2,"version_minor":0,"quarto_mimetype":"application/vnd.jupyter.widget-view+json"}
 </script>
 </div>
 </div>
@@ -730,19 +736,19 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="anchored" data-anchor-id="example-2---a-simple-linear-pathway---without-eventlogger-or-for-fine-control-over-the-dfg-functions">Example 2 - A simple linear pathway - Without EventLogger, or for fine control over the DFG functions</h2>
 <p>First, we will need some extra imports.</p>
 <div id="6b914e2a" class="cell" data-execution_count="9">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> vidigi.process_mapping <span class="im">import</span> add_sim_timestamp, discover_dfg, dfg_to_graphviz, dfg_to_cytoscape</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> vidigi.process_mapping <span class="im">import</span> add_sim_timestamp, discover_dfg, dfg_to_graphviz, dfg_to_cytoscape</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>First, let’s read in an event log. This is a standard vidigi event log created with the EventLogger class, with the dataframe saved as a csv for easy portability.</p>
 <div id="6f249b98" class="cell" data-execution_count="10">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>event_log <span class="op">=</span> pd.read_csv(<span class="st">"sample_event_log_10_day_10_run.csv"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>event_log <span class="op">=</span> pd.read_csv(<span class="st">"sample_event_log_10_day_10_run.csv"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p><strong>IMPORTANT</strong> - we must filter any event log down to just a single run!</p>
 <p>If we don’t, we’ll get very odd behaviour because the entity IDs are reused across runs, and as entities will arrive at different points or take different paths in different runs, it will start to look like they’ve moved back and forth between different stages.</p>
 <p>Alternatively, you could create a new entity ID column where it takes account of the run number as well, and pass this through when we use the <code>discover_dfg()</code> vidigi function.</p>
 <div id="f7d983fe" class="cell" data-execution_count="11">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>event_log_single <span class="op">=</span> event_log[event_log[<span class="st">"run"</span>]<span class="op">==</span><span class="dv">1</span>]</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>event_log_single.head()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>event_log_single <span class="op">=</span> event_log[event_log[<span class="st">"run"</span>]<span class="op">==</span><span class="dv">1</span>]</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>event_log_single.head()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display" data-execution_count="11">
 <div>
 
@@ -837,8 +843,8 @@ Note
 <p>The defaults for column names reflect vidigi’s EventLogger default, so if we’ve used EventLogger, we won’t need to specify column names here.</p>
 <p>If we have a simulation where we don’t really have a date in mind - for example, a simulation that shows no seasonality across the year - then we can leave the <code>sim_start</code> parameter blank, and it will choose a dummy date of 12am on the 1st January, 2000. This won’t be displayed anywhere in the later visualisations, so you don’t have to worry too much about it!</p>
 <div id="ae959896" class="cell" data-execution_count="12">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>df_timestamp <span class="op">=</span> add_sim_timestamp(event_log_single, time_unit<span class="op">=</span><span class="st">"minutes"</span>)</span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>df_timestamp.head()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>df_timestamp <span class="op">=</span> add_sim_timestamp(event_log_single, time_unit<span class="op">=</span><span class="st">"minutes"</span>)</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>df_timestamp.head()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display" data-execution_count="12">
 <div>
 
@@ -921,11 +927,11 @@ Note
 </div>
 <p>Now we can use the <code>discover_dfg</code> function to turn the event log into the format required by the various static and interactive visualisation functions.</p>
 <div id="9cb722d2" class="cell" data-execution_count="13">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>nodes, edges <span class="op">=</span> discover_dfg(df_timestamp)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>nodes, edges <span class="op">=</span> discover_dfg(df_timestamp)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Let’s explore what our nodes look like.</p>
 <div id="bc8e425e" class="cell" data-execution_count="14">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>nodes</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>nodes</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display" data-execution_count="14">
 <div>
 
@@ -972,7 +978,7 @@ Note
 </div>
 <p>The edges dataframe then calculates the frequency of various transitions between nodes, the probability of each - here 1.0 as there are no branching steps - and various time-based metrics for each transition.</p>
 <div id="4684b51b" class="cell" data-execution_count="15">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>edges</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>edges</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display" data-execution_count="15">
 <div>
 
@@ -1049,10 +1055,10 @@ Note
 </div>
 <p>Finally, we can display the output.</p>
 <div id="3df524ef" class="cell" data-execution_count="16">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>dfg_to_graphviz(</span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>    nodes,</span>
-<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    edges,</span>
-<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>dfg_to_graphviz(</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>    nodes,</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    edges,</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display" data-execution_count="16">
 <div>
 <figure class="figure">
@@ -1063,11 +1069,11 @@ Note
 </div>
 <p>By default, it will display the mean time between steps. We could instead ask for the median:</p>
 <div id="c67a8955" class="cell" data-execution_count="17">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>dfg_to_graphviz(</span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>    nodes,</span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    edges,</span>
-<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>    time_metric<span class="op">=</span><span class="st">"median"</span></span>
-<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>dfg_to_graphviz(</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>    nodes,</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    edges,</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    time_metric<span class="op">=</span><span class="st">"median"</span></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display" data-execution_count="17">
 <div>
 <figure class="figure">
@@ -1077,11 +1083,11 @@ Note
 </div>
 </div>
 <div id="204aea57" class="cell" data-execution_count="18">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>dfg_to_graphviz(</span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>    nodes,</span>
-<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    edges,</span>
-<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    time_metric<span class="op">=</span><span class="st">"standard_deviation"</span></span>
-<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>dfg_to_graphviz(</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>    nodes,</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>    edges,</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>    time_metric<span class="op">=</span><span class="st">"standard_deviation"</span></span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display" data-execution_count="18">
 <div>
 <figure class="figure">
@@ -1091,11 +1097,11 @@ Note
 </div>
 </div>
 <div id="275ef65b" class="cell" data-execution_count="19">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>dfg_to_graphviz(</span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>    nodes,</span>
-<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>    edges,</span>
-<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>    time_metric<span class="op">=</span><span class="st">"max"</span></span>
-<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>dfg_to_graphviz(</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>    nodes,</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    edges,</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>    time_metric<span class="op">=</span><span class="st">"max"</span></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display" data-execution_count="19">
 <div>
 <figure class="figure">
@@ -1105,11 +1111,11 @@ Note
 </div>
 </div>
 <div id="cc25200a" class="cell" data-execution_count="20">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>dfg_to_graphviz(</span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>    nodes,</span>
-<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    edges,</span>
-<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>    time_metric<span class="op">=</span><span class="st">"min"</span></span>
-<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>dfg_to_graphviz(</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>    nodes,</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>    edges,</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>    time_metric<span class="op">=</span><span class="st">"min"</span></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display" data-execution_count="20">
 <div>
 <figure class="figure">
@@ -1123,12 +1129,12 @@ Note
 <h1>A more complex example - stroke dataset - without EventLogger</h1>
 <p>Again, make sure we’ve imported the relevant functions.</p>
 <div id="77d2dc6e" class="cell" data-execution_count="21">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> vidigi.process_mapping <span class="im">import</span> add_sim_timestamp, discover_dfg, dfg_to_graphviz, dfg_to_cytoscape</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> vidigi.process_mapping <span class="im">import</span> add_sim_timestamp, discover_dfg, dfg_to_graphviz, dfg_to_cytoscape</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Let’s do the same for a more complex example - a stroke ward with multiple branching pathways and patient types.</p>
 <div id="cbb60024" class="cell" data-execution_count="22">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>stroke_df <span class="op">=</span> pd.read_csv(<span class="st">"event_log_stroke.csv"</span>)</span>
-<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>stroke_df.head()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>stroke_df <span class="op">=</span> pd.read_csv(<span class="st">"event_log_stroke.csv"</span>)</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>stroke_df.head()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display" data-execution_count="22">
 <div>
 
@@ -1245,15 +1251,15 @@ Note
 <p>Let’s tidy it up a bit!</p>
 <p>The event names use underscores, which won’t wrap onto new lines, so we’ll replace those with spaces. We can also remove _time everywhere it appears, as in this case it’s not adding anything useful.</p>
 <div id="6b998b3c" class="cell" data-execution_count="23">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>stroke_df[<span class="st">"event"</span>] <span class="op">=</span> stroke_df[<span class="st">"event"</span>].<span class="bu">apply</span>(<span class="kw">lambda</span> x: x.replace(<span class="st">"_time"</span>,<span class="st">""</span>).replace(<span class="st">"_"</span>, <span class="st">" "</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>stroke_df[<span class="st">"event"</span>] <span class="op">=</span> stroke_df[<span class="st">"event"</span>].<span class="bu">apply</span>(<span class="kw">lambda</span> x: x.replace(<span class="st">"_time"</span>,<span class="st">""</span>).replace(<span class="st">"_"</span>, <span class="st">" "</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Again, we’ll add our timestamp, then get our nodes and edges.</p>
 <div id="05f02417" class="cell" data-execution_count="24">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>stroke_df_timestamp <span class="op">=</span> add_sim_timestamp(stroke_df)</span>
-<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>nodes, edges <span class="op">=</span> discover_dfg(stroke_df_timestamp, case_col<span class="op">=</span><span class="st">"id"</span>)</span>
-<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>nodes</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>stroke_df_timestamp <span class="op">=</span> add_sim_timestamp(stroke_df)</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>nodes, edges <span class="op">=</span> discover_dfg(stroke_df_timestamp, case_col<span class="op">=</span><span class="st">"id"</span>)</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>nodes</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display" data-execution_count="24">
 <div>
 
@@ -1334,7 +1340,7 @@ Note
 </div>
 </div>
 <div id="a64f998c" class="cell" data-execution_count="25">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>edges</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>edges</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display" data-execution_count="25">
 <div>
 
@@ -1544,13 +1550,13 @@ Note
 <p>Let’s see what this looks like.</p>
 <p>We’ll also make use of a couple of extra parameters, filtering out any very infrequent paths.</p>
 <div id="2bd6f070" class="cell" data-execution_count="26">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>g <span class="op">=</span> dfg_to_graphviz(</span>
-<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>    nodes,</span>
-<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>    edges,</span>
-<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>    min_frequency<span class="op">=</span><span class="dv">5</span></span>
-<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a>g</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>g <span class="op">=</span> dfg_to_graphviz(</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>    nodes,</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>    edges,</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>    min_frequency<span class="op">=</span><span class="dv">5</span></span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>g</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display" data-execution_count="26">
 <div>
 <figure class="figure">
@@ -1561,22 +1567,22 @@ Note
 </div>
 <p>Let’s take a quick look at what our output actually is.</p>
 <div id="a3623ea4" class="cell" data-execution_count="27">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="bu">type</span>(g)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="bu">type</span>(g)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display" data-execution_count="27">
 <pre><code>graphviz.graphs.Digraph</code></pre>
 </div>
 </div>
 <p>It’s a graphviz Digraph object, which we could continue to modify if we wanted to.</p>
 <div id="af4e9728" class="cell" data-execution_count="28">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> g.subgraph(name<span class="op">=</span><span class="st">'cluster_0'</span>) <span class="im">as</span> c:</span>
-<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>    c.attr(color<span class="op">=</span><span class="st">'blue'</span>)</span>
-<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>    c.node_attr[<span class="st">'style'</span>] <span class="op">=</span> <span class="st">'filled'</span></span>
-<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Note that we will need to include the newline indicator when filtering; we can work out where this is by visually observing</span></span>
-<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>    <span class="co"># the node labels in the orignal diagram</span></span>
-<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>    c.edges([(<span class="st">'clock start'</span>, <span class="st">'nurse q start'</span>), (<span class="st">'nurse q start'</span>, <span class="st">'nurse triage</span><span class="ch">\n</span><span class="st">start'</span>), (<span class="st">'nurse triage</span><span class="ch">\n</span><span class="st">start'</span>, <span class="st">'nurse triage</span><span class="ch">\n</span><span class="st">end'</span>)])</span>
-<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>    c.attr(label<span class="op">=</span><span class="st">'Arrival and Triage'</span>)</span>
-<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a>g</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb31"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> g.subgraph(name<span class="op">=</span><span class="st">'cluster_0'</span>) <span class="im">as</span> c:</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>    c.attr(color<span class="op">=</span><span class="st">'blue'</span>)</span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>    c.node_attr[<span class="st">'style'</span>] <span class="op">=</span> <span class="st">'filled'</span></span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Note that we will need to include the newline indicator when filtering; we can work out where this is by visually observing</span></span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>    <span class="co"># the node labels in the orignal diagram</span></span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a>    c.edges([(<span class="st">'clock start'</span>, <span class="st">'nurse q start'</span>), (<span class="st">'nurse q start'</span>, <span class="st">'nurse triage</span><span class="ch">\n</span><span class="st">start'</span>), (<span class="st">'nurse triage</span><span class="ch">\n</span><span class="st">start'</span>, <span class="st">'nurse triage</span><span class="ch">\n</span><span class="st">end'</span>)])</span>
+<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a>    c.attr(label<span class="op">=</span><span class="st">'Arrival and Triage'</span>)</span>
+<span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-9"><a href="#cb31-9" aria-hidden="true" tabindex="-1"></a>g</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display" data-execution_count="28">
 <div>
 <figure class="figure">
@@ -1587,23 +1593,23 @@ Note
 </div>
 <p>We can also output to an image type - but note it will output as a series of bytes that will need to be converted into an image in some other way depending on your intended use.</p>
 <div id="a667624d" class="cell" data-execution_count="29">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb31"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>g_png <span class="op">=</span> dfg_to_graphviz(</span>
-<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>    nodes,</span>
-<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>    edges,</span>
-<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>    min_frequency<span class="op">=</span><span class="dv">5</span>,</span>
-<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>    return_image<span class="op">=</span><span class="va">True</span>,</span>
-<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a>    <span class="bu">format</span><span class="op">=</span><span class="st">"png"</span></span>
-<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-9"><a href="#cb31-9" aria-hidden="true" tabindex="-1"></a><span class="bu">type</span>(g_png)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb32"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>g_png <span class="op">=</span> dfg_to_graphviz(</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>    nodes,</span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>    edges,</span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>    min_frequency<span class="op">=</span><span class="dv">5</span>,</span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a>    return_image<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a>    <span class="bu">format</span><span class="op">=</span><span class="st">"png"</span></span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a><span class="bu">type</span>(g_png)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display" data-execution_count="29">
 <pre><code>bytes</code></pre>
 </div>
 </div>
 <div id="4a8cccf7" class="cell" data-execution_count="30">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb33"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> Image</span>
-<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>Image(g_png)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb34"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> Image</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>Image(g_png)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display" data-execution_count="30">
 <div>
 <figure class="figure">
@@ -1614,12 +1620,12 @@ Note
 </div>
 <p>We can also change the orientation of the output.</p>
 <div id="3aea474d" class="cell" data-execution_count="31">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb34"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>dfg_to_graphviz(</span>
-<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>    nodes,</span>
-<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>    edges,</span>
-<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>    min_frequency<span class="op">=</span><span class="dv">5</span>,</span>
-<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>    direction<span class="op">=</span><span class="st">"TD"</span></span>
-<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb35"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>dfg_to_graphviz(</span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>    nodes,</span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>    edges,</span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>    min_frequency<span class="op">=</span><span class="dv">5</span>,</span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>    direction<span class="op">=</span><span class="st">"TD"</span></span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display" data-execution_count="31">
 <div>
 <figure class="figure">
@@ -1632,14 +1638,14 @@ Note
 <p>We might actually want to split these into two separate graphs by filtering the node and edges table.</p>
 <p>For now, though, we’re going to rediscover our dfg using a unit of days, recalculate our timestamp and node/edge dataframes, and visualise this again. Note where ‘minutes’ has changed to ‘days’.</p>
 <div id="0fd849e5" class="cell" data-execution_count="32">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb35"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>nodes, edges <span class="op">=</span> discover_dfg(stroke_df_timestamp, case_col<span class="op">=</span><span class="st">"id"</span>, time_unit<span class="op">=</span><span class="st">"days"</span>)</span>
-<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>dfg_to_graphviz(</span>
-<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>    nodes,</span>
-<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>    edges,</span>
-<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>    min_frequency<span class="op">=</span><span class="dv">5</span>,</span>
-<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a>    time_unit<span class="op">=</span><span class="st">"days"</span>,</span>
-<span id="cb35-8"><a href="#cb35-8" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb36"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>nodes, edges <span class="op">=</span> discover_dfg(stroke_df_timestamp, case_col<span class="op">=</span><span class="st">"id"</span>, time_unit<span class="op">=</span><span class="st">"days"</span>)</span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>dfg_to_graphviz(</span>
+<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>    nodes,</span>
+<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>    edges,</span>
+<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a>    min_frequency<span class="op">=</span><span class="dv">5</span>,</span>
+<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a>    time_unit<span class="op">=</span><span class="st">"days"</span>,</span>
+<span id="cb36-8"><a href="#cb36-8" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display" data-execution_count="32">
 <div>
 <figure class="figure">
@@ -1654,20 +1660,20 @@ Note
 <p>For example, here we expect patients with different stroke types to have different lengths of stay.</p>
 <p>We need to import the <code>display</code> function from <code>IPython.display</code> and explicitly call this to ensure it’s included.</p>
 <div id="3ec26f28" class="cell" data-execution_count="33">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb36"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> display</span>
-<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> stroke_df_timestamp[<span class="st">"patient_diagnosis_type"</span>].unique():</span>
-<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>    df <span class="op">=</span> stroke_df_timestamp[stroke_df_timestamp[<span class="st">"patient_diagnosis_type"</span>]<span class="op">==</span>i]</span>
-<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a>    nodes, edges <span class="op">=</span> discover_dfg(df, case_col<span class="op">=</span><span class="st">"id"</span>, time_unit<span class="op">=</span><span class="st">"days"</span>)</span>
-<span id="cb36-8"><a href="#cb36-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-9"><a href="#cb36-9" aria-hidden="true" tabindex="-1"></a>    display(dfg_to_graphviz(</span>
-<span id="cb36-10"><a href="#cb36-10" aria-hidden="true" tabindex="-1"></a>        nodes,</span>
-<span id="cb36-11"><a href="#cb36-11" aria-hidden="true" tabindex="-1"></a>        edges,</span>
-<span id="cb36-12"><a href="#cb36-12" aria-hidden="true" tabindex="-1"></a>        time_unit<span class="op">=</span><span class="st">"days"</span>,</span>
-<span id="cb36-13"><a href="#cb36-13" aria-hidden="true" tabindex="-1"></a>        title<span class="op">=</span><span class="ss">f"Stroke Type: </span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">"</span></span>
-<span id="cb36-14"><a href="#cb36-14" aria-hidden="true" tabindex="-1"></a>    ))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb37"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> display</span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> stroke_df_timestamp[<span class="st">"patient_diagnosis_type"</span>].unique():</span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a>    df <span class="op">=</span> stroke_df_timestamp[stroke_df_timestamp[<span class="st">"patient_diagnosis_type"</span>]<span class="op">==</span>i]</span>
+<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a>    nodes, edges <span class="op">=</span> discover_dfg(df, case_col<span class="op">=</span><span class="st">"id"</span>, time_unit<span class="op">=</span><span class="st">"days"</span>)</span>
+<span id="cb37-8"><a href="#cb37-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-9"><a href="#cb37-9" aria-hidden="true" tabindex="-1"></a>    display(dfg_to_graphviz(</span>
+<span id="cb37-10"><a href="#cb37-10" aria-hidden="true" tabindex="-1"></a>        nodes,</span>
+<span id="cb37-11"><a href="#cb37-11" aria-hidden="true" tabindex="-1"></a>        edges,</span>
+<span id="cb37-12"><a href="#cb37-12" aria-hidden="true" tabindex="-1"></a>        time_unit<span class="op">=</span><span class="st">"days"</span>,</span>
+<span id="cb37-13"><a href="#cb37-13" aria-hidden="true" tabindex="-1"></a>        title<span class="op">=</span><span class="ss">f"Stroke Type: </span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb37-14"><a href="#cb37-14" aria-hidden="true" tabindex="-1"></a>    ))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
@@ -1706,29 +1712,29 @@ Note
 </div>
 <p>We could do what we talked about earlier and try filtering the nodes and edges.</p>
 <div id="623c5ec2" class="cell" data-execution_count="34">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb37"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> display</span>
-<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> stroke_df_timestamp[<span class="st">"patient_diagnosis_type"</span>].unique():</span>
-<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a>    df <span class="op">=</span> stroke_df_timestamp[stroke_df_timestamp[<span class="st">"patient_diagnosis_type"</span>]<span class="op">==</span>i]</span>
-<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a>    nodes, edges <span class="op">=</span> discover_dfg(df, case_col<span class="op">=</span><span class="st">"id"</span>, time_unit<span class="op">=</span><span class="st">"days"</span>)</span>
-<span id="cb37-8"><a href="#cb37-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb37-9"><a href="#cb37-9" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Remember that we will need to include the newline indicator when filtering; we can work out where this is by visually observing</span></span>
-<span id="cb37-10"><a href="#cb37-10" aria-hidden="true" tabindex="-1"></a>    <span class="co"># the node labels in the orignal diagram</span></span>
-<span id="cb37-11"><a href="#cb37-11" aria-hidden="true" tabindex="-1"></a>    steps_to_include <span class="op">=</span> [<span class="st">"ct or ctp scan</span><span class="ch">\n</span><span class="st">end"</span>, <span class="st">"sdec admit"</span>, <span class="st">"sdec discharge"</span>, <span class="st">"ward q start"</span>, <span class="st">"ward admit"</span>, <span class="st">"ward discharge"</span>, <span class="st">"exit"</span>]</span>
-<span id="cb37-12"><a href="#cb37-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb37-13"><a href="#cb37-13" aria-hidden="true" tabindex="-1"></a>    nodes <span class="op">=</span> nodes[nodes[<span class="st">"activity"</span>].isin(steps_to_include)]</span>
-<span id="cb37-14"><a href="#cb37-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb37-15"><a href="#cb37-15" aria-hidden="true" tabindex="-1"></a>    edges <span class="op">=</span> edges[(edges[<span class="st">"source"</span>].isin(steps_to_include)) <span class="op">|</span></span>
-<span id="cb37-16"><a href="#cb37-16" aria-hidden="true" tabindex="-1"></a>                  (edges[<span class="st">"target"</span>].isin(steps_to_include))]</span>
-<span id="cb37-17"><a href="#cb37-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb37-18"><a href="#cb37-18" aria-hidden="true" tabindex="-1"></a>    display(dfg_to_graphviz(</span>
-<span id="cb37-19"><a href="#cb37-19" aria-hidden="true" tabindex="-1"></a>        nodes,</span>
-<span id="cb37-20"><a href="#cb37-20" aria-hidden="true" tabindex="-1"></a>        edges,</span>
-<span id="cb37-21"><a href="#cb37-21" aria-hidden="true" tabindex="-1"></a>        time_unit<span class="op">=</span><span class="st">"days"</span>,</span>
-<span id="cb37-22"><a href="#cb37-22" aria-hidden="true" tabindex="-1"></a>        title<span class="op">=</span><span class="ss">f"Stroke Type: </span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">"</span></span>
-<span id="cb37-23"><a href="#cb37-23" aria-hidden="true" tabindex="-1"></a>    ))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb38"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> display</span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> stroke_df_timestamp[<span class="st">"patient_diagnosis_type"</span>].unique():</span>
+<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a>    df <span class="op">=</span> stroke_df_timestamp[stroke_df_timestamp[<span class="st">"patient_diagnosis_type"</span>]<span class="op">==</span>i]</span>
+<span id="cb38-6"><a href="#cb38-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-7"><a href="#cb38-7" aria-hidden="true" tabindex="-1"></a>    nodes, edges <span class="op">=</span> discover_dfg(df, case_col<span class="op">=</span><span class="st">"id"</span>, time_unit<span class="op">=</span><span class="st">"days"</span>)</span>
+<span id="cb38-8"><a href="#cb38-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-9"><a href="#cb38-9" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Remember that we will need to include the newline indicator when filtering; we can work out where this is by visually observing</span></span>
+<span id="cb38-10"><a href="#cb38-10" aria-hidden="true" tabindex="-1"></a>    <span class="co"># the node labels in the orignal diagram</span></span>
+<span id="cb38-11"><a href="#cb38-11" aria-hidden="true" tabindex="-1"></a>    steps_to_include <span class="op">=</span> [<span class="st">"ct or ctp scan</span><span class="ch">\n</span><span class="st">end"</span>, <span class="st">"sdec admit"</span>, <span class="st">"sdec discharge"</span>, <span class="st">"ward q start"</span>, <span class="st">"ward admit"</span>, <span class="st">"ward discharge"</span>, <span class="st">"exit"</span>]</span>
+<span id="cb38-12"><a href="#cb38-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-13"><a href="#cb38-13" aria-hidden="true" tabindex="-1"></a>    nodes <span class="op">=</span> nodes[nodes[<span class="st">"activity"</span>].isin(steps_to_include)]</span>
+<span id="cb38-14"><a href="#cb38-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-15"><a href="#cb38-15" aria-hidden="true" tabindex="-1"></a>    edges <span class="op">=</span> edges[(edges[<span class="st">"source"</span>].isin(steps_to_include)) <span class="op">|</span></span>
+<span id="cb38-16"><a href="#cb38-16" aria-hidden="true" tabindex="-1"></a>                  (edges[<span class="st">"target"</span>].isin(steps_to_include))]</span>
+<span id="cb38-17"><a href="#cb38-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-18"><a href="#cb38-18" aria-hidden="true" tabindex="-1"></a>    display(dfg_to_graphviz(</span>
+<span id="cb38-19"><a href="#cb38-19" aria-hidden="true" tabindex="-1"></a>        nodes,</span>
+<span id="cb38-20"><a href="#cb38-20" aria-hidden="true" tabindex="-1"></a>        edges,</span>
+<span id="cb38-21"><a href="#cb38-21" aria-hidden="true" tabindex="-1"></a>        time_unit<span class="op">=</span><span class="st">"days"</span>,</span>
+<span id="cb38-22"><a href="#cb38-22" aria-hidden="true" tabindex="-1"></a>        title<span class="op">=</span><span class="ss">f"Stroke Type: </span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb38-23"><a href="#cb38-23" aria-hidden="true" tabindex="-1"></a>    ))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
@@ -1767,19 +1773,19 @@ Note
 </div>
 <p>We could check out the maximum durations too.</p>
 <div id="7c36cdb1" class="cell" data-execution_count="35">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb38"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> stroke_df_timestamp[<span class="st">"patient_diagnosis_type"</span>].unique():</span>
-<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>    df <span class="op">=</span> stroke_df_timestamp[stroke_df_timestamp[<span class="st">"patient_diagnosis_type"</span>]<span class="op">==</span>i]</span>
-<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a>    nodes, edges <span class="op">=</span> discover_dfg(df, case_col<span class="op">=</span><span class="st">"id"</span>, time_unit<span class="op">=</span><span class="st">"days"</span>)</span>
-<span id="cb38-6"><a href="#cb38-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-7"><a href="#cb38-7" aria-hidden="true" tabindex="-1"></a>    display(dfg_to_graphviz(</span>
-<span id="cb38-8"><a href="#cb38-8" aria-hidden="true" tabindex="-1"></a>        nodes,</span>
-<span id="cb38-9"><a href="#cb38-9" aria-hidden="true" tabindex="-1"></a>        edges,</span>
-<span id="cb38-10"><a href="#cb38-10" aria-hidden="true" tabindex="-1"></a>        time_unit<span class="op">=</span><span class="st">"days"</span>,</span>
-<span id="cb38-11"><a href="#cb38-11" aria-hidden="true" tabindex="-1"></a>        title<span class="op">=</span><span class="ss">f"Stroke Type: </span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">"</span>,</span>
-<span id="cb38-12"><a href="#cb38-12" aria-hidden="true" tabindex="-1"></a>        time_metric<span class="op">=</span><span class="st">"max"</span></span>
-<span id="cb38-13"><a href="#cb38-13" aria-hidden="true" tabindex="-1"></a>    ))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb39"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> stroke_df_timestamp[<span class="st">"patient_diagnosis_type"</span>].unique():</span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>    df <span class="op">=</span> stroke_df_timestamp[stroke_df_timestamp[<span class="st">"patient_diagnosis_type"</span>]<span class="op">==</span>i]</span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a>    nodes, edges <span class="op">=</span> discover_dfg(df, case_col<span class="op">=</span><span class="st">"id"</span>, time_unit<span class="op">=</span><span class="st">"days"</span>)</span>
+<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-7"><a href="#cb39-7" aria-hidden="true" tabindex="-1"></a>    display(dfg_to_graphviz(</span>
+<span id="cb39-8"><a href="#cb39-8" aria-hidden="true" tabindex="-1"></a>        nodes,</span>
+<span id="cb39-9"><a href="#cb39-9" aria-hidden="true" tabindex="-1"></a>        edges,</span>
+<span id="cb39-10"><a href="#cb39-10" aria-hidden="true" tabindex="-1"></a>        time_unit<span class="op">=</span><span class="st">"days"</span>,</span>
+<span id="cb39-11"><a href="#cb39-11" aria-hidden="true" tabindex="-1"></a>        title<span class="op">=</span><span class="ss">f"Stroke Type: </span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">"</span>,</span>
+<span id="cb39-12"><a href="#cb39-12" aria-hidden="true" tabindex="-1"></a>        time_metric<span class="op">=</span><span class="st">"max"</span></span>
+<span id="cb39-13"><a href="#cb39-13" aria-hidden="true" tabindex="-1"></a>    ))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
@@ -1822,22 +1828,22 @@ Note
 <p>Finally, let’s take a look at an interactive output.</p>
 <p>Here, we pass in the same nodes and edges. However, we need to choose a layout; ‘dagre’ is often the best option for getting something that looks similar to graphviz.</p>
 <div id="5249124d" class="cell" data-execution_count="36">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb39"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>nodes, edges <span class="op">=</span> discover_dfg(stroke_df_timestamp, case_col<span class="op">=</span><span class="st">"id"</span>, timestamp_col<span class="op">=</span><span class="st">"timestamp"</span>, time_unit<span class="op">=</span><span class="st">"days"</span>)</span>
-<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>op <span class="op">=</span> dfg_to_cytoscape(</span>
-<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>    nodes,</span>
-<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a>    edges,</span>
-<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a>    layout_name<span class="op">=</span><span class="st">'dagre'</span>,</span>
-<span id="cb39-7"><a href="#cb39-7" aria-hidden="true" tabindex="-1"></a>    layout_orientation<span class="op">=</span><span class="st">"LR"</span>,</span>
-<span id="cb39-8"><a href="#cb39-8" aria-hidden="true" tabindex="-1"></a>    spacing_factor<span class="op">=</span><span class="fl">1.5</span>,</span>
-<span id="cb39-9"><a href="#cb39-9" aria-hidden="true" tabindex="-1"></a>    width<span class="op">=</span><span class="dv">1400</span>,</span>
-<span id="cb39-10"><a href="#cb39-10" aria-hidden="true" tabindex="-1"></a>    time_unit<span class="op">=</span><span class="st">"days"</span>)</span>
-<span id="cb39-11"><a href="#cb39-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb39-12"><a href="#cb39-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb39-13"><a href="#cb39-13" aria-hidden="true" tabindex="-1"></a>display(op)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb40"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>nodes, edges <span class="op">=</span> discover_dfg(stroke_df_timestamp, case_col<span class="op">=</span><span class="st">"id"</span>, timestamp_col<span class="op">=</span><span class="st">"timestamp"</span>, time_unit<span class="op">=</span><span class="st">"days"</span>)</span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>op <span class="op">=</span> dfg_to_cytoscape(</span>
+<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>    nodes,</span>
+<span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a>    edges,</span>
+<span id="cb40-6"><a href="#cb40-6" aria-hidden="true" tabindex="-1"></a>    layout_name<span class="op">=</span><span class="st">'dagre'</span>,</span>
+<span id="cb40-7"><a href="#cb40-7" aria-hidden="true" tabindex="-1"></a>    layout_orientation<span class="op">=</span><span class="st">"LR"</span>,</span>
+<span id="cb40-8"><a href="#cb40-8" aria-hidden="true" tabindex="-1"></a>    spacing_factor<span class="op">=</span><span class="fl">1.5</span>,</span>
+<span id="cb40-9"><a href="#cb40-9" aria-hidden="true" tabindex="-1"></a>    width<span class="op">=</span><span class="dv">1400</span>,</span>
+<span id="cb40-10"><a href="#cb40-10" aria-hidden="true" tabindex="-1"></a>    time_unit<span class="op">=</span><span class="st">"days"</span>)</span>
+<span id="cb40-11"><a href="#cb40-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb40-12"><a href="#cb40-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb40-13"><a href="#cb40-13" aria-hidden="true" tabindex="-1"></a>display(op)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display">
 <script type="application/vnd.jupyter.widget-view+json">
-{"model_id":"1ae48f4050f7416a9575b74d8494555a","version_major":2,"version_minor":0,"quarto_mimetype":"application/vnd.jupyter.widget-view+json"}
+{"model_id":"61a149189417446e9ccef82010571fe3","version_major":2,"version_minor":0,"quarto_mimetype":"application/vnd.jupyter.widget-view+json"}
 </script>
 </div>
 </div>
@@ -1849,6 +1855,9 @@ Note
 </section>
 
 <a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a></main> <!-- /main -->
+<script type="application/vnd.jupyter.widget-state+json">
+{"state":{"02cd8325cdf945a2aca1413900b6a665":{"model_module":"jupyter-cytoscape","model_module_version":"^1.3.3","model_name":"EdgeModel","state":{"_model_module":"jupyter-cytoscape","_model_module_version":"^1.3.3","_model_name":"EdgeModel","_view_count":null,"_view_module":"jupyter-cytoscape","_view_module_version":"^1.3.3","_view_name":"EdgeView","classes":"","data":{"label":"n=49\np=0.02\nmean=0.0 days","source":"ward admit","target":"exit","weight":0.0231023102310231},"pannable":true,"removed":false,"selectable":false,"selected":false}},"075deb218a084f8f86b4989b2578b896":{"model_module":"jupyter-cytoscape","model_module_version":"^1.3.3","model_name":"NodeModel","state":{"_model_module":"jupyter-cytoscape","_model_module_version":"^1.3.3","_model_name":"NodeModel","_view_count":null,"_view_module":"jupyter-cytoscape","_view_module_version":"^1.3.3","_view_name":"NodeView","classes":"multiline-manual","data":{"id":"depart","label":"depart\nn=56"},"grabbable":true,"grabbed":false,"locked":false,"pannable":false,"position":{},"removed":false,"selectable":false,"selected":false}},"0c246764496f4d21814b0e3aeaf8a1ee":{"model_module":"jupyter-cytoscape","model_module_version":"^1.3.3","model_name":"EdgeModel","state":{"_model_module":"jupyter-cytoscape","_model_module_version":"^1.3.3","_model_name":"EdgeModel","_view_count":null,"_view_module":"jupyter-cytoscape","_view_module_version":"^1.3.3","_view_name":"EdgeView","classes":"","data":{"label":"n=566\np=0.16\nmean=0.0 days","source":"ct or ctp scan end","target":"exit","weight":0.16217765042979942},"pannable":true,"removed":false,"selectable":false,"selected":false}},"0c525562c48c47449f64bfdcfc138ddb":{"model_module":"jupyter-cytoscape","model_module_version":"^1.3.3","model_name":"NodeModel","state":{"_model_module":"jupyter-cytoscape","_model_module_version":"^1.3.3","_model_name":"NodeModel","_view_count":null,"_view_module":"jupyter-cytoscape","_view_module_version":"^1.3.3","_view_name":"NodeView","classes":"multiline-manual","data":{"id":"treatment_begins","label":"treatment_begins\nn=60"},"grabbable":true,"grabbed":false,"locked":false,"pannable":false,"position":{},"removed":false,"selectable":false,"selected":false}},"201be3d17e5f4f68b337d75104c3fcad":{"model_module":"jupyter-cytoscape","model_module_version":"^1.3.3","model_name":"NodeModel","state":{"_model_module":"jupyter-cytoscape","_model_module_version":"^1.3.3","_model_name":"NodeModel","_view_count":null,"_view_module":"jupyter-cytoscape","_view_module_version":"^1.3.3","_view_name":"NodeView","classes":"multiline-manual","data":{"id":"treatment_complete","label":"treatment_complete\nn=56"},"grabbable":true,"grabbed":false,"locked":false,"pannable":false,"position":{},"removed":false,"selectable":false,"selected":false}},"2835b1f02b184916b8bdcea3e85fda95":{"model_module":"jupyter-cytoscape","model_module_version":"^1.3.3","model_name":"GraphModel","state":{"_adj":{"arrival":{},"depart":{},"treatment_begins":{},"treatment_complete":{},"treatment_wait_begins":{}},"_model_module":"jupyter-cytoscape","_model_module_version":"^1.3.3","_model_name":"GraphModel","_view_count":null,"_view_module":"jupyter-cytoscape","_view_module_version":"^1.3.3","_view_name":null,"edges":["IPY_MODEL_bc11b0ec1e82405e8ae3821f5ca46515","IPY_MODEL_bd5bb16c245a46e3806b4293aa316820","IPY_MODEL_690cfe0f40dc46618bb62e94b0c92d32","IPY_MODEL_966ebff9b8bf433683fc7d4d9139005e"],"nodes":["IPY_MODEL_fe2feab27fcd47af8941102648d4c735","IPY_MODEL_075deb218a084f8f86b4989b2578b896","IPY_MODEL_0c525562c48c47449f64bfdcfc138ddb","IPY_MODEL_201be3d17e5f4f68b337d75104c3fcad","IPY_MODEL_eda976d554d3415eaeb4949d391bd00a"]}},"2d914974f940424cba9f9effcd8994b6":{"model_module":"jupyter-cytoscape","model_module_version":"^1.3.3","model_name":"EdgeModel","state":{"_model_module":"jupyter-cytoscape","_model_module_version":"^1.3.3","_model_name":"EdgeModel","_view_count":null,"_view_module":"jupyter-cytoscape","_view_module_version":"^1.3.3","_view_name":"EdgeView","classes":"","data":{"label":"n=2072\np=1.00\nmean=0.0 days","source":"ward discharge","target":"exit","weight":1},"pannable":true,"removed":false,"selectable":false,"selected":false}},"2f6fa9ac486140c2851e5b22ddbe1bcf":{"model_module":"jupyter-cytoscape","model_module_version":"^1.3.3","model_name":"NodeModel","state":{"_model_module":"jupyter-cytoscape","_model_module_version":"^1.3.3","_model_name":"NodeModel","_view_count":null,"_view_module":"jupyter-cytoscape","_view_module_version":"^1.3.3","_view_name":"NodeView","classes":"multiline-manual","data":{"id":"sdec admit","label":"sdec admit\nn=1556"},"grabbable":true,"grabbed":false,"locked":false,"pannable":false,"position":{},"removed":false,"selectable":false,"selected":false}},"30fcc897e9934f7fac035df7ce0bdb3e":{"model_module":"jupyter-cytoscape","model_module_version":"^1.3.3","model_name":"EdgeModel","state":{"_model_module":"jupyter-cytoscape","_model_module_version":"^1.3.3","_model_name":"EdgeModel","_view_count":null,"_view_module":"jupyter-cytoscape","_view_module_version":"^1.3.3","_view_name":"EdgeView","classes":"","data":{"label":"n=2121\np=1.00\nmean=0.0 days","source":"ward q start","target":"ward admit","weight":1},"pannable":true,"removed":false,"selectable":false,"selected":false}},"3390e3202cd84a498a69afd4c94d5702":{"model_module":"jupyter-cytoscape","model_module_version":"^1.3.3","model_name":"EdgeModel","state":{"_model_module":"jupyter-cytoscape","_model_module_version":"^1.3.3","_model_name":"EdgeModel","_view_count":null,"_view_module":"jupyter-cytoscape","_view_module_version":"^1.3.3","_view_name":"EdgeView","classes":"","data":{"label":"n=753\np=0.48\nmean=0.0 days","source":"sdec discharge","target":"ward q start","weight":0.4839331619537275},"pannable":true,"removed":false,"selectable":false,"selected":false}},"47d436f7aa1942daa836c2e9262828d7":{"model_module":"jupyter-cytoscape","model_module_version":"^1.3.3","model_name":"NodeModel","state":{"_model_module":"jupyter-cytoscape","_model_module_version":"^1.3.3","_model_name":"NodeModel","_view_count":null,"_view_module":"jupyter-cytoscape","_view_module_version":"^1.3.3","_view_name":"NodeView","classes":"multiline-manual","data":{"id":"ct or ctp scan end","label":"ct or ctp scan end\nn=3490"},"grabbable":true,"grabbed":false,"locked":false,"pannable":false,"position":{},"removed":false,"selectable":false,"selected":false}},"4a21a1b880d84235a12b55d4104e84e8":{"model_module":"jupyter-cytoscape","model_module_version":"^1.3.3","model_name":"EdgeModel","state":{"_model_module":"jupyter-cytoscape","_model_module_version":"^1.3.3","_model_name":"EdgeModel","_view_count":null,"_view_module":"jupyter-cytoscape","_view_module_version":"^1.3.3","_view_name":"EdgeView","classes":"","data":{"label":"n=3490\np=1.00\nmean=0.0 days","source":"nurse triage end","target":"ct or ctp scan start","weight":1},"pannable":true,"removed":false,"selectable":false,"selected":false}},"4e44d7bfc92944dfa18c1e1a1c232e68":{"model_module":"jupyter-cytoscape","model_module_version":"^1.3.3","model_name":"NodeModel","state":{"_model_module":"jupyter-cytoscape","_model_module_version":"^1.3.3","_model_name":"NodeModel","_view_count":null,"_view_module":"jupyter-cytoscape","_view_module_version":"^1.3.3","_view_name":"NodeView","classes":"multiline-manual","data":{"id":"clock start","label":"clock start\nn=3490"},"grabbable":true,"grabbed":false,"locked":false,"pannable":false,"position":{},"removed":false,"selectable":false,"selected":false}},"55e4798890234e0387a5422c32358213":{"model_module":"jupyter-cytoscape","model_module_version":"^1.3.3","model_name":"EdgeModel","state":{"_model_module":"jupyter-cytoscape","_model_module_version":"^1.3.3","_model_name":"EdgeModel","_view_count":null,"_view_module":"jupyter-cytoscape","_view_module_version":"^1.3.3","_view_name":"EdgeView","classes":"","data":{"label":"n=1556\np=1.00\nmean=0.2 days","source":"sdec admit","target":"sdec discharge","weight":1},"pannable":true,"removed":false,"selectable":false,"selected":false}},"57cf8ef845d34b579683906523905c35":{"model_module":"jupyter-cytoscape","model_module_version":"^1.3.3","model_name":"GraphModel","state":{"_adj":{},"_model_module":"jupyter-cytoscape","_model_module_version":"^1.3.3","_model_name":"GraphModel","_view_count":null,"_view_module":"jupyter-cytoscape","_view_module_version":"^1.3.3","_view_name":null,"edges":[],"nodes":[]}},"5d7ef73b974e49ea9cad2a6a3a1521e7":{"model_module":"jupyter-cytoscape","model_module_version":"^1.3.3","model_name":"NodeModel","state":{"_model_module":"jupyter-cytoscape","_model_module_version":"^1.3.3","_model_name":"NodeModel","_view_count":null,"_view_module":"jupyter-cytoscape","_view_module_version":"^1.3.3","_view_name":"NodeView","classes":"multiline-manual","data":{"id":"ct or ctp scan start","label":"ct or ctp scan start\nn=3490"},"grabbable":true,"grabbed":false,"locked":false,"pannable":false,"position":{},"removed":false,"selectable":false,"selected":false}},"61a149189417446e9ccef82010571fe3":{"model_module":"@jupyter-widgets/controls","model_module_version":"2.0.0","model_name":"BoxModel","state":{"_dom_classes":[],"_model_module":"@jupyter-widgets/controls","_model_module_version":"2.0.0","_model_name":"BoxModel","_view_count":null,"_view_module":"@jupyter-widgets/controls","_view_module_version":"2.0.0","_view_name":"BoxView","box_style":"","children":["IPY_MODEL_db3e7ce88692469db2159fbbe070d6b2"],"layout":"IPY_MODEL_97ebdbe23e2a4ef9a185730b76780d05","tabbable":null,"tooltip":null}},"676938d06c5b491bb2cf2e0641831d11":{"model_module":"@jupyter-widgets/base","model_module_version":"2.0.0","model_name":"LayoutModel","state":{"_model_module":"@jupyter-widgets/base","_model_module_version":"2.0.0","_model_name":"LayoutModel","_view_count":null,"_view_module":"@jupyter-widgets/base","_view_module_version":"2.0.0","_view_name":"LayoutView","align_content":null,"align_items":null,"align_self":null,"border_bottom":null,"border_left":null,"border_right":null,"border_top":null,"bottom":null,"display":null,"flex":null,"flex_flow":null,"grid_area":null,"grid_auto_columns":null,"grid_auto_flow":null,"grid_auto_rows":null,"grid_column":null,"grid_gap":null,"grid_row":null,"grid_template_areas":null,"grid_template_columns":null,"grid_template_rows":null,"height":"580px","justify_content":null,"justify_items":null,"left":null,"margin":null,"max_height":null,"max_width":null,"min_height":null,"min_width":null,"object_fit":null,"object_position":null,"order":null,"overflow":null,"padding":null,"right":null,"top":null,"visibility":null,"width":"1180px"}},"690cfe0f40dc46618bb62e94b0c92d32":{"model_module":"jupyter-cytoscape","model_module_version":"^1.3.3","model_name":"EdgeModel","state":{"_model_module":"jupyter-cytoscape","_model_module_version":"^1.3.3","_model_name":"EdgeModel","_view_count":null,"_view_module":"jupyter-cytoscape","_view_module_version":"^1.3.3","_view_name":"EdgeView","classes":"","data":{"label":"n=56\np=1.00\nmean=0.0 minutes","source":"treatment_complete","target":"depart","weight":1},"pannable":true,"removed":false,"selectable":false,"selected":false}},"69804e8bd5b74af6980ff53dbd4ccd8f":{"model_module":"@jupyter-widgets/base","model_module_version":"2.0.0","model_name":"LayoutModel","state":{"_model_module":"@jupyter-widgets/base","_model_module_version":"2.0.0","_model_name":"LayoutModel","_view_count":null,"_view_module":"@jupyter-widgets/base","_view_module_version":"2.0.0","_view_name":"LayoutView","align_content":null,"align_items":null,"align_self":null,"border_bottom":"1px solid lightgray","border_left":"1px solid lightgray","border_right":"1px solid lightgray","border_top":"1px solid lightgray","bottom":null,"display":null,"flex":null,"flex_flow":null,"grid_area":null,"grid_auto_columns":null,"grid_auto_flow":null,"grid_auto_rows":null,"grid_column":null,"grid_gap":null,"grid_row":null,"grid_template_areas":null,"grid_template_columns":null,"grid_template_rows":null,"height":"600px","justify_content":null,"justify_items":null,"left":null,"margin":null,"max_height":null,"max_width":null,"min_height":null,"min_width":null,"object_fit":null,"object_position":null,"order":null,"overflow":null,"padding":null,"right":null,"top":null,"visibility":null,"width":"1200px"}},"69efcfe7c96d4f92bb14689e8f3080c4":{"model_module":"jupyter-cytoscape","model_module_version":"^1.3.3","model_name":"NodeModel","state":{"_model_module":"jupyter-cytoscape","_model_module_version":"^1.3.3","_model_name":"NodeModel","_view_count":null,"_view_module":"jupyter-cytoscape","_view_module_version":"^1.3.3","_view_name":"NodeView","classes":"multiline-manual","data":{"id":"ward discharge","label":"ward discharge\nn=2072"},"grabbable":true,"grabbed":false,"locked":false,"pannable":false,"position":{},"removed":false,"selectable":false,"selected":false}},"6a47a0dcbd4e4645a6ce1e695c77e76b":{"model_module":"jupyter-cytoscape","model_module_version":"^1.3.3","model_name":"NodeModel","state":{"_model_module":"jupyter-cytoscape","_model_module_version":"^1.3.3","_model_name":"NodeModel","_view_count":null,"_view_module":"jupyter-cytoscape","_view_module_version":"^1.3.3","_view_name":"NodeView","classes":"multiline-manual","data":{"id":"exit","label":"exit\nn=3490"},"grabbable":true,"grabbed":false,"locked":false,"pannable":false,"position":{},"removed":false,"selectable":false,"selected":false}},"6c6915de75d3411a9189bd4fcae0caaa":{"model_module":"jupyter-cytoscape","model_module_version":"^1.3.3","model_name":"NodeModel","state":{"_model_module":"jupyter-cytoscape","_model_module_version":"^1.3.3","_model_name":"NodeModel","_view_count":null,"_view_module":"jupyter-cytoscape","_view_module_version":"^1.3.3","_view_name":"NodeView","classes":"multiline-manual","data":{"id":"nurse triage start","label":"nurse triage start\nn=3490"},"grabbable":true,"grabbed":false,"locked":false,"pannable":false,"position":{},"removed":false,"selectable":false,"selected":false}},"70f6cce08af5489490df4f50236db702":{"model_module":"jupyter-cytoscape","model_module_version":"^1.3.3","model_name":"NodeModel","state":{"_model_module":"jupyter-cytoscape","_model_module_version":"^1.3.3","_model_name":"NodeModel","_view_count":null,"_view_module":"jupyter-cytoscape","_view_module_version":"^1.3.3","_view_name":"NodeView","classes":"multiline-manual","data":{"id":"nurse q start","label":"nurse q start\nn=3490"},"grabbable":true,"grabbed":false,"locked":false,"pannable":false,"position":{},"removed":false,"selectable":false,"selected":false}},"717622080997456a940c3219a3762eea":{"model_module":"jupyter-cytoscape","model_module_version":"^1.3.3","model_name":"EdgeModel","state":{"_model_module":"jupyter-cytoscape","_model_module_version":"^1.3.3","_model_name":"EdgeModel","_view_count":null,"_view_module":"jupyter-cytoscape","_view_module_version":"^1.3.3","_view_name":"EdgeView","classes":"","data":{"label":"n=3490\np=1.00\nmean=0.0 days","source":"ct or ctp scan start","target":"ct or ctp scan end","weight":1},"pannable":true,"removed":false,"selectable":false,"selected":false}},"80a7290700bb49b49d3f03a741361719":{"model_module":"jupyter-cytoscape","model_module_version":"^1.3.3","model_name":"EdgeModel","state":{"_model_module":"jupyter-cytoscape","_model_module_version":"^1.3.3","_model_name":"EdgeModel","_view_count":null,"_view_module":"jupyter-cytoscape","_view_module_version":"^1.3.3","_view_name":"EdgeView","classes":"","data":{"label":"n=803\np=0.52\nmean=0.0 days","source":"sdec discharge","target":"exit","weight":0.5160668380462725},"pannable":true,"removed":false,"selectable":false,"selected":false}},"8315e994f6824d339adf4a8db6c838d5":{"model_module":"jupyter-cytoscape","model_module_version":"^1.3.3","model_name":"EdgeModel","state":{"_model_module":"jupyter-cytoscape","_model_module_version":"^1.3.3","_model_name":"EdgeModel","_view_count":null,"_view_module":"jupyter-cytoscape","_view_module_version":"^1.3.3","_view_name":"EdgeView","classes":"","data":{"label":"n=3490\np=1.00\nmean=0.0 days","source":"nurse triage start","target":"nurse triage end","weight":1},"pannable":true,"removed":false,"selectable":false,"selected":false}},"8785542db8d9462e8a4b9ab766ec4f44":{"model_module":"jupyter-cytoscape","model_module_version":"^1.3.3","model_name":"NodeModel","state":{"_model_module":"jupyter-cytoscape","_model_module_version":"^1.3.3","_model_name":"NodeModel","_view_count":null,"_view_module":"jupyter-cytoscape","_view_module_version":"^1.3.3","_view_name":"NodeView","classes":"multiline-manual","data":{"id":"ward q start","label":"ward q start\nn=2121"},"grabbable":true,"grabbed":false,"locked":false,"pannable":false,"position":{},"removed":false,"selectable":false,"selected":false}},"966ebff9b8bf433683fc7d4d9139005e":{"model_module":"jupyter-cytoscape","model_module_version":"^1.3.3","model_name":"EdgeModel","state":{"_model_module":"jupyter-cytoscape","_model_module_version":"^1.3.3","_model_name":"EdgeModel","_view_count":null,"_view_module":"jupyter-cytoscape","_view_module_version":"^1.3.3","_view_name":"EdgeView","classes":"","data":{"label":"n=60\np=1.00\nmean=160.5 minutes","source":"treatment_wait_begins","target":"treatment_begins","weight":1},"pannable":true,"removed":false,"selectable":false,"selected":false}},"97ebdbe23e2a4ef9a185730b76780d05":{"model_module":"@jupyter-widgets/base","model_module_version":"2.0.0","model_name":"LayoutModel","state":{"_model_module":"@jupyter-widgets/base","_model_module_version":"2.0.0","_model_name":"LayoutModel","_view_count":null,"_view_module":"@jupyter-widgets/base","_view_module_version":"2.0.0","_view_name":"LayoutView","align_content":null,"align_items":null,"align_self":null,"border_bottom":"1px solid lightgray","border_left":"1px solid lightgray","border_right":"1px solid lightgray","border_top":"1px solid lightgray","bottom":null,"display":null,"flex":null,"flex_flow":null,"grid_area":null,"grid_auto_columns":null,"grid_auto_flow":null,"grid_auto_rows":null,"grid_column":null,"grid_gap":null,"grid_row":null,"grid_template_areas":null,"grid_template_columns":null,"grid_template_rows":null,"height":"600px","justify_content":null,"justify_items":null,"left":null,"margin":null,"max_height":null,"max_width":null,"min_height":null,"min_width":null,"object_fit":null,"object_position":null,"order":null,"overflow":null,"padding":null,"right":null,"top":null,"visibility":null,"width":"1400px"}},"9ad9f53808404a9fbfd84f3801925fee":{"model_module":"jupyter-cytoscape","model_module_version":"^1.3.3","model_name":"EdgeModel","state":{"_model_module":"jupyter-cytoscape","_model_module_version":"^1.3.3","_model_name":"EdgeModel","_view_count":null,"_view_module":"jupyter-cytoscape","_view_module_version":"^1.3.3","_view_name":"EdgeView","classes":"","data":{"label":"n=2072\np=0.98\nmean=8.1 days","source":"ward admit","target":"ward discharge","weight":0.976897689768977},"pannable":true,"removed":false,"selectable":false,"selected":false}},"af3628e5ddc246ffb39a03cc0f0610cd":{"model_module":"jupyter-cytoscape","model_module_version":"^1.3.3","model_name":"GraphModel","state":{"_adj":{"clock start":{},"ct or ctp scan end":{},"ct or ctp scan start":{},"exit":{},"nurse q start":{},"nurse triage end":{},"nurse triage start":{},"sdec admit":{},"sdec discharge":{},"ward admit":{},"ward discharge":{},"ward q start":{}},"_model_module":"jupyter-cytoscape","_model_module_version":"^1.3.3","_model_name":"GraphModel","_view_count":null,"_view_module":"jupyter-cytoscape","_view_module_version":"^1.3.3","_view_name":null,"edges":["IPY_MODEL_c39214c4725846e593da0909334bd834","IPY_MODEL_0c246764496f4d21814b0e3aeaf8a1ee","IPY_MODEL_e2076638bff24b4a82a4c0e49c2b50a6","IPY_MODEL_cd83e82226a341de92891edd19b2beaa","IPY_MODEL_717622080997456a940c3219a3762eea","IPY_MODEL_d6fd8c405a9449dca10820be2045d5ea","IPY_MODEL_4a21a1b880d84235a12b55d4104e84e8","IPY_MODEL_8315e994f6824d339adf4a8db6c838d5","IPY_MODEL_55e4798890234e0387a5422c32358213","IPY_MODEL_80a7290700bb49b49d3f03a741361719","IPY_MODEL_3390e3202cd84a498a69afd4c94d5702","IPY_MODEL_02cd8325cdf945a2aca1413900b6a665","IPY_MODEL_9ad9f53808404a9fbfd84f3801925fee","IPY_MODEL_2d914974f940424cba9f9effcd8994b6","IPY_MODEL_30fcc897e9934f7fac035df7ce0bdb3e"],"nodes":["IPY_MODEL_4e44d7bfc92944dfa18c1e1a1c232e68","IPY_MODEL_47d436f7aa1942daa836c2e9262828d7","IPY_MODEL_5d7ef73b974e49ea9cad2a6a3a1521e7","IPY_MODEL_6a47a0dcbd4e4645a6ce1e695c77e76b","IPY_MODEL_70f6cce08af5489490df4f50236db702","IPY_MODEL_ccba2769812944c28621484e5a9287a0","IPY_MODEL_6c6915de75d3411a9189bd4fcae0caaa","IPY_MODEL_2f6fa9ac486140c2851e5b22ddbe1bcf","IPY_MODEL_f0a9426981654a7fad357effad4371f2","IPY_MODEL_aff27b4eb5d7413895d1a1027f73d64c","IPY_MODEL_69efcfe7c96d4f92bb14689e8f3080c4","IPY_MODEL_8785542db8d9462e8a4b9ab766ec4f44"]}},"aff27b4eb5d7413895d1a1027f73d64c":{"model_module":"jupyter-cytoscape","model_module_version":"^1.3.3","model_name":"NodeModel","state":{"_model_module":"jupyter-cytoscape","_model_module_version":"^1.3.3","_model_name":"NodeModel","_view_count":null,"_view_module":"jupyter-cytoscape","_view_module_version":"^1.3.3","_view_name":"NodeView","classes":"multiline-manual","data":{"id":"ward admit","label":"ward admit\nn=2121"},"grabbable":true,"grabbed":false,"locked":false,"pannable":false,"position":{},"removed":false,"selectable":false,"selected":false}},"bc11b0ec1e82405e8ae3821f5ca46515":{"model_module":"jupyter-cytoscape","model_module_version":"^1.3.3","model_name":"EdgeModel","state":{"_model_module":"jupyter-cytoscape","_model_module_version":"^1.3.3","_model_name":"EdgeModel","_view_count":null,"_view_module":"jupyter-cytoscape","_view_module_version":"^1.3.3","_view_name":"EdgeView","classes":"","data":{"label":"n=132\np=1.00\nmean=0.0 minutes","source":"arrival","target":"treatment_wait_begins","weight":1},"pannable":true,"removed":false,"selectable":false,"selected":false}},"bd5bb16c245a46e3806b4293aa316820":{"model_module":"jupyter-cytoscape","model_module_version":"^1.3.3","model_name":"EdgeModel","state":{"_model_module":"jupyter-cytoscape","_model_module_version":"^1.3.3","_model_name":"EdgeModel","_view_count":null,"_view_module":"jupyter-cytoscape","_view_module_version":"^1.3.3","_view_name":"EdgeView","classes":"","data":{"label":"n=56\np=1.00\nmean=40.1 minutes","source":"treatment_begins","target":"treatment_complete","weight":1},"pannable":true,"removed":false,"selectable":false,"selected":false}},"c39214c4725846e593da0909334bd834":{"model_module":"jupyter-cytoscape","model_module_version":"^1.3.3","model_name":"EdgeModel","state":{"_model_module":"jupyter-cytoscape","_model_module_version":"^1.3.3","_model_name":"EdgeModel","_view_count":null,"_view_module":"jupyter-cytoscape","_view_module_version":"^1.3.3","_view_name":"EdgeView","classes":"","data":{"label":"n=3490\np=1.00\nmean=0.0 days","source":"clock start","target":"nurse q start","weight":1},"pannable":true,"removed":false,"selectable":false,"selected":false}},"ccba2769812944c28621484e5a9287a0":{"model_module":"jupyter-cytoscape","model_module_version":"^1.3.3","model_name":"NodeModel","state":{"_model_module":"jupyter-cytoscape","_model_module_version":"^1.3.3","_model_name":"NodeModel","_view_count":null,"_view_module":"jupyter-cytoscape","_view_module_version":"^1.3.3","_view_name":"NodeView","classes":"multiline-manual","data":{"id":"nurse triage end","label":"nurse triage end\nn=3490"},"grabbable":true,"grabbed":false,"locked":false,"pannable":false,"position":{},"removed":false,"selectable":false,"selected":false}},"cd83e82226a341de92891edd19b2beaa":{"model_module":"jupyter-cytoscape","model_module_version":"^1.3.3","model_name":"EdgeModel","state":{"_model_module":"jupyter-cytoscape","_model_module_version":"^1.3.3","_model_name":"EdgeModel","_view_count":null,"_view_module":"jupyter-cytoscape","_view_module_version":"^1.3.3","_view_name":"EdgeView","classes":"","data":{"label":"n=1368\np=0.39\nmean=0.0 days","source":"ct or ctp scan end","target":"ward q start","weight":0.39197707736389686},"pannable":true,"removed":false,"selectable":false,"selected":false}},"d5beb0f5624040ca852bc51ca3ef5907":{"model_module":"jupyter-cytoscape","model_module_version":"^1.3.3","model_name":"GraphModel","state":{"_adj":{},"_model_module":"jupyter-cytoscape","_model_module_version":"^1.3.3","_model_name":"GraphModel","_view_count":null,"_view_module":"jupyter-cytoscape","_view_module_version":"^1.3.3","_view_name":null,"edges":[],"nodes":[]}},"d6fd8c405a9449dca10820be2045d5ea":{"model_module":"jupyter-cytoscape","model_module_version":"^1.3.3","model_name":"EdgeModel","state":{"_model_module":"jupyter-cytoscape","_model_module_version":"^1.3.3","_model_name":"EdgeModel","_view_count":null,"_view_module":"jupyter-cytoscape","_view_module_version":"^1.3.3","_view_name":"EdgeView","classes":"","data":{"label":"n=3490\np=1.00\nmean=0.0 days","source":"nurse q start","target":"nurse triage start","weight":1},"pannable":true,"removed":false,"selectable":false,"selected":false}},"db3e7ce88692469db2159fbbe070d6b2":{"model_module":"jupyter-cytoscape","model_module_version":"^1.3.3","model_name":"CytoscapeModel","state":{"_dom_classes":[],"_interaction_handlers":{},"_model_module":"jupyter-cytoscape","_model_module_version":"^1.3.3","_model_name":"CytoscapeModel","_view_count":null,"_view_module":"jupyter-cytoscape","_view_module_version":"^1.3.3","_view_name":"CytoscapeView","auto_ungrabify":false,"auto_unselectify":true,"autolock":false,"box_selection_enabled":false,"cytoscape_layout":{"animate":true,"directed":true,"fit":false,"name":"dagre","numIter":1,"padding":30,"randomize":true,"rankDir":"LR","spacingFactor":1.5},"cytoscape_style":[{"selector":"node","style":{"background-color":"skyblue","content":"data(label)","font-size":"10px","height":"40px","text-halign":"center","text-max-width":40,"text-valign":"center","text-wrap":"wrap","width":"40px"}},{"selector":"edge","style":{"content":"data(label)","curve-style":"bezier","font-size":"8px","line-color":"#9dbaea","target-arrow-color":"#9dbaea","target-arrow-shape":"triangle","text-max-width":80,"text-wrap":"wrap","width":"mapData(weight, 0, 1, 1, 6)"}}],"desktop_tap_threshold":4,"graph":"IPY_MODEL_af3628e5ddc246ffb39a03cc0f0610cd","headless":false,"hide_edges_on_viewport":false,"layout":"IPY_MODEL_e896ec91224a455e91e886794fcdcc27","max_zoom":1e+50,"min_zoom":1e-50,"motion_blur":false,"motion_blur_opacity":0.2,"panning_enabled":true,"pixel_ratio":"auto","rendered_position":{"renderedPosition":{"x":100,"y":100}},"selection_type":"single","style_enabled":true,"tabbable":null,"texture_on_viewport":false,"tooltip":null,"tooltip_source":"label","touch_tap_threshold":8,"user_panning_enabled":true,"user_zooming_enabled":true,"wheel_sensitivity":1,"zoom":2,"zooming_enabled":true}},"e1c666d11976481ba988d97ce1b4d77c":{"model_module":"@jupyter-widgets/controls","model_module_version":"2.0.0","model_name":"BoxModel","state":{"_dom_classes":[],"_model_module":"@jupyter-widgets/controls","_model_module_version":"2.0.0","_model_name":"BoxModel","_view_count":null,"_view_module":"@jupyter-widgets/controls","_view_module_version":"2.0.0","_view_name":"BoxView","box_style":"","children":["IPY_MODEL_fd82e1f18f6940fcbc07b75ff809e484"],"layout":"IPY_MODEL_69804e8bd5b74af6980ff53dbd4ccd8f","tabbable":null,"tooltip":null}},"e2076638bff24b4a82a4c0e49c2b50a6":{"model_module":"jupyter-cytoscape","model_module_version":"^1.3.3","model_name":"EdgeModel","state":{"_model_module":"jupyter-cytoscape","_model_module_version":"^1.3.3","_model_name":"EdgeModel","_view_count":null,"_view_module":"jupyter-cytoscape","_view_module_version":"^1.3.3","_view_name":"EdgeView","classes":"","data":{"label":"n=1556\np=0.45\nmean=0.0 days","source":"ct or ctp scan end","target":"sdec admit","weight":0.4458452722063037},"pannable":true,"removed":false,"selectable":false,"selected":false}},"e896ec91224a455e91e886794fcdcc27":{"model_module":"@jupyter-widgets/base","model_module_version":"2.0.0","model_name":"LayoutModel","state":{"_model_module":"@jupyter-widgets/base","_model_module_version":"2.0.0","_model_name":"LayoutModel","_view_count":null,"_view_module":"@jupyter-widgets/base","_view_module_version":"2.0.0","_view_name":"LayoutView","align_content":null,"align_items":null,"align_self":null,"border_bottom":null,"border_left":null,"border_right":null,"border_top":null,"bottom":null,"display":null,"flex":null,"flex_flow":null,"grid_area":null,"grid_auto_columns":null,"grid_auto_flow":null,"grid_auto_rows":null,"grid_column":null,"grid_gap":null,"grid_row":null,"grid_template_areas":null,"grid_template_columns":null,"grid_template_rows":null,"height":"580px","justify_content":null,"justify_items":null,"left":null,"margin":null,"max_height":null,"max_width":null,"min_height":null,"min_width":null,"object_fit":null,"object_position":null,"order":null,"overflow":null,"padding":null,"right":null,"top":null,"visibility":null,"width":"1380px"}},"eda976d554d3415eaeb4949d391bd00a":{"model_module":"jupyter-cytoscape","model_module_version":"^1.3.3","model_name":"NodeModel","state":{"_model_module":"jupyter-cytoscape","_model_module_version":"^1.3.3","_model_name":"NodeModel","_view_count":null,"_view_module":"jupyter-cytoscape","_view_module_version":"^1.3.3","_view_name":"NodeView","classes":"multiline-manual","data":{"id":"treatment_wait_begins","label":"treatment_wait_begins\nn=132"},"grabbable":true,"grabbed":false,"locked":false,"pannable":false,"position":{},"removed":false,"selectable":false,"selected":false}},"f0a9426981654a7fad357effad4371f2":{"model_module":"jupyter-cytoscape","model_module_version":"^1.3.3","model_name":"NodeModel","state":{"_model_module":"jupyter-cytoscape","_model_module_version":"^1.3.3","_model_name":"NodeModel","_view_count":null,"_view_module":"jupyter-cytoscape","_view_module_version":"^1.3.3","_view_name":"NodeView","classes":"multiline-manual","data":{"id":"sdec discharge","label":"sdec discharge\nn=1556"},"grabbable":true,"grabbed":false,"locked":false,"pannable":false,"position":{},"removed":false,"selectable":false,"selected":false}},"fd82e1f18f6940fcbc07b75ff809e484":{"model_module":"jupyter-cytoscape","model_module_version":"^1.3.3","model_name":"CytoscapeModel","state":{"_dom_classes":[],"_interaction_handlers":{},"_model_module":"jupyter-cytoscape","_model_module_version":"^1.3.3","_model_name":"CytoscapeModel","_view_count":null,"_view_module":"jupyter-cytoscape","_view_module_version":"^1.3.3","_view_name":"CytoscapeView","auto_ungrabify":false,"auto_unselectify":true,"autolock":false,"box_selection_enabled":false,"cytoscape_layout":{"animate":true,"directed":true,"fit":false,"name":"dagre","numIter":1,"padding":30,"randomize":true,"rankDir":"LR","spacingFactor":2},"cytoscape_style":[{"selector":"node","style":{"background-color":"skyblue","content":"data(label)","font-size":"10px","height":"40px","text-halign":"center","text-max-width":40,"text-valign":"center","text-wrap":"wrap","width":"40px"}},{"selector":"edge","style":{"content":"data(label)","curve-style":"bezier","font-size":"8px","line-color":"#9dbaea","target-arrow-color":"#9dbaea","target-arrow-shape":"triangle","text-max-width":80,"text-wrap":"wrap","width":"mapData(weight, 0, 1, 1, 6)"}}],"desktop_tap_threshold":4,"graph":"IPY_MODEL_2835b1f02b184916b8bdcea3e85fda95","headless":false,"hide_edges_on_viewport":false,"layout":"IPY_MODEL_676938d06c5b491bb2cf2e0641831d11","max_zoom":1e+50,"min_zoom":1e-50,"motion_blur":false,"motion_blur_opacity":0.2,"panning_enabled":true,"pixel_ratio":"auto","rendered_position":{"renderedPosition":{"x":100,"y":100}},"selection_type":"single","style_enabled":true,"tabbable":null,"texture_on_viewport":false,"tooltip":null,"tooltip_source":"label","touch_tap_threshold":8,"user_panning_enabled":true,"user_zooming_enabled":true,"wheel_sensitivity":1,"zoom":2,"zooming_enabled":true}},"fe2feab27fcd47af8941102648d4c735":{"model_module":"jupyter-cytoscape","model_module_version":"^1.3.3","model_name":"NodeModel","state":{"_model_module":"jupyter-cytoscape","_model_module_version":"^1.3.3","_model_name":"NodeModel","_view_count":null,"_view_module":"jupyter-cytoscape","_view_module_version":"^1.3.3","_view_name":"NodeView","classes":"multiline-manual","data":{"id":"arrival","label":"arrival\nn=132"},"grabbable":true,"grabbed":false,"locked":false,"pannable":false,"position":{},"removed":false,"selectable":false,"selected":false}}},"version_major":2,"version_minor":0}
+</script>
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     // Ensure there is a toggle, if there isn't float one in the top right
