@@ -15,7 +15,7 @@ def reshape_for_animations(
     event_log: pd.DataFrame,
     every_x_time_units: int = 10,
     limit_duration: int = 10 * 60 * 24,
-    step_snapshot_max: int = 50,
+    step_snapshot_max: int = 60,
     time_col_name: str = "time",
     entity_col_name: str = "entity_id",
     event_type_col_name: str = "event_type",
@@ -40,7 +40,7 @@ def reshape_for_animations(
     limit_duration : int, optional
         The maximum duration to consider in preferred time units (default is 10 days).
     step_snapshot_max : int, optional
-        The maximum number of entities to include in each snapshot for each event (default is 50).
+        The maximum number of entities to include in each snapshot for each event (default is 60).
     time_col_name : str, default="time"
         Name of the column in `event_log` that contains the timestamp of each event.
         Timestamps should represent the number of time units since the simulation began.
@@ -386,7 +386,7 @@ def generate_animation_df(
     event_position_df: pd.DataFrame,
     wrap_queues_at: Optional[int] = 20,
     wrap_resources_at: Optional[int] = 20,
-    step_snapshot_max: int = 50,
+    step_snapshot_max: int = 60,
     gap_between_entities: int = 10,
     gap_between_resources: int = 10,
     gap_between_resource_rows: int = 30,
@@ -422,7 +422,7 @@ def generate_animation_df(
     wrap_resources_at : int, optional
         Number of resources to show before wrapping to a new row (default is 20).
     step_snapshot_max : int, optional
-        Maximum number of patients to show in each snapshot (default is 50).
+        Maximum number of patients to show in each snapshot (default is 60).
     gap_between_entities : int, optional
         Horizontal spacing between entities in pixels (default is 10).
     gap_between_resources : int, optional
