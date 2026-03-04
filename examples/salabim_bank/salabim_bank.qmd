@@ -5,6 +5,11 @@ filters:
   - line-highlight
 ---
 
+```{python}
+#| echo: false
+# pylint: disable=too-few-public-methods,function-redefined
+```
+
 Using a Salabim model with vidigi follows the same process as a SimPy model. To demonstrate how it is set-up, we will use an example model from the [Salabim documentation](https://www.salabim.org/manual/Modelling.html#a-bank-example). Salabim is licensed under MIT.
 
 It is a model of a bank with three clerks. Customers arrival following a uniform distribution, wait in a first in first out (FIFO) queue, and then are served by a clerk which has a fixed time of 30.
@@ -14,7 +19,6 @@ It is a model of a bank with three clerks. Customers arrival following a uniform
 The required imports for this page:
 
 ```{python}
-import os
 import salabim as sim
 from vidigi.logging import EventLogger
 from vidigi.utils import EventPosition, create_event_position_df
@@ -23,25 +27,31 @@ from vidigi.animation import animate_activity_log
 
 ## Original Salabim model
 
-This is the original model code from Salabim (though with `trace=False`, more frequent arrivals, and shorter run-time than the original):
+This is the original model, with code adapted from the Salabim documentation.
 
 ```{python}
-# Source: https://www.salabim.org/manual/Modelling.html#a-bank-example
-# License: MIT
-# Copyright holder: salabim contributors
+# Adapted from: https://www.salabim.org/manual/Modelling.html#a-bank-example
+# Licence: MIT
+# Licence copyright holder: salabim contributors
 
 # Bank, 3 clerks.py
 
 
 class CustomerGenerator(sim.Component):
+    """Generates customers at random time intervals."""
+
     def process(self):
+        """Create customers and wait before generating the next one."""
         while True:
             Customer()
             self.hold(sim.Uniform(3, 12).sample())
 
 
 class Customer(sim.Component):
+    """A customer that joins the waiting line and is served by a clerk."""
+
     def process(self):
+        """Join queue, wake idle clerk if available, then wait for service."""
         self.enter(waitingline)
         for clerk in clerks:
             if clerk.ispassive():
@@ -51,7 +61,15 @@ class Customer(sim.Component):
 
 
 class Clerk(sim.Component):
+    """A clerk that serves waiting customers."""
+
+    def __init__(self, *args, **kwargs):
+        """Initialise clerk with no current customers."""
+        super().__init__(*args, **kwargs)
+        self.customer = None
+
     def process(self):
+        """Continuously take customers from the queue and serve them."""
         while True:
             while len(waitingline) == 0:
                 self.passivate()
@@ -79,13 +97,20 @@ After running the simulation, we generate the event log dataframe by calling `lo
 
 ```{python}
 class CustomerGenerator(sim.Component):
+    """Generates customers at random time intervals."""
+
     def process(self):
+        """Create customers and wait before generating the next one."""
         while True:
             Customer()
             self.hold(sim.Uniform(3, 12).sample())
 
+
 class Customer(sim.Component):
+    """A customer that joins the waiting line and is served by a clerk."""
+
     def process(self):
+        """Join queue, wake idle clerk if available, then wait for service."""
         logger.log_arrival(entity_id=self.name()) #<<
         self.enter(waitingline)
         logger.log_queue(entity_id=self.name(), event="wait_for_clerk") #<<
@@ -96,11 +121,18 @@ class Customer(sim.Component):
         self.passivate()
         logger.log_departure(entity_id=self.name()) #<<
 
+
 class Clerk(sim.Component):
-    def setup(self, clerk_id): #<<
+    """A clerk that serves waiting customers."""
+
+    def __init__(self, clerk_id, *args, **kwargs): #<<
+        """Initialise clerk with no current customers."""
+        super().__init__(*args, **kwargs)
+        self.customer = None
         self.clerk_id = clerk_id #<<
 
     def process(self):
+        """Continuously take customers from the queue and serve them."""
         while True:
             while len(waitingline) == 0:
                 self.passivate()
@@ -120,6 +152,7 @@ class Clerk(sim.Component):
                 event="service_ends" #<<
             ) #<<
 
+
 env = sim.Environment(trace=False)
 logger = EventLogger(env=env) #<<
 CustomerGenerator()
@@ -130,7 +163,7 @@ waitingline = sim.Queue("waitingline")
 env.run(till=500) #<<
 
 event_log_df = logger.to_dataframe() #<<
-event_log_df #<<
+print(event_log_df) #<<
 ```
 
 ## Creating the animation
@@ -141,7 +174,9 @@ The `animate_activity_log()` function requires a class with the number of clerks
 
 ```{python}
 class Scenario:
+    """Configuration for the animation."""
     n_clerks = 3
+
 
 event_position_df = create_event_position_df([
     EventPosition(event="arrival", x=25, y=200, label="Arrival"),
@@ -159,15 +194,18 @@ fig = animate_activity_log(
     plotly_height=800,
     plotly_width=900,
     override_x_max=350,
-    override_y_max = 275,
+    override_y_max=275,
     resource_icon_size=50,
     gap_between_resources=20,
     wrap_queues_at=12,
     gap_between_queue_rows=10,
     display_stage_labels=False,
-    add_background_image="https://raw.githubusercontent.com/amyheather/vidigi/refs/heads/main/examples/salabim_bank/bank_background.drawio.png",
+    add_background_image=(
+        "https://raw.githubusercontent.com/amyheather/vidigi/refs/heads/main/"
+        "examples/salabim_bank/bank_background.drawio.png"
+    ),
     background_image_opacity=1
 )
 
-fig
+fig.show()
 ```
