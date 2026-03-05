@@ -15,12 +15,14 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/92166537?v=4",
       "profile": "https://www.linkedin.com/in/amyheather",
       "contributions": [
+        "bug",
         "doc",
+        "example",
+        "ideas",
         "infra",
         "maintenance",
         "test",
-        "tutorial",
-        "ideas"
+        "tutorial"
       ]
     },
     {
