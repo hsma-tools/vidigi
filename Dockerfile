@@ -18,6 +18,7 @@ RUN set -eux; \
         # Basic utilities
         wget ca-certificates gnupg software-properties-common \
         dirmngr locales git \
+        graphviz \
         # R compilation dependencies (CRITICAL for igraph)
         build-essential gfortran \
         libxml2-dev \
