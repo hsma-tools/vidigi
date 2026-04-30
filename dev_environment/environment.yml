@@ -28,8 +28,8 @@ dependencies:
   - salabim>=26.0.1
   - simpy>=4.1.1
   - sim-tools>=0.9.0,<1.0.0
-  - streamlit>=1.52.2,2.0.0
-  - tox>=4.25.0,5.0.0
+  - streamlit>=1.52.2,<2.0.0
+  - tox>=4.25.0,<5.0.0
   - webcolors>=24.11.1
   - pip:
     - ciw>=3.2.5,<4.0.0
