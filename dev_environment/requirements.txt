@@ -19,7 +19,7 @@ pillow>=10.0.0
 pip
 pydantic>=2.10.4,<3.0.0
 pylint>=4.0.5
-pytest>=8.3.2
+pytest>=8.3.2,<9.0.0
 pytest-html>=4.1.1
 quartodoc>=0.9.1
 salabim>=26.0.1

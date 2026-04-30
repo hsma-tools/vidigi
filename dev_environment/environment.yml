@@ -22,7 +22,7 @@ dependencies:
   - pydantic>=2.10.4
   - pylint>=4.0.5
   - python=3.11
-  - pytest>=8.3.2
+  - pytest>=8.3.2,<9.0.0
   - pytest-html>=4.1.1
   - quartodoc>=0.9.1,<1.0.0
   - salabim>=26.0.1

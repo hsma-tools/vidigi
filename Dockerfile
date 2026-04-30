@@ -17,6 +17,7 @@ RUN set -eux; \
     apt-get install -y --no-install-recommends \
         # Basic utilities
         wget ca-certificates gnupg software-properties-common \
+        dirmngr locales git curl \
         dirmngr locales git \
         graphviz \
         # R compilation dependencies (CRITICAL for igraph)
