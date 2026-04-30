@@ -2,7 +2,7 @@
 
 We welcome contributions to `vidigi`. You can either:
 
-* [Create a GitHub issue](https://github.com/hsma-tools/vidigi/issuess).
+* [Create a GitHub issue](https://github.com/hsma-tools/vidigi/issues).
 * [Fork the repository](https://github.com/hsma-tools/vidigi/fork) and create a pull request.
 
 This document contains guidance for working on this repository. Please be respectful and considerate - see the`CODE_OF_CONDUCT.md`.
