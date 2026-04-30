@@ -1,4 +1,8 @@
 
+# 1.3.1
+
+- Handle pandas FutureWarning that was outputting multiple warnings for Pandas 2.2.0 and above
+
 # 1.3.0
 
 ### Enhancements
