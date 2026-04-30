@@ -1,4 +1,4 @@
-from sample_models._simple_fifo_with_logging_storewrapper import Trial, g
+from tests.sample_models._simple_fifo_with_logging_storewrapper import Trial, g
 from vidigi.prep import reshape_for_animations, generate_animation_df
 from vidigi.animation import generate_animation, animate_activity_log
 import pandas as pd
