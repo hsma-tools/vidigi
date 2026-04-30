@@ -104,4 +104,5 @@ jobs:
 
       - name: Run tests
         if: steps.should_run.outputs.run == 'true'
-        run: pytest --verbose --tb=short
+        run: |
+          python -m pytest --verbose --tb=short
