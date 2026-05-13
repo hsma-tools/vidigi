@@ -18,7 +18,6 @@ RUN set -eux; \
         # Basic utilities
         wget ca-certificates gnupg software-properties-common \
         dirmngr locales git curl \
-        dirmngr locales git \
         graphviz \
         # R compilation dependencies (CRITICAL for igraph)
         build-essential gfortran \
@@ -37,7 +36,7 @@ RUN set -eux; \
 # ============================================================
 RUN wget -qO- https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc | \
     gpg --dearmor -o /usr/share/keyrings/r-project.gpg && \
-    echo "deb [signed-by=/usr/share/keyrings/r-project.gpg] https://cloud.r-project.org/bin/linux/ubuntu noble-cran45/" \
+    echo "deb [signed-by=/usr/share/keyrings/r-project.gpg] https://cloud.r-project.org/bin/linux/ubuntu noble-cran40/" \
         > /etc/apt/sources.list.d/r-project.list && \
     apt-get update && \
     apt-get install -y --no-install-recommends r-base r-base-dev && \
@@ -85,6 +84,7 @@ RUN /opt/conda/envs/vidigi_package_dev/bin/pip install -e /workspace
 # ============================================================
 # CRITICAL: R package compilation must happen with system
 # libraries, NOT conda libraries in PATH
+ENV RENV_CONFIG_PAK_ENABLED=TRUE
 ENV RENV_PATHS_LIBRARY=/workspace/renv/library
 
 RUN Rscript -e "install.packages('renv', repos = 'https://cloud.r-project.org')" && \
