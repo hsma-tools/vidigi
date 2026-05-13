@@ -40,7 +40,7 @@ RUN wget -qO- https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc |
     echo "deb [signed-by=/usr/share/keyrings/r-project.gpg] https://cloud.r-project.org/bin/linux/ubuntu noble-cran40/" \
         > /etc/apt/sources.list.d/r-project.list && \
     apt-get update && \
-    apt-get install -y --no-install-recommends r-base r-base-dev && \
+    apt-get install -y --no-install-recommends r-base=4.5.* r-base-dev=4.5.* && \
     rm -rf /var/lib/apt/lists/*
 
 # ============================================================
