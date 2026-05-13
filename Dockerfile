@@ -27,6 +27,7 @@ RUN set -eux; \
         libblas-dev \
         liblapack-dev \
         libcurl4-openssl-dev \
+        libpng-dev \
         libssl-dev && \
     locale-gen en_GB.UTF-8 && \
     rm -rf /var/lib/apt/lists/*
