@@ -1,4 +1,4 @@
-FROM ubuntu:22.04
+FROM rocker/r-ver:4.4.1
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -34,13 +34,14 @@ RUN set -eux; \
 # ============================================================
 # STAGE 2: Install R from CRAN
 # ============================================================
-RUN wget -qO- https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc | \
-    gpg --dearmor -o /usr/share/keyrings/r-project.gpg && \
-    echo "deb [signed-by=/usr/share/keyrings/r-project.gpg] https://cloud.r-project.org/bin/linux/ubuntu jammy-cran40/" \
-        > /etc/apt/sources.list.d/r-project.list && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends r-base r-base-dev && \
-    rm -rf /var/lib/apt/lists/*
+# RUN wget -qO- https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc | \
+#     gpg --dearmor -o /usr/share/keyrings/r-project.gpg && \
+#     echo "deb [signed-by=/usr/share/keyrings/r-project.gpg] https://cloud.r-project.org/bin/linux/ubuntu noble-cran40/" \
+#         > /etc/apt/sources.list.d/r-project.list && \
+#     apt-get update && \
+#     apt-get install -y --no-install-recommends r-base r-base-dev && \
+#     rm -rf /var/lib/apt/lists/*
+# TEMPORARILY REMOVED DUE TO SWITCH TO ROCKER
 
 # ============================================================
 # STAGE 3: Install Quarto
@@ -84,7 +85,6 @@ RUN /opt/conda/envs/vidigi_package_dev/bin/pip install -e /workspace
 # ============================================================
 # CRITICAL: R package compilation must happen with system
 # libraries, NOT conda libraries in PATH
-ENV RENV_CONFIG_PAK_ENABLED=TRUE
 ENV RENV_PATHS_LIBRARY=/workspace/renv/library
 
 RUN Rscript -e "install.packages('renv', repos = 'https://cloud.r-project.org')" && \
