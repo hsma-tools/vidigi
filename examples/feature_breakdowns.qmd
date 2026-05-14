@@ -6,6 +6,8 @@ listing:
     contents:
       - "feat_*/*.ipynb"
       - "feat_*/*.qmd"
+    exclude:
+      title: "BupaR"
     type: grid # A list style instead of a grid
     sort: false
     grid-columns: 3

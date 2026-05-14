@@ -2,6 +2,8 @@
 title: Vidigi vs BupaR
 execute:
   echo: true
+  freeze: true
+  eval: false
 filters:
    - include-code-files
 engine: knitr
