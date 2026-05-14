@@ -5,7 +5,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.append(str(ROOT))
 
-from examples.example_2_branching_multistep.ex_2_model_classes import g, Trial
+from ex_2_model_classes import g, Trial
 from vidigi.utils import EventPosition, create_event_position_df
 from vidigi.animation import animate_activity_log
 
