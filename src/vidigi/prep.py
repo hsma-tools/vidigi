@@ -263,13 +263,21 @@ def reshape_for_animations(
                 PANDAS_2_2_0_PLUS = version.parse(pd.__version__) >= version.parse(
                     "2.2.0"
                 )
-                kwargs = {"include_groups": False} if PANDAS_2_2_0_PLUS else {}
-                # Apply the per-event logic to each row
-                most_recent_events_time_unit_ungrouped = (
-                    most_recent_events_time_unit_ungrouped.groupby(
-                        event_col_name, group_keys=False
-                    ).apply(process_event_group, **kwargs)
-                )
+                if PANDAS_2_2_0_PLUS:
+                    most_recent_events_time_unit_ungrouped = (
+                        most_recent_events_time_unit_ungrouped.groupby(
+                            event_col_name, group_keys=True
+                        )
+                        .apply(process_event_group, include_groups=False)
+                        .reset_index(level=0, drop=False)  # Puts the 'event' column safely back
+                    )
+                else:
+                    # Legacy behavior for older Pandas versions
+                    most_recent_events_time_unit_ungrouped = (
+                        most_recent_events_time_unit_ungrouped.groupby(
+                            event_col_name, group_keys=False
+                        ).apply(process_event_group)
+                    )
 
                 # Clean up and store snapshot in our list of snapshots, which will all be
                 # concatenated into one large dataframe at the end
