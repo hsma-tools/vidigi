@@ -101,6 +101,9 @@ jobs:
       - name: Configure Git safe directory
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
+      - name: Install local package
+        run: pip install -e .
+
       - name: Build API docs with quartodoc
         run: quartodoc build
 

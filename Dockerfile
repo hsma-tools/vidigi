@@ -68,8 +68,9 @@ RUN $CONDA_DIR/bin/conda config --system --set always_yes yes && \
 # STAGE 5: Set up project and create conda environment
 # ============================================================
 WORKDIR /workspace
-COPY . /workspace
-RUN rm -f /workspace/.Renviron
+
+# Only copy the environment file to prevent codebase changes from breaking cache
+COPY dev_environment/environment.yml /workspace/dev_environment/environment.yml
 
 # Accept Anaconda ToS for required channels (non-interactive)
 RUN $CONDA_DIR/bin/conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main && \
@@ -77,9 +78,6 @@ RUN $CONDA_DIR/bin/conda tos accept --override-channels --channel https://repo.a
 
 # Create conda environment using explicit path (NOT in PATH yet)
 RUN $CONDA_DIR/bin/conda env create -f dev_environment/environment.yml
-
-# Install Python package
-RUN /opt/conda/envs/vidigi_package_dev/bin/pip install -e /workspace
 
 # ============================================================
 # STAGE 6: Install R packages WITHOUT conda in PATH
