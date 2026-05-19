@@ -1,4 +1,4 @@
-FROM rocker/r-ver:4.4.1
+FROM ubuntu:24.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -86,10 +86,10 @@ RUN /opt/conda/envs/vidigi_package_dev/bin/pip install -e /workspace
 # ============================================================
 # CRITICAL: R package compilation must happen with system
 # libraries, NOT conda libraries in PATH
-ENV RENV_PATHS_LIBRARY=/workspace/renv/library
+# ENV RENV_PATHS_LIBRARY=/workspace/renv/library
 
-RUN Rscript -e "install.packages('renv', repos = 'https://cloud.r-project.org')" && \
-    Rscript -e "renv::restore()"
+# RUN Rscript -e "install.packages('renv', repos = 'https://cloud.r-project.org')" && \
+#     Rscript -e "renv::restore()"
 
 # ============================================================
 # STAGE 7: Activate conda environment for RUNTIME only
