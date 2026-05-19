@@ -1,60 +1,38 @@
-name: Documentation Examples
+name: Documentation Against PyPI Release
 
 on:
-  pull_request:
-
   workflow_dispatch:
     inputs:
       python-version:
-        description: "Python version to test"
+        description: "Python version"
         required: true
-        default: "all"
+        default: "3.12"
         type: choice
         options:
-          - all
           - "3.10"
           - "3.11"
           - "3.12"
           - "3.13"
           - "3.14"
 
-  release:
-    types: [prereleased, released]
-
 jobs:
   docs:
     runs-on: ubuntu-latest
-
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ${{
-
-          github.event_name == 'pull_request'
-          && fromJSON('["3.10","3.11","3.12","3.13","3.14"]')
-
-          || github.event_name == 'release'
-          && fromJSON('["3.10"]')
-
-          || github.event.inputs.python-version == 'all'
-          && fromJSON('["3.10","3.11","3.12","3.13","3.14"]')
-
-          || fromJSON(format('["{0}"]', github.event.inputs.python-version))
-
-          }}
 
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: ${{ github.event.inputs.python-version }}
 
       - uses: actions/cache@v4
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('**/requirements.txt') }}
-
+          key: >
+            ${{ runner.os }}-pypi-docs-
+            ${{ github.event.inputs.python-version }}-
+            ${{ hashFiles('dev_environment/requirements.txt') }}
 
       - name: Install system dependencies
         run: |
@@ -67,7 +45,14 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r dev_environment/requirements.txt
-          pip install -e .
+
+      - name: Install latest Vidigi from PyPI
+        run: |
+          pip install vidigi
+
+      - name: Show installed version
+        run: |
+          python -c "import vidigi; print(vidigi.__version__)"
 
       - name: Render documentation
         run: |
