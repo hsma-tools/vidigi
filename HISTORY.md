@@ -1,7 +1,10 @@
 
 # 1.3.1
 
-- Handle pandas FutureWarning that was outputting multiple warnings for Pandas 2.2.0 and above
+- Add support for pandas 3.13 and 3.14
+- Handle pandas FutureWarning that was outputting multiple warnings for Pandas 2.2.0 and above relating to handling of grouping columns in apply
+    - Subsequently replaced this entire block with a different, more performant approach that is agnostic to pandas version
+- Handle pandas FutureWarning around TimeDeltaIndex unit keyword deprecation for Pandas 2.2.0 and above
 
 # 1.3.0
 

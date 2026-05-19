@@ -34,10 +34,7 @@ def process_background_image_path(source):
         `Figure.add_layout_image`.
     """
     # Leave URLs and existing data URIs unchanged
-    if (
-        isinstance(source, str) and
-        source.startswith(("http://", "https://", "data:"))
-    ):
+    if isinstance(source, str) and source.startswith(("http://", "https://", "data:")):
         return source
 
     # Treat everything else as a local path
@@ -303,7 +300,7 @@ def generate_animation(
             full_entity_df_plus_pos_copy["snapshot_time"] = (
                 dt.date.today()
                 + pd.DateOffset(days=165)
-                + pd.TimedeltaIndex(
+                + pd.to_timedelta(
                     full_entity_df_plus_pos_copy["snapshot_time"], unit=unit
                 )
             )
@@ -311,7 +308,7 @@ def generate_animation(
         elif start_date is not None and start_time is None:
             full_entity_df_plus_pos_copy["snapshot_time"] = dt.datetime.strptime(
                 start_date, "%Y-%m-%d"
-            ) + pd.TimedeltaIndex(
+            ) + pd.to_timedelta(
                 full_entity_df_plus_pos_copy["snapshot_time"], unit=unit
             )
 
@@ -329,7 +326,7 @@ def generate_animation(
                     dt.date.today()
                     + pd.DateOffset(days=165)
                     + start_time_time_delta
-                    + pd.TimedeltaIndex(
+                    + pd.to_timedelta(
                         full_entity_df_plus_pos_copy["snapshot_time"],
                         unit=unit,
                     )
@@ -339,7 +336,7 @@ def generate_animation(
                 full_entity_df_plus_pos_copy["snapshot_time"] = (
                     dt.datetime.strptime(start_date, "%Y-%m-%d")
                     + start_time_time_delta
-                    + pd.TimedeltaIndex(
+                    + pd.to_timedelta(
                         full_entity_df_plus_pos_copy["snapshot_time"],
                         unit=unit,
                     )
