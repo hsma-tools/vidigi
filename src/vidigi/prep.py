@@ -239,45 +239,28 @@ def reshape_for_animations(
                 # First we exclude event types that should not be part of snapshot logic
                 excluded_types = ["resource_use", "resource_use_end"]
 
-                # Apply snapshot logic per event
-                def process_event_group(df):
-                    if df[event_type_col_name].iloc[0] in excluded_types:
-                        return df  # Return unchanged
-                    else:
-                        # Keep only top (step_snapshot_max + 1) ranks
-                        df = df[df["rank"] <= (step_snapshot_max + 1)].copy()
+                # ----------------------------------------------------------------------------- #
+                # Vectorized Cap Logic (Replaces process_event_group and groupby.apply)
+                # ----------------------------------------------------------------------------- #
+                excluded_types = ["resource_use", "resource_use_end"]
 
-                        # Identify max rank row (to possibly add 'additional' column)
-                        max_row = df[df["rank"] == float(step_snapshot_max + 1)].copy()
-                        if len(max_row) > 0:
-                            max_row["additional"] = max_row["max"] - max_row["rank"]
-                            df = pd.concat(
-                                [
-                                    df[df["rank"] != float(step_snapshot_max + 1)],
-                                    max_row,
-                                ],
-                                ignore_index=True,
-                            )
-                        return df
+                # 1. Separate data into what needs capping and what doesn't
+                to_process_mask = ~most_recent_events_time_unit_ungrouped[event_type_col_name].isin(excluded_types)
 
-                PANDAS_2_2_0_PLUS = version.parse(pd.__version__) >= version.parse(
-                    "2.2.0"
+                # 2. Filter out rows where rank exceeds step_snapshot_max + 1 (only for non-excluded types)
+                keep_mask = (~to_process_mask) | (most_recent_events_time_unit_ungrouped["rank"] <= (step_snapshot_max + 1))
+                most_recent_events_time_unit_ungrouped = most_recent_events_time_unit_ungrouped[keep_mask].copy()
+
+                # 3. Calculate the 'additional' column value only for the boundary rows
+                # (Re-evaluate masks on the trimmed dataframe)
+                still_processing_mask = ~most_recent_events_time_unit_ungrouped[event_type_col_name].isin(excluded_types)
+                boundary_row_mask = still_processing_mask & (most_recent_events_time_unit_ungrouped["rank"] == float(step_snapshot_max + 1))
+
+                most_recent_events_time_unit_ungrouped.loc[boundary_row_mask, "additional"] = (
+                    most_recent_events_time_unit_ungrouped.loc[boundary_row_mask, "max"] - most_recent_events_time_unit_ungrouped.loc[boundary_row_mask, "rank"]
                 )
-                if PANDAS_2_2_0_PLUS:
-                    most_recent_events_time_unit_ungrouped = (
-                        most_recent_events_time_unit_ungrouped.groupby(
-                            event_col_name, group_keys=True
-                        )
-                        .apply(process_event_group, include_groups=False)
-                        .reset_index(level=0, drop=False)  # Puts the 'event' column safely back
-                    )
-                else:
-                    # Legacy behavior for older Pandas versions
-                    most_recent_events_time_unit_ungrouped = (
-                        most_recent_events_time_unit_ungrouped.groupby(
-                            event_col_name, group_keys=False
-                        ).apply(process_event_group)
-                    )
+
+                most_recent_events_time_unit_ungrouped = most_recent_events_time_unit_ungrouped.reset_index(drop=True)
 
                 # Clean up and store snapshot in our list of snapshots, which will all be
                 # concatenated into one large dataframe at the end
