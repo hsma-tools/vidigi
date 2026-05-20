@@ -52,7 +52,7 @@ jobs:
 
       - name: Show installed version
         run: |
-          python -c "import vidigi; print(vidigi.__version__)"
+          python -c "import importlib.metadata; print(importlib.metadata.version('vidigi'))"
 
       - name: Render documentation
         run: |
