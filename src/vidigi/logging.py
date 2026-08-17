@@ -722,7 +722,7 @@ class TrialLogger:
         if not as_df:
             return self._run_index[run]["run_data"]
         else:
-            return self._run_index[run]["run_data"]
+            return self._run_index[run]["run_data"].to_dataframe()
 
     def to_dataframe(self):
         """
