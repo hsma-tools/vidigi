@@ -134,6 +134,24 @@ def reshape_for_animations(
             .copy()
         )
 
+    # The pivot above turns the 'arrival' and 'depart' event names into columns. If the
+    # log contains no arrival_departure rows at all we cannot work out who is present at
+    # any given moment, so say so rather than silently animating nothing.
+    if "arrival" not in pivoted_log.columns:
+        raise ValueError(
+            f"No 'arrival' events were found in the event log. `reshape_for_animations` "
+            f"identifies who is present at each snapshot using rows where "
+            f"`{event_type_col_name}` is 'arrival_departure' and `{event_col_name}` is "
+            f"'arrival' or 'depart'. Check that your event log contains these, and that "
+            f"the `event_type_col_name` and `event_col_name` arguments match your columns."
+        )
+
+    # If nobody has departed - a truncated run, or a model whose entities never leave -
+    # there is no 'depart' column to compare against. Treat every entity as still in the
+    # system, which is what an absent departure means.
+    if "depart" not in pivoted_log.columns:
+        pivoted_log["depart"] = np.nan
+
     # Add in behaviour for if limit_duration is None (which strictly speaking it shouldn't be,
     # but should improve behaviour if users try to do this)
     if limit_duration is None:
@@ -164,26 +182,24 @@ def reshape_for_animations(
         # - and who left the system after the current minute
         # (or arrived but didn't reach the point of being seen before the model run ended)
         if time_unit % every_x_time_units == 0:
-            try:
-                # Work out which entities - if any - were present in the simulation at the current time
-                # They will have arrived at or before the minute in question, and they will depart at
-                # or after the minute in question, or never depart during our model run
-                # (which can happen if they arrive towards the end, or there is a bottleneck)
-                current_entities_in_moment = pivoted_log[
+            # Work out which entities - if any - were present in the simulation at the current time
+            # They will have arrived at or before the minute in question, and they will depart at
+            # or after the minute in question, or never depart during our model run
+            # (which can happen if they arrive towards the end, or there is a bottleneck)
+            # Both 'arrival' and 'depart' are guaranteed to exist as columns by this point.
+            current_entities_in_moment = pivoted_log[
+                (
+                    pivoted_log["arrival"] <= time_unit
+                )  # Arrived before or at the current time
+                & (
                     (
-                        pivoted_log["arrival"] <= time_unit
-                    )  # Arrived before or at the current time
-                    & (
-                        (
-                            pivoted_log["depart"] >= time_unit
-                        )  # Left after or at the current time
-                        | (
-                            pivoted_log["depart"].isnull()
-                        )  # Or never left (due to model ending first)
-                    )
-                ][entity_col_name].values
-            except KeyError:
-                current_entities_in_moment = []  # Use an empty list for consistency
+                        pivoted_log["depart"] >= time_unit
+                    )  # Left after or at the current time
+                    | (
+                        pivoted_log["depart"].isnull()
+                    )  # Or never left (due to model ending first)
+                )
+            ][entity_col_name].values
 
             # If we do have any entities, they will have been passed as a list
             # so now just filter our event log down to the events these entities have been
