@@ -4,6 +4,8 @@
 ### ⚠️ Breaking changes
 
 - Exit steps are written to your `event_type_col_name` column instead of a hardcoded `event_type` column — output of `reshape_for_animations` changes if you pass a custom event type column name.
+- `TrialLogger.get_event_duration_stat(what="summary")` reported the *total* entity count under `unserved_count`. It now reports the number unserved, so that figure and `unserved_count_mean_per_run` will change.
+- `TrialLogger` statistics now include runs added via `add_log` after construction, which were previously omitted from every calculation.
 
 ### Notes
 
@@ -35,6 +37,20 @@
 - New warning when `time_display_units` is coarser than the snapshot interval
     - The animation frame is the formatted time, so e.g. ten-minute snapshots displayed as `'d'` all carry the same label. Snapshots are merged, entities from different moments are drawn on top of one another, and plotly may produce no frames at all
     - This previously happened silently and returned a plausible-looking static figure
+- **BREAKING:** `TrialLogger` statistics now reflect logs added after construction
+    - The combined trial dataframe was built once in `__init__` and never rebuilt, so a run added with `add_log` was counted by `summary()` while being absent from every statistic computed from that frame
+    - A trial assembled by constructing empty and adding runs in a loop — a natural way to write it — produced statistics for no runs at all
+    - The frame is now derived from the current set of logs on each access, so it cannot go stale
+    - Any figure you have previously reported from a trial built this way was computed from a subset of your runs and will change
+- **BREAKING:** `get_event_duration_stat(what="summary")` reports the number of unserved entities under `unserved_count`
+    - It returned `series.size`, the total number of entities, so a trial where everyone was served still reported every entity as unserved. `unserved_count_mean_per_run` carried the same error
+    - The standalone `what="unserved_count"` path was already correct, so the two routes to the same statistic disagreed
+- `TrialLogger()` can be constructed with no arguments
+    - This raised `ValueError: No objects to concatenate`, which ruled out creating an empty trial and filling it with `add_log`
+- `TrialLogger.get_log_by_run(run, as_df=True)` returns a DataFrame
+    - Both branches of the `as_df` check returned the same thing, so the parameter did nothing
+- `TrialLogger` now rejects an `EventLogger` with no events or no `run_number`
+    - The run id is read from the first event, so these previously failed with `IndexError` or stored `None` as the run id, making the log unretrievable by run
 - `EventLogger.from_csv` now leaves the logger in a usable state
     - It assigned the DataFrame directly to the internal log, which is a list of records everywhere else. Afterwards `get_events_by_entity` and friends walked column names and failed with `AttributeError`, `to_json`/`to_json_string` failed with `TypeError`, and `to_csv` failed on an ambiguous truth value
     - Only `to_dataframe` and `summary` happened to work, so the breakage was easy to miss
@@ -49,7 +65,7 @@
 
 ### Testing
 
-Test coverage grew from 31 to 169 tests, concentrated on the parts of the pipeline where a
+Test coverage grew from 31 to 206 tests, concentrated on the parts of the pipeline where a
 mistake changes what the animation *shows*, or what the reported numbers *say*, rather
 than raising an error.
 
@@ -57,6 +73,7 @@ than raising an error.
 - `generate_animation_df` gained its first dedicated coverage: entity and resource positions, queue wrapping, icon assignment, and the overflow placeholder
 - `animation.py` gained its first dedicated coverage: frame count and ordering, animation timings, hover configuration, resource markers, every time display format, background image embedding, and the error paths
 - `EventLogger` gained its first dedicated coverage: the event shape each helper produces, time taken from both simpy-style and salabim-style environments, event validation and its warnings, timestamp parsing, retrieval, and export
+- `TrialLogger` gained its first dedicated coverage: construction, that statistics stay current as runs are added, and every duration statistic checked against hand-computed values including the served/unserved accounting
 - Two invariants the source had flagged as unchecked are now enforced — no entity is drawn in two positions within a single frame, and each entity keeps the same icon throughout
 
 # 1.3.1
