@@ -1,5 +1,11 @@
 ---
 image: example.png
+pub-info:
+    abstract: |
+        You don't have to regenerate an animation just to watch it faster or slower. This example
+        shows how the frame duration and frame transition duration can be changed after the fact,
+        via an interactive Streamlit app, letting you offer viewers 1x/2x/5x/10x-style playback
+        speeds without rerunning any simulation or animation code.
 ---
 
 ## Changing the play speed (frame duration and frame transition duration) without regenerating the animation
