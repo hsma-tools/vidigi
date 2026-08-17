@@ -9,6 +9,11 @@ from vidigi.utils import _enforce_int_params
 from packaging import version
 
 
+# Sentinel so a deprecated parameter can tell "caller passed a value" apart from
+# "caller left it alone", without warning everyone who simply uses the default.
+_UNSET = object()
+
+
 @_enforce_int_params(
     ["every_x_time_units", "limit_duration", "step_snapshot_max"],
     allow_none=["limit_duration"],
@@ -392,7 +397,7 @@ def generate_animation_df(
     custom_entity_icon_list: Optional[list[str]] = None,
     include_fun_emojis: bool = False,
     save_intermediate_outputs: Optional[Union[bool, str]] = False,
-    minimize_output_df: bool = True,
+    minimize_output_df=_UNSET,
     step_snapshot_limit_gauges=False,
     gauge_segments: int = 10,
     gauge_max_override: Optional[Union[int, float]] = None,
@@ -452,6 +457,11 @@ def generate_animation_df(
         If True or a string, output a series of csvs with intermediate transformed dataframes.
         If a string is passed, this will be interpreted as the path to prefix the dataframes with.
         Default is False.
+    minimize_output_df: bool, optional
+        .. deprecated::
+            This parameter has never had any effect and is ignored. All columns are
+            retained regardless of the value passed. Passing it emits a
+            DeprecationWarning. Column dropping is planned for vidigi 2.0.
     step_snapshot_limit_gauges: bool, optional
         If True, replaces the text '+ x more' with a gauge. The upper limit of the gauge is set
         by the maximum queue length observed across the simulation.
@@ -821,11 +831,19 @@ def generate_animation_df(
             index=True,
         )
 
-    # Drop any columns that are no longer strictly necessary (but may be useful to retain for debugging)
-    if minimize_output_df:
-        for col in ["opacity", "x", "y", "index", "run"]:
-            if col in full_entity_df_plus_pos.columns:
-                full_entity_df_plus_pos.drop(columns=col)
+    # `minimize_output_df` has never had any effect: the loop that was meant to implement
+    # it called .drop() without assigning the result, so every column was retained
+    # regardless. Rather than start dropping columns now - which would change the output
+    # of every existing caller, including removing `run` - the parameter is deprecated and
+    # left inert. Columns will be dropped in 2.0.
+    if minimize_output_df is not _UNSET:
+        warnings.warn(
+            "`minimize_output_df` has never had any effect and is deprecated. It is "
+            "currently ignored, and all columns are retained. Column dropping will be "
+            "introduced in vidigi 2.0; pass no value to keep the current behaviour.",
+            DeprecationWarning,
+            stacklevel=3,
+        )
 
     return full_entity_df_plus_pos.dropna(axis=1, how="all")
 
