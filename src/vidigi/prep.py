@@ -326,8 +326,10 @@ def reshape_for_animations(
     # Only keep rows for people whose exit step will happen *before* the simulation end
     final_step = final_step[final_step["snapshot_time"] <= (limit_duration)]
 
-    # Change the event_type of the final step to more accurately reflect what it is
-    final_step["event_type"] = "exit"
+    # Change the event_type of the final step to more accurately reflect what it is.
+    # This must use the caller's event type column - writing to a literal "event_type"
+    # creates a second, mostly-empty type column when a custom name is in use.
+    final_step[event_type_col_name] = "exit"
 
     full_entity_df = pd.concat([full_entity_df, final_step], ignore_index=True)
 
