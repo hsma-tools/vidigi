@@ -295,6 +295,12 @@ def generate_animation(
             # Approximate 1 year as 365 days
             full_entity_df_plus_pos_copy["snapshot_time"] *= 365
             unit = "d"
+        else:
+            raise ValueError(
+                f"Invalid `simulation_time_unit` '{simulation_time_unit}'. Valid options "
+                f"are: 'seconds', 'minutes', 'hours', 'days', 'weeks', 'months', 'years' "
+                f"(each also accepted in the singular)."
+            )
 
         if start_date is None and start_time is None:
             full_entity_df_plus_pos_copy["snapshot_time"] = (
@@ -468,8 +474,14 @@ def generate_animation(
                         lambda x: dt.datetime.strftime(x, time_display_units)
                     )
                 )
-            except:
-                raise "Invalid time_display_units option provided. Valid options are: dhms, dhm, dh, d, m, y. Alternatively, you can provide your own valid strftime format (e.g. '%Y-%m-%d %H'). See the strftime documentation for more details: https://strftime.org/"
+            except Exception as exc:
+                raise ValueError(
+                    f"Invalid time_display_units option provided: "
+                    f"'{time_display_units}'. Valid options are: dhms, dhm, dh, d, m, y. "
+                    f"Alternatively, you can provide your own valid strftime format "
+                    f"(e.g. '%Y-%m-%d %H'). See the strftime documentation for more "
+                    f"details: https://strftime.org/"
+                ) from exc
 
     else:
         full_entity_df_plus_pos_copy["snapshot_time_display"] = (
@@ -828,8 +840,10 @@ def generate_animation(
             ],
         )
     else:
-        raise (
-            "Invalid backend passed. Options are: 'express'|'px'|'plotly express' for original vidigi backend, or 'go'|'graph objects' for advanced backend"
+        raise ValueError(
+            f"Invalid backend passed: '{backend}'. Options are: 'express'|'px'|"
+            f"'plotly express' for the original vidigi backend, or 'go'|"
+            f"'graph objects' for the advanced backend."
         )
 
     # Update the size of the icons and labels
