@@ -58,6 +58,9 @@
     - It was defined as a validator on a field with a default, and pydantic skips those when the caller omits the field — precisely the case the check exists to catch. It only ever fired when a resource id *was* supplied but had the wrong type
     - Logging a `resource_use` or `resource_use_end` event with no `resource_id` now warns, as documented
 - Removed a stray debug `print` from `EventLogger.plot_entity_timeline`, which dumped the entity's events to stdout on every call
+- `VidigiStore.cancel_get` now works
+    - It looked for the pending-request queue on itself, but `VidigiStore` wraps a `simpy.Store` rather than subclassing it. Every call raised `AttributeError`, which the method's `except ValueError` did not catch, so cancelling a request — and therefore modelling reneging with this class — was impossible
+    - `VidigiPriorityStore` was unaffected, as it keeps `get_queue` as its own attribute
 - `minimize_output_df` is deprecated and remains inert
     - It has never had any effect: the loop meant to implement it discarded the result of `.drop()`, so the documented default of `True` was always a no-op
     - Making it work now would change the output of every existing caller, including removing the `run` column, so the behaviour is deferred to 2.0
@@ -65,7 +68,7 @@
 
 ### Testing
 
-Test coverage grew from 31 to 206 tests, concentrated on the parts of the pipeline where a
+Test coverage grew from 31 to 216 tests, concentrated on the parts of the pipeline where a
 mistake changes what the animation *shows*, or what the reported numbers *say*, rather
 than raising an error.
 
@@ -74,6 +77,7 @@ than raising an error.
 - `animation.py` gained its first dedicated coverage: frame count and ordering, animation timings, hover configuration, resource markers, every time display format, background image embedding, and the error paths
 - `EventLogger` gained its first dedicated coverage: the event shape each helper produces, time taken from both simpy-style and salabim-style environments, event validation and its warnings, timestamp parsing, retrieval, and export
 - `TrialLogger` gained its first dedicated coverage: construction, that statistics stay current as runs are added, and every duration statistic checked against hand-computed values including the served/unserved accounting
+- `cancel_get` is now covered for both store types, including an end-to-end reneging scenario asserting who is served and when
 - Two invariants the source had flagged as unchecked are now enforced — no entity is drawn in two positions within a single frame, and each entity keeps the same icon throughout
 
 # 1.3.1
