@@ -1,5 +1,6 @@
 import datetime as dt
 import time
+import warnings
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -603,6 +604,24 @@ def generate_animation(
     # Add opacity where not present for backwards compatibility prior to 1.0.1
     if "opacity" not in full_entity_df_plus_pos_copy:
         full_entity_df_plus_pos_copy["opacity"] = 1
+
+    # The animation frame is the *formatted* time, so a display format coarser than the
+    # snapshot interval silently merges snapshots into a single frame - e.g. 10 minute
+    # snapshots displayed as 'd' collapse a whole day into one. Plotly then drops the
+    # animation entirely, and entities from different moments are drawn on top of one
+    # another. Say so rather than returning a quietly wrong figure.
+    distinct_snapshots = full_entity_df_plus_pos_copy["snapshot_time_base"].nunique()
+    distinct_labels = full_entity_df_plus_pos_copy["snapshot_time_display"].nunique()
+    if distinct_labels < distinct_snapshots:
+        warnings.warn(
+            f"`time_display_units` is coarser than the snapshot interval: "
+            f"{distinct_snapshots} snapshots collapse into {distinct_labels} distinct "
+            f"frame label(s), so snapshots will be merged and the animation will show "
+            f"fewer - possibly no - frames. Either use a finer `time_display_units`, or "
+            f"increase `every_x_time_units` so each snapshot gets its own label.",
+            UserWarning,
+            stacklevel=3,
+        )
 
     if str.lower(backend) in ["express", "px", "plotly express"]:
         if hover_text_entity is None:
