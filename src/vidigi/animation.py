@@ -483,10 +483,14 @@ def generate_animation(
     # tell it where to put people at each defined step of the process, and the
     # scattergraph will move them
 
-    # If we have been passed a custom hover data list, use this
+    # If we have been passed a custom hover data list, use this.
+    # Copy it - appending to the caller's list would grow it on every call.
     if custom_hover_data:
-        hovers = custom_hover_data
-        if scenario:
+        hovers = list(custom_hover_data)
+        # Only offer the resource column if the log actually has one. A scenario can be
+        # passed for a model with no resource_use events, in which case referencing it
+        # would fail inside plotly with an unrelated-looking error.
+        if scenario is not None and resource_col_name in full_entity_df_plus_pos_copy:
             hovers.append(resource_col_name)
 
     else:
@@ -567,7 +571,8 @@ def generate_animation(
                 "queue_position",
             ]
 
-        if scenario is not None:
+        # As above, only when the column is actually present.
+        if scenario is not None and resource_col_name in full_entity_df_plus_pos_copy:
             hovers.append(resource_col_name)
 
     if hover_text_entity == "default":
