@@ -886,7 +886,14 @@ def generate_animation(
     # Make an additional dataframe that has one row per resource type
     # Then, starting from the initial position, make that many large circles
     # make them semi-transparent or you won't see the people using them!
-    if scenario is not None:
+    # A scenario can be supplied for a model where no event declares a resource - a
+    # purely queue-based model, say. There is nothing to draw in that case, and the
+    # explode below would fail on the resulting empty frame.
+    if (
+        scenario is not None
+        and "resource" in event_position_df.columns
+        and event_position_df["resource"].notnull().any()
+    ):
         events_with_resources = event_position_df[
             event_position_df["resource"].notnull()
         ].copy()
