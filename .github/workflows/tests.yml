@@ -11,8 +11,6 @@ on:
         - pyproject.toml
         - tox.ini
         - .gitignore
-        - Dockerfile
-        - pytest.ini
         - .github/workflows/tests.yml
   pull_request:
 

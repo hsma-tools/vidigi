@@ -6,6 +6,7 @@ project:
     - "examples/**/*.ipynb"
     - "!examples/r_simmer/"
     - "!examples/ARCHIVE_vidigi_vs_bupar/"
+    - "!notes.qmd"
 
 # tell quarto to read the generated sidebar
 metadata-files:
