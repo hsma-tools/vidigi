@@ -667,10 +667,27 @@ class TrialLogger:
         if event_logs is not None:
             for log in event_logs:
                 self._event_logs.append(
-                    {"run_id": log._log[0]["run_number"], "run_data": log}
+                    {"run_id": self._run_id_of(log), "run_data": log}
                 )
 
         self._run_index = {r["run_id"]: r for r in self._event_logs}
+
+    @staticmethod
+    def _run_id_of(event_log: EventLogger):
+        """Read the run number off a log, with a message that says what is wrong."""
+        if not event_log._log:
+            raise ValueError(
+                "Cannot add an empty EventLogger to a TrialLogger - the run number is "
+                "read from its first event."
+            )
+        run_number = event_log._log[0].get("run_number")
+        if run_number is None:
+            raise ValueError(
+                "The EventLogger being added has no `run_number` on its first event. "
+                "Construct it with EventLogger(run_number=...) so its events can be "
+                "told apart from other runs in the trial."
+            )
+        return run_number
 
     @property
     def _trial_dataframe(self):
@@ -698,7 +715,7 @@ class TrialLogger:
             An `EventLogger` instance containing a log of events for a single run.
         """
         self._event_logs.append(
-            {"run_id": event_log._log[0]["run_number"], "run_data": event_log}
+            {"run_id": self._run_id_of(event_log), "run_data": event_log}
         )
         self._run_index = {r["run_id"]: r for r in self._event_logs}
 

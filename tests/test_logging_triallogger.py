@@ -59,6 +59,23 @@ def test_empty_logger_is_rejected():
         TrialLogger([EventLogger(run_number=1)])
 
 
+def test_add_log_validates_too(single_run_logger):
+    """The same checks must apply on both routes into the trial.
+
+    Validating only in the constructor would let add_log store None as the
+    run id, leaving the log unretrievable by run.
+    """
+    trial = TrialLogger([single_run_logger])
+    no_run_number = EventLogger()
+    no_run_number.log_arrival(entity_id=1, time=0.0)
+
+    with pytest.raises(ValueError, match="no `run_number`"):
+        trial.add_log(no_run_number)
+
+    with pytest.raises(ValueError, match="empty EventLogger"):
+        trial.add_log(EventLogger(run_number=2))
+
+
 # --------------------------------------------------------------------------- #
 # The trial dataframe stays current
 # --------------------------------------------------------------------------- #
