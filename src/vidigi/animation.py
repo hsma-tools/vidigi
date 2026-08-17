@@ -1296,7 +1296,7 @@ def animate_activity_log(
         )
 
     if limit_duration is None:
-        limit_duration = round(max(event_log["time"]))
+        limit_duration = round(event_log[time_col_name].max())
 
     full_entity_df = reshape_for_animations(
         event_log,
