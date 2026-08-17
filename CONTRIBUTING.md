@@ -69,33 +69,18 @@ If you make changes to the development environment, please ensure you change it 
 
 ### R
 
-To build the documentation, you will also need to set-up an appropriate R environment, as we compare `vidigi` to some similar packages in R.
+R is **not** currently required to build vidigi's documentation. R was previously used to compare `vidigi` against similar packages in R (bupaR, processanimateR), but that comparison content (`examples/ARCHIVE_vidigi_vs_bupar/`, `examples/r_simmer/`, `vidigi_docs/prep_vidigi_outputs_for_bupar_processing.ipynb`) is excluded from the active Quarto render scope, and the Docker image used by CI (see `Dockerfile`) no longer installs R at all.
 
-You can find the version of R used listed in the `renv.lock` file - we'd suggest using `rig` to install this.
+The old R/renv toolchain files (`renv.lock`, `DESCRIPTION`, `.Rprofile`, `.renvignore`, `vidigi.Rproj`, `renv/`) are kept for reference under [`archive/r_environment/`](archive/r_environment/) rather than deleted, in case this comparison content is revived in future.
 
-To fetch the required R packages, you can first try using `renv::restore()`. This will attempt to create the exact environment description in the `renv.lock` file. However, if you encounter problems, you can try using the `DESCRIPTION` file instead.
+#### Reviving R support
 
-The `DESCRIPTION` file lists all the required R packages (though with no pinned dependencies). You'll want to open R, initialise renv, install (based on `DESCRIPTION`), and then record this using `renv::snapshot()` - for example, from the terminal:
+If you want to bring R support back:
 
-```
-R
-renv::init()
-renv::install()
-renv::snapshot()
-```
-
-To quit R from the terminal (e.g., if need to restart it after initialising renv), use the command `q()`.
-
-To install the package `processanimateR` via `renv::install()`, you'll need to add GitHub authentication credentials (as it pulls the package from GitHub, since it was removed from CRAN). If you don't, it will default to looking on CRAN and fail with the error `package 'processanimateR' is not available`. Alternatively, you can get it manually using the package `remotes`:
-
-```
-install.packages("remotes")
-remotes::install_github("bupaverse/processanimateR")
-```
-
-**Warning:** This package can take a long time to install.
-
-**Note:** We use renv snapshot type `all` as `implicit` mode excludes packages it can't detect as dependencies, but we have `reticulate` which is necessary but doesn't appear like a typical dependency (e.g., `library(reticulate)`).
+1. Move the files out of `archive/r_environment/` back to the repo root (this restores `renv`'s and RStudio's expected relative paths, e.g. `.Rprofile`'s `source("renv/activate.R")`).
+2. Restore the R install stages in `Dockerfile` — the last commit with a working (rocker-based) R install was [`14a363b`](https://github.com/hsma-tools/vidigi/commit/14a363b), which is a reasonable starting point rather than the current `Dockerfile`.
+3. Expect to re-validate the R/renv install from scratch: R was dropped after a long run of CI build failures (rocker base image issues, CRAN mirror problems, package version pinning - see commits `3269691` through `b9646b6` in the git history), so it wasn't reliable even when last in use.
+4. Re-add `examples/ARCHIVE_vidigi_vs_bupar/` and/or `examples/r_simmer/` to `_quarto.yml`'s `project.render` list (remove their `!` exclusion entries) once R renders successfully again.
 
 <br>
 

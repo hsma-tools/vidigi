@@ -17,9 +17,6 @@ on:
       - HISTORY.md
       - theme-dark.scss
       - theme-light.scss
-      - vidigi.Rproj
-      - renv/**
-      - .renvignore
       - _extensions/**
   workflow_dispatch:
     inputs:
@@ -55,8 +52,6 @@ jobs:
             docker:
               - 'Dockerfile'
               - 'dev_environment/environment.yml'
-              - 'renv.lock'
-              - 'renv/**'
 
       - name: Login to GitHub Container Registry
         if: >
