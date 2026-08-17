@@ -199,8 +199,19 @@ def _ensure_int(value, name: str) -> int:
     )
 
 
-def _enforce_int_params(param_names):
-    """Decorator to auto-check certain parameters are integer-like."""
+def _enforce_int_params(param_names, allow_none=()):
+    """Decorator to auto-check certain parameters are integer-like.
+
+    Parameters
+    ----------
+    param_names : iterable of str
+        Names of the parameters to coerce to integers.
+    allow_none : iterable of str, optional
+        Subset of `param_names` for which `None` is a documented, meaningful
+        value. These are passed through untouched so the decorated function can
+        apply its own handling, rather than being rejected here.
+    """
+    allow_none = set(allow_none)
 
     def decorator(func):
         sig = inspect.signature(func)
@@ -214,6 +225,8 @@ def _enforce_int_params(param_names):
             # validate the chosen parameters
             for name in param_names:
                 if name in bound.arguments:
+                    if bound.arguments[name] is None and name in allow_none:
+                        continue
                     bound.arguments[name] = _ensure_int(
                         bound.arguments[name], name
                     )

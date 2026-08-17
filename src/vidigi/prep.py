@@ -9,11 +9,14 @@ from vidigi.utils import _enforce_int_params
 from packaging import version
 
 
-@_enforce_int_params(["every_x_time_units", "limit_duration", "step_snapshot_max"])
+@_enforce_int_params(
+    ["every_x_time_units", "limit_duration", "step_snapshot_max"],
+    allow_none=["limit_duration"],
+)
 def reshape_for_animations(
     event_log: pd.DataFrame,
     every_x_time_units: int = 10,
-    limit_duration: int = 10 * 60 * 24,
+    limit_duration: Optional[int] = 10 * 60 * 24,
     step_snapshot_max: int = 60,
     time_col_name: str = "time",
     entity_col_name: str = "entity_id",
@@ -155,7 +158,7 @@ def reshape_for_animations(
     # Add in behaviour for if limit_duration is None (which strictly speaking it shouldn't be,
     # but should improve behaviour if users try to do this)
     if limit_duration is None:
-        limit_duration = int(round(max(pivoted_log[time_col_name]), 0))
+        limit_duration = int(round(event_log[time_col_name].max(), 0))
         warnings.warn(
             f"`None` was provided for the limit_duration argument."
             f"This is not an officially supported input, so has been set to {limit_duration}.",
