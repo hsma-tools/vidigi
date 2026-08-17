@@ -511,7 +511,6 @@ class EventLogger:
 
         df = self.to_dataframe()
         entity_events = df[df["entity_id"] == entity_id]
-        print(entity_events)
 
         if entity_events.empty:
             raise ValueError(f"No events found for entity_id = {entity_id}")
