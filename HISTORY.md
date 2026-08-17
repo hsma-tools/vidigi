@@ -35,6 +35,13 @@
 - New warning when `time_display_units` is coarser than the snapshot interval
     - The animation frame is the formatted time, so e.g. ten-minute snapshots displayed as `'d'` all carry the same label. Snapshots are merged, entities from different moments are drawn on top of one another, and plotly may produce no frames at all
     - This previously happened silently and returned a plausible-looking static figure
+- `EventLogger.from_csv` now leaves the logger in a usable state
+    - It assigned the DataFrame directly to the internal log, which is a list of records everywhere else. Afterwards `get_events_by_entity` and friends walked column names and failed with `AttributeError`, `to_json`/`to_json_string` failed with `TypeError`, and `to_csv` failed on an ambiguous truth value
+    - Only `to_dataframe` and `summary` happened to work, so the breakage was easy to miss
+- The "resource_id is recommended" warning now actually fires
+    - It was defined as a validator on a field with a default, and pydantic skips those when the caller omits the field — precisely the case the check exists to catch. It only ever fired when a resource id *was* supplied but had the wrong type
+    - Logging a `resource_use` or `resource_use_end` event with no `resource_id` now warns, as documented
+- Removed a stray debug `print` from `EventLogger.plot_entity_timeline`, which dumped the entity's events to stdout on every call
 - `minimize_output_df` is deprecated and remains inert
     - It has never had any effect: the loop meant to implement it discarded the result of `.drop()`, so the documented default of `True` was always a no-op
     - Making it work now would change the output of every existing caller, including removing the `run` column, so the behaviour is deferred to 2.0
@@ -42,12 +49,14 @@
 
 ### Testing
 
-Test coverage grew from 31 to 122 tests, concentrated on the parts of the pipeline where a
-mistake changes what the animation *shows* rather than raising an error.
+Test coverage grew from 31 to 169 tests, concentrated on the parts of the pipeline where a
+mistake changes what the animation *shows*, or what the reported numbers *say*, rather
+than raising an error.
 
 - `reshape_for_animations` is now asserted by value rather than by shape: which entities are present at each snapshot, which event each is shown at, queue ordering, exit step timing, and the `step_snapshot_max` cap
 - `generate_animation_df` gained its first dedicated coverage: entity and resource positions, queue wrapping, icon assignment, and the overflow placeholder
 - `animation.py` gained its first dedicated coverage: frame count and ordering, animation timings, hover configuration, resource markers, every time display format, background image embedding, and the error paths
+- `EventLogger` gained its first dedicated coverage: the event shape each helper produces, time taken from both simpy-style and salabim-style environments, event validation and its warnings, timestamp parsing, retrieval, and export
 - Two invariants the source had flagged as unchecked are now enforced — no entity is drawn in two positions within a single frame, and each entity keeps the same icon throughout
 
 # 1.3.1
