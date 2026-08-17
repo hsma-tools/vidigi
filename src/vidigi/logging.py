@@ -672,8 +672,20 @@ class TrialLogger:
 
         self._run_index = {r["run_id"]: r for r in self._event_logs}
 
-        self._trial_dataframe = pd.concat(
-            [pd.DataFrame(log["run_data"].to_dataframe()) for log in self._event_logs]
+    @property
+    def _trial_dataframe(self):
+        """Every run's events in one frame, rebuilt from the current logs.
+
+        This is derived rather than stored: it was previously built once in
+        __init__, so any log added later was counted by `summary()` but absent
+        from every statistic computed off this frame.
+        """
+        if not self._event_logs:
+            return pd.DataFrame()
+
+        return pd.concat(
+            [log["run_data"].to_dataframe() for log in self._event_logs],
+            ignore_index=True,
         )
 
     def add_log(self, event_log: EventLogger):
