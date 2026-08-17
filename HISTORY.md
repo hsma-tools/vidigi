@@ -1,4 +1,55 @@
 
+# 1.4.0
+
+### ⚠️ Breaking changes
+
+- Exit steps are written to your `event_type_col_name` column instead of a hardcoded `event_type` column — output of `reshape_for_animations` changes if you pass a custom event type column name.
+
+### Notes
+
+- **BREAKING:** `reshape_for_animations` now writes the exit step's event type to the column named by `event_type_col_name`
+    - Previously it always assigned to a literal `"event_type"` column. A log using a custom event type column therefore came out with *two* type columns: the caller's, left empty on every exit row, and a spurious `event_type` containing nothing but `"exit"`
+    - `generate_animation_df` filters on the caller's column, so exit steps were not being recognised as exits
+    - If you use the default column names, nothing changes
+- `reshape_for_animations` no longer fails on an event log in which no entity has departed
+    - A truncated run, a warm-up period, or a model whose entities never leave produces no `depart` events, so the pivoted log had no `depart` column. Every snapshot was silently emptied and the function then failed with an opaque `KeyError: 'entity_id'`
+    - A missing `depart` column is now read as "everyone is still in the system", which is what an absent departure means
+    - A log with no `arrival` events now raises a `ValueError` naming the arguments to check, rather than failing later with an unrelated error
+- `limit_duration=None` now behaves as the docstring describes in `reshape_for_animations`
+    - The integer coercion applied to the argument rejected `None` before the function's own handling could run, and that handling would itself have failed by reading a column consumed by the pivot
+    - It now resolves to the largest time in the event log, matching how `animate_activity_log` already computed the same default
+- `wrap_queues_at=None` now behaves as documented in `generate_animation_df`
+    - Two sites used the value arithmetically before the existing `None` branch was reached: the `step_snapshot_max` multiple check, and the overflow label offset inside an `np.where` (which evaluates both branches, so the condition could not short-circuit the division)
+- `animate_activity_log` now respects `time_col_name` when working out a default `limit_duration`
+    - It previously read a literal `"time"` column, so every caller with a custom time column hit `KeyError: 'time'`
+- `hover_text_entity=None` now disables hover as documented
+    - The underlying plotly express call does not accept the `hoverinfo` argument that was being passed, so this option raised `TypeError` rather than doing anything
+- Passing a `scenario` for a model where no event position declares a resource no longer fails
+    - This produced `KeyError: 'x_final'`, which read like a problem with the caller's data rather than a missing guard
+- `custom_hover_data` is no longer modified in place
+    - The list passed in was appended to directly, so it grew by an entry on every call and eventually referenced the same column twice
+    - The resource column is now only offered when the event log actually contains one
+- Invalid `backend` and `time_display_units` values now raise `ValueError` carrying the intended guidance
+    - Both were raised as bare strings, which Python rejects with `TypeError: exceptions must derive from BaseException`, so the message explaining the valid options never reached the user
+- An unrecognised `simulation_time_unit` now raises `ValueError` listing the valid units, instead of `UnboundLocalError`
+- New warning when `time_display_units` is coarser than the snapshot interval
+    - The animation frame is the formatted time, so e.g. ten-minute snapshots displayed as `'d'` all carry the same label. Snapshots are merged, entities from different moments are drawn on top of one another, and plotly may produce no frames at all
+    - This previously happened silently and returned a plausible-looking static figure
+- `minimize_output_df` is deprecated and remains inert
+    - It has never had any effect: the loop meant to implement it discarded the result of `.drop()`, so the documented default of `True` was always a no-op
+    - Making it work now would change the output of every existing caller, including removing the `run` column, so the behaviour is deferred to 2.0
+    - Passing it emits a `DeprecationWarning`; callers who never passed it are unaffected
+
+### Testing
+
+Test coverage grew from 31 to 122 tests, concentrated on the parts of the pipeline where a
+mistake changes what the animation *shows* rather than raising an error.
+
+- `reshape_for_animations` is now asserted by value rather than by shape: which entities are present at each snapshot, which event each is shown at, queue ordering, exit step timing, and the `step_snapshot_max` cap
+- `generate_animation_df` gained its first dedicated coverage: entity and resource positions, queue wrapping, icon assignment, and the overflow placeholder
+- `animation.py` gained its first dedicated coverage: frame count and ordering, animation timings, hover configuration, resource markers, every time display format, background image embedding, and the error paths
+- Two invariants the source had flagged as unchecked are now enforced — no entity is drawn in two positions within a single frame, and each entity keeps the same icon throughout
+
 # 1.3.1
 
 - Add support for pandas 3.13 and 3.14

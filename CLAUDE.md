@@ -22,11 +22,16 @@
 
 - Don't monkeypatch core objects (e.g. `pd.DataFrame`) to cover a trivial/unreachable branch — skip it.
 - For subtle-bug fixes (wrong direction, silent no-op, wrong ordering), prove the new test catches the regression by reverting the fix and confirming it fails, then restoring. "Tests pass" alone isn't proof.
+- Reverting proves a test catches *that* regression; it doesn't prove the test pins the behaviour. Where reverting is tautological — a test asserting the DeprecationWarning a fix just added, say — mutate the code *towards* the plausible wrong behaviour instead and confirm the test fails.
+- Assert whole mappings, not two sampled entries, when checking positional or derived data (icon assignment, rank→position, ordered lists). Spot checks pass by coincidence: reversing icon assignment left positions 0 and 3 unchanged, so a test asserting exactly those two entities passed against reversed output. Caught only by mutating.
+- When a test's expected values are hand-computed, verify them against a scratch run *before* writing the assertion, then let the test encode the confirmed result. Several plausible-looking expectations here were wrong about existing behaviour, not about the code being wrong.
 - Tests marked `slow_grasp` (medium/large-scale GRASP configs, run on their own CI job — see `tests.yml`) are excluded from the default local run. Don't run them routinely (e.g. as part of a general "run the tests" pass) — only run `-m slow_grasp` when specifically asked to, or when a change actually touches GRASP solver internals.
 
 # Deferred work
 
 - Structural fixes that get deferred need a handover: context, repro, proposed design/trade-offs, implementation notes, testing guidance.
+- `pending_fixes.md` is the running list of behaviours that look wrong but are deliberately unchanged because fixing them would alter output for callers who change nothing. Check it before "fixing" something that looks obviously broken — it may already be a recorded decision. Each entry needs the repro, why it's ambiguous, blast radius, and the test that pins current behaviour so the assertion can be updated alongside any fix.
+- Where current behaviour is pinned rather than fixed, say so in the test itself with a comment, not just in `pending_fixes.md` — the next person to read the assertion needs to know it encodes a deferred decision rather than a verified expectation.
 
 # Reporting
 
@@ -55,7 +60,10 @@
 # HISTORY.md
 
 - Every user-facing change needs an entry — check as part of the task, don't wait to be asked.
-- Add to the top section if it's unreleased; only start a new `## vX.Y.Z` (bumping `pyproject.toml`) for the first change since the last release.
+- Add to the top section if it's unreleased; only start a new version header (bumping `pyproject.toml` to match) for the first change since the last release.
+- Version headers are a single `#` with a bare number — `# 1.4.0`, not `## v1.4.0`.
 - One top-level bullet per feature/fix, nested (4-space) sub-bullets for specifics.
-- Versions with breaking changes open with `### ⚠️ Breaking changes` (scannable one-liners) then `### Notes` for full bullets — see v0.7.0. Otherwise a plain flat list.
+- Versions with breaking changes open with `### ⚠️ Breaking changes` (scannable one-liners) then `### Notes` for full bullets — see 1.4.0. Otherwise either a plain flat list (1.3.1) or `### Enhancements` / `### Fixes` / `### New examples` groupings (1.3.0), whichever suits the release.
+- Each breaking bullet under `### Notes` opens with `**BREAKING:**`, and says what happens to callers on the defaults — usually "nothing changes", which is the reassurance most readers need.
+- Releases that meaningfully add test coverage get a `### Testing` section: a one-line before/after test count, then a few bullets on which areas gained coverage and what class of bug that guards against. High level only — users don't need individual test names, just confidence that the tested surface grew.
 - Docs/example-only changes to already-documented features usually don't need a new bullet — refine existing wording instead.

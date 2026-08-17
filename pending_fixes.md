@@ -70,3 +70,73 @@ behaviour is confirmed as intended.
 **Decision needed:** either clamp the loop to `limit_duration` and document that the final
 partial interval is dropped, or keep the overshoot and correct the docstring to say the
 animation runs to the first interval boundary at or after `limit_duration`.
+
+---
+
+## 3. Queue sits one gap further forward when wrapping is enabled
+
+**Where:** `generate_animation_df` in [src/vidigi/prep.py](src/vidigi/prep.py) — the queue
+x-position calculation.
+
+**Observed:** with an anchor of `x=400` and `gap_between_entities=10`, the entity at rank 1
+is drawn at:
+
+- `x = 400` when `wrap_queues_at=5`
+- `x = 390` when `wrap_queues_at=None`
+
+So turning wrapping off shifts the entire queue back by one full gap.
+
+**Cause:** the base calculation is `x - rank * gap`, which puts rank 1 one gap behind the
+anchor. The wrapping branch then adds `+ gap_between_entities` as part of its row offset,
+which incidentally cancels that out. The unwrapped path has no equivalent, so the
+compensation is only applied in one of the two modes.
+
+**Why it is ambiguous:** it is not obvious which position is intended. Sitting rank 1
+exactly on the anchor (wrapped behaviour) reads as the more deliberate choice, and matches
+how `event_position_df` coordinates are documented as "the bottom-right corner of the queue
+or resource". But the unwrapped path may equally be the reference and the wrapping branch's
+`+ gap` may be an artefact of the row arithmetic.
+
+**Impact of changing it:** every queue position shifts by `gap_between_entities` in
+whichever mode is corrected. Visually small but affects every animation using that mode,
+and background images aligned against current positions would need nudging. Breaking.
+
+**Pinned by:** `tests/test_prep_positioning.py::test_queue_steps_back_from_anchor_by_gap`
+(wrapped, rank 1 at 400) and `::test_wrap_queues_at_none_produces_single_row` (unwrapped,
+rank 1 at 390). Both encode current behaviour; update whichever changes.
+
+---
+
+## 4. `rank` is computed twice, and the two computations agree (no action needed yet)
+
+**Where:** `reshape_for_animations` computes `rank` per event per snapshot; then
+`generate_animation_df` immediately overwrites it with its own `groupby([event,
+snapshot_time]).rank(method="first")`. The source carries a comment dated 29/09/2025
+noting the duplication and suggesting removal, but flagging that the two methods differ
+"very slightly".
+
+**Verified:** the two agree, including in the case most likely to break them — entity IDs
+that are *not* in arrival order. With entities 10, 2 and 7 joining a queue in that order,
+both computations rank them 10, 2, 7 (arrival order) rather than 2, 7, 10 (id order).
+
+The reason is that `reshape_for_animations` sorts by `[time, index]` before
+`groupby(entity).tail(1)`, and `tail` returns rows in their original frame order rather
+than group order. That ordering then survives the final `sort_values(["snapshot_time",
+event])` because pandas sorts are stable. So the row order the second computation ranks
+over is already arrival order.
+
+**Recorded because:** this is a latent fragility rather than a live defect. The second
+computation's correctness depends entirely on an incidental property of the first — the
+stability of an unrelated sort. Any future change to how `reshape_for_animations` orders
+its output would silently reorder every queue in every animation, with no test in
+`reshape_for_animations` itself able to catch it.
+
+**Suggested action:** delete the recomputation in `generate_animation_df` and rely on the
+rank `reshape_for_animations` already produces, which is derived explicitly from arrival
+order rather than from row order. Low risk given the two are verified equal, but it is a
+behaviour-preserving change that should still be made deliberately rather than in passing.
+
+**Covered by:** `tests/test_prep_reshape_semantics.py::test_rank_follows_order_of_joining_the_queue`
+and `::test_queue_closes_up_when_an_entity_leaves` assert the rank from
+`reshape_for_animations`. Neither currently uses out-of-order entity IDs — add such a case
+alongside any change here.
