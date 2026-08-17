@@ -868,11 +868,12 @@ class TrialLogger:
                 "median (of complete)": series.median(skipna=True),
                 "min": series.min(),
                 "max": series.max(),
-                "unserved_count": series.size,
+                "unserved_count": series.size - series.count(),
                 "served_count": series.count(),
                 "unserved_rate": (series.size - series.count()) / series.size,
                 "served_rate": series.count() / series.size,
-                "unserved_count_mean_per_run": series.size / n_runs,
+                "unserved_count_mean_per_run": (series.size - series.count())
+                / n_runs,
                 "served_count_mean_per_run": series.count() / n_runs,
             }
 
