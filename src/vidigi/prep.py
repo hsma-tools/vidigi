@@ -479,7 +479,9 @@ def generate_animation_df(
         else:
             extra_path = ""
 
-    if step_snapshot_max % wrap_queues_at != 0:
+    # `wrap_queues_at=None` means "do not wrap", which is handled further down. Only
+    # check the multiple when wrapping is actually in use.
+    if wrap_queues_at is not None and step_snapshot_max % wrap_queues_at != 0:
         warnings.warn(
             f"`step_snapshot_max` is not a multiple of `wrap_queues_at`."
             f"The animation will display better if this is resolved.",
@@ -576,11 +578,17 @@ def generate_animation_df(
 
         queues["y_final"] = queues["y_final"] + (queues["row"] * gap_between_queue_rows)
 
-    queues["x_final"] = np.where(
-        queues["rank"] != step_snapshot_max + 1,
-        queues["x_final"],
-        queues["x_final"] - (gap_between_entities * (wrap_queues_at / 2)),
-    )
+    # Nudge the overflow row's "+ x more" label towards the middle of the queue row so it
+    # does not sit flush against the front of the queue. With no wrapping there is no row
+    # to centre it within, so it stays where its rank puts it.
+    # np.where evaluates both branches, so the division must be guarded rather than
+    # relying on the condition to short-circuit it.
+    if wrap_queues_at is not None:
+        queues["x_final"] = np.where(
+            queues["rank"] != step_snapshot_max + 1,
+            queues["x_final"],
+            queues["x_final"] - (gap_between_entities * (wrap_queues_at / 2)),
+        )
 
     # Deal with the exit steps
     exit_steps = entity_data[entity_data[event_type_col_name] == "exit"].copy()
