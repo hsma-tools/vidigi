@@ -622,8 +622,15 @@ def generate_animation(
                 width=plotly_width,
                 # This sets the opacity of the points that sit behind
                 opacity=0,
-                hoverinfo="none",
             )
+
+            # plotly express does not accept `hoverinfo`, so hover has to be
+            # switched off on the resulting traces instead.
+            fig.update_traces(hoverinfo="skip", hovertemplate=None)
+            for frame in fig.frames:
+                for trace in frame.data:
+                    trace.hoverinfo = "skip"
+                    trace.hovertemplate = None
         else:
             fig = px.scatter(
                 full_entity_df_plus_pos_copy.sort_values("snapshot_time_base"),
