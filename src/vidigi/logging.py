@@ -70,6 +70,10 @@ class BaseEvent(BaseModel):
     resource_id: Optional[int] = Field(
         None,
         description="ID of the resource involved (required for resource use events).",
+        # Without this, pydantic skips the field's validators when the caller omits it,
+        # so the "resource_id is recommended" check below could never fire in the one
+        # case it exists to catch.
+        validate_default=True,
     )
 
     # Allow arbitrary extra fields
