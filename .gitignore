@@ -25,6 +25,7 @@ _freeze/
 dist/
 docs/
 reference/
+**/iframe_figures/
 
 node_modules/
 package.json

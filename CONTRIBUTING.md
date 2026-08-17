@@ -105,7 +105,7 @@ The vidigi documentation is created using quarto and `quartodoc`. You can genera
 
 ```
 quartodoc build
-quarto render vidigi_docs
+quarto render
 ```
 
 It is rendered via GitHub actions and hosted on GitHub pages. The action creates a Docker image hosted on GitHub Container Registry. This makes it more efficient, as it doesn't need to rebuild the environment when no changes have been made to the packages installed.
