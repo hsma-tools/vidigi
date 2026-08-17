@@ -11,6 +11,12 @@ filters:
   - quarto
   - line-highlight
 image: adding_vidigi_to_a_simple_simpy_model_hsma_structure.gif
+pub-info:
+    abstract: |
+        A step-by-step walkthrough of retrofitting vidigi onto an existing SimPy model written in the
+        style taught on the Health Service Modelling Associates (HSMA) programme. The core steps -
+        adding logging, swapping in vidigi's resource classes, and building the animation - apply
+        just as well if your model is structured differently.
 ---
 
 ```{python}

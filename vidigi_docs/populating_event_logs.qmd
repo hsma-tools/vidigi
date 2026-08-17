@@ -11,6 +11,12 @@ filters:
   - quarto
   - line-highlight
 image: populating_event_logs.png
+pub-info:
+    abstract: |
+        A reference guide to the event log format vidigi 0.0.4 and below expects - the required event
+        types, columns and structure for arrivals, queueing and resource use. Kept for anyone still on
+        an older release; current versions of vidigi are better served by the EventLogger-based
+        examples.
 ---
 
 ## Event types

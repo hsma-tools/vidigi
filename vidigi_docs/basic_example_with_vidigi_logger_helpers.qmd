@@ -3,6 +3,11 @@ filters:
   - quarto
   - line-highlight
 image: basic_example_with_vidigi_logger_helpers.gif
+pub-info:
+    abstract: |
+        The simplest possible starting point - a single-step SimPy model with just one server.
+        This example walks through using vidigi's EventLogger helper class to capture arrivals,
+        queueing and resource use with the minimum of code changes to an existing model.
 ---
 # A very simple example with one server
 

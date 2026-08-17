@@ -3,6 +3,12 @@ filters:
   - quarto
   - line-highlight
 image: basic_example_with_vidigi_logger_helpers_multiple_servers.gif
+pub-info:
+    abstract: |
+        Building on the single-server example, this model introduces multiple servers, so we need a
+        way to track which specific resource each entity is using. Here we bring in vidigi's
+        VidigiStore class, a drop-in replacement for SimPy's Resource that keeps this tracking
+        automatic.
 ---
 # A slightly more complex example with multiple servers
 
