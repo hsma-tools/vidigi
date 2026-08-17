@@ -116,6 +116,41 @@ def test_wrap_queues_at_none_produces_single_row(overflow_positions):
     assert positions[7.0][0] == 330.0
 
 
+def test_queue_order_follows_join_time_not_entity_id(basic_event_position_df):
+    """Queue position is arrival order, even when entity IDs are unsorted.
+
+    generate_animation_df recomputes `rank` over the row order it receives,
+    discarding the one reshape_for_animations derived from arrival order. The
+    two agree only because that row order happens to be arrival order. This
+    pins the property end to end so a future reordering cannot silently shuffle
+    every queue. See pending_fixes.md entry 4.
+    """
+    # Entity 10 joins first, then 2, then 7 - deliberately not id order.
+    specs = []
+    for entity_id, join_time in [(10, 1), (2, 2), (7, 3)]:
+        specs += [
+            (join_time, entity_id, "arrival_departure", "arrival"),
+            (join_time, entity_id, "queue", "waiting"),
+            (100, entity_id, "arrival_departure", "depart"),
+        ]
+    log = pd.DataFrame(
+        [
+            {"time": t, "entity_id": e, "event_type": et, "event": ev}
+            for t, e, et, ev in specs
+        ]
+    )
+
+    reshaped = reshape_for_animations(log, every_x_time_units=10, limit_duration=30)
+    result = generate_animation_df(reshaped, basic_event_position_df)
+    queue = result[
+        (result["snapshot_time"] == 20) & (result["event"] == "waiting")
+    ].sort_values("rank")
+
+    assert queue["entity_id"].tolist() == [10.0, 2.0, 7.0]
+    # Front of the queue is the largest x, so x must decrease with join order.
+    assert queue["x_final"].is_monotonic_decreasing
+
+
 def test_queue_row_assignment_is_monotonic(overflow_positions):
     """y never decreases as rank increases - the queue grows one way only."""
     result = overflow_positions(wrap_queues_at=5)

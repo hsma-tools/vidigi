@@ -1,0 +1,584 @@
+"""Structural tests for the figures produced by animation.py.
+
+These assert the shape of the returned plotly figure - frame count, frame
+names, trace composition, animation timings - rather than comparing rendered
+images. That keeps them fast and stable across plotly 5 and 6, while still
+catching the ways an animation can come out wrong.
+
+animation.py had no dedicated test file; the existing coverage is four
+`try/except: pytest.fail(...)` smoke tests that assert nothing about the
+figure.
+"""
+
+import datetime as dt
+
+import pandas as pd
+import plotly.graph_objects as go
+import pytest
+
+from vidigi.animation import (
+    add_repeating_overlay,
+    animate_activity_log,
+    generate_animation,
+    process_background_image_path,
+)
+from vidigi.prep import generate_animation_df, reshape_for_animations
+
+
+@pytest.fixture
+def positioned(simple_queue_log, basic_event_position_df):
+    """Output of the full prep pipeline, ready for generate_animation."""
+    reshaped = reshape_for_animations(
+        simple_queue_log, every_x_time_units=10, limit_duration=50
+    )
+    return generate_animation_df(reshaped, basic_event_position_df)
+
+
+@pytest.fixture
+def positioned_with_resources(resource_log, basic_event_position_df):
+    reshaped = reshape_for_animations(
+        resource_log, every_x_time_units=10, limit_duration=50
+    )
+    return generate_animation_df(reshaped, basic_event_position_df)
+
+
+def frame_names(fig):
+    return [frame.name for frame in fig.frames]
+
+
+# --------------------------------------------------------------------------- #
+# Frames
+# --------------------------------------------------------------------------- #
+
+
+def test_returns_a_figure(positioned, basic_event_position_df):
+    fig = generate_animation(positioned, basic_event_position_df)
+
+    assert isinstance(fig, go.Figure)
+
+
+def test_one_frame_per_snapshot(positioned, basic_event_position_df):
+    """Every snapshot in the data becomes exactly one animation frame."""
+    fig = generate_animation(positioned, basic_event_position_df)
+
+    expected = sorted(positioned["snapshot_time"].unique())
+
+    assert len(fig.frames) == len(expected)
+    assert frame_names(fig) == [str(snapshot) for snapshot in expected]
+
+
+def test_frames_are_in_chronological_order(positioned, basic_event_position_df):
+    """Out-of-order frames would make the animation jump around in time."""
+    fig = generate_animation(positioned, basic_event_position_df)
+
+    numeric = [float(name) for name in frame_names(fig)]
+
+    assert numeric == sorted(numeric)
+
+
+def test_empty_snapshot_still_produces_a_frame(positioned, basic_event_position_df):
+    """Snapshot 50 has nobody in the system but must not be skipped."""
+    fig = generate_animation(positioned, basic_event_position_df)
+
+    assert "50" in frame_names(fig)
+
+
+# --------------------------------------------------------------------------- #
+# Animation timings
+# --------------------------------------------------------------------------- #
+
+
+def test_frame_duration_reaches_the_play_button(positioned, basic_event_position_df):
+    """frame_duration must land in the updatemenu args, not just be accepted.
+
+    The source swallows an IndexError here and prints a message, so a silent
+    failure to apply the setting would otherwise go unnoticed.
+    """
+    fig = generate_animation(
+        positioned,
+        basic_event_position_df,
+        frame_duration=123,
+        frame_transition_duration=456,
+    )
+
+    play_args = fig.layout.updatemenus[0].buttons[0].args[1]
+
+    assert play_args["frame"]["duration"] == 123
+    assert play_args["transition"]["duration"] == 456
+
+
+def test_include_play_button_false_removes_controls(
+    positioned, basic_event_position_df
+):
+    fig = generate_animation(
+        positioned, basic_event_position_df, include_play_button=False
+    )
+
+    assert not fig.layout.updatemenus
+
+
+# --------------------------------------------------------------------------- #
+# Traces: stage labels and resources
+# --------------------------------------------------------------------------- #
+
+
+def test_stage_labels_add_one_trace_with_every_label(
+    positioned, basic_event_position_df
+):
+    fig = generate_animation(
+        positioned, basic_event_position_df, display_stage_labels=True
+    )
+    label_traces = [
+        trace
+        for trace in fig.data
+        if trace.mode == "text" and trace.text is not None
+    ]
+
+    assert len(label_traces) == 1
+    assert set(label_traces[0].text) == set(basic_event_position_df["label"])
+
+
+def test_stage_labels_can_be_disabled(positioned, basic_event_position_df):
+    with_labels = generate_animation(
+        positioned, basic_event_position_df, display_stage_labels=True
+    )
+    without_labels = generate_animation(
+        positioned, basic_event_position_df, display_stage_labels=False
+    )
+
+    assert len(without_labels.data) == len(with_labels.data) - 1
+
+
+def test_one_resource_marker_per_available_resource(
+    positioned_with_resources, basic_event_position_df, scenario_with_resources
+):
+    """The scenario's resource count drives how many markers are drawn."""
+    fig = generate_animation(
+        positioned_with_resources,
+        basic_event_position_df,
+        scenario=scenario_with_resources,
+        display_stage_labels=False,
+    )
+
+    # The resource trace is the last one added.
+    resource_trace = fig.data[-1]
+
+    assert len(resource_trace.x) == scenario_with_resources.n_cubicles
+
+
+def test_scenario_without_any_resource_positions_is_harmless(
+    positioned, basic_event_position_df, scenario_with_resources
+):
+    """A scenario may be passed for a model where no event declares a resource.
+
+    Regression test: the resource block exploded an empty frame and died with
+    KeyError: 'x_final'.
+    """
+    no_resources = basic_event_position_df.copy()
+    no_resources["resource"] = None
+
+    fig = generate_animation(
+        positioned, no_resources, scenario=scenario_with_resources
+    )
+
+    assert isinstance(fig, go.Figure)
+
+
+def test_custom_resource_icon_is_used(
+    positioned_with_resources, basic_event_position_df, scenario_with_resources
+):
+    fig = generate_animation(
+        positioned_with_resources,
+        basic_event_position_df,
+        scenario=scenario_with_resources,
+        custom_resource_icon="🛏️",
+    )
+
+    assert fig.data[-1].text == "🛏️"
+
+
+# --------------------------------------------------------------------------- #
+# Hover configuration
+# --------------------------------------------------------------------------- #
+
+
+def test_custom_hover_data_list_is_not_mutated(
+    positioned, basic_event_position_df, scenario_with_resources
+):
+    """The caller's list must survive unchanged, including across repeat calls.
+
+    Regression test: the list was used directly and appended to, so it grew by
+    one entry per call and eventually referenced a column twice.
+    """
+    hovers = ["entity_id", "event"]
+
+    generate_animation(
+        positioned,
+        basic_event_position_df,
+        scenario=scenario_with_resources,
+        custom_hover_data=hovers,
+        hover_text_entity="%{customdata[0]}",
+    )
+    generate_animation(
+        positioned,
+        basic_event_position_df,
+        scenario=scenario_with_resources,
+        custom_hover_data=hovers,
+        hover_text_entity="%{customdata[0]}",
+    )
+
+    assert hovers == ["entity_id", "event"]
+
+
+def test_hover_text_none_disables_hover(positioned, basic_event_position_df):
+    fig = generate_animation(
+        positioned, basic_event_position_df, hover_text_entity=None
+    )
+
+    assert isinstance(fig, go.Figure)
+
+
+def test_custom_hover_template_is_applied_to_every_frame(
+    positioned, basic_event_position_df
+):
+    """A hover template set on the initial trace must also reach the frames.
+
+    Otherwise hover text is correct until the animation advances one frame.
+    """
+    template = "Entity %{customdata[0]}"
+
+    fig = generate_animation(
+        positioned,
+        basic_event_position_df,
+        custom_hover_data=["entity_id"],
+        hover_text_entity=template,
+    )
+
+    assert fig.data[0].hovertemplate == template
+    for frame in fig.frames:
+        for trace in frame.data:
+            assert trace.hovertemplate == template
+
+
+# --------------------------------------------------------------------------- #
+# Time display
+# --------------------------------------------------------------------------- #
+
+
+def _positioned_at_interval(event_position_df, interval, n_snapshots=3):
+    """Positioned data whose snapshots are `interval` time units apart.
+
+    Each display format needs a snapshot spacing at least as coarse as itself,
+    or every snapshot formats to the same label and the frames collapse.
+    """
+    specs = []
+    for index in range(n_snapshots):
+        entity_id = index + 1
+        arrival = index * interval
+        specs += [
+            (arrival, entity_id, "arrival_departure", "arrival"),
+            (arrival, entity_id, "queue", "waiting"),
+            (interval * n_snapshots * 5, entity_id, "arrival_departure", "depart"),
+        ]
+    log = pd.DataFrame(
+        [
+            {"time": t, "entity_id": e, "event_type": et, "event": ev}
+            for t, e, et, ev in specs
+        ]
+    )
+    reshaped = reshape_for_animations(
+        log,
+        every_x_time_units=interval,
+        limit_duration=interval * (n_snapshots - 1),
+    )
+    return generate_animation_df(reshaped, event_position_df)
+
+
+# Interval is in simulation minutes and must be at least as coarse as the
+# display format, so each snapshot gets a distinct label.
+@pytest.mark.parametrize(
+    "time_display_units, interval, expected_fragment",
+    [
+        ("dhms", 10, "01 January 2020"),
+        ("dhms_ampm", 10, "AM"),
+        ("dhm", 10, "01 January 2020"),
+        ("dh", 60, "01 January 2020"),
+        ("d", 60 * 24, "Wednesday 01 January 2020"),
+        ("m", 60 * 24 * 31, "January 2020"),
+        ("y", 60 * 24 * 366, "2020"),
+        ("%Y-%m-%d", 60 * 24, "2020-01-01"),
+    ],
+)
+def test_time_display_units_formats_frame_labels(
+    basic_event_position_df, time_display_units, interval, expected_fragment
+):
+    positioned = _positioned_at_interval(basic_event_position_df, interval)
+
+    fig = generate_animation(
+        positioned,
+        basic_event_position_df,
+        time_display_units=time_display_units,
+        start_date="2020-01-01",
+    )
+
+    assert any(expected_fragment in name for name in frame_names(fig))
+
+
+def test_display_format_coarser_than_snapshots_warns(
+    positioned, basic_event_position_df
+):
+    """Collapsing snapshots into one label must not happen silently.
+
+    The animation frame is the formatted time, so 10 minute snapshots shown as
+    'd' all carry the same label. Plotly then produces no frames at all and
+    entities from different moments are drawn on top of one another.
+    """
+    with pytest.warns(UserWarning, match="coarser than the snapshot interval"):
+        fig = generate_animation(
+            positioned,
+            basic_event_position_df,
+            time_display_units="d",
+            start_date="2020-01-01",
+        )
+
+    # Demonstrates the consequence the warning is about.
+    assert len(fig.frames) == 0
+
+
+def test_day_clock_counts_from_simulation_start(
+    positioned, basic_event_position_df
+):
+    fig = generate_animation(
+        positioned,
+        basic_event_position_df,
+        time_display_units="day_clock",
+        start_date="2020-01-01",
+    )
+
+    assert any("Simulation Day 1" in name for name in frame_names(fig))
+
+
+def test_raw_simulation_time_used_when_no_display_units(
+    positioned, basic_event_position_df
+):
+    fig = generate_animation(positioned, basic_event_position_df)
+
+    assert frame_names(fig) == ["0", "10", "20", "30", "40", "50"]
+
+
+# --------------------------------------------------------------------------- #
+# Error paths
+# --------------------------------------------------------------------------- #
+
+
+def test_invalid_backend_raises_valueerror(positioned, basic_event_position_df):
+    """Regression test: this raised the message as a bare string.
+
+    `raise "some message"` produces `TypeError: exceptions must derive from
+    BaseException`, so the intended guidance never reached the user.
+    """
+    with pytest.raises(ValueError, match="Invalid backend"):
+        generate_animation(positioned, basic_event_position_df, backend="nonsense")
+
+
+def test_invalid_time_display_units_raises_valueerror(
+    positioned, basic_event_position_df
+):
+    """Regression test: also raised as a bare string."""
+    with pytest.raises(ValueError, match="Invalid time_display_units"):
+        generate_animation(
+            positioned, basic_event_position_df, time_display_units="%Q%Q"
+        )
+
+
+def test_unknown_simulation_time_unit_raises_valueerror(
+    positioned, basic_event_position_df
+):
+    """Regression test: left `unit` unbound and raised UnboundLocalError."""
+    with pytest.raises(ValueError, match="Invalid `simulation_time_unit`"):
+        generate_animation(
+            positioned,
+            basic_event_position_df,
+            simulation_time_unit="fortnights",
+            time_display_units="dhm",
+        )
+
+
+# --------------------------------------------------------------------------- #
+# Background images
+# --------------------------------------------------------------------------- #
+
+
+def test_background_image_url_passed_through_unchanged():
+    url = "https://example.com/plan.png"
+
+    assert process_background_image_path(url) == url
+
+
+def test_background_image_data_uri_passed_through_unchanged():
+    uri = "data:image/png;base64,AAAA"
+
+    assert process_background_image_path(uri) == uri
+
+
+def test_local_background_image_becomes_data_uri(tmp_path):
+    """Local paths are embedded so figures survive being moved between machines."""
+    image = tmp_path / "plan.png"
+    image.write_bytes(b"\x89PNG\r\n\x1a\nfake")
+
+    result = process_background_image_path(image)
+
+    assert result.startswith("data:image/png;base64,")
+
+
+def test_background_image_added_to_layout(
+    positioned, basic_event_position_df, tmp_path
+):
+    image = tmp_path / "plan.png"
+    image.write_bytes(b"\x89PNG\r\n\x1a\nfake")
+
+    fig = generate_animation(
+        positioned,
+        basic_event_position_df,
+        add_background_image=str(image),
+        background_image_opacity=0.25,
+    )
+
+    assert len(fig.layout.images) == 1
+    assert fig.layout.images[0].source.startswith("data:image/png;base64,")
+    assert fig.layout.images[0].opacity == 0.25
+
+
+# --------------------------------------------------------------------------- #
+# animate_activity_log end to end
+# --------------------------------------------------------------------------- #
+
+
+def test_animate_activity_log_end_to_end(simple_queue_log, basic_event_position_df):
+    fig = animate_activity_log(
+        simple_queue_log, basic_event_position_df, limit_duration=50
+    )
+
+    assert isinstance(fig, go.Figure)
+    assert len(fig.frames) == 6
+
+
+def test_animate_activity_log_honours_custom_time_column(basic_event_position_df):
+    """limit_duration defaults from the caller's time column, not a literal 'time'.
+
+    Regression test: the default read event_log["time"], so every user with a
+    custom time column hit KeyError: 'time'.
+    """
+    log = pd.DataFrame(
+        {
+            "sim_time": [0, 5, 10, 15, 20, 25],
+            "entity_id": [1, 1, 1, 2, 2, 2],
+            "event_type": [
+                "arrival_departure",
+                "queue",
+                "arrival_departure",
+                "arrival_departure",
+                "queue",
+                "arrival_departure",
+            ],
+            "event": ["arrival", "waiting", "depart", "arrival", "waiting", "depart"],
+        }
+    )
+
+    fig = animate_activity_log(
+        log, basic_event_position_df, time_col_name="sim_time"
+    )
+
+    assert isinstance(fig, go.Figure)
+    assert len(fig.frames) > 0
+
+
+def test_animate_activity_log_matches_manual_pipeline(
+    simple_queue_log, basic_event_position_df
+):
+    """The convenience wrapper must agree with running the three steps by hand."""
+    combined = animate_activity_log(
+        simple_queue_log, basic_event_position_df, limit_duration=50
+    )
+
+    reshaped = reshape_for_animations(
+        simple_queue_log, every_x_time_units=10, limit_duration=50
+    )
+    positioned = generate_animation_df(reshaped, basic_event_position_df)
+    manual = generate_animation(positioned, basic_event_position_df)
+
+    assert frame_names(combined) == frame_names(manual)
+
+
+# --------------------------------------------------------------------------- #
+# add_repeating_overlay
+# --------------------------------------------------------------------------- #
+
+
+def test_overlay_adds_two_traces(positioned, basic_event_position_df):
+    fig = generate_animation(positioned, basic_event_position_df)
+    before = len(fig.data)
+
+    add_repeating_overlay(
+        fig,
+        overlay_text="Closed",
+        first_start_frame=1,
+        on_duration_frames=2,
+        off_duration_frames=2,
+    )
+
+    assert len(fig.data) == before + 2
+
+
+def test_overlay_visibility_follows_on_off_cycle(
+    positioned, basic_event_position_df
+):
+    """Frames inside the 'on' window carry overlay geometry; others are empty."""
+    fig = generate_animation(positioned, basic_event_position_df)
+
+    add_repeating_overlay(
+        fig,
+        overlay_text="Closed",
+        first_start_frame=0,
+        on_duration_frames=2,
+        off_duration_frames=2,
+    )
+
+    # The source only switches on for i > start_frame, so frame 0 is always off
+    # even when start_frame is 0. From frame 1 the cycle position is
+    # (i - start) % 4, on while that is < 2: frames 1, 4, 5 on; 2, 3 off.
+    visible = [len(frame.data[-1].x or []) > 0 for frame in fig.frames]
+
+    assert visible == [False, True, False, False, True, True]
+
+
+def test_overlay_on_figure_without_frames_is_a_no_op():
+    fig = go.Figure()
+
+    result = add_repeating_overlay(
+        fig,
+        overlay_text="Closed",
+        first_start_frame=0,
+        on_duration_frames=1,
+        off_duration_frames=1,
+    )
+
+    assert result is fig
+    assert len(result.data) == 0
+
+
+def test_overlay_with_zero_cycle_length_is_a_no_op(
+    positioned, basic_event_position_df
+):
+    fig = generate_animation(positioned, basic_event_position_df)
+    before = len(fig.data)
+
+    add_repeating_overlay(
+        fig,
+        overlay_text="Closed",
+        first_start_frame=0,
+        on_duration_frames=0,
+        off_duration_frames=0,
+    )
+
+    assert len(fig.data) == before
