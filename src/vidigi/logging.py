@@ -405,7 +405,10 @@ class EventLogger:
         if pathway_col_name is not None:
             df = df.rename(columns={pathway_col_name: "pathway"})
 
-        self._log = df.copy()
+        # `_log` is a list of records everywhere else. Assigning the DataFrame itself
+        # left the logger in a state where iteration walked column names, truthiness
+        # checks raised, and JSON export failed.
+        self._log = df.to_dict("records")
 
     ####################################################
     # Summarising Logs                                 #
