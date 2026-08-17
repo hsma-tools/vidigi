@@ -153,3 +153,16 @@ Thanks goes to all of the following people ([emoji key](https://allcontributors.
 <!-- ALL-CONTRIBUTORS-LIST:END -->
 
 Contributors of any kind - not just code - are welcome! Please see `CONTRIBUTING.md` for guidance.
+
+
+# Generative AI use disclosure and policy
+
+A note about AI usage from Sammi (primary library author and maintainer):
+> I've been coding for over ten years, love the act of coding, and have significant concerns about the ethics and environmental impact of AI. However, I can't deny its utility as a solo maintainer when it comes to making all the features I want to include in my projects a reality. I hope you find these projects useful enough to help offset some of the downsides of AI, and will use them to help do some good in the world, or at least use them to claw back some of your time so you can spend more of it enjoying being human. For my part, I will continue to use AI critically and carefully, and I will try to make environmentally-conscious choices in my personal life to help balance the scales.
+
+The fundamentals of this library were written by hand, with occasionaly use of the web version of ChatGPT, Gemini and Claude for debugging, debating architecture, and exploring possible approaches.
+Claude usage via Claude Code was not introduced until 17 August 2026. The project's CLAUDE.md is provided for transparency, and for consistency if contributors wish to use it.
+
+All AI-generated code will always be thoroughly reviewed and tested before inclusion.
+
+We are happy to accept AI-supported contributions to the library, but reserve the right to reject wholly AI generated pull requests which are not felt to add value to the project.
