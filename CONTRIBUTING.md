@@ -69,7 +69,7 @@ If you make changes to the development environment, please ensure you change it 
 
 ### R
 
-R is **not** currently required to build vidigi's documentation. R was previously used to compare `vidigi` against similar packages in R (bupaR, processanimateR), but that comparison content (`examples/ARCHIVE_vidigi_vs_bupar/`, `examples/r_simmer/`, `vidigi_docs/prep_vidigi_outputs_for_bupar_processing.ipynb`) is excluded from the active Quarto render scope, and the Docker image used by CI (see `Dockerfile`) no longer installs R at all.
+R is **not** currently required to build vidigi's documentation. R was previously used to compare `vidigi` against similar packages in R (bupaR, processanimateR), but that comparison content (`examples/ARCHIVE_vidigi_vs_bupar/`, `examples/r_simmer/`, `vidigi_docs/prep_vidigi_outputs_for_bupar_processing.ipynb`) is excluded from the active Quarto render scope, and the CI docs-build workflow ([`documentation_deploy.yml`](.github/workflows/documentation_deploy.yml)) no longer uses Docker or installs R at all.
 
 The old R/renv toolchain files (`renv.lock`, `DESCRIPTION`, `.Rprofile`, `.renvignore`, `vidigi.Rproj`, `renv/`) are kept for reference under [`archive/r_environment/`](archive/r_environment/) rather than deleted, in case this comparison content is revived in future.
 
@@ -78,7 +78,7 @@ The old R/renv toolchain files (`renv.lock`, `DESCRIPTION`, `.Rprofile`, `.renvi
 If you want to bring R support back:
 
 1. Move the files out of `archive/r_environment/` back to the repo root (this restores `renv`'s and RStudio's expected relative paths, e.g. `.Rprofile`'s `source("renv/activate.R")`).
-2. Restore the R install stages in `Dockerfile` — the last commit with a working (rocker-based) R install was [`14a363b`](https://github.com/hsma-tools/vidigi/commit/14a363b), which is a reasonable starting point rather than the current `Dockerfile`.
+2. For a starting point on installing R again, see the archived [`archive/docker_quarto_workflow/Dockerfile`](archive/docker_quarto_workflow/Dockerfile) and [`archive/docker_quarto_workflow/docker_quarto.yml`](archive/docker_quarto_workflow/docker_quarto.yml), or the last commit with a working (rocker-based) R install, [`14a363b`](https://github.com/hsma-tools/vidigi/commit/14a363b).
 3. Expect to re-validate the R/renv install from scratch: R was dropped after a long run of CI build failures (rocker base image issues, CRAN mirror problems, package version pinning - see commits `3269691` through `b9646b6` in the git history), so it wasn't reliable even when last in use.
 4. Re-add `examples/ARCHIVE_vidigi_vs_bupar/` and/or `examples/r_simmer/` to `_quarto.yml`'s `project.render` list (remove their `!` exclusion entries) once R renders successfully again.
 
@@ -93,21 +93,9 @@ quartodoc build
 quarto render
 ```
 
-It is rendered via GitHub actions and hosted on GitHub pages. The action creates a Docker image hosted on GitHub Container Registry. This makes it more efficient, as it doesn't need to rebuild the environment when no changes have been made to the packages installed.
+It is rendered via GitHub Actions ([`documentation_deploy.yml`](.github/workflows/documentation_deploy.yml)) and hosted on GitHub Pages. The workflow installs Quarto and vidigi's dependencies directly on the Actions runner and renders/publishes from there - no Docker container is involved.
 
-To test rendering the quarto site in the docker container locally...
-
-Build image:
-
-```
-sudo docker build -t vidigi .
-```
-
-Render quarto project inside container:
-
-```
-docker run --rm vidigi quarto render
-```
+A Docker-based build was previously used (to reuse a cached environment across runs, back when R was part of the docs build), but with R no longer required it added more overhead than it saved. It's kept for reference under [`archive/docker_quarto_workflow/`](archive/docker_quarto_workflow/) in case a containerized build is needed again.
 
 <br>
 
