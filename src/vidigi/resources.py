@@ -224,17 +224,27 @@ class VidigiStore:
     def cancel_get(self, get_event):
         """
         Cancels a pending get request by removing it from the queue.
+
+        Useful for modelling reneging, where an entity gives up waiting.
+
+        Note that if the request has already been fulfilled, the item has
+        already left the store. Cancelling does not put it back, so the caller
+        should return it with `put()` in that case.
+
+        Parameters
+        ----------
+        get_event : simpy.resources.store.StoreGet
+            The event returned by `get_direct()` / `request_direct()`, or
+            yielded by the `request()` context manager.
         """
         try:
             # The get_event is the SimPy event object that was created
-            # and placed in the queue.
-            self.get_queue.remove(get_event)
-            # You might want to add a print statement for debugging:
-            # print(f"{self.env.now}: Successfully cancelled and removed a get request from the queue.")
+            # and placed in the queue. This class wraps a simpy.Store rather
+            # than subclassing it, so the queue lives on the wrapped store.
+            self.store.get_queue.remove(get_event)
         except ValueError:
             # This can happen if the request was already fulfilled between the
             # timeout and the cancellation call. It's safe to ignore.
-            # print(f"{self.env.now}: Attempted to cancel a request that was no longer in the queue (likely already fulfilled).")
             pass
 
     @property
