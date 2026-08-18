@@ -1,21 +1,32 @@
 """DataFrames in, go.Figure out.
 
 Every function here is a thin wrapper over its `vidigi.analysis` twin: axis
-formatting and trace styling only, no arithmetic beyond that. Column-name
-overrides are explicit keyword parameters rather than a generic `**kwargs`, so
-`**kwargs` stays free to forward styling straight through to the underlying
-plotly express call, matching the existing behaviour of `plot_metric_bar`.
+formatting and trace styling only, no arithmetic beyond that.
+
+`**kwargs` means two different things depending on the function, and each
+docstring says which:
+
+- On `plot_queue_size` - extracted from pre-existing code, where `**kwargs` has
+  always forwarded to `plotly.express.line` - that meaning is kept, so no
+  existing caller's styling kwargs silently start doing something else. Column
+  names are separate, explicitly named parameters there instead.
+- On every function new in 1.4.0+ (e.g. `plot_duration_distribution`),
+  `**kwargs` is column-name passthrough to the underlying `vidigi.analysis`
+  function instead - there is no single plotly call to forward general styling
+  to, since `go` builds several traces by hand. Style the returned figure
+  directly.
 """
 
 import warnings
-from typing import Literal, Optional, TypeAlias
+from typing import Literal, Optional, TypeAlias, Union
 
+import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-from vidigi.analysis import queue_size_over_time
+from vidigi.analysis import event_durations, queue_size_over_time, MatchMode
 
 # Which plotly API draws the chart. Mirrors `vidigi.animation.AnimationBackend`'s
 # accepted spellings and case-insensitive matching, for consistency across the
@@ -331,5 +342,198 @@ def _plot_queue_size_go(
 
     fig.update_xaxes(title_text="snapshot_time")
     fig.update_yaxes(title_text="count")
+
+    return fig
+
+
+# Chart type for `plot_duration_distribution`. Editors offer these as
+# completions, but the value is still validated at runtime, since annotations
+# are not enforced.
+DistributionKind: TypeAlias = Literal["hist", "box", "violin", "ecdf"]
+
+# Which column of `vidigi.analysis.event_durations`'s output `split_by` groups on.
+SplitBy: TypeAlias = Literal["run", "pathway"]
+_SPLIT_BY_COLUMNS = {"run": "run_number", "pathway": "pathway"}
+
+
+def plot_duration_distribution(
+    event_log: pd.DataFrame,
+    first_event: str,
+    second_event: str,
+    *,
+    kind: DistributionKind = "hist",
+    split_by: Optional[SplitBy] = None,
+    bins: Optional[Union[int, list, np.ndarray]] = None,
+    match: MatchMode = "first",
+    normalise: bool = False,
+    title: Optional[str] = None,
+    **kwargs,
+) -> go.Figure:
+    """
+    Plot the distribution of durations between two events.
+
+    Thin wrapper over `vidigi.analysis.event_durations`: this function only bins
+    (for `kind="hist"`) or reshapes the resulting durations for the chosen chart
+    type - no statistic is computed that isn't already in that DataFrame.
+
+    Parameters
+    ----------
+    event_log : pandas.DataFrame
+        Long-format event log, e.g. the output of `TrialLogger.to_dataframe()`.
+    first_event, second_event : str
+        The two events to measure the duration between. See
+        `vidigi.analysis.event_durations`.
+    kind : {"hist", "box", "violin", "ecdf"}, default="hist"
+        Chart type.
+
+        - ``"hist"``: a histogram, binned with `numpy.histogram` and drawn as
+          bars - never `plotly.graph_objects.Histogram`, which bins in the
+          browser and so has no inspectable `y` values.
+        - ``"box"`` / ``"violin"``: the raw durations, one trace per group (or a
+          single trace when `split_by` is `None`).
+        - ``"ecdf"``: the empirical cumulative distribution function, drawn as a
+          step line - linear interpolation between the sorted points would draw
+          probabilities that never occurred.
+    split_by : {"run", "pathway"} or None, default=None
+        If given, produces one trace per distinct value of the corresponding
+        column (`run_number` or `pathway`) instead of a single trace over every
+        duration pooled together.
+    bins : int, sequence, or None, default=None
+        Passed to `numpy.histogram` when `kind="hist"`. `None` uses 10 bins,
+        matching `numpy.histogram`'s own default. The same bin edges are used
+        for every group when `split_by` is set, so bars stay comparable across
+        groups. Ignored for other kinds.
+    match : {"first", "last", "occurrence"}, default="first"
+        How repeated occurrences of the two events are paired. See
+        `vidigi.analysis.event_durations`.
+    normalise : bool, default=False
+        For `kind="hist"` only: if True, bar heights are a probability density
+        (area sums to 1) rather than raw counts. Ignored for other kinds, whose
+        y-axis is either the raw durations or already a proportion (`"ecdf"`).
+    title : str, optional
+        Figure title. There is no general plotly-kwargs passthrough on this
+        function - style the returned figure directly.
+    **kwargs : dict
+        Additional keyword arguments forwarded to
+        `vidigi.analysis.event_durations` (e.g. `entity_col_name`,
+        `run_col_name`).
+
+    Returns
+    -------
+    plotly.graph_objects.Figure
+
+    Raises
+    ------
+    ValueError
+        If `kind` or `split_by` is not one of the supported values; if no
+        complete pairs are found to plot; or if `split_by` is set but the
+        corresponding column is entirely missing from the durations.
+
+    See Also
+    --------
+    vidigi.analysis.event_durations : The underlying per-entity durations.
+
+    Notes
+    -----
+    Rows with an incomplete pairing (`duration` is `NaN` - an entity that never
+    reached `second_event`, or vice versa) cannot be plotted on a distribution
+    and are dropped before drawing. Call `vidigi.analysis.event_durations`
+    directly if you need to know how many were excluded.
+    """
+    if kind not in ("hist", "box", "violin", "ecdf"):
+        raise ValueError(
+            f"`kind` must be one of 'hist', 'box', 'violin', 'ecdf'; got {kind!r}."
+        )
+    if split_by is not None and split_by not in _SPLIT_BY_COLUMNS:
+        raise ValueError(
+            f"`split_by` must be one of 'run', 'pathway', or None; got {split_by!r}."
+        )
+
+    durations = event_durations(
+        event_log, first_event, second_event, match=match, **kwargs
+    )
+    durations = durations[durations["duration"].notna()]
+
+    if durations.empty:
+        raise ValueError(
+            f"No complete '{first_event}' -> '{second_event}' pairs were found to "
+            f"plot a distribution from."
+        )
+
+    axis_label = f"{first_event} -> {second_event} duration"
+
+    if split_by is None:
+        groups = [(None, durations)]
+    else:
+        group_col = _SPLIT_BY_COLUMNS[split_by]
+        if durations[group_col].isna().all():
+            raise ValueError(
+                f"`split_by=\"{split_by}\"` was requested, but the '{group_col}' "
+                f"column is entirely missing from the durations - `event_log` has "
+                f"no {split_by} information for this event pair. Pass "
+                f"`split_by=None`, or check `run_col_name`/`pathway_col_name`."
+            )
+        groups = list(durations.groupby(group_col, dropna=True))
+
+    fig = go.Figure()
+
+    def _trace_name(group_value):
+        return str(group_value) if group_value is not None else axis_label
+
+    if kind == "hist":
+        edges = np.histogram_bin_edges(
+            durations["duration"].to_numpy(), bins=(10 if bins is None else bins)
+        )
+        centers = (edges[:-1] + edges[1:]) / 2
+        widths = np.diff(edges)
+        for group_value, group_df in groups:
+            counts, _ = np.histogram(
+                group_df["duration"].to_numpy(), bins=edges, density=normalise
+            )
+            fig.add_trace(
+                go.Bar(
+                    x=centers,
+                    y=counts,
+                    width=widths,
+                    name=_trace_name(group_value),
+                    opacity=0.7 if split_by is not None else 1.0,
+                    hovertemplate="Duration: %{x:.2f}<br>"
+                    + ("Density" if normalise else "Count")
+                    + ": %{y}<extra></extra>",
+                )
+            )
+        if split_by is not None:
+            fig.update_layout(barmode="overlay")
+        fig.update_xaxes(title_text=axis_label)
+        fig.update_yaxes(title_text="density" if normalise else "count")
+
+    elif kind in ("box", "violin"):
+        trace_cls = go.Box if kind == "box" else go.Violin
+        for group_value, group_df in groups:
+            fig.add_trace(
+                trace_cls(y=group_df["duration"], name=_trace_name(group_value))
+            )
+        fig.update_yaxes(title_text=axis_label)
+
+    else:  # ecdf
+        for group_value, group_df in groups:
+            sorted_durations = np.sort(group_df["duration"].to_numpy())
+            n = len(sorted_durations)
+            fig.add_trace(
+                go.Scatter(
+                    x=sorted_durations,
+                    y=np.arange(1, n + 1) / n,
+                    mode="lines",
+                    line_shape="hv",
+                    name=_trace_name(group_value),
+                    hovertemplate="Duration: %{x:.2f}<br>"
+                    "Cumulative proportion: %{y:.3f}<extra></extra>",
+                )
+            )
+        fig.update_xaxes(title_text=axis_label)
+        fig.update_yaxes(title_text="cumulative proportion")
+
+    if title is not None:
+        fig.update_layout(title=title)
 
     return fig

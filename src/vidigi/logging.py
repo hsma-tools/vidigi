@@ -22,7 +22,13 @@ from vidigi.process_mapping import (
     dfg_to_cytoscape_streamlit,
 )
 from vidigi.analysis import event_durations, MatchMode
-from vidigi.plots import plot_queue_size as _plot_queue_size, PlotBackend
+from vidigi.plots import (
+    plot_queue_size as _plot_queue_size,
+    plot_duration_distribution as _plot_duration_distribution,
+    PlotBackend,
+    DistributionKind,
+    SplitBy,
+)
 
 RECOGNIZED_EVENT_TYPES = {
     "arrival_departure",
@@ -684,6 +690,8 @@ class TrialLogger:
     get_event_duration_stat(first_event, second_event, what="mean",
                             exclude_incomplete=True, dp=2, label=None, **kwargs)
         Compute statistics on durations between two event types across runs.
+    plot_duration_distribution(first_event, second_event, kind="hist", **kwargs)
+        Plot the distribution of durations between two events, across every run.
 
     Parameters
     ----------
@@ -995,6 +1003,68 @@ class TrialLogger:
             return {"stat": label, "value": result}
         else:
             return result
+
+    def plot_duration_distribution(
+        self,
+        first_event,
+        second_event,
+        *,
+        kind: DistributionKind = "hist",
+        split_by: Optional[SplitBy] = None,
+        bins=None,
+        match: MatchMode = "first",
+        normalise: bool = False,
+        title: Optional[str] = None,
+        **kwargs,
+    ):
+        """
+        Plot the distribution of durations between two events, across every run.
+
+        Thin wrapper over `vidigi.plots.plot_duration_distribution`, called on
+        this trial's combined dataframe. See that function for the full
+        parameter list.
+
+        Parameters
+        ----------
+        first_event, second_event : str
+            The two events to measure the duration between.
+        kind : {"hist", "box", "violin", "ecdf"}, default="hist"
+            Chart type.
+        split_by : {"run", "pathway"} or None, default=None
+            If given, one trace per distinct value of that column.
+        bins : int, sequence, or None, default=None
+            Passed to `numpy.histogram` when `kind="hist"`.
+        match : {"first", "last", "occurrence"}, default="first"
+            How repeated occurrences of the two events are paired.
+        normalise : bool, default=False
+            For `kind="hist"` only: bar heights as a probability density.
+        title : str, optional
+            Figure title.
+        **kwargs : dict
+            Additional keyword arguments forwarded to
+            `vidigi.analysis.event_durations`.
+
+        Returns
+        -------
+        plotly.graph_objects.Figure
+
+        See Also
+        --------
+        vidigi.plots.plot_duration_distribution : The underlying implementation.
+        vidigi.analysis.event_durations : The underlying per-entity durations.
+        """
+        return _plot_duration_distribution(
+            self._trial_dataframe,
+            first_event,
+            second_event,
+            kind=kind,
+            split_by=split_by,
+            bins=bins,
+            match=match,
+            normalise=normalise,
+            title=title,
+            **kwargs,
+        )
 
     def plot_metric_bar(
         self,
