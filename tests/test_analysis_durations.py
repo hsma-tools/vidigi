@@ -157,3 +157,78 @@ def test_occurrence_match_warns_on_unequal_counts():
     assert matched["duration"] == 2
     unmatched = result[result["occurrence"] == 1].iloc[0]
     assert pd.isna(unmatched["second_time"])
+
+
+# --------------------------------------------------------------------------- #
+# Parity with the old pivot-based calculation, on raw event logs
+# --------------------------------------------------------------------------- #
+
+
+def _pivot_duration_reference(event_log, first_event, second_event, run_col=None):
+    """Generalisation of the old `pivot`-based calculation, for parity testing only.
+
+    Same shape as the pivot previously inlined in `get_event_duration_stat`, just
+    parameterised over an optional run column so it can be run directly against
+    conftest's raw event-log fixtures rather than only `TrialLogger` output.
+    """
+    index_cols = ["entity_id"] + ([run_col] if run_col else [])
+    event_df = event_log[event_log["event"].isin([first_event, second_event])][
+        index_cols + ["event", "time"]
+    ].copy()
+    pivoted = event_df.pivot(
+        columns="event", index=index_cols, values="time"
+    ).reset_index()
+    pivoted["duration"] = pivoted[second_event] - pivoted[first_event]
+    return pivoted.sort_values(index_cols).reset_index(drop=True)
+
+
+@pytest.mark.parametrize(
+    "fixture_name,run_col",
+    [
+        ("simple_queue_log", None),
+        ("overflow_queue_log", None),
+        ("warm_up_log", None),
+        ("multi_run_log", "run"),
+    ],
+)
+def test_event_durations_matches_the_old_pivot_on_raw_logs(
+    fixture_name, run_col, request
+):
+    """Parity check against every raw-log fixture where every entity visits
+    'arrival'/'depart' at most once - including one with a run column spelled
+    plain 'run' rather than 'run_number', to pin `run_col_name="auto"` detection
+    against the same reference.
+    """
+    event_log = request.getfixturevalue(fixture_name)
+
+    old = _pivot_duration_reference(event_log, "arrival", "depart", run_col=run_col)
+    new = (
+        event_durations(event_log, "arrival", "depart")
+        .rename(columns={"run_number": run_col} if run_col else {})
+        .sort_values(["entity_id"] + ([run_col] if run_col else []))
+        .reset_index(drop=True)
+    )
+
+    assert list(new["entity_id"]) == list(old["entity_id"])
+    if run_col:
+        assert list(new[run_col]) == list(old[run_col])
+    pd.testing.assert_series_equal(
+        new["duration"], old["duration"], check_names=False
+    )
+
+
+def test_event_absent_from_the_whole_log_raises_clearly_on_both(no_departure_log):
+    """When an event never occurs anywhere in the log - as opposed to some
+    entities simply never reaching it - `event_durations` treats it as almost
+    certainly a typo'd argument and raises `ValueError` naming it, rather than
+    silently returning every entity as unserved.
+
+    The old pivot-based calculation also failed here, but with an opaque
+    `KeyError` for a column that was never going to exist, giving no hint the
+    problem was the event name rather than the data.
+    """
+    with pytest.raises(KeyError):
+        _pivot_duration_reference(no_departure_log, "arrival", "depart")
+
+    with pytest.raises(ValueError, match="'depart'"):
+        event_durations(no_departure_log, "arrival", "depart")

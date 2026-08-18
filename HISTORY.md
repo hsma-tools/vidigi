@@ -8,6 +8,7 @@
 - `TrialLogger.get_event_duration_stat(what="summary")` reported the *total* entity count under `unserved_count`. It now reports the number unserved, so that figure and `unserved_count_mean_per_run` will change.
 - `TrialLogger` statistics now include runs added via `add_log` after construction, which were previously omitted from every calculation.
 - `TrialLogger.plot_queue_size` plotted queue lengths that were wrong in three ways: capped at 61, missing every snapshot where a queue was empty, and a mean taken over only the runs that had somebody waiting. Any queue length chart you have previously reported will change.
+- `TrialLogger.get_event_duration_stat(what="summary")` computed its per-run denominator only from runs where the event pair occurred at all. A run with neither event was silently excluded, so `served_count_mean_per_run` and `unserved_count_mean_per_run` were inflated whenever any run had zero of both events; both now divide by the true number of runs in the trial.
 
 ### Notes
 
@@ -109,14 +110,19 @@
     - Making it work now would change the output of every existing caller, including removing the `run` column, so the behaviour is deferred to 2.0
     - Passing it emits a `DeprecationWarning`; callers who never passed it are unaffected
 - New `vidigi.analysis` module — the first piece of a numbers-in-DataFrames-out layer that the plotting functions will sit on top of
-    - `event_durations(event_log, first_event, second_event, match=...)` pairs occurrences of two events per entity and computes the time between them. It is not yet wired up to `get_event_duration_stat` — that follows in a later release — but is usable standalone today, including on logs where an entity revisits a step, which the existing `pivot`-based calculation cannot handle at all
+    - `event_durations(event_log, first_event, second_event, match=...)` pairs occurrences of two events per entity and computes the time between them, usable standalone on any event log, including one where an entity revisits a step
     - `match` controls how repeated occurrences are paired: `"first"`/`"last"` take the entity's earliest or latest of each event regardless of how many times either occurs; `"occurrence"` pairs the *n*-th of each in time order, and warns if an entity has an unequal count of the two
     - The pairing is an outer join, not a left join on the first event, so it captures both an entity that started but never finished, and one that finished with no matching start
     - `pathway` and `run_number` are always present in the output, even when the input log has neither column, since `EventLogger.to_dataframe()` drops all-null columns
+- **BREAKING:** `TrialLogger.get_event_duration_stat` and the new `TrialLogger.get_event_durations` are now built on `vidigi.analysis.event_durations` instead of a `pivot`
+    - `pivot` raises `ValueError: Index contains duplicate entries` for any entity that revisits `first_event` or `second_event` within a run - a rework loop - so those logs could not be analysed at all. This is now supported via the new `match` argument
+    - At the default `match="first"`, results are identical to the old pivot everywhere it used to succeed - the only behaviour change is that logs which previously raised now return a value
+    - `get_event_duration_stat`'s per-run denominator (used by `served_count_mean_per_run` and `unserved_count_mean_per_run`) is now the true number of runs in the trial rather than only those containing the event pair - see the breaking change above
+    - New `TrialLogger.get_event_durations(first_event, second_event, match=...)` exposes the full per-entity duration frame directly, rather than only a single aggregated statistic
 
 ### Testing
 
-Test coverage grew from 31 to 333 tests, concentrated on the parts of the pipeline where a
+Test coverage grew from 31 to 347 tests, concentrated on the parts of the pipeline where a
 mistake changes what the animation *shows*, or what the reported numbers *say*, rather
 than raising an error.
 
@@ -133,6 +139,7 @@ than raising an error.
 - `cancel_get` is now covered for both store types, including an end-to-end reneging scenario asserting who is served and when
 - Two invariants the source had flagged as unchecked are now enforced — no entity is drawn in two positions within a single frame, and each entity keeps the same icon throughout
 - `vidigi.analysis.event_durations` is covered against hand-computed durations, including a rework-loop fixture the old `pivot`-based calculation cannot even run against, every pairing mode, the outer-join edge cases (started-but-unfinished and finished-but-unstarted), and the missing-run/missing-pathway-column fallbacks
+- `TrialLogger.get_event_duration_stat`, the new `get_event_durations`, and `vidigi.analysis.event_durations` directly are all pinned against the old `pivot`-based calculation on every applicable existing fixture — including one with a run column spelled `run` rather than `run_number`, to check `run_col_name="auto"` against the same reference — so the rebuild is proven byte-for-byte equivalent wherever the pivot used to work. A dedicated regression test covers the per-run denominator fix, proven to fail against the old formula before being restored
 
 # 1.3.1
 

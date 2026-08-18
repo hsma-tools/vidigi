@@ -156,6 +156,102 @@ def test_get_log_by_run_rejects_unknown_run(two_run_loggers):
 
 
 # --------------------------------------------------------------------------- #
+# get_event_durations - thin wrapper over vidigi.analysis.event_durations
+# --------------------------------------------------------------------------- #
+
+
+def test_get_event_durations_returns_the_full_per_entity_frame(two_run_loggers):
+    trial = TrialLogger(two_run_loggers)
+
+    result = trial.get_event_durations("arrival", "depart")
+
+    assert sorted(result["duration"].tolist()) == [5.0, 5.0, 5.0, 5.0]
+    assert set(result["run_number"]) == {1, 2}
+    assert list(result.columns) == [
+        "entity_id",
+        "run_number",
+        "pathway",
+        "occurrence",
+        "first_time",
+        "second_time",
+        "duration",
+    ]
+
+
+def test_get_event_durations_handles_a_rework_loop(rework_loop_logger):
+    """The old pivot-based calculation cannot run against this fixture at all."""
+    trial = TrialLogger([rework_loop_logger])
+
+    result = trial.get_event_durations("assessment", "treated", match="occurrence")
+
+    assert sorted(result["duration"].tolist()) == [4.0, 10.0]
+
+
+def _old_pivot_durations(trial, first_event, second_event):
+    """Replicates the pre-1.5.0 `pivot`-based calculation, for parity testing only."""
+    df = trial.to_dataframe()
+    event_df = df[df["event"].isin([first_event, second_event])][
+        ["entity_id", "run_number", "event", "time"]
+    ].copy()
+    pivoted = event_df.pivot(
+        columns="event", index=["entity_id", "run_number"], values="time"
+    ).reset_index()[["entity_id", "run_number", first_event, second_event]]
+    pivoted["duration"] = pivoted[second_event] - pivoted[first_event]
+    return pivoted
+
+
+@pytest.mark.parametrize(
+    "fixture_name",
+    [
+        "single_run_logger",
+        "two_run_loggers",
+        "logger_with_unserved_entity",
+        "long_queue_logger",
+        "emptying_queue_loggers",
+    ],
+)
+def test_get_event_durations_matches_the_old_pivot_where_it_worked(
+    fixture_name, request
+):
+    """`match="first"` must reproduce the old pivot exactly wherever it succeeded.
+
+    Every fixture here has each entity visiting 'arrival' and 'depart' at most
+    once per run, which is exactly the case the pivot could handle.
+    """
+    fixture = request.getfixturevalue(fixture_name)
+    loggers = fixture if isinstance(fixture, list) else [fixture]
+    trial = TrialLogger(loggers)
+
+    old = (
+        _old_pivot_durations(trial, "arrival", "depart")
+        .sort_values(["run_number", "entity_id"])
+        .reset_index(drop=True)
+    )
+    new = (
+        trial.get_event_durations("arrival", "depart")
+        .sort_values(["run_number", "entity_id"])
+        .reset_index(drop=True)
+    )
+
+    assert list(new["entity_id"]) == list(old["entity_id"])
+    assert list(new["run_number"]) == list(old["run_number"])
+    pd.testing.assert_series_equal(
+        new["duration"], old["duration"], check_names=False
+    )
+
+
+def test_old_pivot_raises_on_a_rework_loop(rework_loop_logger):
+    """Pins the behaviour `event_durations` replaces: the pivot cannot represent
+    an entity visiting the same event twice, since both visits map to the same
+    (entity_id, run_number, event) cell.
+    """
+    trial = TrialLogger([rework_loop_logger])
+
+    with pytest.raises(ValueError):
+        _old_pivot_durations(trial, "assessment", "treated")
+
+
+# --------------------------------------------------------------------------- #
 # Duration statistics
 # --------------------------------------------------------------------------- #
 
@@ -288,6 +384,38 @@ def test_summary_per_run_means_across_two_runs():
     assert summary["unserved_count"] == 2
     assert summary["served_count_mean_per_run"] == 2.0
     assert summary["unserved_count_mean_per_run"] == 1.0
+
+
+def test_summary_per_run_means_count_runs_with_neither_event_too():
+    """Regression test: the denominator was the number of runs *containing
+    either event*, so a run where neither occurred at all was silently dropped
+    from it - inflating served/unserved rates that are meant to be per-run
+    averages over the whole trial.
+    """
+    loggers = []
+    for run in (1, 2):
+        logger = EventLogger(run_number=run)
+        logger.log_custom_event(
+            entity_id=1, event_type="milestone", event="check_in", time=0.0
+        )
+        logger.log_custom_event(
+            entity_id=1, event_type="milestone", event="check_out", time=5.0
+        )
+        loggers.append(logger)
+
+    # Run 3 never has a 'check_in' or 'check_out' event at all.
+    third = EventLogger(run_number=3)
+    third.log_arrival(entity_id=1, time=0.0)
+    third.log_departure(entity_id=1, time=1.0)
+    loggers.append(third)
+
+    trial = TrialLogger(loggers)
+
+    summary = trial.get_event_duration_stat("check_in", "check_out", what="summary")
+
+    assert summary["served_count"] == 2
+    assert summary["served_count_mean_per_run"] == round(2 / 3, 2)
+    assert summary["unserved_count_mean_per_run"] == 0.0
 
 
 def test_summary_statistics_ignore_incomplete_journeys(

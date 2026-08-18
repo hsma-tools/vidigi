@@ -23,6 +23,7 @@ from vidigi.process_mapping import (
     dfg_to_cytoscape,
     dfg_to_cytoscape_streamlit,
 )
+from vidigi.analysis import event_durations, MatchMode
 
 RECOGNIZED_EVENT_TYPES = {
     "arrival_departure",
@@ -679,6 +680,8 @@ class TrialLogger:
         Return the full trial data as a pandas DataFrame.
     summary()
         Return a simple summary of the number of runs in the trial.
+    get_event_durations(first_event, second_event, match="first", **kwargs)
+        Compute per-entity durations between two event types across every run.
     get_event_duration_stat(first_event, second_event, what="mean",
                             exclude_incomplete=True, dp=2, label=None, **kwargs)
         Compute statistics on durations between two event types across runs.
@@ -794,6 +797,50 @@ class TrialLogger:
         """
         return {"number_of_runs": len(self._event_logs)}
 
+    def get_event_durations(
+        self,
+        first_event,
+        second_event,
+        *,
+        match: MatchMode = "first",
+        **kwargs,
+    ):
+        """
+        Compute per-entity durations between two event types across every run.
+
+        Thin wrapper over `vidigi.analysis.event_durations`, called on the trial's
+        combined dataframe. See that function for the full parameter list, the
+        meaning of `match`, and how incomplete pairs are handled.
+
+        Parameters
+        ----------
+        first_event : str
+            Name of the first event.
+        second_event : str
+            Name of the second event.
+        match : {"first", "last", "occurrence"}, default="first"
+            How repeated occurrences of the two events for the same entity are
+            paired. See `vidigi.analysis.event_durations`.
+        **kwargs : dict
+            Additional keyword arguments forwarded to
+            `vidigi.analysis.event_durations` (e.g. `entity_col_name`,
+            `keep_incomplete`).
+
+        Returns
+        -------
+        pandas.DataFrame
+            One row per matched pair, with columns ``entity_id``, ``run_number``,
+            ``pathway``, ``occurrence``, ``first_time``, ``second_time``,
+            ``duration``.
+
+        See Also
+        --------
+        vidigi.analysis.event_durations : Full parameter list and pairing semantics.
+        """
+        return event_durations(
+            self._trial_dataframe, first_event, second_event, match=match, **kwargs
+        )
+
     def get_event_duration_stat(
         self,
         first_event,
@@ -802,6 +849,7 @@ class TrialLogger:
         exclude_incomplete=True,
         dp=2,
         label=None,
+        match: MatchMode = "first",
         **kwargs,
     ):
         """
@@ -826,6 +874,12 @@ class TrialLogger:
         label : str, optional
             If provided, return the result as a dictionary with keys
             {"stat": label, "value": result}.
+        match : {"first", "last", "occurrence"}, default="first"
+            How repeated occurrences of the two events for the same entity are
+            paired, for entities that revisit a step. See
+            `vidigi.analysis.event_durations` for the full explanation. The
+            default matches the behaviour of every prior release, where an
+            entity visiting either event more than once was unsupported.
         **kwargs : dict
             Additional arguments passed to the pandas Series method
             corresponding to `what` (e.g., `quantile(q=0.9)`).
@@ -841,20 +895,19 @@ class TrialLogger:
         ------
         ValueError
             If `what` is not a supported aggregation function.
+
+        See Also
+        --------
+        get_event_durations : The per-entity durations this method summarises.
         """
-        event_df = self._trial_dataframe[
-            self._trial_dataframe["event"].isin([first_event, second_event])
-        ][["entity_id", "run_number", "event", "time"]].copy()
+        # Every run in the trial, not just those where one of the two events
+        # occurred - otherwise a run with neither event is silently uncounted,
+        # inflating served/unserved rates that are meant to be per-run averages.
+        n_runs = len(self._event_logs)
 
-        n_runs = len(event_df["run_number"].unique())
-
-        pivoted_df = event_df.pivot(
-            columns="event", index=["entity_id", "run_number"], values="time"
-        ).reset_index()[["entity_id", "run_number", first_event, second_event]]
-
-        pivoted_df["duration"] = pivoted_df[second_event] - pivoted_df[first_event]
-
-        series = pivoted_df["duration"]
+        series = self.get_event_durations(first_event, second_event, match=match)[
+            "duration"
+        ]
 
         # Define special cases
         special_aggs = {
