@@ -581,6 +581,7 @@ class EventLogger:
         self,
         output_format: DFGType = "graphviz-object",
         input_time_format="minutes",
+        warm_up: Optional[float] = None,
         **kwargs,
     ):
         """
@@ -606,6 +607,12 @@ class EventLogger:
         input_time_format : str, optional
             The time unit used to calculate durations and timestamps,
             by default "minutes".
+        warm_up : float, optional
+            Discard a warm-up period before the graph is built, by dropping
+            events at or before this simulation time. Default is `None`,
+            which keeps every event. See
+            :func:`vidigi.process_mapping.add_sim_timestamp` for what this
+            does and does not affect.
         **kwargs
             Arbitrary keyword arguments passed to the underlying rendering
             functions (`dfg_to_graphviz`, `dfg_to_cytoscape`, etc.).
@@ -633,7 +640,7 @@ class EventLogger:
 
         """
         df = self.to_dataframe()
-        df = add_sim_timestamp(df, time_unit=input_time_format)
+        df = add_sim_timestamp(df, time_unit=input_time_format, warm_up=warm_up)
         nodes, edges = discover_dfg(df, time_unit=input_time_format)
 
         if output_format == "graphviz-object":

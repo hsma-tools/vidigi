@@ -34,6 +34,10 @@
     - `"run_start"` keeps the grid running from time 0 and drops the early frames, so frame times stay the same ones you would get with no warm-up — useful when `warm_up` is not a multiple of `every_x_time_units` and you would rather keep round numbers. This matches the longstanding workaround of filtering the reshaped frame on `snapshot_time`, except that a snapshot falling exactly on `warm_up` is kept rather than dropped
     - The two are identical whenever `warm_up` is a multiple of `every_x_time_units`, and irrelevant when there is no warm-up
     - Alignment moves the frame times only — never which entities appear in them
+- New `warm_up` argument on `add_sim_timestamp`, threaded through `EventLogger.generate_dfg`, for discarding a warm-up period before building a process map
+    - This is a plain time-based filter, not a port of `reshape_for_animations`' `warm_up`. `discover_dfg` builds each case's edges from its own consecutive rows rather than reconstructing who was present at a given moment from arrival and departure rows, so dropping early rows here cannot make a case silently vanish from output it should still appear in — the animation's failure mode does not apply here
+    - Two consequences worth knowing before relying on this for reporting: a case entirely within the warm-up is dropped completely, and a case that spans the cutoff loses the single edge connecting its last pre-cutoff event to its first post-cutoff event, since one side of that pair is no longer in the log. Both are intentional, so warm-up activity does not contribute to the transition statistics
+    - The default of `None` keeps every row, matching current behaviour exactly, and is a drop-in replacement for filtering the event log by time before calling `add_sim_timestamp`, which is how this has been taught until now
 - `backend` now matches case-insensitively for every spelling
     - The plotly express branch lowercased its input and the graph objects branch did not, so `backend="EXPRESS"` was accepted while `backend="GO"` was rejected as invalid
     - The error message also listed only two of the four graph objects spellings, so `"plotly graph objects"` and `"plotly go"` worked but were never advertised
@@ -107,7 +111,7 @@
 
 ### Testing
 
-Test coverage grew from 31 to 306 tests, concentrated on the parts of the pipeline where a
+Test coverage grew from 31 to 314 tests, concentrated on the parts of the pipeline where a
 mistake changes what the animation *shows*, or what the reported numbers *say*, rather
 than raising an error.
 
@@ -119,6 +123,7 @@ than raising an error.
 - The single-replication guard is covered across all four animation entry points, including column-name detection, both independent checks, and — most importantly — that a valid single-run log carrying a run column is still accepted
 - Warm-up handling is covered end to end: that `warm_up` shows the entities a truncated log loses, that the truncation trap itself is detected, that both snapshot alignments move frame times without changing who is in them, and that the defaults are a true no-op rather than merely a similar result
 - Every value advertised by a literal-typed argument is asserted to be accepted at runtime, so the annotations cannot drift from the checks they describe
+- `process_mapping` gained its first dedicated coverage: the new `warm_up` filter, and what it does and does not affect for a case that spans the cutoff versus one entirely inside it
 - `plot_queue_size` is now asserted against hand-computed queue lengths rather than only checking that a figure came back — the previous tests would have passed against a blank chart, and did pass while every long queue was saturating
 - `cancel_get` is now covered for both store types, including an end-to-end reneging scenario asserting who is served and when
 - Two invariants the source had flagged as unchecked are now enforced — no entity is drawn in two positions within a single frame, and each entity keeps the same icon throughout

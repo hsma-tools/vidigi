@@ -1,3 +1,5 @@
+from typing import Optional
+
 import pandas as pd
 from graphviz import Digraph
 import ipycytoscape
@@ -25,6 +27,7 @@ def add_sim_timestamp(
     timestamp_col: str = "timestamp",
     sim_start: pd.Timestamp | str | None = None,
     time_unit: str = "minutes",
+    warm_up: Optional[float] = None,
 ) -> pd.DataFrame:
     """
     Add a pseudo-timestamp column to a simulation event log.
@@ -50,6 +53,25 @@ def add_sim_timestamp(
         Unit of the simulation time.
         Accepted values are 'seconds', 'minutes', 'hours', 'days' or 'weeks'.
         Default: "minutes".
+    warm_up : float, optional
+        Discard a warm-up period by dropping rows with `time_col <= warm_up`,
+        in the same units as `time_col`. Default is `None`, which keeps every row.
+
+        Unlike `reshape_for_animations`' `warm_up` argument, this is a plain
+        time-based filter and needs no other handling: `discover_dfg` builds
+        each case's edges from its own consecutive rows, rather than
+        reconstructing who was present at a given moment from arrival and
+        departure rows, so dropping early rows here does not make any case
+        vanish from output it should still appear in.
+
+        Two consequences worth knowing before relying on this for reporting:
+        a case entirely within the warm-up is dropped completely, and a case
+        that spans the cutoff loses the single edge connecting its last
+        pre-cutoff event to its first post-cutoff event, since one side of
+        that pair is no longer in the log. Both are intentional - they keep
+        warm-up activity from contributing to the transition statistics -
+        but they mean a case's node counts can undercount its true number of
+        events even where its later transitions are otherwise complete.
 
     Returns
     -------
@@ -68,7 +90,17 @@ def add_sim_timestamp(
     if time_col not in log.columns:
         raise KeyError(f"Column '{time_col}' not found in event log")
 
+    if warm_up is not None and warm_up < 0:
+        raise ValueError(
+            f"`warm_up` must not be negative, but {warm_up} was passed. It is a "
+            f"threshold in the same units as `{time_col}`: rows with "
+            f"`{time_col} <= warm_up` are dropped."
+        )
+
     df = log.copy()
+
+    if warm_up is not None:
+        df = df[df[time_col] > warm_up]
 
     if sim_start is None:
         sim_start = pd.Timestamp("2000-01-01 00:00:00")
