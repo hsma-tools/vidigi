@@ -5,7 +5,11 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from vidigi.prep import reshape_for_animations, generate_animation_df
-from vidigi.utils import _enforce_int_params
+from vidigi.utils import (
+    _check_one_arrival_per_entity,
+    _check_single_run,
+    _enforce_int_params,
+)
 import numpy as np
 from typing import Optional
 import base64
@@ -90,6 +94,7 @@ def generate_animation(
     overflow_text_color: str = "black",
     stage_label_text_colour: str = "black",
     backend: str = "express",
+    run_col_name: Optional[str] = "auto",
 ) -> go.Figure:
     """
     Generate an animated visualization of patient flow through a system.
@@ -232,6 +237,13 @@ def generate_animation(
         EXPERIMENTAL. Whether to use the plotly express backend for the initial
         plot (default), or the experimental plotly go backend. The go approach
         is currently unstable and much slower. Use at your own risk.
+    run_col_name : str or None, optional
+        Name of the column identifying which simulation run (replication) each
+        row belongs to, used to reject data containing more than one
+        replication. Default is "auto", which looks for a column named
+        (case-insensitively) one of 'run', 'run_number', 'replication', 'rep' or
+        'run_id'. Pass an explicit column name to override the search, or `None`
+        to disable the check.
 
     Returns
     -------
@@ -240,6 +252,9 @@ def generate_animation(
 
     Notes
     -----
+    - **This function animates a single replication only.** Data containing more
+      than one run is rejected with a `ValueError`, because the runs would
+      otherwise be blended into an animation representing no run of your model.
     - The function uses Plotly Express to create an animated scatter plot.
     - Time can be displayed as actual dates or as model time units.
     - The animation supports customization of icon sizes, resource
@@ -253,6 +268,14 @@ def generate_animation(
     - The `snapshot_time` column is transformed to datetime strings, and a
       `snapshot_time_display` column is created for visual display.
     """
+    # The run column survives both earlier pipeline stages, so a multi-replication
+    # frame that reached this far is still caught rather than animated as a blend.
+    _check_single_run(
+        full_entity_df_plus_pos,
+        run_col_name=run_col_name,
+        frame_arg="full_entity_df_plus_pos",
+    )
+
     full_entity_df_plus_pos_copy = full_entity_df_plus_pos.copy()
 
     if override_x_max is not None:
@@ -1146,6 +1169,7 @@ def animate_activity_log(
     step_snapshot_limit_gauges: bool = False,
     gauge_segments: int = 10,
     gauge_max_override: Optional[int | float] = None,
+    run_col_name: Optional[str] = "auto",
 ) -> go.Figure:
     """
     Generate an animated visualization of patient flow through a system.
@@ -1325,6 +1349,13 @@ def animate_activity_log(
         Manually specified maximum value for queue length gauges. If `None`,
         the upper limit is determined from the maximum queue length observed in
         the simulation when `step_snapshot_limit_gauges` is `True`.
+    run_col_name : str or None, optional
+        Name of the column identifying which simulation run (replication) each
+        row belongs to, used to reject event logs containing more than one
+        replication. Default is "auto", which looks for a column named
+        (case-insensitively) one of 'run', 'run_number', 'replication', 'rep' or
+        'run_id'. Pass an explicit column name to override the search, or `None`
+        to disable the check.
 
     Returns
     -------
@@ -1333,6 +1364,11 @@ def animate_activity_log(
 
     Notes
     -----
+    - **Pass a single replication only.** An event log containing more than one
+      run is rejected with a `ValueError`. Passing several runs does not raise on
+      its own - it silently blends them into an animation that represents no run
+      of your model - so this is checked before any work is done. Filter first,
+      e.g. `event_log[event_log["run"] == 1]`.
     - This function uses helper functions: reshape_for_animations,
       generate_animation_df, and generate_animation.
     - The animation supports customization of icon sizes, resource
@@ -1341,6 +1377,19 @@ def animate_activity_log(
     - A background image can be added to provide context for the patient flow.
     - The function handles both queuing and resource use events.
     """
+    # Check here as well as in reshape_for_animations, deliberately. This is the entry
+    # point most users call, so the error should name this function's own arguments
+    # rather than an internal one's, and should fire before any work is done.
+    _check_single_run(event_log, run_col_name=run_col_name, frame_arg="event_log")
+    _check_one_arrival_per_entity(
+        event_log,
+        entity_col_name=entity_col_name,
+        event_type_col_name=event_type_col_name,
+        event_col_name=event_col_name,
+        pathway_col_name=pathway_col_name,
+        frame_arg="event_log",
+    )
+
     if debug_mode:
         start_time_function = time.perf_counter()
         print(
@@ -1361,6 +1410,7 @@ def animate_activity_log(
         event_type_col_name=event_type_col_name,
         event_col_name=event_col_name,
         pathway_col_name=pathway_col_name,
+        run_col_name=run_col_name,
     )
 
     if debug_write_intermediate_objects:
@@ -1391,6 +1441,7 @@ def animate_activity_log(
         step_snapshot_limit_gauges=step_snapshot_limit_gauges,
         gauge_max_override=gauge_max_override,
         gauge_segments=gauge_segments,
+        run_col_name=run_col_name,
     )
 
     if debug_write_intermediate_objects:
@@ -1433,6 +1484,7 @@ def animate_activity_log(
         backend=backend,
         hover_text_entity=hover_text_entity,
         custom_hover_data=custom_hover_data,
+        run_col_name=run_col_name,
     )
 
     if debug_mode:

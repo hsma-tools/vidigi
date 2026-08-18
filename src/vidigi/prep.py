@@ -5,7 +5,11 @@ import numpy as np
 import hashlib
 import warnings
 from typing import Optional, Union
-from vidigi.utils import _enforce_int_params
+from vidigi.utils import (
+    _check_one_arrival_per_entity,
+    _check_single_run,
+    _enforce_int_params,
+)
 from packaging import version
 
 
@@ -30,6 +34,7 @@ def reshape_for_animations(
     pathway_col_name: Optional[str] = None,
     debug_mode: bool = False,
     save_intermediate_outputs: Optional[Union[bool, str]] = False,
+    run_col_name: Optional[str] = "auto",
 ) -> pd.DataFrame:
     """
     Reshape event log data for animation purposes.
@@ -71,6 +76,12 @@ def reshape_for_animations(
         If True or a string, output a series of csvs with intermediate transformed dataframes.
         If a string is passed, this will be interpreted as the path to prefix the dataframes with.
         Default is False.
+    run_col_name : str or None, optional
+        Name of the column identifying which simulation run (replication) each row
+        belongs to, used to reject event logs containing more than one replication.
+        Default is "auto", which looks for a column named (case-insensitively) one of
+        'run', 'run_number', 'replication', 'rep' or 'run_id'. Pass an explicit column
+        name to override the search, or `None` to disable the check.
 
     Returns
     -------
@@ -80,6 +91,10 @@ def reshape_for_animations(
 
     Notes
     -----
+    - **This function animates a single replication only.** An event log containing more
+      than one run is rejected with a `ValueError`, because the runs would otherwise be
+      blended together into an animation representing no run of your model. Filter your
+      log first, e.g. `event_log[event_log["run"] == 1]`.
     - The function creates snapshots of entity positions at specified time intervals.
     - It handles entities who are present in the system at each snapshot time.
     - Entities are ranked within each event based on their arrival order.
@@ -97,6 +112,20 @@ def reshape_for_animations(
     - Implement pathway order and precedence columns.
     - Fix the automatic exit at the end of the simulation run for all entities.
     """
+    # Reject multi-replication logs before doing any work. Both checks run: the run
+    # column catches a log whose entity IDs happen to be unique across runs, and the
+    # duplicate-arrival check catches a log whose run column is named something we do
+    # not recognise, or absent entirely.
+    _check_single_run(event_log, run_col_name=run_col_name, frame_arg="event_log")
+    _check_one_arrival_per_entity(
+        event_log,
+        entity_col_name=entity_col_name,
+        event_type_col_name=event_type_col_name,
+        event_col_name=event_col_name,
+        pathway_col_name=pathway_col_name,
+        frame_arg="event_log",
+    )
+
     # Begin logic
     entity_dfs = []
 
@@ -398,6 +427,7 @@ def generate_animation_df(
     include_fun_emojis: bool = False,
     save_intermediate_outputs: Optional[Union[bool, str]] = False,
     minimize_output_df=_UNSET,
+    run_col_name: Optional[str] = "auto",
     step_snapshot_limit_gauges=False,
     gauge_segments: int = 10,
     gauge_max_override: Optional[Union[int, float]] = None,
@@ -462,6 +492,12 @@ def generate_animation_df(
             This parameter has never had any effect and is ignored. All columns are
             retained regardless of the value passed. Passing it emits a
             DeprecationWarning. Column dropping is planned for vidigi 2.0.
+    run_col_name : str or None, optional
+        Name of the column identifying which simulation run (replication) each row
+        belongs to, used to reject data containing more than one replication.
+        Default is "auto", which looks for a column named (case-insensitively) one of
+        'run', 'run_number', 'replication', 'rep' or 'run_id'. Pass an explicit column
+        name to override the search, or `None` to disable the check.
     step_snapshot_limit_gauges: bool, optional
         If True, replaces the text '+ x more' with a gauge. The upper limit of the gauge is set
         by the maximum queue length observed across the simulation.
@@ -473,6 +509,10 @@ def generate_animation_df(
 
     Notes
     -----
+    - **This function positions a single replication only.** Data containing more than
+      one run is rejected with a `ValueError`. The run column survives
+      `reshape_for_animations`, so a multi-replication log is caught here as well as
+      there.
     - The function handles both queuing and resource use events differently.
     - It assigns unique icons to entities for visualization.
     - Queues can be wrapped to multiple rows if they exceed a specified length.
@@ -482,6 +522,13 @@ def generate_animation_df(
     ----
     - Write a test to ensure that no entity ID appears in multiple places at a single time unit.
     """
+
+    # The run column survives reshape_for_animations, so a multi-replication log that
+    # reached this far - for instance by calling the three pipeline steps by hand - is
+    # still caught here rather than being positioned into a blended animation.
+    _check_single_run(
+        full_entity_df, run_col_name=run_col_name, frame_arg="full_entity_df"
+    )
 
     if save_intermediate_outputs is not False:
         if isinstance(save_intermediate_outputs, str):
@@ -504,10 +551,10 @@ def generate_animation_df(
             f"Placement dataframe started construction at {time.strftime('%H:%M:%S', time.localtime())}"
         )
 
-    # Filter to only a single replication
-
-    # TODO: Write a test  to ensure that no patient ID appears in multiple places at a single time unit
-    # and return an error if it does so
+    # Note: this function does NOT filter to a single replication - it cannot, as the
+    # snapshotting has already happened by this point. A multi-replication log is
+    # rejected up front by the `_check_single_run` call above and in
+    # `reshape_for_animations`.
 
     # 29/09/2025 - consider removing as this is already done in reshape_for_animation function
     # (though method is very slightly different, but should achieve the same output)

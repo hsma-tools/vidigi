@@ -108,6 +108,30 @@ def no_departure_log():
 
 
 @pytest.fixture
+def multi_run_log(simple_queue_log):
+    """The same three entities simulated twice, concatenated with a `run` column.
+
+    This is the natural artefact at the end of a replicated DES study, and the
+    shape that used to produce a silently blended animation: entity 1 arrives at
+    t=0 in run 1 and t=100 in run 2, which the arrival/departure pivot would
+    average to t=50 - a moment it existed in neither run.
+    """
+    first = simple_queue_log.assign(run=1)
+    second = simple_queue_log.assign(run=2)
+    second["time"] = second["time"] + 100
+    return pd.concat([first, second], ignore_index=True)
+
+
+@pytest.fixture
+def single_run_log_with_run_column(simple_queue_log):
+    """One replication that nonetheless carries a run column.
+
+    Completely valid input. The guard must not reject it.
+    """
+    return simple_queue_log.assign(run=1)
+
+
+@pytest.fixture
 def basic_event_position_df():
     """Positions for the events used by the log fixtures.
 
