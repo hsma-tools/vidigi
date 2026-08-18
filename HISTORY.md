@@ -132,14 +132,15 @@
     - Matches the accepted spellings and case-insensitive matching of `backend` on the animation functions (`"express"`/`"px"`/`"plotly express"`, `"go"`/`"graph objects"`/`"plotly graph objects"`/`"plotly go"`), for consistency across the package
     - Purely additive: no existing caller's output or `**kwargs` behaviour changes
 - New `plot_duration_distribution` (both `vidigi.plots.plot_duration_distribution` and `TrialLogger.plot_duration_distribution`) - vidigi's first chart showing the *shape* of a duration rather than a single summary statistic
-    - `kind="hist"` (default), `"box"`, `"violin"` or `"ecdf"`. Histograms are numpy-binned and drawn as `go.Bar`, never `plotly.graph_objects.Histogram` - that bins in the browser, so its `y` values are never inspectable, in code or in a test. `"ecdf"` is drawn as a step line, since linear interpolation between sorted points would draw cumulative probabilities that never occurred
+    - `kind="hist"` (default), `"box"`, `"violin"`, `"ecdf"`, `"ridgeline"` or `"heatmap"`. Histograms are numpy-binned and drawn as `go.Bar`, never `plotly.graph_objects.Histogram` - that bins in the browser, so its `y` values are never inspectable, in code or in a test. `"ecdf"` is drawn as a step line, since linear interpolation between sorted points would draw cumulative probabilities that never occurred
     - `split_by="run"` or `"pathway"` draws one trace per distinct value of that column instead of pooling every duration together, using the same bin edges across groups for `kind="hist"` so bars stay comparable
+    - `"ridgeline"` and `"heatmap"` both require `split_by`, and exist for the case `split_by` was built for but a plain `"box"`/`"violin"` handles badly: comparing a duration's distribution across *many* groups (e.g. every run in a 100-replication trial) without the chart turning into an unreadable pile. `"ridgeline"` stacks one density curve per group with a slight vertical overlap; `"heatmap"` draws duration on the x-axis and one row per group, coloured by count or density, and scales further still since it costs no vertical space per row at all. Ridgeline heights are always a per-group density, never a raw count, so a group with more observations does not draw a taller ridge for the same underlying shape
     - Built entirely on the existing `vidigi.analysis.event_durations` - no new analysis function was needed, since a distribution is a reshaping of durations already, not a new statistic. Incomplete pairs (`duration` is `NaN`) are dropped before plotting
     - New-function style, per the plans for the rest of the 1.4.0/1.5.0 plotting work: no `interactive=`, always returns a figure; `**kwargs` forwards to `vidigi.analysis.event_durations` for column-name overrides, not to a plotly call - there's no single call to forward general styling to, since `go` builds several traces by hand. Style the returned figure directly, or pass `title=`
 
 ### Testing
 
-Test coverage grew from 31 to 394 tests, concentrated on the parts of the pipeline where a
+Test coverage grew from 31 to 402 tests, concentrated on the parts of the pipeline where a
 mistake changes what the animation *shows*, or what the reported numbers *say*, rather
 than raising an error.
 
@@ -160,6 +161,7 @@ than raising an error.
 - `vidigi.analysis.queue_size_over_time` and `vidigi.plots.plot_queue_size` are covered directly as free functions, not just through `TrialLogger`, including a warm-up window trim proven to fail if the argument were dropped, `run_col_name="auto"` detecting a plain `run` column, a log with no run column at all, and that plotly express kwargs still reach the chart after the extraction
 - `backend="go"` on `plot_queue_size` is covered for hand-computed queue lengths (single and faceted), the empty-queue-as-zero and mean-across-runs behaviour matching the express backend, warm-up trimming, every accepted spelling and case-insensitive matching, the invalid-backend error, and that facet row placement is correct (proven to fail if a mutated row mapping put every event's traces on the same row)
 - `plot_duration_distribution` is covered for every `kind` against hand-computed (or independently numpy-computed) bin edges, counts, densities, raw values and ECDF step arrays; `split_by` is checked as a full `{trace name: values}` mapping for both `"run"` and `"pathway"`, and proven to fail if the two columns were swapped; the ECDF's step shape is proven to fail if `line_shape="hv"` were dropped; incomplete pairs are confirmed dropped before plotting rather than erroring or appearing as `NaN`; and every `DistributionKind`/`SplitBy` literal value is asserted to be accepted at runtime, matching the pattern already used for `DurationStat`
+- `"ridgeline"` and `"heatmap"` are covered for the full per-group polygon/matrix against independently numpy-computed bin edges and densities/counts, that both require `split_by`, and - proven to fail if the density were swapped for a raw count - that a group with more observations draws the same ridge height as one with fewer, given the same underlying shape
 
 # 1.3.1
 

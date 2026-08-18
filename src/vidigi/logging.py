@@ -1028,16 +1028,22 @@ class TrialLogger:
         ----------
         first_event, second_event : str
             The two events to measure the duration between.
-        kind : {"hist", "box", "violin", "ecdf"}, default="hist"
-            Chart type.
+        kind : {"hist", "box", "violin", "ecdf", "ridgeline", "heatmap"}, default="hist"
+            Chart type. `"ridgeline"` and `"heatmap"` require `split_by` to be
+            set - see `vidigi.plots.plot_duration_distribution` for the full
+            explanation of each.
         split_by : {"run", "pathway"} or None, default=None
-            If given, one trace per distinct value of that column.
+            If given, one trace (or, for `"heatmap"`, one row) per distinct
+            value of that column.
         bins : int, sequence, or None, default=None
-            Passed to `numpy.histogram` when `kind="hist"`.
+            Passed to `numpy.histogram` when `kind` is `"hist"`, `"ridgeline"`
+            or `"heatmap"`.
         match : {"first", "last", "occurrence"}, default="first"
             How repeated occurrences of the two events are paired.
         normalise : bool, default=False
-            For `kind="hist"` only: bar heights as a probability density.
+            For `kind="hist"` or `kind="heatmap"`: heights/cells as a
+            probability density rather than raw counts. `"ridgeline"` always
+            uses density, regardless of this argument.
         title : str, optional
             Figure title.
         **kwargs : dict

@@ -349,7 +349,11 @@ def _plot_queue_size_go(
 # Chart type for `plot_duration_distribution`. Editors offer these as
 # completions, but the value is still validated at runtime, since annotations
 # are not enforced.
-DistributionKind: TypeAlias = Literal["hist", "box", "violin", "ecdf"]
+DistributionKind: TypeAlias = Literal[
+    "hist", "box", "violin", "ecdf", "ridgeline", "heatmap"
+]
+_DISTRIBUTION_KINDS = ("hist", "box", "violin", "ecdf", "ridgeline", "heatmap")
+_MULTI_GROUP_KINDS = ("ridgeline", "heatmap")
 
 # Which column of `vidigi.analysis.event_durations`'s output `split_by` groups on.
 SplitBy: TypeAlias = Literal["run", "pathway"]
@@ -383,7 +387,7 @@ def plot_duration_distribution(
     first_event, second_event : str
         The two events to measure the duration between. See
         `vidigi.analysis.event_durations`.
-    kind : {"hist", "box", "violin", "ecdf"}, default="hist"
+    kind : {"hist", "box", "violin", "ecdf", "ridgeline", "heatmap"}, default="hist"
         Chart type.
 
         - ``"hist"``: a histogram, binned with `numpy.histogram` and drawn as
@@ -394,22 +398,36 @@ def plot_duration_distribution(
         - ``"ecdf"``: the empirical cumulative distribution function, drawn as a
           step line - linear interpolation between the sorted points would draw
           probabilities that never occurred.
+        - ``"ridgeline"``: one histogram-derived density curve per group,
+          stacked with a vertical offset and slight overlap ("joy plot" style).
+          Always compares *shape* (each curve is its own density, area 1)
+          rather than raw counts, so groups with different numbers of
+          observations remain comparable; `normalise` is ignored. **Requires
+          `split_by`** - a ridgeline needs more than one group to stack.
+        - ``"heatmap"``: one row per group, duration binned along the x-axis,
+          colour showing count or density per cell. Scales to far more groups
+          than `"ridgeline"` can stay readable at, since it costs no vertical
+          space per row. **Requires `split_by`.**
     split_by : {"run", "pathway"} or None, default=None
-        If given, produces one trace per distinct value of the corresponding
-        column (`run_number` or `pathway`) instead of a single trace over every
-        duration pooled together.
+        If given, produces one trace (or, for `"heatmap"`, one row) per
+        distinct value of the corresponding column (`run_number` or
+        `pathway`) instead of a single trace over every duration pooled
+        together. Required for `kind="ridgeline"` or `kind="heatmap"`.
     bins : int, sequence, or None, default=None
-        Passed to `numpy.histogram` when `kind="hist"`. `None` uses 10 bins,
-        matching `numpy.histogram`'s own default. The same bin edges are used
-        for every group when `split_by` is set, so bars stay comparable across
-        groups. Ignored for other kinds.
+        Passed to `numpy.histogram` when `kind` is `"hist"`, `"ridgeline"` or
+        `"heatmap"`. `None` uses 10 bins, matching `numpy.histogram`'s own
+        default. The same bin edges are used for every group when `split_by`
+        is set, so bars/rows stay comparable across groups. Ignored for other
+        kinds.
     match : {"first", "last", "occurrence"}, default="first"
         How repeated occurrences of the two events are paired. See
         `vidigi.analysis.event_durations`.
     normalise : bool, default=False
-        For `kind="hist"` only: if True, bar heights are a probability density
-        (area sums to 1) rather than raw counts. Ignored for other kinds, whose
-        y-axis is either the raw durations or already a proportion (`"ecdf"`).
+        For `kind="hist"` or `kind="heatmap"`: if True, heights/cell values are
+        a probability density (each group's area sums to 1) rather than raw
+        counts. Ignored for other kinds - `"ridgeline"` always uses density
+        (see above), and the y-axis of `"box"`/`"violin"`/`"ecdf"` is either
+        the raw durations or already a proportion.
     title : str, optional
         Figure title. There is no general plotly-kwargs passthrough on this
         function - style the returned figure directly.
@@ -425,7 +443,8 @@ def plot_duration_distribution(
     Raises
     ------
     ValueError
-        If `kind` or `split_by` is not one of the supported values; if no
+        If `kind` or `split_by` is not one of the supported values; if `kind`
+        is `"ridgeline"` or `"heatmap"` and `split_by` is not set; if no
         complete pairs are found to plot; or if `split_by` is set but the
         corresponding column is entirely missing from the durations.
 
@@ -440,13 +459,20 @@ def plot_duration_distribution(
     and are dropped before drawing. Call `vidigi.analysis.event_durations`
     directly if you need to know how many were excluded.
     """
-    if kind not in ("hist", "box", "violin", "ecdf"):
+    if kind not in _DISTRIBUTION_KINDS:
         raise ValueError(
-            f"`kind` must be one of 'hist', 'box', 'violin', 'ecdf'; got {kind!r}."
+            f"`kind` must be one of {_DISTRIBUTION_KINDS}; got {kind!r}."
         )
     if split_by is not None and split_by not in _SPLIT_BY_COLUMNS:
         raise ValueError(
             f"`split_by` must be one of 'run', 'pathway', or None; got {split_by!r}."
+        )
+    if kind in _MULTI_GROUP_KINDS and split_by is None:
+        raise ValueError(
+            f"kind={kind!r} draws one {'curve' if kind == 'ridgeline' else 'row'} "
+            f"per group, so needs more than one group to compare - pass "
+            f"`split_by='run'` or `split_by='pathway'`. Use `kind='hist'` for a "
+            f"single distribution."
         )
 
     durations = event_durations(
@@ -480,11 +506,13 @@ def plot_duration_distribution(
     def _trace_name(group_value):
         return str(group_value) if group_value is not None else axis_label
 
-    if kind == "hist":
+    if kind in ("hist", "ridgeline", "heatmap"):
         edges = np.histogram_bin_edges(
             durations["duration"].to_numpy(), bins=(10 if bins is None else bins)
         )
         centers = (edges[:-1] + edges[1:]) / 2
+
+    if kind == "hist":
         widths = np.diff(edges)
         for group_value, group_df in groups:
             counts, _ = np.histogram(
@@ -515,7 +543,7 @@ def plot_duration_distribution(
             )
         fig.update_yaxes(title_text=axis_label)
 
-    else:  # ecdf
+    elif kind == "ecdf":
         for group_value, group_df in groups:
             sorted_durations = np.sort(group_df["duration"].to_numpy())
             n = len(sorted_durations)
@@ -532,6 +560,63 @@ def plot_duration_distribution(
             )
         fig.update_xaxes(title_text=axis_label)
         fig.update_yaxes(title_text="cumulative proportion")
+
+    elif kind == "ridgeline":
+        # Always a density (area 1) per group, never a raw count: a group with
+        # more observations would otherwise draw a taller ridge for the same
+        # shape, which reads as "busier" rather than "differently distributed".
+        row_height = 1.0
+        group_densities = [
+            (group_value, np.histogram(group_df["duration"].to_numpy(), bins=edges, density=True)[0])
+            for group_value, group_df in groups
+        ]
+        peak = max((counts.max() for _, counts in group_densities), default=0.0)
+        scale = (row_height * 1.5 / peak) if peak > 0 else 1.0
+
+        offsets, labels = [], []
+        for i, (group_value, counts) in enumerate(group_densities):
+            offset = i * row_height
+            offsets.append(offset)
+            labels.append(_trace_name(group_value))
+            heights = offset + counts * scale
+            fig.add_trace(
+                go.Scatter(
+                    x=[centers[0], *centers, centers[-1], centers[0]],
+                    y=[offset, *heights, offset, offset],
+                    fill="toself",
+                    mode="lines",
+                    line=dict(width=1),
+                    name=_trace_name(group_value),
+                    hoverinfo="skip",
+                )
+            )
+        fig.update_yaxes(tickvals=offsets, ticktext=labels, title_text=split_by)
+        fig.update_xaxes(title_text=axis_label)
+
+    else:  # heatmap
+        z, labels = [], []
+        for group_value, group_df in groups:
+            counts, _ = np.histogram(
+                group_df["duration"].to_numpy(), bins=edges, density=normalise
+            )
+            z.append(counts)
+            labels.append(_trace_name(group_value))
+
+        fig.add_trace(
+            go.Heatmap(
+                x=centers,
+                y=labels,
+                z=z,
+                colorbar=dict(title="Density" if normalise else "Count"),
+                hovertemplate="Duration: %{x:.2f}<br>"
+                f"{split_by.capitalize()}"
+                ": %{y}<br>"
+                + ("Density" if normalise else "Count")
+                + ": %{z}<extra></extra>",
+            )
+        )
+        fig.update_xaxes(title_text=axis_label)
+        fig.update_yaxes(title_text=split_by)
 
     if title is not None:
         fig.update_layout(title=title)

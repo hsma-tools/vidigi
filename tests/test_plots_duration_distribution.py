@@ -204,6 +204,116 @@ def test_no_complete_pairs_raises():
         plot_duration_distribution(event_log, "arrival", "depart")
 
 
+# --------------------------------------------------------------------------- #
+# kind="ridgeline" / "heatmap" - both require split_by
+# --------------------------------------------------------------------------- #
+
+
+def _two_group_event_log():
+    return TrialLogger(
+        [
+            _logger_with_durations([1, 2, 3], run_number=1),
+            _logger_with_durations([4, 5, 6], run_number=2),
+        ]
+    ).to_dataframe()
+
+
+@pytest.mark.parametrize("kind", ["ridgeline", "heatmap"])
+def test_ridgeline_and_heatmap_require_split_by(kind):
+    with pytest.raises(ValueError, match="split_by"):
+        plot_duration_distribution(_basic_event_log(), "arrival", "depart", kind=kind)
+
+
+def test_heatmap_gives_the_full_matrix_and_labels():
+    event_log = _two_group_event_log()
+
+    fig = plot_duration_distribution(
+        event_log, "arrival", "depart", kind="heatmap", split_by="run", bins=3
+    )
+
+    edges = np.histogram_bin_edges([1, 2, 3, 4, 5, 6], bins=3)
+    expected_centers = (edges[:-1] + edges[1:]) / 2
+    expected_row1, _ = np.histogram([1, 2, 3], bins=edges)
+    expected_row2, _ = np.histogram([4, 5, 6], bins=edges)
+
+    assert np.allclose(fig.data[0].x, expected_centers)
+    assert list(fig.data[0].y) == ["1", "2"]
+    assert np.allclose(list(fig.data[0].z), [expected_row1, expected_row2])
+
+
+def test_heatmap_normalise_gives_density_per_row():
+    event_log = _two_group_event_log()
+
+    fig = plot_duration_distribution(
+        event_log,
+        "arrival",
+        "depart",
+        kind="heatmap",
+        split_by="run",
+        bins=3,
+        normalise=True,
+    )
+
+    edges = np.histogram_bin_edges([1, 2, 3, 4, 5, 6], bins=3)
+    expected_row1, _ = np.histogram([1, 2, 3], bins=edges, density=True)
+    expected_row2, _ = np.histogram([4, 5, 6], bins=edges, density=True)
+
+    assert np.allclose(list(fig.data[0].z), [expected_row1, expected_row2])
+
+
+def test_ridgeline_gives_the_full_polygon_per_group():
+    event_log = _two_group_event_log()
+
+    fig = plot_duration_distribution(
+        event_log, "arrival", "depart", kind="ridgeline", split_by="run", bins=3
+    )
+
+    edges = np.histogram_bin_edges([1, 2, 3, 4, 5, 6], bins=3)
+    centers = (edges[:-1] + edges[1:]) / 2
+    density1, _ = np.histogram([1, 2, 3], bins=edges, density=True)
+    density2, _ = np.histogram([4, 5, 6], bins=edges, density=True)
+    peak = max(density1.max(), density2.max())
+    scale = 1.5 / peak
+
+    expected_x = [centers[0], *centers, centers[-1], centers[0]]
+    expected_y0 = [0, *(density1 * scale), 0, 0]
+    expected_y1 = [1.0, *(1.0 + density2 * scale), 1.0, 1.0]
+
+    assert len(fig.data) == 2
+    assert np.allclose(fig.data[0].x, expected_x)
+    assert np.allclose(fig.data[0].y, expected_y0)
+    assert fig.data[0].name == "1"
+    assert np.allclose(fig.data[1].x, expected_x)
+    assert np.allclose(fig.data[1].y, expected_y1)
+    assert fig.data[1].name == "2"
+
+    assert list(fig.layout.yaxis.tickvals) == [0.0, 1.0]
+    assert list(fig.layout.yaxis.ticktext) == ["1", "2"]
+
+
+def test_ridgeline_uses_density_so_group_size_does_not_affect_height():
+    """A group with twice as many observations but the same relative shape
+    must produce the same ridge height as a group with fewer - proving
+    ridgeline always uses density, never raw counts, regardless of
+    `normalise`. Otherwise a busier run would misleadingly look "different"
+    from a quieter one with an identical distribution shape.
+    """
+    event_log = TrialLogger(
+        [
+            _logger_with_durations([1, 1, 2, 2, 3, 3], run_number=1),
+            _logger_with_durations([1, 2, 3], run_number=2),
+        ]
+    ).to_dataframe()
+
+    fig = plot_duration_distribution(
+        event_log, "arrival", "depart", kind="ridgeline", split_by="run", bins=3
+    )
+
+    peak0 = max(fig.data[0].y) - 0.0
+    peak1 = max(fig.data[1].y) - 1.0
+    assert np.isclose(peak0, peak1)
+
+
 def test_invalid_kind_raises():
     with pytest.raises(ValueError, match="`kind`"):
         plot_duration_distribution(
@@ -220,8 +330,23 @@ def test_invalid_split_by_raises():
 
 @pytest.mark.parametrize("kind", typing.get_args(DistributionKind))
 def test_every_distribution_kind_literal_is_accepted(kind):
-    """The annotation must not advertise a `kind` the runtime check rejects."""
-    fig = plot_duration_distribution(_basic_event_log(), "arrival", "depart", kind=kind)
+    """The annotation must not advertise a `kind` the runtime check rejects.
+
+    "ridgeline" and "heatmap" additionally require `split_by`, so a run column
+    with more than one value is used for every kind rather than switching
+    fixtures per kind.
+    """
+    trial = TrialLogger(
+        [
+            _logger_with_durations([1, 2, 3], run_number=1),
+            _logger_with_durations([4, 5, 6], run_number=2),
+        ]
+    )
+    split_by = "run" if kind in ("ridgeline", "heatmap") else None
+
+    fig = plot_duration_distribution(
+        trial.to_dataframe(), "arrival", "depart", kind=kind, split_by=split_by
+    )
     assert isinstance(fig, go.Figure)
 
 
