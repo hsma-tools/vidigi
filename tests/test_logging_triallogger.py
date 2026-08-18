@@ -511,6 +511,24 @@ def test_plot_queue_size_mean_only(two_run_loggers):
     assert isinstance(fig, go.Figure)
 
 
+def test_plot_queue_size_backend_go_is_passed_through(long_queue_logger):
+    """`backend="go"` reaches vidigi.plots.plot_queue_size, and reports the same
+    queue length as the default express backend does.
+    """
+    trial = TrialLogger([long_queue_logger])
+
+    fig = trial.plot_queue_size(
+        event_list=["waiting"],
+        limit_duration=30,
+        every_x_time_units=10,
+        backend="go",
+    )
+
+    run_trace = [t for t in fig.data if t.name == "1"][0]
+    assert list(run_trace.x) == [0, 10, 20, 30]
+    assert list(run_trace.y) == [150, 150, 150, 150]
+
+
 # --------------------------------------------------------------------------- #
 # plot_queue_size: the plotted number must be the queue length
 #

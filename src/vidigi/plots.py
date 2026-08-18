@@ -7,13 +7,43 @@ overrides are explicit keyword parameters rather than a generic `**kwargs`, so
 plotly express call, matching the existing behaviour of `plot_metric_bar`.
 """
 
-from typing import Optional
+import warnings
+from typing import Literal, Optional, TypeAlias
 
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 from vidigi.analysis import queue_size_over_time
+
+# Which plotly API draws the chart. Mirrors `vidigi.animation.AnimationBackend`'s
+# accepted spellings and case-insensitive matching, for consistency across the
+# package. Editors offer these as completions, but the value is still validated
+# at runtime, since annotations are not enforced.
+PlotBackend: TypeAlias = Literal[
+    "express",
+    "px",
+    "plotly express",
+    "go",
+    "graph objects",
+    "plotly graph objects",
+    "plotly go",
+]
+
+
+def _resolve_backend(backend: str) -> str:
+    lowered = str.lower(backend)
+    if lowered in ("express", "px", "plotly express"):
+        return "express"
+    if lowered in ("go", "graph objects", "plotly graph objects", "plotly go"):
+        return "go"
+    raise ValueError(
+        f"Invalid backend passed: '{backend}'. Options are: 'express'|'px'|"
+        f"'plotly express' for the plotly express backend (default), or "
+        f"'go'|'graph objects'|'plotly graph objects'|'plotly go' for the plotly "
+        f"graph objects backend. Matching is case-insensitive."
+    )
 
 
 def plot_queue_size(
@@ -25,6 +55,7 @@ def plot_queue_size(
     warm_up: int = 0,
     show_all_runs: bool = True,
     shared_y_axis: bool = True,
+    backend: PlotBackend = "express",
     run_col_name: Optional[str] = "auto",
     entity_col_name: str = "entity_id",
     time_col_name: str = "time",
@@ -62,6 +93,16 @@ def plot_queue_size(
     shared_y_axis : bool, default=True
         If True (and more than one event is plotted), every facet shares a y-axis
         range. If False, each is scaled independently.
+    backend : {"express", "go"}, default="express"
+        Which plotly API builds the figure. `"express"` (several spellings
+        accepted, see `vidigi.animation.AnimationBackend` for the equivalent on
+        the animation functions) matches the pre-existing behaviour and accepts
+        `**kwargs` forwarded to `plotly.express.line` for styling at creation
+        time. `"go"` builds every trace explicitly with `plotly.graph_objects`
+        instead: trace names, order and legend grouping are then deterministic
+        rather than depending on `px`'s automatic grouping, which some callers
+        find easier to target when restyling the figure afterwards. `**kwargs`
+        is not used by the `"go"` backend - style the returned figure directly.
     run_col_name : str or None, default="auto"
         Column identifying which run each row belongs to. See
         `vidigi.analysis.queue_size_over_time`.
@@ -69,7 +110,8 @@ def plot_queue_size(
     pathway_col_name : str or None
         Column names forwarded to `vidigi.analysis.queue_size_over_time`.
     **kwargs : dict
-        Additional keyword arguments passed to `plotly.express.line`.
+        Additional keyword arguments passed to `plotly.express.line`. Ignored
+        (with a warning) when `backend="go"`.
 
     Returns
     -------
@@ -101,6 +143,8 @@ def plot_queue_size(
     ... )
     <plotly.graph_objs._figure.Figure>
     """
+    resolved_backend = _resolve_backend(backend)
+
     event_counts = queue_size_over_time(
         event_log,
         event_list,
@@ -119,6 +163,24 @@ def plot_queue_size(
         "count"
     ].mean()
 
+    if resolved_backend == "express":
+        return _plot_queue_size_express(
+            event_counts, mean_df, event_list, show_all_runs, shared_y_axis, **kwargs
+        )
+
+    if kwargs:
+        warnings.warn(
+            f"backend='go' does not use **kwargs (got {sorted(kwargs)}); they are "
+            f"ignored. Style the returned figure directly instead.",
+            UserWarning,
+            stacklevel=2,
+        )
+    return _plot_queue_size_go(event_counts, mean_df, event_list, show_all_runs, shared_y_axis)
+
+
+def _plot_queue_size_express(
+    event_counts, mean_df, event_list, show_all_runs, shared_y_axis, **kwargs
+) -> go.Figure:
     faceting_variable = "event" if len(event_list) > 1 else None
 
     if show_all_runs:
@@ -194,3 +256,80 @@ def plot_queue_size(
         fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
 
         return fig
+
+
+def _plot_queue_size_go(
+    event_counts, mean_df, event_list, show_all_runs, shared_y_axis
+) -> go.Figure:
+    n_events = len(event_list)
+
+    if n_events > 1:
+        fig = make_subplots(
+            rows=n_events,
+            cols=1,
+            shared_yaxes=shared_y_axis,
+            subplot_titles=event_list,
+        )
+    else:
+        fig = go.Figure()
+
+    event_to_row = {event: i + 1 for i, event in enumerate(event_list)}
+
+    def _add_trace(trace, event):
+        if n_events > 1:
+            fig.add_trace(trace, row=event_to_row[event], col=1)
+        else:
+            fig.add_trace(trace)
+
+    if show_all_runs:
+        run_ids = list(event_counts["run_number"].dropna().unique())
+        try:
+            run_ids = sorted(run_ids)
+        except TypeError:
+            pass
+        # A log with no run column produces an all-NA run_number - a single
+        # unnamed group, rather than no runs at all.
+        if not run_ids:
+            run_ids = [None]
+
+        for run_id in run_ids:
+            if run_id is None:
+                run_rows = event_counts[event_counts["run_number"].isna()]
+            else:
+                run_rows = event_counts[event_counts["run_number"] == run_id]
+            for j, event in enumerate(event_list):
+                sub = run_rows[run_rows["event"] == event].sort_values(
+                    "snapshot_time"
+                )
+                _add_trace(
+                    go.Scatter(
+                        x=sub["snapshot_time"],
+                        y=sub["count"],
+                        mode="lines",
+                        opacity=0.2,
+                        legendgroup=str(run_id),
+                        name=str(run_id),
+                        showlegend=(j == 0),
+                    ),
+                    event,
+                )
+
+    for event in event_list:
+        sub = mean_df[mean_df["event"] == event].sort_values("snapshot_time")
+        _add_trace(
+            go.Scatter(
+                x=sub["snapshot_time"],
+                y=sub["count"],
+                mode="lines",
+                line=dict(color="black", width=3),
+                name="Mean",
+                legendgroup="Mean",
+                showlegend=(event == event_list[0]),
+            ),
+            event,
+        )
+
+    fig.update_xaxes(title_text="snapshot_time")
+    fig.update_yaxes(title_text="count")
+
+    return fig

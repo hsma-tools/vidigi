@@ -22,7 +22,7 @@ from vidigi.process_mapping import (
     dfg_to_cytoscape_streamlit,
 )
 from vidigi.analysis import event_durations, MatchMode
-from vidigi.plots import plot_queue_size as _plot_queue_size
+from vidigi.plots import plot_queue_size as _plot_queue_size, PlotBackend
 
 RECOGNIZED_EVENT_TYPES = {
     "arrival_departure",
@@ -1085,6 +1085,7 @@ class TrialLogger:
         show_all_runs=True,
         shared_y_axis=True,
         warm_up: int = 0,
+        backend: PlotBackend = "express",
         **kwargs,
     ):
         """
@@ -1114,8 +1115,15 @@ class TrialLogger:
             to `limit_duration`. See `vidigi.prep.reshape_for_animations` for why
             this - and not filtering the log by time - is the correct way to
             discard a warm-up period. The default of `0` is a no-op.
+        backend : {"express", "go"}, default="express"
+            Which plotly API builds the figure. See `vidigi.plots.plot_queue_size`
+            for the full explanation - in short, `"go"` gives every trace a
+            deterministic name and order instead of `px`'s automatic grouping,
+            which some callers find easier to target when restyling the figure
+            afterwards. `**kwargs` is ignored when `backend="go"`.
         **kwargs
-            Additional keyword arguments passed to `plotly.express.line`.
+            Additional keyword arguments passed to `plotly.express.line`. Ignored
+            (with a warning) when `backend="go"`.
 
         Returns
         -------
@@ -1164,6 +1172,7 @@ class TrialLogger:
             warm_up=warm_up,
             show_all_runs=show_all_runs,
             shared_y_axis=shared_y_axis,
+            backend=backend,
             **kwargs,
         )
 

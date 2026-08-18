@@ -126,10 +126,15 @@
 - `TrialLogger.plot_queue_size` gains a `warm_up` argument, for discarding a warm-up period the same way `reshape_for_animations` already supports
     - The default of `0` is a verified no-op - output is identical to omitting the argument
     - Internally, `TrialLogger.plot_queue_size` is now a thin delegator to `vidigi.plots.plot_queue_size`, called on the trial's combined dataframe. The four tests asserting exact queue-length values were left untouched, and passing unchanged is the proof the extraction is behaviour-preserving
+- New `backend` argument on `plot_queue_size` (both `vidigi.plots.plot_queue_size` and `TrialLogger.plot_queue_size`), in response to feedback from advanced users who wanted a `plotly.graph_objects`-built chart to restyle afterwards
+    - `backend="express"` (default) is the pre-existing behaviour, unchanged - `**kwargs` still forwards to `plotly.express.line`
+    - `backend="go"` builds every trace explicitly instead: trace names, order and legend grouping are then deterministic rather than depending on `px`'s automatic per-run grouping, which is easier to target when restyling a specific run or event's trace afterwards. It also sets facet titles directly via `plotly.subplots.make_subplots`, with no need for the `event=` prefix `px`'s auto-generated annotations require stripping off. `**kwargs` is not used by this backend and is ignored with a warning if passed
+    - Matches the accepted spellings and case-insensitive matching of `backend` on the animation functions (`"express"`/`"px"`/`"plotly express"`, `"go"`/`"graph objects"`/`"plotly graph objects"`/`"plotly go"`), for consistency across the package
+    - Purely additive: no existing caller's output or `**kwargs` behaviour changes
 
 ### Testing
 
-Test coverage grew from 31 to 359 tests, concentrated on the parts of the pipeline where a
+Test coverage grew from 31 to 371 tests, concentrated on the parts of the pipeline where a
 mistake changes what the animation *shows*, or what the reported numbers *say*, rather
 than raising an error.
 
@@ -148,6 +153,7 @@ than raising an error.
 - `vidigi.analysis.event_durations` is covered against hand-computed durations, including a rework-loop fixture the old `pivot`-based calculation cannot even run against, every pairing mode, the outer-join edge cases (started-but-unfinished and finished-but-unstarted), and the missing-run/missing-pathway-column fallbacks
 - `TrialLogger.get_event_duration_stat`, the new `get_event_durations`, and `vidigi.analysis.event_durations` directly are all pinned against the old `pivot`-based calculation on every applicable existing fixture — including one with a run column spelled `run` rather than `run_number`, to check `run_col_name="auto"` against the same reference — so the rebuild is proven byte-for-byte equivalent wherever the pivot used to work. A dedicated regression test covers the per-run denominator fix, proven to fail against the old formula before being restored
 - `vidigi.analysis.queue_size_over_time` and `vidigi.plots.plot_queue_size` are covered directly as free functions, not just through `TrialLogger`, including a warm-up window trim proven to fail if the argument were dropped, `run_col_name="auto"` detecting a plain `run` column, a log with no run column at all, and that plotly express kwargs still reach the chart after the extraction
+- `backend="go"` on `plot_queue_size` is covered for hand-computed queue lengths (single and faceted), the empty-queue-as-zero and mean-across-runs behaviour matching the express backend, warm-up trimming, every accepted spelling and case-insensitive matching, the invalid-backend error, and that facet row placement is correct (proven to fail if a mutated row mapping put every event's traces on the same row)
 
 # 1.3.1
 
