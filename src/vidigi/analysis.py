@@ -13,6 +13,7 @@ from typing import Literal, Optional, TypeAlias
 
 import pandas as pd
 
+from vidigi.prep import reshape_for_animations
 from vidigi.utils import _resolve_run_column
 
 MatchMode: TypeAlias = Literal["first", "last", "occurrence"]
@@ -296,3 +297,144 @@ def event_durations(
             "duration",
         ]
     ].reset_index(drop=True)
+
+
+def queue_size_over_time(
+    event_log: pd.DataFrame,
+    event_list: list,
+    limit_duration,
+    *,
+    every_x_time_units: int = 1,
+    warm_up: int = 0,
+    run_col_name: Optional[str] = "auto",
+    entity_col_name: str = "entity_id",
+    time_col_name: str = "time",
+    event_type_col_name: str = "event_type",
+    event_col_name: str = "event",
+    pathway_col_name: Optional[str] = None,
+) -> pd.DataFrame:
+    """
+    Compute the size of one or more queues at regular snapshots, across every run.
+
+    Extracted from `TrialLogger.plot_queue_size`, which is now a thin wrapper over
+    `vidigi.plots.plot_queue_size`, itself a thin wrapper over this function.
+
+    Parameters
+    ----------
+    event_log : pandas.DataFrame
+        Long-format event log spanning one or more runs, e.g. the output of
+        `TrialLogger.to_dataframe()`.
+    event_list : list of str
+        Event names (matched against `event_col_name`) to report a queue size for.
+    limit_duration : int or float
+        Maximum time to include, in the same units as `time_col_name`.
+    every_x_time_units : int, default=1
+        Time granularity for snapshots.
+    warm_up : int, default=0
+        Time at which the reported window begins. Snapshots run from `warm_up` to
+        `limit_duration`. Passed straight through to `reshape_for_animations`; see
+        that function's docstring for why this - and not filtering the log by time
+        - is the correct way to discard a warm-up period.
+    run_col_name : str or None, default="auto"
+        Column identifying which run each row belongs to. `"auto"` looks for a
+        column named (case-insensitively) one of `run`, `run_number`,
+        `replication`, `rep` or `run_id`. Pass an explicit column name to
+        override, or `None` if the log holds a single run.
+    entity_col_name, time_col_name, event_type_col_name, event_col_name,
+    pathway_col_name : str or None
+        Column names forwarded to `reshape_for_animations`. See that function's
+        docstring for their meaning.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Columns ``run_number``, ``event``, ``snapshot_time``, ``count``. One row
+        per event in `event_list` per snapshot per run, including snapshots where
+        the queue was empty - a queue with nobody in it is a real zero, not a
+        missing row.
+
+    Notes
+    -----
+    - Queue lengths are **not** capped at the `step_snapshot_max` used internally
+      by `reshape_for_animations` for keeping an animation drawable; a queue is
+      reported at its true length, however long it got.
+    - An event in `event_list` that occurs in no run at all is reported as zero
+      throughout, with a warning - otherwise a misspelt event name is
+      indistinguishable from a queue that genuinely never formed.
+    """
+    run_col = _resolve_run_column(event_log, run_col_name)
+    run_groups = (
+        list(event_log.groupby(run_col, sort=False))
+        if run_col
+        else [(pd.NA, event_log)]
+    )
+
+    results = []
+    snapshot_times = set()
+    observed_events = set()
+
+    for run_id, run_df in run_groups:
+        # `step_snapshot_max` caps how many entities `reshape_for_animations` keeps
+        # per event per snapshot, so an animation stays drawable. Left at its
+        # default here it would saturate the *count* at `step_snapshot_max + 1`
+        # rather than reporting how long the queue actually got, so it is lifted
+        # above anything the log can hold.
+        reshaped = reshape_for_animations(
+            run_df,
+            every_x_time_units=every_x_time_units,
+            limit_duration=limit_duration,
+            step_snapshot_max=max(len(run_df), 1),
+            warm_up=warm_up,
+            time_col_name=time_col_name,
+            entity_col_name=entity_col_name,
+            event_type_col_name=event_type_col_name,
+            event_col_name=event_col_name,
+            pathway_col_name=pathway_col_name,
+            run_col_name=None,
+        )
+
+        # Snapshots where nobody was in the model are still represented in the
+        # reshaped frame, so this collects the full time grid - including the
+        # intervals whose count is zero and which would otherwise go missing.
+        snapshot_times.update(reshaped["snapshot_time"].unique().tolist())
+        observed_events.update(reshaped[event_col_name].dropna().unique().tolist())
+
+        results.append(
+            (
+                run_id,
+                reshaped[reshaped[event_col_name].isin(event_list)]
+                .groupby([event_col_name, "snapshot_time"])
+                .size(),
+            )
+        )
+
+    unseen_events = [event for event in event_list if event not in observed_events]
+    if unseen_events:
+        warnings.warn(
+            f"{unseen_events} did not occur in any run, so will be reported as a "
+            f"queue of zero throughout. Check these against the values in your "
+            f"event log's '{event_col_name}' column.",
+            UserWarning,
+            stacklevel=2,
+        )
+
+    # An event with nobody queuing produces no rows to count, so counting alone
+    # leaves gaps - biasing any mean upwards by averaging only over the runs that
+    # had somebody waiting. Filling the grid makes those genuine zeros explicit.
+    full_index = pd.MultiIndex.from_product(
+        [event_list, sorted(snapshot_times)], names=[event_col_name, "snapshot_time"]
+    )
+
+    event_counts = pd.concat(
+        [
+            counts.reindex(full_index, fill_value=0)
+            .reset_index(name="count")
+            .assign(run_number=run_id)
+            for run_id, counts in results
+        ],
+        ignore_index=True,
+    )
+
+    return event_counts.rename(columns={event_col_name: "event"})[
+        ["run_number", "event", "snapshot_time", "count"]
+    ]

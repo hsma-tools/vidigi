@@ -119,10 +119,17 @@
     - At the default `match="first"`, results are identical to the old pivot everywhere it used to succeed - the only behaviour change is that logs which previously raised now return a value
     - `get_event_duration_stat`'s per-run denominator (used by `served_count_mean_per_run` and `unserved_count_mean_per_run`) is now the true number of runs in the trial rather than only those containing the event pair - see the breaking change above
     - New `TrialLogger.get_event_durations(first_event, second_event, match=...)` exposes the full per-entity duration frame directly, rather than only a single aggregated statistic
+- New `vidigi.plots` module — `go.Figure`-returning charts, each a thin wrapper over the matching `vidigi.analysis` function
+    - `plot_queue_size(event_log, event_list, limit_duration, ...)` is the first entry, extracted from `TrialLogger.plot_queue_size`. It operates on a plain event log DataFrame rather than a `TrialLogger`, so it also works on logs from `vidigi.ciw`, a CSV, or a hand-built frame
+    - Its data preparation is `vidigi.analysis.queue_size_over_time(event_log, event_list, limit_duration, ...)`, giving queue-size-over-time a "numbers only" route for tables and reports as well as a chart
+    - `**kwargs` keeps its existing meaning - forwarded straight to `plotly.express.line` - rather than being repurposed for column-name overrides, so no existing caller's styling kwargs silently start doing something else. Column names (`entity_col_name` and friends) are separate, explicitly named parameters on both functions
+- `TrialLogger.plot_queue_size` gains a `warm_up` argument, for discarding a warm-up period the same way `reshape_for_animations` already supports
+    - The default of `0` is a verified no-op - output is identical to omitting the argument
+    - Internally, `TrialLogger.plot_queue_size` is now a thin delegator to `vidigi.plots.plot_queue_size`, called on the trial's combined dataframe. The four tests asserting exact queue-length values were left untouched, and passing unchanged is the proof the extraction is behaviour-preserving
 
 ### Testing
 
-Test coverage grew from 31 to 347 tests, concentrated on the parts of the pipeline where a
+Test coverage grew from 31 to 359 tests, concentrated on the parts of the pipeline where a
 mistake changes what the animation *shows*, or what the reported numbers *say*, rather
 than raising an error.
 
@@ -140,6 +147,7 @@ than raising an error.
 - Two invariants the source had flagged as unchecked are now enforced — no entity is drawn in two positions within a single frame, and each entity keeps the same icon throughout
 - `vidigi.analysis.event_durations` is covered against hand-computed durations, including a rework-loop fixture the old `pivot`-based calculation cannot even run against, every pairing mode, the outer-join edge cases (started-but-unfinished and finished-but-unstarted), and the missing-run/missing-pathway-column fallbacks
 - `TrialLogger.get_event_duration_stat`, the new `get_event_durations`, and `vidigi.analysis.event_durations` directly are all pinned against the old `pivot`-based calculation on every applicable existing fixture — including one with a run column spelled `run` rather than `run_number`, to check `run_col_name="auto"` against the same reference — so the rebuild is proven byte-for-byte equivalent wherever the pivot used to work. A dedicated regression test covers the per-run denominator fix, proven to fail against the old formula before being restored
+- `vidigi.analysis.queue_size_over_time` and `vidigi.plots.plot_queue_size` are covered directly as free functions, not just through `TrialLogger`, including a warm-up window trim proven to fail if the argument were dropped, `run_col_name="auto"` detecting a plain `run` column, a log with no run column at all, and that plotly express kwargs still reach the chart after the extraction
 
 # 1.3.1
 

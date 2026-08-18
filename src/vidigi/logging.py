@@ -14,8 +14,6 @@ from datetime import datetime
 import plotly.express as px
 import warnings
 import inspect
-from vidigi.prep import reshape_for_animations
-import plotly.graph_objects as go
 from vidigi.process_mapping import (
     discover_dfg,
     add_sim_timestamp,
@@ -24,6 +22,7 @@ from vidigi.process_mapping import (
     dfg_to_cytoscape_streamlit,
 )
 from vidigi.analysis import event_durations, MatchMode
+from vidigi.plots import plot_queue_size as _plot_queue_size
 
 RECOGNIZED_EVENT_TYPES = {
     "arrival_departure",
@@ -1085,15 +1084,14 @@ class TrialLogger:
         interactive=True,
         show_all_runs=True,
         shared_y_axis=True,
+        warm_up: int = 0,
         **kwargs,
     ):
         """
         Plot the size of one or more queues over time across simulation runs.
 
-        This function processes logged simulation events, computes queue sizes
-        for specified event types, and visualizes the results. If multiple runs
-        are available, individual trajectories and/or their mean are shown.
-        Currently, only interactive Plotly-based plotting is supported.
+        Thin wrapper over `vidigi.plots.plot_queue_size`, called on this trial's
+        combined dataframe.
 
         Parameters
         ----------
@@ -1111,6 +1109,11 @@ class TrialLogger:
         show_all_runs : bool, default=True
             If True, plots all runs with semi-transparent lines and overlays
             the mean trajectory. If False, only the mean trajectory is plotted.
+        warm_up : int, default=0
+            Time at which the plotted window begins. Snapshots run from `warm_up`
+            to `limit_duration`. See `vidigi.prep.reshape_for_animations` for why
+            this - and not filtering the log by time - is the correct way to
+            discard a warm-up period. The default of `0` is a no-op.
         **kwargs
             Additional keyword arguments passed to `plotly.express.line`.
 
@@ -1123,8 +1126,6 @@ class TrialLogger:
         -----
         - When multiple event types are specified, they are faceted in separate
         panels if `show_all_runs=False`.
-        - The function relies on `reshape_for_animations` to transform raw
-        event logs into a time-indexed format suitable for plotting.
         - Queue lengths are **not** capped at `step_snapshot_max`, unlike the
         animation functions, so long queues are plotted at their full length
         rather than flattening off. Reshaping without that cap uses more memory
@@ -1138,7 +1139,8 @@ class TrialLogger:
 
         See Also
         --------
-        reshape_for_animations : Helper function for snapshotting simulation logs.
+        vidigi.plots.plot_queue_size : The underlying implementation.
+        vidigi.analysis.queue_size_over_time : The underlying per-run, per-snapshot counts.
 
         Examples
         --------
@@ -1150,152 +1152,18 @@ class TrialLogger:
         ... )
         <plotly.graph_objs._figure.Figure>
         """
-        results = []
-        snapshot_times = set()
-        observed_events = set()
+        if not interactive:
+            print("Static plotting not currently supported - please use 'interactive'")
+            return None
 
-        for run in self._event_logs:
-            run_df = run["run_data"].to_dataframe()
-
-            # `step_snapshot_max` caps how many entities are kept per event per
-            # snapshot so an animation stays drawable. Left at its default here it
-            # would make the plotted queue saturate at `step_snapshot_max + 1`
-            # rather than showing how long the queue actually got. A line chart has
-            # no drawing limit, so lift the cap above anything the log can hold.
-            df = reshape_for_animations(
-                run_df,
-                every_x_time_units=every_x_time_units,
-                limit_duration=limit_duration,
-                step_snapshot_max=max(len(run_df), 1),
-            )
-
-            # Snapshots where nobody was in the model are still represented in the
-            # reshaped frame, so this collects the full time grid - including the
-            # intervals whose count is zero and which would otherwise go missing.
-            snapshot_times.update(df["snapshot_time"].unique().tolist())
-            observed_events.update(df["event"].dropna().unique().tolist())
-
-            results.append(
-                (
-                    run["run_id"],
-                    df[df["event"].isin(event_list)]
-                    .groupby(["event", "snapshot_time"])
-                    .size(),
-                )
-            )
-
-        unseen_events = [event for event in event_list if event not in observed_events]
-        if unseen_events:
-            warnings.warn(
-                f"{unseen_events} did not occur in any run, so will be plotted as a "
-                f"queue of zero throughout. Check these against the values in your "
-                f"event log's 'event' column.",
-                UserWarning,
-                stacklevel=2,
-            )
-
-        # An event with nobody queuing produces no rows to count, so counting alone
-        # leaves gaps that the line chart bridges - drawing a queue that had in fact
-        # emptied - and biases the mean upwards by averaging only over the runs that
-        # had somebody waiting. Filling the grid makes those genuine zeros explicit.
-        full_index = pd.MultiIndex.from_product(
-            [event_list, sorted(snapshot_times)], names=["event", "snapshot_time"]
+        return _plot_queue_size(
+            self._trial_dataframe,
+            event_list,
+            limit_duration,
+            every_x_time_units=every_x_time_units,
+            warm_up=warm_up,
+            show_all_runs=show_all_runs,
+            shared_y_axis=shared_y_axis,
+            **kwargs,
         )
 
-        event_counts = pd.concat(
-            [
-                counts.reindex(full_index, fill_value=0)
-                .reset_index(name="count")
-                .assign(run_number=run_id)
-                for run_id, counts in results
-            ],
-            ignore_index=True,
-        )[["run_number", "event", "snapshot_time", "count"]]
-
-        mean_df = event_counts.groupby(["snapshot_time", "event"], as_index=False)[
-            "count"
-        ].mean()
-
-        if len(event_list) > 1:
-            faceting_variable = "event"
-        else:
-            faceting_variable = None
-
-        if interactive:
-            if show_all_runs:
-                fig = px.line(
-                    event_counts,
-                    x="snapshot_time",
-                    y="count",
-                    color="run_number",
-                    **kwargs,
-                    facet_row=faceting_variable,
-                )
-
-                fig.update_traces(opacity=0.2)
-                if not shared_y_axis:
-                    fig.update_yaxes(matches=None)
-
-                if faceting_variable is None:
-                    fig.add_trace(
-                        go.Scatter(
-                            x=mean_df["snapshot_time"],
-                            y=mean_df["count"],
-                            mode="lines",
-                            line=dict(color="black", width=3),
-                            name="Mean",
-                        )
-                    )
-                else:
-                    # Build mapping from event name -> subplot row index
-                    event_to_row = {}
-                    for i, ann in enumerate(fig.layout.annotations):
-                        if ann.text.startswith(
-                            "event="
-                        ):  # e.g. "event=MINORS_examination_begins"
-                            event_name = ann.text.split("=")[-1]
-                            # Use enumeration index + 1 for proper row indexing
-                            event_to_row[event_name] = i + 1
-
-                    # Add mean traces to the correct row
-                    for event_name, df_event in mean_df.groupby("event"):
-                        row_idx = event_to_row.get(event_name, 1)
-                        fig.add_trace(
-                            go.Scatter(
-                                x=df_event["snapshot_time"],
-                                y=df_event["count"],
-                                mode="lines",
-                                line=dict(color="black", width=3),
-                                name="Mean",
-                                showlegend=False,
-                            ),
-                            row=row_idx,
-                            col=1,
-                        )
-                    # Show legend for just one mean line
-                    if len(fig.data) > 0:
-                        fig.data[-1].showlegend = True
-
-                    fig.for_each_annotation(
-                        lambda a: a.update(text=a.text.split("=")[-1])
-                    )
-
-                return fig
-            else:
-                fig = px.line(
-                    mean_df,
-                    x="snapshot_time",
-                    y="count",
-                    facet_row=faceting_variable,
-                    **kwargs,
-                )
-
-                if not shared_y_axis:
-                    fig.update_yaxes(matches=None)
-
-                fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
-
-                return fig
-
-        else:
-            print("Static plotting not currently supported - please use 'interactive'")
