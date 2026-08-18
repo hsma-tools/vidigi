@@ -162,6 +162,8 @@ def test_alignment_is_irrelevant_without_a_warm_up(warm_up_log):
 
 
 def test_invalid_snapshot_alignment_raises(warm_up_log):
+    """The `SnapshotAlignment` annotation is a hint for editors and type checkers,
+    not a runtime constraint, so the explicit check still has to be there."""
     with pytest.raises(ValueError, match="Invalid snapshot_alignment"):
         reshape_for_animations(
             warm_up_log,

@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 import hashlib
 import warnings
-from typing import Optional, Union
+from typing import Literal, Optional, TypeAlias, Union
 from vidigi.utils import (
     _check_one_arrival_per_entity,
     _check_single_run,
@@ -16,6 +16,12 @@ from packaging import version
 # Sentinel so a deprecated parameter can tell "caller passed a value" apart from
 # "caller left it alone", without warning everyone who simply uses the default.
 _UNSET = object()
+
+# Where the snapshot grid counts from when a warm-up period is set. Shared with
+# animation.py so the two signatures cannot drift apart. Editors offer these as
+# completions; the value is still validated at runtime, since annotations are not
+# enforced.
+SnapshotAlignment: TypeAlias = Literal["warm_up", "run_start"]
 
 
 def _warn_on_entities_without_an_arrival(
@@ -92,7 +98,7 @@ def reshape_for_animations(
     save_intermediate_outputs: Optional[Union[bool, str]] = False,
     run_col_name: Optional[str] = "auto",
     warm_up: int = 0,
-    snapshot_alignment: str = "warm_up",
+    snapshot_alignment: SnapshotAlignment = "warm_up",
 ) -> pd.DataFrame:
     """
     Reshape event log data for animation purposes.

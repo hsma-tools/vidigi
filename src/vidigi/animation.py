@@ -4,7 +4,11 @@ import warnings
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from vidigi.prep import reshape_for_animations, generate_animation_df
+from vidigi.prep import (
+    SnapshotAlignment,
+    generate_animation_df,
+    reshape_for_animations,
+)
 from vidigi.utils import (
     _check_one_arrival_per_entity,
     _check_single_run,
@@ -1171,7 +1175,7 @@ def animate_activity_log(
     gauge_max_override: Optional[int | float] = None,
     run_col_name: Optional[str] = "auto",
     warm_up: int = 0,
-    snapshot_alignment: str = "warm_up",
+    snapshot_alignment: SnapshotAlignment = "warm_up",
 ) -> go.Figure:
     """
     Generate an animated visualization of patient flow through a system.
