@@ -3,12 +3,20 @@
 
 ### ⚠️ Breaking changes
 
+- Event logs containing more than one simulation run are now **rejected** by all four animation functions instead of being silently blended into a single animation. If you were passing an unfiltered multi-run log, you were not getting the animation you thought you were; filter to one replication first.
 - Exit steps are written to your `event_type_col_name` column instead of a hardcoded `event_type` column — output of `reshape_for_animations` changes if you pass a custom event type column name.
 - `TrialLogger.get_event_duration_stat(what="summary")` reported the *total* entity count under `unserved_count`. It now reports the number unserved, so that figure and `unserved_count_mean_per_run` will change.
 - `TrialLogger` statistics now include runs added via `add_log` after construction, which were previously omitted from every calculation.
 
 ### Notes
 
+- **BREAKING:** Multi-replication event logs are rejected rather than silently blended
+    - Passing an event log containing several runs never raised and never warned — it produced an animation representing *no* run of your model. `reshape_for_animations` pivots the arrival and departure rows to work out when each entity was present, and that pivot averages duplicates: an entity arriving at t=1 in run 1 and t=41 in run 2 was given an arrival of 21 and a departure of 71. A later `groupby(...).tail(1)` then discarded one run's rows entirely
+    - Every downstream check still passed, because the resulting frame is internally consistent and completely fictional
+    - `reshape_for_animations`, `generate_animation_df`, `generate_animation` and `animate_activity_log` now all raise a `ValueError` naming the offending column and showing how to filter
+    - Two independent checks, because neither alone suffices. A **run column** carrying more than one value is caught even when entity IDs are unique across runs; **an entity with more than one `arrival` or `depart`** is caught even when the run column is named something unexpected or is absent entirely. The second also catches entity IDs reused within a single run, which corrupts an animation in exactly the same way
+    - New `run_col_name` argument on all four functions. Defaults to `"auto"`, which looks for a column named (case-insensitively) `run`, `run_number`, `replication`, `rep` or `run_id`. Pass an explicit name to override, or `None` to disable the check
+    - Chosen over a deprecation period deliberately: warning first would mean another release cycle of users presenting wrong animations to stakeholders, and the only behaviour being removed is "silently produce a wrong answer". The constraint was previously documented only in a tutorial page and in a source comment sitting above code that did not enforce it
 - **BREAKING:** `reshape_for_animations` now writes the exit step's event type to the column named by `event_type_col_name`
     - Previously it always assigned to a literal `"event_type"` column. A log using a custom event type column therefore came out with *two* type columns: the caller's, left empty on every exit row, and a spurious `event_type` containing nothing but `"exit"`
     - `generate_animation_df` filters on the caller's column, so exit steps were not being recognised as exits
@@ -68,7 +76,7 @@
 
 ### Testing
 
-Test coverage grew from 31 to 216 tests, concentrated on the parts of the pipeline where a
+Test coverage grew from 31 to 244 tests, concentrated on the parts of the pipeline where a
 mistake changes what the animation *shows*, or what the reported numbers *say*, rather
 than raising an error.
 
@@ -77,6 +85,7 @@ than raising an error.
 - `animation.py` gained its first dedicated coverage: frame count and ordering, animation timings, hover configuration, resource markers, every time display format, background image embedding, and the error paths
 - `EventLogger` gained its first dedicated coverage: the event shape each helper produces, time taken from both simpy-style and salabim-style environments, event validation and its warnings, timestamp parsing, retrieval, and export
 - `TrialLogger` gained its first dedicated coverage: construction, that statistics stay current as runs are added, and every duration statistic checked against hand-computed values including the served/unserved accounting
+- The single-replication guard is covered across all four animation entry points, including column-name detection, both independent checks, and — most importantly — that a valid single-run log carrying a run column is still accepted
 - `cancel_get` is now covered for both store types, including an end-to-end reneging scenario asserting who is served and when
 - Two invariants the source had flagged as unchecked are now enforced — no entity is drawn in two positions within a single frame, and each entity keeps the same icon throughout
 

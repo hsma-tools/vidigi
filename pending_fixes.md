@@ -107,36 +107,85 @@ rank 1 at 390). Both encode current behaviour; update whichever changes.
 
 ---
 
-## 4. `rank` is computed twice, and the two computations agree (no action needed yet)
+## 4. `reshape_for_animations`' own `rank` is wrong for a log that is not in time order
+
+> **Corrected 2026-08-18.** An earlier version of this entry claimed the two rank
+> computations agree and recommended deleting the one in `generate_animation_df`. That was
+> wrong, and acting on it would have introduced a real defect. The probe used to "verify"
+> it had row order and time order identical, so the two could not diverge. Recorded here
+> rather than quietly rewritten, because the original claim was confidently stated.
 
 **Where:** `reshape_for_animations` computes `rank` per event per snapshot; then
 `generate_animation_df` immediately overwrites it with its own `groupby([event,
 snapshot_time]).rank(method="first")`. The source carries a comment dated 29/09/2025
-noting the duplication and suggesting removal, but flagging that the two methods differ
-"very slightly".
+suggesting the duplication could be removed.
 
-**Verified:** the two agree, including in the case most likely to break them — entity IDs
-that are *not* in arrival order. With entities 10, 2 and 7 joining a queue in that order,
-both computations rank them 10, 2, 7 (arrival order) rather than 2, 7, 10 (id order).
+**The two do not agree.** `reshape_for_animations` ranks on `index` — the row's *position in
+the event log file*. `generate_animation_df` ranks over the row order of the frame it
+receives, which reshape has already sorted by `[time, index]`, so it reflects *join time*.
+They coincide only when the log's row order happens to match its time order.
 
-The reason is that `reshape_for_animations` sorts by `[time, index]` before
-`groupby(entity).tail(1)`, and `tail` returns rows in their original frame order rather
-than group order. That ordering then survives the final `sort_values(["snapshot_time",
-event])` because pandas sorts are stable. So the row order the second computation ranks
-over is already arrival order.
+Reproduced with a log whose rows are grouped by entity rather than sorted by time — entity
+2 listed first but joining at t=5, entity 10 listed second joining at t=1:
 
-**Recorded because:** this is a latent fragility rather than a live defect. The second
-computation's correctness depends entirely on an incidental property of the first — the
-stability of an unrelated sort. Any future change to how `reshape_for_animations` orders
-its output would silently reorder every queue in every animation, with no test in
-`reshape_for_animations` itself able to catch it.
+```
+true join order by time : [10, 7, 2]
+reshape rank order      : [2, 10, 7]   <- log row position, wrong
+generate_animation_df   : [10, 7, 2]   <- join time, correct
+```
 
-**Suggested action:** delete the recomputation in `generate_animation_df` and rely on the
-rank `reshape_for_animations` already produces, which is derived explicitly from arrival
-order rather than from row order. Low risk given the two are verified equal, but it is a
-behaviour-preserving change that should still be made deliberately rather than in passing.
+**Consequence:** the recomputation in `generate_animation_df` is *masking* a defect in
+`reshape_for_animations`, not duplicating it. Deleting it — as this entry previously
+recommended — would push wrong queue order into every animation built from a log that is
+not already time-sorted. Event logs assembled per-entity, or concatenated from per-entity
+collectors, are a realistic way to hit this.
 
-**Covered by:** `tests/test_prep_reshape_semantics.py::test_rank_follows_order_of_joining_the_queue`
-and `::test_queue_closes_up_when_an_entity_leaves` assert the rank from
-`reshape_for_animations`. Neither currently uses out-of-order entity IDs — add such a case
-alongside any change here.
+**Suggested fix:** correct the rank in `reshape_for_animations` to derive from join time
+rather than file position, then the recomputation becomes genuinely redundant and can be
+removed. Both halves should change together, with a test using a log whose row order
+differs from its time order.
+
+**Test coverage is currently insufficient.**
+`tests/test_prep_positioning.py::test_queue_order_follows_join_time_not_entity_id` pins the
+end-to-end property, but its fixture lists entities in join order, so it cannot see this
+divergence. `tests/test_prep_reshape_semantics.py::test_rank_follows_order_of_joining_the_queue`
+asserts reshape's rank *is* join order, which is only true for time-ordered logs — the test
+name promises more than the assertion delivers. Both need a non-time-ordered case.
+
+---
+
+## 5. An empty snapshot window fails with an opaque `KeyError: 'entity_id'`
+
+**Where:** `reshape_for_animations` in [src/vidigi/prep.py](src/vidigi/prep.py) — the final
+`sort_values([entity_col_name, "snapshot_time"])`.
+
+**Observed:** when no entity falls inside the requested window, every per-snapshot frame is
+the placeholder row carrying only `snapshot_time`. The concatenated frame therefore has no
+`entity_id` column, and the sort at the end fails:
+
+```python
+log = pd.DataFrame({
+    "time": [100, 100, 145], "entity_id": [1, 1, 1],
+    "event_type": ["arrival_departure", "queue", "arrival_departure"],
+    "event": ["arrival", "waiting", "depart"]})
+reshape_for_animations(log, every_x_time_units=10, limit_duration=50)
+# KeyError: 'entity_id'
+```
+
+**Why it matters:** this is the same failure the v1.4.0 no-departures fix addressed, reached
+by a different route, so the fix there did not cover it. The usual causes are benign and
+easy to hit by accident — a `limit_duration` shorter than the model's warm-up, or filtering
+to a replication whose events all fall outside the window. The error names an internal
+column and gives no hint that the real problem is an empty time window.
+
+**Why it is not urgent:** it is a crash, not silent corruption, so nobody ships a wrong
+animation because of it. That is the only reason it sits here rather than being fixed.
+
+**Suggested fix:** detect the empty result before the sort and raise a `ValueError` naming
+`limit_duration`, the window requested, and the time range actually present in the log —
+e.g. "no entities are present between t=0 and t=50; the log spans t=100 to t=145". An empty
+animation is arguably also defensible, but an explicit error is more useful, since an empty
+animation is almost never what the caller wanted.
+
+**Not currently covered by any test.** Found while writing the multi-replication guard
+tests, where a fixture shifted a second run's times beyond the requested window.
