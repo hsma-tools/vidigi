@@ -36,6 +36,28 @@ DFGType: TypeAlias = Literal[
     "graphviz-object", "graphviz-image", "cytoscape-jupyter", "cytoscape-streamlit"
 ]
 
+# Statistics that can be computed over the durations between a pair of events.
+# The first group are pandas Series methods applied to the durations; the second are
+# computed by vidigi, and count entities rather than summarise times. Editors offer
+# these as completions, but the value is still validated at runtime, since
+# annotations are not enforced.
+DurationStat: TypeAlias = Literal[
+    "mean",
+    "median",
+    "max",
+    "min",
+    "quantile",
+    "std",
+    "var",
+    "sum",
+    "count",
+    "unserved_count",
+    "served_count",
+    "unserved_rate",
+    "served_rate",
+    "summary",
+]
+
 
 class BaseEvent(BaseModel):
     _warned_unrecognized_event_types: ClassVar[Set[str]] = set()
@@ -769,7 +791,7 @@ class TrialLogger:
         self,
         first_event,
         second_event,
-        what="mean",
+        what: DurationStat = "mean",
         exclude_incomplete=True,
         dp=2,
         label=None,
@@ -918,7 +940,7 @@ class TrialLogger:
     def plot_metric_bar(
         self,
         event_pair_list: list[dict],
-        what: str = "mean",
+        what: DurationStat = "mean",
         exclude_incomplete: bool = True,
         interactive=True,
         **kwargs,

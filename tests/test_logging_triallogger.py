@@ -6,13 +6,14 @@ below is hand-computable from the fixtures in conftest.py: each entity arrives,
 waits one time unit, and departs five time units after arriving.
 """
 
+import typing
 import warnings
 
 import pandas as pd
 import plotly.graph_objects as go
 import pytest
 
-from vidigi.logging import EventLogger, TrialLogger
+from vidigi.logging import DurationStat, EventLogger, TrialLogger
 
 
 # --------------------------------------------------------------------------- #
@@ -347,6 +348,21 @@ def test_plot_metric_bar_uses_one_bar_per_pair(two_run_loggers):
     )
 
     assert list(fig.data[0].x) == ["A", "B"]
+
+
+@pytest.mark.parametrize("what", typing.get_args(DurationStat))
+def test_every_duration_stat_literal_is_accepted(what, two_run_loggers):
+    """The annotation must not advertise a statistic the runtime check rejects.
+
+    `get_event_duration_stat` validates `what` against a set built in the method
+    body, so the Literal is a second copy of that list and could drift from it.
+    """
+    trial = TrialLogger(two_run_loggers)
+    extra = {"q": 0.9} if what == "quantile" else {}
+
+    result = trial.get_event_duration_stat("arrival", "depart", what=what, **extra)
+
+    assert result is not None
 
 
 def test_plot_queue_size_returns_a_figure(two_run_loggers):

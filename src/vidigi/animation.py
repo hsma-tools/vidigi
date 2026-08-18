@@ -15,10 +15,44 @@ from vidigi.utils import (
     _enforce_int_params,
 )
 import numpy as np
-from typing import Optional
+from typing import Literal, Optional, TypeAlias
 import base64
 import mimetypes
 from pathlib import Path
+
+
+# Which plotly API draws the animation. Several spellings of each are accepted, and
+# matching is case-insensitive; the canonical forms are listed first. Editors offer
+# these as completions, but the values are still validated at runtime, since
+# annotations are not enforced.
+AnimationBackend: TypeAlias = Literal[
+    "express",
+    "px",
+    "plotly express",
+    "go",
+    "graph objects",
+    "plotly graph objects",
+    "plotly go",
+]
+
+# The real-world duration of one simulation time unit, used to turn snapshot times
+# into datetimes. Each is also accepted in the singular.
+SimulationTimeUnit: TypeAlias = Literal[
+    "seconds",
+    "second",
+    "minutes",
+    "minute",
+    "hours",
+    "hour",
+    "days",
+    "day",
+    "weeks",
+    "week",
+    "months",
+    "month",
+    "years",
+    "year",
+]
 
 
 def process_background_image_path(source):
@@ -69,7 +103,7 @@ def generate_animation(
     event_col_name: str = "event",
     event_type_col_name: str = "event_type",
     resource_col_name: str = "resource_id",
-    simulation_time_unit: str = "minutes",
+    simulation_time_unit: SimulationTimeUnit = "minutes",
     plotly_height: int = 900,
     plotly_width: Optional[int] = None,
     include_play_button: bool = True,
@@ -97,7 +131,7 @@ def generate_animation(
     background_image_opacity: float = 0.5,
     overflow_text_color: str = "black",
     stage_label_text_colour: str = "black",
-    backend: str = "express",
+    backend: AnimationBackend = "express",
     run_col_name: Optional[str] = "auto",
 ) -> go.Figure:
     """
@@ -707,7 +741,9 @@ def generate_animation(
                     trace.hovertemplate = hover_text
 
     # EXPERIMENTAL
-    elif backend in [
+    # Lowercased to match the express branch above, which has always accepted
+    # 'Express'. Without it, 'GO' was rejected while 'EXPRESS' was accepted.
+    elif str.lower(backend) in [
         "go",
         "graph objects",
         "plotly graph objects",
@@ -896,7 +932,8 @@ def generate_animation(
         raise ValueError(
             f"Invalid backend passed: '{backend}'. Options are: 'express'|'px'|"
             f"'plotly express' for the original vidigi backend, or 'go'|"
-            f"'graph objects' for the advanced backend."
+            f"'graph objects'|'plotly graph objects'|'plotly go' for the advanced "
+            f"backend. Matching is case-insensitive."
         )
 
     # Update the size of the icons and labels
@@ -1133,7 +1170,7 @@ def animate_activity_log(
     event_col_name: str = "event",
     pathway_col_name: Optional[str] = None,
     resource_col_name: str = "resource_id",
-    simulation_time_unit: str = "minutes",
+    simulation_time_unit: SimulationTimeUnit = "minutes",
     every_x_time_units: int = 10,
     wrap_queues_at: Optional[int] = 20,
     wrap_resources_at: Optional[int] = 20,
@@ -1169,7 +1206,7 @@ def animate_activity_log(
     background_image_opacity: float = 0.5,
     overflow_text_color: str = "black",
     stage_label_text_colour: str = "black",
-    backend: str = "express",
+    backend: AnimationBackend = "express",
     step_snapshot_limit_gauges: bool = False,
     gauge_segments: int = 10,
     gauge_max_override: Optional[int | float] = None,

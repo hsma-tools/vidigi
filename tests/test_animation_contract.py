@@ -11,12 +11,15 @@ figure.
 """
 
 import datetime as dt
+import typing
 
 import pandas as pd
 import plotly.graph_objects as go
 import pytest
 
 from vidigi.animation import (
+    AnimationBackend,
+    SimulationTimeUnit,
     add_repeating_overlay,
     animate_activity_log,
     generate_animation,
@@ -369,6 +372,57 @@ def test_raw_simulation_time_used_when_no_display_units(
 # --------------------------------------------------------------------------- #
 # Error paths
 # --------------------------------------------------------------------------- #
+
+
+@pytest.mark.parametrize("backend", typing.get_args(AnimationBackend))
+def test_every_backend_literal_is_a_recognised_option(
+    backend, positioned, basic_event_position_df
+):
+    """The annotation must not advertise a spelling the runtime check rejects.
+
+    Deliberately does not assert that a figure comes back. The 'go' spellings
+    reach the graph-objects branch and fail there for a separate, pre-existing
+    reason - a numpy int64 handed to plotly as a trace name - which is out of
+    scope here. What is pinned is the claim the annotation actually makes: that
+    every advertised spelling is accepted *as a backend*.
+    """
+    try:
+        generate_animation(positioned, basic_event_position_df, backend=backend)
+    except ValueError as exc:
+        assert "Invalid backend passed" not in str(exc)
+
+
+@pytest.mark.parametrize("backend", ["EXPRESS", "Plotly Express", "GO", "Plotly Go"])
+def test_backend_matching_is_case_insensitive(
+    backend, positioned, basic_event_position_df
+):
+    """Both branches must treat case the same way.
+
+    The express branch lowercased its input and the graph-objects branch did
+    not, so 'EXPRESS' was accepted while 'GO' was rejected as an invalid
+    backend - a difference with no reason behind it.
+    """
+    try:
+        generate_animation(positioned, basic_event_position_df, backend=backend)
+    except ValueError as exc:
+        assert "Invalid backend passed" not in str(exc)
+
+
+@pytest.mark.parametrize("unit", typing.get_args(SimulationTimeUnit))
+def test_every_simulation_time_unit_literal_is_accepted(
+    unit, positioned, basic_event_position_df
+):
+    fig = generate_animation(
+        positioned,
+        basic_event_position_df,
+        simulation_time_unit=unit,
+        start_date="2025-01-01",
+        # Fine enough that even second-scale units get a distinct label per
+        # snapshot, so this does not trip the coarse-display warning.
+        time_display_units="dhms",
+    )
+
+    assert isinstance(fig, go.Figure)
 
 
 def test_invalid_backend_raises_valueerror(positioned, basic_event_position_df):
