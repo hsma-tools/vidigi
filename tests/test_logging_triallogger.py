@@ -6,6 +6,8 @@ below is hand-computable from the fixtures in conftest.py: each entity arrives,
 waits one time unit, and departs five time units after arriving.
 """
 
+import warnings
+
 import pandas as pd
 import plotly.graph_objects as go
 import pytest
@@ -363,3 +365,115 @@ def test_plot_queue_size_mean_only(two_run_loggers):
     )
 
     assert isinstance(fig, go.Figure)
+
+
+# --------------------------------------------------------------------------- #
+# plot_queue_size: the plotted number must be the queue length
+#
+# These assert values rather than figure types. The two tests above would pass
+# against a blank chart, and did pass while the queue length was saturating.
+# --------------------------------------------------------------------------- #
+
+
+def test_plot_queue_size_reports_queues_longer_than_step_snapshot_max(
+    long_queue_logger,
+):
+    """A 150-long queue must plot as 150, not flatten off at the display cap.
+
+    `step_snapshot_max` caps how many entity icons an animation draws. Inherited
+    here it capped the *count*, so every long queue plotted a flat 61 - a
+    bottleneck reads as a stable queue, with no visual cue that anything had
+    been discarded.
+    """
+    trial = TrialLogger([long_queue_logger])
+
+    fig = trial.plot_queue_size(
+        event_list=["waiting"], limit_duration=30, every_x_time_units=10
+    )
+
+    run_trace = fig.data[0]
+    assert list(run_trace.x) == [0, 10, 20, 30]
+    assert list(run_trace.y) == [150, 150, 150, 150]
+
+
+def test_plot_queue_size_plots_an_empty_queue_as_zero(emptying_queue_loggers):
+    """A snapshot with nobody queuing must be plotted, not omitted.
+
+    An event with no rows contributed no point at all, so the line was drawn
+    straight across the gap - asserting a queue over exactly the period it had
+    emptied. See the fixture for the full expected series.
+    """
+    trial = TrialLogger(emptying_queue_loggers)
+
+    fig = trial.plot_queue_size(
+        event_list=["waiting"], limit_duration=30, every_x_time_units=10
+    )
+
+    by_run = {trace.name: list(trace.y) for trace in fig.data}
+    assert by_run["1"] == [1, 1, 0, 0]
+    assert by_run["2"] == [0, 0, 1, 1]
+    assert all(list(trace.x) == [0, 10, 20, 30] for trace in fig.data)
+
+
+def test_plot_queue_size_mean_includes_runs_with_an_empty_queue(
+    emptying_queue_loggers,
+):
+    """The mean must be over every run, including those with nobody queuing.
+
+    Averaging only the runs that happened to have a row biases the mean upwards
+    exactly when the queue is shortest. Here one run holds 1 and the other 0 at
+    every snapshot, so the mean is 0.5 throughout; it previously read 1.0.
+    """
+    trial = TrialLogger(emptying_queue_loggers)
+
+    fig = trial.plot_queue_size(
+        event_list=["waiting"],
+        limit_duration=30,
+        every_x_time_units=10,
+        show_all_runs=False,
+    )
+
+    assert list(fig.data[0].y) == [0.5, 0.5, 0.5, 0.5]
+
+
+def test_plot_queue_size_warns_when_an_event_never_occurs(emptying_queue_loggers):
+    """Zero-filling means a misspelt event name would silently plot a flat zero."""
+    trial = TrialLogger(emptying_queue_loggers)
+
+    with pytest.warns(UserWarning, match="did not occur in any run"):
+        fig = trial.plot_queue_size(
+            event_list=["waitng"], limit_duration=30, every_x_time_units=10
+        )
+
+    assert list(fig.data[0].y) == [0, 0, 0, 0]
+
+
+def test_plot_queue_size_does_not_warn_when_an_event_occurs_in_only_some_runs():
+    """A queue that forms in one run but not another is ordinary, not suspicious.
+
+    The warning has to key off the runs collectively. Keyed off each run
+    individually it would fire on entirely valid input, and a warning that cries
+    wolf gets filtered out along with the real one.
+    """
+    queues = EventLogger(run_number=1)
+    queues.log_arrival(entity_id=1, time=0.0)
+    queues.log_queue(entity_id=1, event="waiting", time=0.0)
+    queues.log_departure(entity_id=1, time=30.0)
+
+    never_queues = EventLogger(run_number=2)
+    never_queues.log_arrival(entity_id=1, time=0.0)
+    never_queues.log_departure(entity_id=1, time=30.0)
+
+    trial = TrialLogger([queues, never_queues])
+
+    with warnings.catch_warnings(record=True) as raised:
+        warnings.simplefilter("always")
+        fig = trial.plot_queue_size(
+            event_list=["waiting"], limit_duration=20, every_x_time_units=10
+        )
+
+    assert not [w for w in raised if "did not occur" in str(w.message)]
+
+    by_run = {trace.name: list(trace.y) for trace in fig.data}
+    assert by_run["1"] == [1, 1, 1]
+    assert by_run["2"] == [0, 0, 0]

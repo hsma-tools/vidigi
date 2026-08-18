@@ -7,6 +7,7 @@
 - Exit steps are written to your `event_type_col_name` column instead of a hardcoded `event_type` column — output of `reshape_for_animations` changes if you pass a custom event type column name.
 - `TrialLogger.get_event_duration_stat(what="summary")` reported the *total* entity count under `unserved_count`. It now reports the number unserved, so that figure and `unserved_count_mean_per_run` will change.
 - `TrialLogger` statistics now include runs added via `add_log` after construction, which were previously omitted from every calculation.
+- `TrialLogger.plot_queue_size` plotted queue lengths that were wrong in three ways: capped at 61, missing every snapshot where a queue was empty, and a mean taken over only the runs that had somebody waiting. Any queue length chart you have previously reported will change.
 
 ### Notes
 
@@ -53,6 +54,13 @@
 - **BREAKING:** `get_event_duration_stat(what="summary")` reports the number of unserved entities under `unserved_count`
     - It returned `series.size`, the total number of entities, so a trial where everyone was served still reported every entity as unserved. `unserved_count_mean_per_run` carried the same error
     - The standalone `what="unserved_count"` path was already correct, so the two routes to the same statistic disagreed
+- **BREAKING:** `TrialLogger.plot_queue_size` reports the queue length that actually formed
+    - Three separate errors, each of which made a queue look better than it was, and none of which produced any visual cue that something had been discarded
+    - **Long queues saturated.** The chart was built by reshaping the log with the default `step_snapshot_max=60`, which caps how many entity icons an *animation* draws. With the cap applied to a line chart, a queue of 150 plotted as a flat 61 — a growing bottleneck reading as a stable queue. The cap is no longer applied here, since a line has no drawing limit
+    - **Empty queues went missing.** A snapshot with nobody queuing produced no row to count, so no point was plotted and the line was drawn straight across the gap — asserting a queue over precisely the interval it had emptied. Genuine zeros are now plotted
+    - **The mean was biased upwards.** It averaged only the runs that had somebody waiting at that moment, so two runs holding 1 and 0 gave a mean of 1.0 rather than 0.5. Every run now contributes at every snapshot
+    - An event named in `event_list` that occurs in no run is plotted as zero throughout and now warns, since zero-filling would otherwise make a misspelt event name indistinguishable from a queue that never formed
+    - Reshaping without the cap uses more memory than an equivalent animation
 - `TrialLogger()` can be constructed with no arguments
     - This raised `ValueError: No objects to concatenate`, which ruled out creating an empty trial and filling it with `add_log`
 - `TrialLogger.get_log_by_run(run, as_df=True)` returns a DataFrame
@@ -76,7 +84,7 @@
 
 ### Testing
 
-Test coverage grew from 31 to 244 tests, concentrated on the parts of the pipeline where a
+Test coverage grew from 31 to 249 tests, concentrated on the parts of the pipeline where a
 mistake changes what the animation *shows*, or what the reported numbers *say*, rather
 than raising an error.
 
@@ -86,6 +94,7 @@ than raising an error.
 - `EventLogger` gained its first dedicated coverage: the event shape each helper produces, time taken from both simpy-style and salabim-style environments, event validation and its warnings, timestamp parsing, retrieval, and export
 - `TrialLogger` gained its first dedicated coverage: construction, that statistics stay current as runs are added, and every duration statistic checked against hand-computed values including the served/unserved accounting
 - The single-replication guard is covered across all four animation entry points, including column-name detection, both independent checks, and — most importantly — that a valid single-run log carrying a run column is still accepted
+- `plot_queue_size` is now asserted against hand-computed queue lengths rather than only checking that a figure came back — the previous tests would have passed against a blank chart, and did pass while every long queue was saturating
 - `cancel_get` is now covered for both store types, including an end-to-end reneging scenario asserting who is served and when
 - Two invariants the source had flagged as unchecked are now enforced — no entity is drawn in two positions within a single frame, and each entity keeps the same icon throughout
 

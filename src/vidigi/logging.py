@@ -1043,6 +1043,14 @@ class TrialLogger:
         panels if `show_all_runs=False`.
         - The function relies on `reshape_for_animations` to transform raw
         event logs into a time-indexed format suitable for plotting.
+        - Queue lengths are **not** capped at `step_snapshot_max`, unlike the
+        animation functions, so long queues are plotted at their full length
+        rather than flattening off. Reshaping without that cap uses more memory
+        than an equivalent animation would.
+        - Snapshots at which an event has nobody queuing are plotted as zero
+        rather than omitted, so a queue that empties is drawn dropping to the
+        axis and the mean is taken across every run. An event in `event_list`
+        that occurs in no run is plotted as zero throughout, with a warning.
         - If `interactive=False`, no plot is returned and a message is printed
         instead.
 
@@ -1061,17 +1069,66 @@ class TrialLogger:
         <plotly.graph_objs._figure.Figure>
         """
         results = []
+        snapshot_times = set()
+        observed_events = set()
 
         for run in self._event_logs:
+            run_df = run["run_data"].to_dataframe()
+
+            # `step_snapshot_max` caps how many entities are kept per event per
+            # snapshot so an animation stays drawable. Left at its default here it
+            # would make the plotted queue saturate at `step_snapshot_max + 1`
+            # rather than showing how long the queue actually got. A line chart has
+            # no drawing limit, so lift the cap above anything the log can hold.
             df = reshape_for_animations(
-                run["run_data"].to_dataframe(),
+                run_df,
                 every_x_time_units=every_x_time_units,
                 limit_duration=limit_duration,
+                step_snapshot_max=max(len(run_df), 1),
             )
-            df = df[df["event"].isin(event_list)]
-            results.append(df.groupby(["run_number", "event", "snapshot_time"]).size())
 
-        event_counts = pd.concat(results).reset_index(name="count")
+            # Snapshots where nobody was in the model are still represented in the
+            # reshaped frame, so this collects the full time grid - including the
+            # intervals whose count is zero and which would otherwise go missing.
+            snapshot_times.update(df["snapshot_time"].unique().tolist())
+            observed_events.update(df["event"].dropna().unique().tolist())
+
+            results.append(
+                (
+                    run["run_id"],
+                    df[df["event"].isin(event_list)]
+                    .groupby(["event", "snapshot_time"])
+                    .size(),
+                )
+            )
+
+        unseen_events = [event for event in event_list if event not in observed_events]
+        if unseen_events:
+            warnings.warn(
+                f"{unseen_events} did not occur in any run, so will be plotted as a "
+                f"queue of zero throughout. Check these against the values in your "
+                f"event log's 'event' column.",
+                UserWarning,
+                stacklevel=2,
+            )
+
+        # An event with nobody queuing produces no rows to count, so counting alone
+        # leaves gaps that the line chart bridges - drawing a queue that had in fact
+        # emptied - and biases the mean upwards by averaging only over the runs that
+        # had somebody waiting. Filling the grid makes those genuine zeros explicit.
+        full_index = pd.MultiIndex.from_product(
+            [event_list, sorted(snapshot_times)], names=["event", "snapshot_time"]
+        )
+
+        event_counts = pd.concat(
+            [
+                counts.reindex(full_index, fill_value=0)
+                .reset_index(name="count")
+                .assign(run_number=run_id)
+                for run_id, counts in results
+            ],
+            ignore_index=True,
+        )[["run_number", "event", "snapshot_time", "count"]]
 
         mean_df = event_counts.groupby(["snapshot_time", "event"], as_index=False)[
             "count"

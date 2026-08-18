@@ -194,3 +194,50 @@ def two_run_loggers():
 def logger_with_unserved_entity():
     """One run where 2 of 3 entities depart, so unserved_rate is exactly 1/3."""
     return _build_logger(run_number=1, unserved_entity=True)
+
+
+@pytest.fixture
+def long_queue_logger():
+    """One run where 150 entities queue simultaneously and none depart early.
+
+    Deliberately far above the default ``step_snapshot_max`` of 60, so a queue
+    length plot that inherits the animation's display cap saturates instead of
+    reporting the queue that actually formed.
+    """
+    logger = EventLogger(run_number=1)
+    for entity_id in range(1, 151):
+        logger.log_arrival(entity_id=entity_id, time=0.0)
+        logger.log_queue(entity_id=entity_id, event="waiting", time=0.0)
+        logger.log_departure(entity_id=entity_id, time=100.0)
+    return logger
+
+
+@pytest.fixture
+def emptying_queue_loggers():
+    """Two runs whose single queue is occupied for opposite halves of the run.
+
+    With ``limit_duration=30`` and ``every_x_time_units=10`` the snapshots are
+    0, 10, 20, 30 and the queue length is fully determined:
+
+    ==============  =======  =======  ======
+    snapshot_time   run 1    run 2    mean
+    ==============  =======  =======  ======
+    0               1        0        0.5
+    10              1        0        0.5
+    20              0        1        0.5
+    30              0        1        0.5
+    ==============  =======  =======  ======
+
+    Every zero here is a real, empty queue rather than an absence of data.
+    """
+    first = EventLogger(run_number=1)
+    first.log_arrival(entity_id=1, time=0.0)
+    first.log_queue(entity_id=1, event="waiting", time=0.0)
+    first.log_departure(entity_id=1, time=15.0)
+
+    second = EventLogger(run_number=2)
+    second.log_arrival(entity_id=1, time=20.0)
+    second.log_queue(entity_id=1, event="waiting", time=20.0)
+    second.log_departure(entity_id=1, time=35.0)
+
+    return [first, second]
