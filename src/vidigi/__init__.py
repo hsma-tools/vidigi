@@ -1,1 +1,10 @@
-from . import animation, ciw, prep, utils, logging, resources, process_mapping
+from . import (
+    analysis,
+    animation,
+    ciw,
+    prep,
+    utils,
+    logging,
+    resources,
+    process_mapping,
+)

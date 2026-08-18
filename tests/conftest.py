@@ -243,6 +243,40 @@ def long_queue_logger():
 
 
 @pytest.fixture
+def rework_loop_logger():
+    """One entity that revisits 'assessment' before its final 'treated'.
+
+    Entity 1 hits 'assessment' at t=1 and t=20, then 'treated' at t=5 and t=30 - a
+    rework loop the old pivot-based duration calculation cannot represent (it raises,
+    since `pivot` cannot place two 'assessment' times in one cell).
+
+    ``event_durations(..., "assessment", "treated", match=...)`` gives:
+
+    ==============  ===========
+    match           duration
+    ==============  ===========
+    "first"         [4]   (5 - 1)
+    "last"          [10]  (30 - 20)
+    "occurrence"    [4, 10]
+    ==============  ===========
+    """
+    logger = EventLogger(run_number=1)
+    logger.log_custom_event(
+        entity_id=1, event_type="milestone", event="assessment", time=1.0
+    )
+    logger.log_custom_event(
+        entity_id=1, event_type="milestone", event="treated", time=5.0
+    )
+    logger.log_custom_event(
+        entity_id=1, event_type="milestone", event="assessment", time=20.0
+    )
+    logger.log_custom_event(
+        entity_id=1, event_type="milestone", event="treated", time=30.0
+    )
+    return logger
+
+
+@pytest.fixture
 def emptying_queue_loggers():
     """Two runs whose single queue is occupied for opposite halves of the run.
 
