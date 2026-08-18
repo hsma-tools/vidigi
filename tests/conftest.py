@@ -132,6 +132,36 @@ def single_run_log_with_run_column(simple_queue_log):
 
 
 @pytest.fixture
+def warm_up_log():
+    """A run with a 100-time-unit warm-up worth of history before the window.
+
+    Five entities join the queue during the warm-up and are *still queuing* well
+    past it; two more join at t=110; one arrives and departs entirely within the
+    warm-up. Nobody departs until t=300.
+
+    With ``every_x_time_units=10`` and ``limit_duration=200`` the queue at
+    snapshot 120 holds entities 1-7. Truncating this log with
+    ``log[log["time"] >= 100]`` leaves only 6 and 7 there, because the arrival
+    rows of 1-5 have been removed - the trap ``warm_up`` exists to avoid.
+    """
+    specs = []
+    for entity_id in range(1, 6):
+        specs.append((10 * entity_id, entity_id, "arrival_departure", "arrival"))
+        specs.append((10 * entity_id, entity_id, "queue", "waiting"))
+        specs.append((300, entity_id, "arrival_departure", "depart"))
+    for entity_id in (6, 7):
+        specs.append((110, entity_id, "arrival_departure", "arrival"))
+        specs.append((110, entity_id, "queue", "waiting"))
+        specs.append((300, entity_id, "arrival_departure", "depart"))
+    # Arrives and leaves entirely within the warm-up, so must not appear at all
+    # once the window starts at 100.
+    specs.append((10, 8, "arrival_departure", "arrival"))
+    specs.append((10, 8, "queue", "waiting"))
+    specs.append((50, 8, "arrival_departure", "depart"))
+    return _rows(*specs)
+
+
+@pytest.fixture
 def basic_event_position_df():
     """Positions for the events used by the log fixtures.
 

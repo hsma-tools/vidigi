@@ -1170,6 +1170,8 @@ def animate_activity_log(
     gauge_segments: int = 10,
     gauge_max_override: Optional[int | float] = None,
     run_col_name: Optional[str] = "auto",
+    warm_up: int = 0,
+    snapshot_alignment: str = "warm_up",
 ) -> go.Figure:
     """
     Generate an animated visualization of patient flow through a system.
@@ -1224,8 +1226,9 @@ def animate_activity_log(
         Maximum number of patients to show in each snapshot per event (default
         is 60).
     limit_duration : int, optional
-        Maximum duration to animate in minutes (default is None, which
-        auto-adjusts to the maximum time in the provided event log).
+        The time at which the animation stops (default is None, which
+        auto-adjusts to the maximum time in the provided event log). Together
+        with `warm_up` this bounds the animation window.
     plotly_height : int, optional
         Height of the Plotly figure in pixels (default is 900).
     plotly_width : int, optional
@@ -1356,6 +1359,32 @@ def animate_activity_log(
         (case-insensitively) one of 'run', 'run_number', 'replication', 'rep' or
         'run_id'. Pass an explicit column name to override the search, or `None`
         to disable the check.
+    warm_up : int, optional
+        The time at which the animation starts, in simulation time units
+        (default is 0, the beginning of the run). Not to be confused with
+        `start_time` above, which is a time of day used only for labelling
+        frames as clock times.
+
+        This is how to discard a warm-up period. Pass the **whole** event log
+        and set `warm_up` to the end of your warm-up; do not filter the log by
+        time first. Filtering removes the 'arrival' rows of every entity that
+        arrived during the warm-up, and since presence is worked out from
+        arrival and departure rows, those entities then vanish from every frame
+        - including ones still queuing, which is exactly what a steady-state
+        animation is meant to show. `warm_up` trims the window while leaving
+        that history intact.
+    snapshot_alignment : {"warm_up", "run_start"}, optional
+        Which point the snapshot grid counts from when `warm_up` is non-zero.
+        Ignored when `warm_up` is 0.
+
+        - "warm_up" (default): the first frame lands exactly on the boundary,
+          showing the state of the system as the warm-up ends.
+        - "run_start": frame times stay on the grid running from time 0 and the
+          early ones are dropped, so they remain the same times you would get
+          with no warm-up at all.
+
+        The two are identical whenever `warm_up` is a multiple of
+        `every_x_time_units`.
 
     Returns
     -------
@@ -1411,6 +1440,8 @@ def animate_activity_log(
         event_col_name=event_col_name,
         pathway_col_name=pathway_col_name,
         run_col_name=run_col_name,
+        warm_up=warm_up,
+        snapshot_alignment=snapshot_alignment,
     )
 
     if debug_write_intermediate_objects:

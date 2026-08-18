@@ -22,6 +22,22 @@
     - Previously it always assigned to a literal `"event_type"` column. A log using a custom event type column therefore came out with *two* type columns: the caller's, left empty on every exit row, and a spurious `event_type` containing nothing but `"exit"`
     - `generate_animation_df` filters on the caller's column, so exit steps were not being recognised as exits
     - If you use the default column names, nothing changes
+- New `warm_up` argument on `reshape_for_animations` and `animate_activity_log`, for discarding a warm-up period without damaging the animation
+    - Discarding warm-up is routine, and the obvious way to do it to an event log — `event_log[event_log["time"] >= warm_up]` — quietly breaks the result. Presence at each snapshot is worked out from arrival and departure rows, so truncating the log removes the `arrival` row of everyone who was already in the system, and those entities then appear in *no* frame at all. The entities lost are precisely the ones a steady-state animation exists to show: on a log with five entities queuing since before the boundary and two arriving after it, the queue was drawn holding two
+    - `warm_up` trims the animation window instead of the log. Pass the whole event log and set `warm_up` to the end of your warm-up period; by default the snapshot grid is anchored on it, so the first frame lands exactly on the boundary — see `snapshot_alignment` below to keep the original grid instead
+    - `warm_up` and `limit_duration` bound the window between them. `limit_duration` keeps its existing meaning, so adding `warm_up` to an existing call does not move the end of the animation
+    - The default of `0` is a verified no-op — output is identical to omitting the argument
+    - Not to be confused with `animate_activity_log`'s existing `start_time`, which is a time of day used only for labelling frames as clock times
+    - Also faster than filtering afterwards, since the discarded frames are never built at all — around 4.6x on a run that is 80% warm-up
+- New `snapshot_alignment` argument, controlling where the snapshot grid counts from when a `warm_up` is set
+    - `"warm_up"` (the default) puts the first frame exactly on the boundary, so the animation opens on the state of the system as the warm-up ends
+    - `"run_start"` keeps the grid running from time 0 and drops the early frames, so frame times stay the same ones you would get with no warm-up — useful when `warm_up` is not a multiple of `every_x_time_units` and you would rather keep round numbers. This matches the longstanding workaround of filtering the reshaped frame on `snapshot_time`, except that a snapshot falling exactly on `warm_up` is kept rather than dropped
+    - The two are identical whenever `warm_up` is a multiple of `every_x_time_units`, and irrelevant when there is no warm-up
+    - Alignment moves the frame times only — never which entities appear in them
+- New warning when an event log contains entities with no `arrival` event
+    - These are silently absent from every frame, because presence is decided by comparing arrival and departure times and a missing arrival compares as `False` against every snapshot
+    - Nearly always the signature of a log truncated to remove a warm-up period, so the warning names the entities, explains why they will not appear, and points at `warm_up`
+    - Both shapes are caught: an entity left with a `depart` row but no `arrival`, and an entity still in the system whose remaining rows are all queue or resource events, which is absent from the arrival/departure pivot entirely
 - `reshape_for_animations` no longer fails on an event log in which no entity has departed
     - A truncated run, a warm-up period, or a model whose entities never leave produces no `depart` events, so the pivoted log had no `depart` column. Every snapshot was silently emptied and the function then failed with an opaque `KeyError: 'entity_id'`
     - A missing `depart` column is now read as "everyone is still in the system", which is what an absent departure means
@@ -84,7 +100,7 @@
 
 ### Testing
 
-Test coverage grew from 31 to 249 tests, concentrated on the parts of the pipeline where a
+Test coverage grew from 31 to 267 tests, concentrated on the parts of the pipeline where a
 mistake changes what the animation *shows*, or what the reported numbers *say*, rather
 than raising an error.
 
@@ -94,6 +110,7 @@ than raising an error.
 - `EventLogger` gained its first dedicated coverage: the event shape each helper produces, time taken from both simpy-style and salabim-style environments, event validation and its warnings, timestamp parsing, retrieval, and export
 - `TrialLogger` gained its first dedicated coverage: construction, that statistics stay current as runs are added, and every duration statistic checked against hand-computed values including the served/unserved accounting
 - The single-replication guard is covered across all four animation entry points, including column-name detection, both independent checks, and — most importantly — that a valid single-run log carrying a run column is still accepted
+- Warm-up handling is covered end to end: that `warm_up` shows the entities a truncated log loses, that the truncation trap itself is detected, that both snapshot alignments move frame times without changing who is in them, and that the defaults are a true no-op rather than merely a similar result
 - `plot_queue_size` is now asserted against hand-computed queue lengths rather than only checking that a figure came back — the previous tests would have passed against a blank chart, and did pass while every long queue was saturating
 - `cancel_get` is now covered for both store types, including an end-to-end reneging scenario asserting who is served and when
 - Two invariants the source had flagged as unchecked are now enforced — no entity is drawn in two positions within a single frame, and each entity keeps the same icon throughout

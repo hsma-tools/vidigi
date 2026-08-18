@@ -18,8 +18,64 @@ from packaging import version
 _UNSET = object()
 
 
+def _warn_on_entities_without_an_arrival(
+    event_log: pd.DataFrame,
+    pivoted_log: pd.DataFrame,
+    entity_col_name: str,
+    event_col_name: str,
+) -> None:
+    """Warn about entities that have events but no 'arrival', so are never drawn.
+
+    Whether an entity is present at a snapshot is decided by comparing its arrival and
+    departure times, so an entity with no arrival row is absent from every frame no
+    matter how many other events it has. Nothing else in the pipeline notices.
+
+    Almost always this means the log has been truncated by time to discard a warm-up
+    period, which strips the arrival rows of everyone who was already in the system.
+    Those are precisely the entities a steady-state animation is meant to show, so the
+    queue is drawn far shorter than the model actually had it.
+
+    A warning rather than an error: a model that legitimately never logs an arrival for
+    some entities is unusual but not impossible, and this does not corrupt anything for
+    the entities that *are* drawn.
+    """
+    entities_with_an_arrival = set(
+        pivoted_log.loc[pivoted_log["arrival"].notna(), entity_col_name]
+    )
+    seen_entities = event_log[entity_col_name].dropna().drop_duplicates()
+
+    # Kept in log order rather than sorted, so mixed id types cannot raise on comparison.
+    missing = [
+        entity for entity in seen_entities if entity not in entities_with_an_arrival
+    ]
+    if not missing:
+        return
+
+    examples = ", ".join(repr(entity) for entity in missing[:5])
+    if len(missing) > 5:
+        examples += ", ..."
+
+    warnings.warn(
+        f"{len(missing)} entities ({examples}) have events in the event log but no "
+        f"'arrival' event, so they will be missing from every frame of the animation.\n"
+        "\n"
+        f"vidigi works out who is present at each snapshot from the arrival and "
+        f"departure rows, so an entity without an arrival is never drawn.\n"
+        "\n"
+        f"The usual cause is discarding a warm-up period by filtering the log, e.g. "
+        f"`event_log[event_log['time'] >= warm_up]`, which removes the arrival rows of "
+        f"everyone already in the system - including entities that are still queuing.\n"
+        "\n"
+        f"To skip a warm-up period, pass the whole event log and set `warm_up` to "
+        f"the end of the warm-up instead. That trims the animation window without "
+        f"discarding the history it needs.",
+        UserWarning,
+        stacklevel=4,
+    )
+
+
 @_enforce_int_params(
-    ["every_x_time_units", "limit_duration", "step_snapshot_max"],
+    ["every_x_time_units", "limit_duration", "step_snapshot_max", "warm_up"],
     allow_none=["limit_duration"],
 )
 def reshape_for_animations(
@@ -35,6 +91,8 @@ def reshape_for_animations(
     debug_mode: bool = False,
     save_intermediate_outputs: Optional[Union[bool, str]] = False,
     run_col_name: Optional[str] = "auto",
+    warm_up: int = 0,
+    snapshot_alignment: str = "warm_up",
 ) -> pd.DataFrame:
     """
     Reshape event log data for animation purposes.
@@ -50,7 +108,9 @@ def reshape_for_animations(
     every_x_time_units : int, optional
         The time interval between snapshots in preferred time units (default is 10).
     limit_duration : int, optional
-        The maximum duration to consider in preferred time units (default is 10 days).
+        The time at which the animation stops, in preferred time units (default is 10
+        days). Together with `warm_up` this defines the animation window, which runs
+        from `warm_up` to `limit_duration`.
     step_snapshot_max : int, optional
         The maximum number of entities to include in each snapshot for each event (default is 60).
     time_col_name : str, default="time"
@@ -82,6 +142,35 @@ def reshape_for_animations(
         Default is "auto", which looks for a column named (case-insensitively) one of
         'run', 'run_number', 'replication', 'rep' or 'run_id'. Pass an explicit column
         name to override the search, or `None` to disable the check.
+    warm_up : int, optional
+        The time at which the animation starts, in preferred time units (default is 0,
+        the beginning of the run). Snapshots then run up to `limit_duration`, spaced
+        `every_x_time_units` apart; `snapshot_alignment` controls exactly where that
+        grid falls.
+
+        This is how to discard a warm-up period. Pass the **whole** event log and set
+        `warm_up` to the end of your warm-up; do not filter the log by time first.
+        Filtering removes the 'arrival' rows of every entity that arrived during the
+        warm-up, and since this function works out who is present from arrival and
+        departure rows, those entities then vanish from every frame - including ones
+        still queuing. `warm_up` trims the window while leaving that history intact.
+    snapshot_alignment : {"warm_up", "run_start"}, optional
+        Which point the snapshot grid counts from when `warm_up` is non-zero. Ignored
+        when `warm_up` is 0, as the two are then identical.
+
+        - "warm_up" (default): snapshots are taken at `warm_up`,
+          `warm_up + every_x_time_units`, and so on, so the first frame lands exactly
+          on the boundary and shows the state of the system as the warm-up ends.
+        - "run_start": snapshots stay on the grid that runs from time 0, and those
+          before `warm_up` are simply dropped. Frame times are then the same ones you
+          would get with no warm-up at all, which keeps them round numbers when
+          `warm_up` is not a multiple of `every_x_time_units`. This matches the
+          longstanding workaround of filtering the reshaped frame by `snapshot_time`,
+          except that a snapshot falling exactly on `warm_up` is kept rather than
+          dropped.
+
+        The two produce identical grids whenever `warm_up` is a multiple of
+        `every_x_time_units`.
 
     Returns
     -------
@@ -104,11 +193,16 @@ def reshape_for_animations(
       assumption does not hold may display unexpected behaviour.
     - An 'exit' event is added for each entity at the end of their journey.
     - The function uses memory management techniques (del and gc.collect()) to handle large datasets.
+    - **To skip a warm-up period, use `warm_up` rather than filtering the event log.**
+      Presence at each snapshot is derived from arrival and departure rows, so a log
+      truncated with something like `event_log[event_log["time"] >= warm_up]` has lost
+      the arrival row of everyone who was already in the system, and those entities are
+      then absent from every frame. A warning is raised if the log looks truncated this
+      way, but `warm_up` avoids the problem entirely.
 
     TODO
     ----
     - Add behavior for when limit_duration is None.
-    - Consider adding 'first step' and 'last step' parameters.
     - Implement pathway order and precedence columns.
     - Fix the automatic exit at the end of the simulation run for all entities.
     """
@@ -189,6 +283,18 @@ def reshape_for_animations(
     if "depart" not in pivoted_log.columns:
         pivoted_log["depart"] = np.nan
 
+    # Presence is decided further down by `pivoted_log["arrival"] <= time_unit`, and
+    # `NaN <= t` is False, so an entity with no arrival row is silently absent from
+    # every frame however many other events it has. The usual cause is a log truncated
+    # by time to discard a warm-up period, which strips the arrival rows of everyone
+    # already in the system - exactly the entities the modeller is trying to look at.
+    _warn_on_entities_without_an_arrival(
+        event_log,
+        pivoted_log,
+        entity_col_name=entity_col_name,
+        event_col_name=event_col_name,
+    )
+
     # Add in behaviour for if limit_duration is None (which strictly speaking it shouldn't be,
     # but should improve behaviour if users try to do this)
     if limit_duration is None:
@@ -198,6 +304,36 @@ def reshape_for_animations(
             f"This is not an officially supported input, so has been set to {limit_duration}.",
             UserWarning,
             stacklevel=3,
+        )
+
+    if warm_up < 0:
+        raise ValueError(
+            f"`warm_up` must not be negative, but {warm_up} was passed. It is the "
+            f"time at which the animation begins, measured from the start of the run."
+        )
+
+    if warm_up > limit_duration:
+        raise ValueError(
+            f"`warm_up` ({warm_up}) is after `limit_duration` ({limit_duration}), "
+            f"so the animation window is empty and no frames can be produced. These "
+            f"bound the window between them: the animation runs from `warm_up` to "
+            f"`limit_duration`."
+        )
+
+    # Which point the snapshot grid counts from. Anchoring on `warm_up` puts the first
+    # frame exactly on the boundary; anchoring on the start of the run keeps the frame
+    # times a caller would have got without a warm-up, and simply drops the early ones.
+    # The two coincide whenever `warm_up` is a multiple of `every_x_time_units`.
+    if snapshot_alignment == "warm_up":
+        grid_origin = warm_up
+    elif snapshot_alignment == "run_start":
+        grid_origin = 0
+    else:
+        raise ValueError(
+            f"Invalid snapshot_alignment option provided: '{snapshot_alignment}'. "
+            f"Valid options are: 'warm_up' (snapshots start exactly at `warm_up`) and "
+            f"'run_start' (snapshots stay on the grid running from time 0, and those "
+            f"before `warm_up` are dropped)."
         )
 
     ################################################################################
@@ -213,12 +349,16 @@ def reshape_for_animations(
     ################################################################################
     # Note that we want to do this for everything up to AND INCLUDING the full duration we've passed
     # as the limit
-    for time_unit in range(limit_duration + every_x_time_units):
+    # By default the snapshot grid is anchored on `warm_up` rather than on zero, so the
+    # first frame lands exactly on the requested start instead of at whichever interval
+    # boundary happens to follow it. At the default `warm_up=0` both alignments give
+    # the same grid as before.
+    for time_unit in range(warm_up, limit_duration + every_x_time_units):
         # Get entities who
         # - arrived before the current minute
         # - and who left the system after the current minute
         # (or arrived but didn't reach the point of being seen before the model run ended)
-        if time_unit % every_x_time_units == 0:
+        if (time_unit - grid_origin) % every_x_time_units == 0:
             # Work out which entities - if any - were present in the simulation at the current time
             # They will have arrived at or before the minute in question, and they will depart at
             # or after the minute in question, or never depart during our model run
