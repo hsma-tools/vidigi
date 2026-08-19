@@ -13,7 +13,6 @@ from io import TextIOBase
 from datetime import datetime
 import plotly.express as px
 import warnings
-import inspect
 from vidigi.process_mapping import (
     discover_dfg,
     add_sim_timestamp,
@@ -21,12 +20,20 @@ from vidigi.process_mapping import (
     dfg_to_cytoscape,
     dfg_to_cytoscape_streamlit,
 )
-from vidigi.analysis import event_durations, MatchMode
+from vidigi.analysis import (
+    DurationStat,
+    MatchMode,
+    _summarise_durations,
+    event_durations,
+)
 from vidigi.plots import (
     plot_queue_size as _plot_queue_size,
     plot_duration_distribution as _plot_duration_distribution,
-    PlotBackend,
+    plot_metric_bar as _plot_metric_bar,
+    Across,
     DistributionKind,
+    ErrorBars,
+    PlotBackend,
     SplitBy,
 )
 
@@ -40,28 +47,6 @@ RECOGNIZED_EVENT_TYPES = {
 
 DFGType: TypeAlias = Literal[
     "graphviz-object", "graphviz-image", "cytoscape-jupyter", "cytoscape-streamlit"
-]
-
-# Statistics that can be computed over the durations between a pair of events.
-# The first group are pandas Series methods applied to the durations; the second are
-# computed by vidigi, and count entities rather than summarise times. Editors offer
-# these as completions, but the value is still validated at runtime, since
-# annotations are not enforced.
-DurationStat: TypeAlias = Literal[
-    "mean",
-    "median",
-    "max",
-    "min",
-    "quantile",
-    "std",
-    "var",
-    "sum",
-    "count",
-    "unserved_count",
-    "served_count",
-    "unserved_rate",
-    "served_rate",
-    "summary",
 ]
 
 
@@ -916,88 +901,9 @@ class TrialLogger:
             "duration"
         ]
 
-        # Define special cases
-        special_aggs = {
-            "count",
-            "unserved_count",
-            "served_count",
-            "unserved_rate",
-            "served_rate",
-            "summary",
-        }
-
-        # Collect allowed methods dynamically (only callables, no private methods)
-        allowed = {
-            "mean",
-            "median",
-            "max",
-            "min",
-            "quantile",
-            "std",
-            "var",
-            "sum",
-        } | special_aggs
-
-        # check if valid
-        if what not in allowed:
-            # Build helpful message
-            sigs = []
-            for name in sorted(allowed):
-                try:
-                    func = getattr(series, name)
-                    sig = str(inspect.signature(func))
-                except Exception:
-                    sig = "()"
-                sigs.append(f"  - {name}{sig}")
-            raise ValueError(
-                f"Unsupported aggregation: {what}.\n"
-                f"Allowed aggregations:\n" + "\n".join(sigs)
-            )
-
-        # Handle count separately
-        if what == "count":
-            if exclude_incomplete:
-                result = series.count()  # excludes NaN
-            else:
-                result = series.size  # includes NaN
-        elif what == "unserved_count":
-            result = series.size - series.count()
-        elif what == "served_count":
-            result = series.count()  # excludes NaN
-        elif what == "unserved_rate":
-            result = (series.size - series.count()) / series.size
-        elif what == "served_rate":
-            result = series.count() / series.size
-        elif what == "summary":
-            result = {
-                "mean (of complete)": series.mean(skipna=True),
-                "median (of complete)": series.median(skipna=True),
-                "min": series.min(),
-                "max": series.max(),
-                "unserved_count": series.size - series.count(),
-                "served_count": series.count(),
-                "unserved_rate": (series.size - series.count()) / series.size,
-                "served_rate": series.count() / series.size,
-                "unserved_count_mean_per_run": (series.size - series.count())
-                / n_runs,
-                "served_count_mean_per_run": series.count() / n_runs,
-            }
-
-        # Otherwise, use predefined methods
-        else:
-            method = getattr(series, what)
-
-            # Some methods accept skipna, others don't (like size, nunique with dropna instead).
-            try:
-                result = method(skipna=exclude_incomplete, **kwargs)
-            except TypeError:
-                # fallback if skipna isn't a parameter
-                result = method(**kwargs)
-
-        if what == "summary":
-            result = {k: round(v, dp) for k, v in result.items()}
-        else:
-            result = round(result, dp)
+        result = _summarise_durations(
+            series, what, exclude_incomplete, n_runs, dp=dp, **kwargs
+        )
 
         if label:
             return {"stat": label, "value": result}
@@ -1077,15 +983,19 @@ class TrialLogger:
         event_pair_list: list[dict],
         what: DurationStat = "mean",
         exclude_incomplete: bool = True,
+        across: Across = "entities",
+        error_bars: Optional[ErrorBars] = None,
+        ci_level: float = 0.95,
+        show_runs: bool = False,
+        match: MatchMode = "first",
         interactive=True,
         **kwargs,
     ):
         """
         Plot a bar chart of event duration statistics for a list of event pairs.
 
-        This function computes a specified statistic (e.g., mean, median) of
-        durations between pairs of events and plots the results as a bar chart.
-        Interactive plotting is supported via Plotly.
+        Thin wrapper over `vidigi.plots.plot_metric_bar`, called on this trial's
+        combined dataframe. See that function for the full parameter list.
 
         Parameters
         ----------
@@ -1096,16 +1006,36 @@ class TrialLogger:
             - ``"first_event"`` (str): The name of the first event.
             - ``"second_event"`` (str): The name of the second event.
         what : str, default="mean"
-            The statistic to compute on event durations. Supported values depend on
-            the implementation of ``get_event_duration_stat`` (e.g., "mean", "median").
+            The statistic to compute on event durations. See
+            `vidigi.analysis.event_durations`'s module for the full set. When
+            `across="runs"`, only a genuine per-replication statistic is
+            accepted - see `vidigi.analysis.replication_means`.
         exclude_incomplete : bool, default=True
             If True, incomplete event durations (where the second event is missing)
-            are excluded from the calculation.
+            are excluded from the calculation. Must be True when `across="runs"`.
+        across : {"entities", "runs"}, default="entities"
+            Whether each bar is a statistic pooled over every entity (matching
+            every prior release), or the mean of a per-replication statistic
+            computed separately for each run. `error_bars` and `show_runs`
+            both require `across="runs"`.
+        error_bars : {"ci", "sd", "se", "range", "iqr"} or None, default=None
+            The spread drawn as an error bar around each bar. `"ci"` requires
+            the optional `scipy` dependency (`pip install vidigi[stats]`). See
+            `vidigi.plots.plot_metric_bar` for the full explanation of each.
+        ci_level : float, default=0.95
+            Confidence level used when `error_bars="ci"`.
+        show_runs : bool, default=False
+            If True, overlays each replication's individual value as a
+            semi-transparent point on top of its bar.
+        match : {"first", "last", "occurrence"}, default="first"
+            How repeated occurrences of the two events are paired. See
+            `vidigi.analysis.event_durations`.
         interactive : bool, default=True
             If True, returns an interactive Plotly bar chart. If False, static
             plotting is not currently supported (a message will be printed).
         **kwargs : dict
-            Additional keyword arguments passed to ``plotly.express.bar``.
+            Additional keyword arguments passed to ``plotly.express.bar`` (e.g.
+            `title=`, `width=`).
 
         Returns
         -------
@@ -1115,12 +1045,8 @@ class TrialLogger:
 
         See Also
         --------
-        plot_queue_size : Plot the size of queues for events over time.
-
-        Notes
-        -----
-        This method relies on ``self.get_event_duration_stat`` to compute the
-        chosen statistic for each event pair.
+        plot_duration_distribution : The full distribution behind one of these bars.
+        vidigi.plots.plot_metric_bar : The underlying implementation.
 
         Examples
         --------
@@ -1131,26 +1057,22 @@ class TrialLogger:
         >>> fig = obj.plot_metric_bar(event_pairs, what="mean")
         >>> fig.show()
         """
-        results = []
-        for event_pair in event_pair_list:
-            results.append(
-                {
-                    "label": event_pair["label"],
-                    "value": self.get_event_duration_stat(
-                        event_pair["first_event"],
-                        event_pair["second_event"],
-                        what=what,
-                        exclude_incomplete=exclude_incomplete,
-                    ),
-                }
-            )
-
-        results_df = pd.DataFrame(results)
-
-        if interactive:
-            return px.bar(results_df, x="label", y="value", **kwargs)
-        else:
+        if not interactive:
             print("Static plotting not currently supported - please use 'interactive'")
+            return None
+
+        return _plot_metric_bar(
+            self._trial_dataframe,
+            event_pair_list,
+            what=what,
+            exclude_incomplete=exclude_incomplete,
+            across=across,
+            error_bars=error_bars,
+            ci_level=ci_level,
+            show_runs=show_runs,
+            match=match,
+            **kwargs,
+        )
 
     def plot_queue_size(
         self,

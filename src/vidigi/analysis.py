@@ -8,8 +8,10 @@ or `TrialLogger`.
 """
 
 import difflib
+import inspect
 import warnings
-from typing import Literal, Optional, TypeAlias
+from collections import namedtuple
+from typing import Literal, Optional, TypeAlias, Union
 
 import pandas as pd
 
@@ -17,6 +19,43 @@ from vidigi.prep import reshape_for_animations
 from vidigi.utils import _resolve_run_column
 
 MatchMode: TypeAlias = Literal["first", "last", "occurrence"]
+
+# Statistics that can be computed over the durations between a pair of events.
+# The first group are pandas Series methods applied to the durations; the second are
+# computed by vidigi, and count entities rather than summarise times. Editors offer
+# these as completions, but the value is still validated at runtime, since
+# annotations are not enforced.
+DurationStat: TypeAlias = Literal[
+    "mean",
+    "median",
+    "max",
+    "min",
+    "quantile",
+    "std",
+    "var",
+    "sum",
+    "count",
+    "unserved_count",
+    "served_count",
+    "unserved_rate",
+    "served_rate",
+    "summary",
+]
+
+# The subset of `DurationStat` that is a genuine per-replication statistic - a
+# pandas Series method callable directly on one run's durations. The remainder
+# (`"count"`, `"unserved_rate"`, `"summary"`, ...) count *entities*, not
+# durations, and are not meaningful re-averaged across runs - see
+# `replication_means`.
+_REPLICATION_STATS = ("mean", "median", "max", "min", "quantile", "std", "var", "sum")
+_SPECIAL_DURATION_AGGS = (
+    "count",
+    "unserved_count",
+    "served_count",
+    "unserved_rate",
+    "served_rate",
+    "summary",
+)
 
 
 def _nearest_match_hint(name, candidates, n: int = 3) -> str:
@@ -297,6 +336,260 @@ def event_durations(
             "duration",
         ]
     ].reset_index(drop=True)
+
+
+def _summarise_durations(
+    series: pd.Series,
+    what: str,
+    exclude_incomplete: bool,
+    n_runs: int,
+    dp: Optional[int] = None,
+    **kwargs,
+) -> Union[float, dict]:
+    """Reduce a series of durations to a single statistic (or, for `"summary"`, several).
+
+    Shared by `TrialLogger.get_event_duration_stat` and `vidigi.plots.plot_metric_bar`'s
+    `across="entities"` path, so the two cannot drift.
+    """
+    allowed = _REPLICATION_STATS + _SPECIAL_DURATION_AGGS
+
+    if what not in allowed:
+        sigs = []
+        for name in sorted(allowed):
+            try:
+                func = getattr(series, name)
+                sig = str(inspect.signature(func))
+            except Exception:
+                sig = "()"
+            sigs.append(f"  - {name}{sig}")
+        raise ValueError(
+            f"Unsupported aggregation: {what}.\n"
+            f"Allowed aggregations:\n" + "\n".join(sigs)
+        )
+
+    if what == "count":
+        result = series.count() if exclude_incomplete else series.size
+    elif what == "unserved_count":
+        result = series.size - series.count()
+    elif what == "served_count":
+        result = series.count()
+    elif what == "unserved_rate":
+        result = (series.size - series.count()) / series.size
+    elif what == "served_rate":
+        result = series.count() / series.size
+    elif what == "summary":
+        result = {
+            "mean (of complete)": series.mean(skipna=True),
+            "median (of complete)": series.median(skipna=True),
+            "min": series.min(),
+            "max": series.max(),
+            "unserved_count": series.size - series.count(),
+            "served_count": series.count(),
+            "unserved_rate": (series.size - series.count()) / series.size,
+            "served_rate": series.count() / series.size,
+            "unserved_count_mean_per_run": (series.size - series.count()) / n_runs,
+            "served_count_mean_per_run": series.count() / n_runs,
+        }
+    else:
+        method = getattr(series, what)
+        try:
+            result = method(skipna=exclude_incomplete, **kwargs)
+        except TypeError:
+            result = method(**kwargs)
+
+    if dp is None:
+        return result
+    if what == "summary":
+        return {k: round(v, dp) for k, v in result.items()}
+    return round(result, dp)
+
+
+def replication_means(
+    durations: pd.DataFrame,
+    *,
+    value_col: str = "duration",
+    run_col: str = "run_number",
+    what: DurationStat = "mean",
+    **kwargs,
+) -> pd.DataFrame:
+    """
+    Reduce a per-entity durations frame to one value per replication.
+
+    The independent unit for any confidence interval is the replication, not the
+    entity - entities within a run are strongly serially correlated, so this is the
+    function that produces the values `mean_confidence_interval` must be called on.
+    See the *Notes* there for why.
+
+    Parameters
+    ----------
+    durations : pandas.DataFrame
+        Per-entity durations, e.g. the output of `event_durations`.
+    value_col : str, default="duration"
+        Column to aggregate within each run.
+    run_col : str, default="run_number"
+        Column identifying which run each row belongs to.
+    what : str, default="mean"
+        The per-replication statistic to compute: one of `"mean"`, `"median"`,
+        `"max"`, `"min"`, `"quantile"`, `"std"`, `"var"`, `"sum"` - a genuine
+        pandas Series method, callable on a single run's values. Entity-counting
+        aggregations such as `"count"` or `"unserved_rate"` answer a different
+        question (how many entities, not what value) and are not meaningful
+        re-averaged across runs; use `TrialLogger.get_event_duration_stat` or
+        `vidigi.plots.plot_metric_bar(across="entities")` for those instead.
+    **kwargs : dict
+        Additional keyword arguments passed to the chosen statistic, e.g.
+        `q=0.9` for `what="quantile"`.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Columns `run_col` and `"value"`, one row per run that has at least one
+        non-missing `value_col`. Rows with a missing (`NaN`) `value_col` - an
+        incomplete pairing - are dropped before aggregating, since a missing
+        duration cannot contribute to a run's statistic.
+
+    Raises
+    ------
+    ValueError
+        If `what` is not one of the supported per-replication statistics.
+
+    See Also
+    --------
+    mean_confidence_interval : Compute a confidence interval over this function's output.
+    event_durations : The underlying per-entity durations.
+    """
+    if what not in _REPLICATION_STATS:
+        raise ValueError(
+            f"`what` must be one of {_REPLICATION_STATS} - a genuine per-replication "
+            f"statistic - not {what!r}. Aggregations like 'count' or 'summary' count "
+            f"entities rather than summarise a value, and are not meaningful "
+            f"re-averaged across runs; use `TrialLogger.get_event_duration_stat` or "
+            f"`vidigi.plots.plot_metric_bar(across='entities')` for those."
+        )
+
+    clean = durations.dropna(subset=[value_col])
+    result = (
+        clean.groupby(run_col, dropna=True)[value_col]
+        .agg(what, **kwargs)
+        .rename("value")
+        .reset_index()
+    )
+    return result[[run_col, "value"]]
+
+
+def _require_scipy():
+    """Import and return `scipy.stats`, raising a legible error if unavailable.
+
+    scipy ships as the optional `[stats]` extra rather than a hard dependency,
+    since it is only needed for `error_bars="ci"` - `"sd"`, `"se"`, `"range"` and
+    `"iqr"` all work with numpy/pandas alone.
+    """
+    try:
+        from scipy import stats
+    except ImportError:
+        raise ImportError(
+            "Computing a confidence interval requires the optional dependency "
+            "'scipy', which is not installed with vidigi by default. Install it "
+            "with: pip install vidigi[stats]"
+        )
+    return stats
+
+
+ConfidenceInterval = namedtuple(
+    "ConfidenceInterval", ["mean", "half_width", "lower", "upper", "n", "method"]
+)
+
+
+def mean_confidence_interval(
+    values, *, ci_level: float = 0.95, method: Literal["t"] = "t"
+) -> ConfidenceInterval:
+    """
+    Confidence interval for a mean, computed over independent replicate values.
+
+    Parameters
+    ----------
+    values : array-like
+        The replicate-level values to summarise - typically the `"value"` column
+        of `replication_means`'s output. **Must be one value per replication, never
+        one value per entity** - see *Notes*.
+    ci_level : float, default=0.95
+        Confidence level, e.g. `0.95` for a 95% interval.
+    method : {"t"}, default="t"
+        How the interval is computed. Only Student's t is supported: with
+        `n` typically in the 5-30 range for a replicated simulation study, a
+        normal approximation is systematically too narrow (at `n=5`,
+        `t=2.776` vs `z=1.96` - 29% too narrow), so `t` with `n - 1` degrees of
+        freedom is used unconditionally, never `z`.
+
+    Returns
+    -------
+    ConfidenceInterval
+        Named tuple of `(mean, half_width, lower, upper, n, method)`. If fewer
+        than 2 non-missing values are given, `half_width`, `lower` and `upper`
+        are `NaN` and a warning is raised - an interval needs at least 2 points
+        to estimate a spread from.
+
+    Raises
+    ------
+    ImportError
+        If `scipy` is not installed. Install it with `pip install vidigi[stats]`.
+    ValueError
+        If `method` is not `"t"`.
+
+    See Also
+    --------
+    replication_means : Produces the per-replication values this function summarises.
+
+    Notes
+    -----
+    This must be computed over **replication means, never pooled per-entity
+    observations**. Entities within a single run are strongly serially
+    correlated - one bad morning makes fifty consecutive waits long together -
+    so pooling treats correlated observations as independent, shrinking the
+    standard error by roughly the square root of the number of entities per run
+    and producing an interval that can be an order of magnitude too narrow.
+    Replications are the independent unit; entities are not.
+
+    At `n=2`, `t` gives a large interval (`t=12.71` at the 95% level) - this is
+    correct and informative given only two replications, not a bug to special-case.
+    """
+    if method != "t":
+        raise ValueError(f"`method` must be 't'; got {method!r}.")
+
+    series = pd.Series(values).dropna()
+    n = len(series)
+    mean = series.mean()
+
+    if n < 2:
+        warnings.warn(
+            f"Cannot compute a confidence interval from {n} replication(s) - at "
+            f"least 2 are required to estimate a spread. Returning a NaN "
+            f"half-width.",
+            UserWarning,
+            stacklevel=2,
+        )
+        return ConfidenceInterval(
+            mean=mean,
+            half_width=float("nan"),
+            lower=float("nan"),
+            upper=float("nan"),
+            n=n,
+            method=method,
+        )
+
+    stats = _require_scipy()
+    std = series.std(ddof=1)
+    se = std / (n**0.5)
+    half_width = stats.t.ppf(1 - (1 - ci_level) / 2, df=n - 1) * se
+
+    return ConfidenceInterval(
+        mean=mean,
+        half_width=half_width,
+        lower=mean - half_width,
+        upper=mean + half_width,
+        n=n,
+        method=method,
+    )
 
 
 def queue_size_over_time(

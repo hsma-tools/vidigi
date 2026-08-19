@@ -478,6 +478,34 @@ def test_plot_metric_bar_uses_one_bar_per_pair(two_run_loggers):
     assert list(fig.data[0].x) == ["A", "B"]
 
 
+def test_plot_metric_bar_across_runs_with_ci_is_passed_through(unequal_run_loggers):
+    """`across="runs"`/`error_bars="ci"` reach `vidigi.plots.plot_metric_bar`, and
+    the delegation reproduces the hand-computed values from that fixture's
+    docstring exactly."""
+    trial = TrialLogger(unequal_run_loggers)
+
+    fig = trial.plot_metric_bar(
+        [{"label": "A", "first_event": "arrival", "second_event": "depart"}],
+        across="runs",
+        error_bars="ci",
+    )
+
+    assert fig.data[0].y == pytest.approx((6.0,))
+    assert round(fig.data[0].error_y.array[0], 3) == 6.572
+
+
+def test_plot_metric_bar_across_entities_is_unchanged_at_defaults(unequal_run_loggers):
+    """`across="entities"` (the default) must give exactly what every prior
+    release gave: the pooled mean over every entity, ignoring run boundaries."""
+    trial = TrialLogger(unequal_run_loggers)
+
+    fig = trial.plot_metric_bar(
+        [{"label": "A", "first_event": "arrival", "second_event": "depart"}]
+    )
+
+    assert fig.data[0].y == pytest.approx((5.75,))
+
+
 @pytest.mark.parametrize("what", typing.get_args(DurationStat))
 def test_every_duration_stat_literal_is_accepted(what, two_run_loggers):
     """The annotation must not advertise a statistic the runtime check rejects.

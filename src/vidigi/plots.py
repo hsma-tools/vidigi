@@ -6,10 +6,12 @@ formatting and trace styling only, no arithmetic beyond that.
 `**kwargs` means two different things depending on the function, and each
 docstring says which:
 
-- On `plot_queue_size` - extracted from pre-existing code, where `**kwargs` has
-  always forwarded to `plotly.express.line` - that meaning is kept, so no
-  existing caller's styling kwargs silently start doing something else. Column
-  names are separate, explicitly named parameters there instead.
+- On `plot_queue_size` and `plot_metric_bar` - both extracted from pre-existing
+  code, where `**kwargs` has always forwarded to `plotly.express.line`/`.bar`
+  respectively - that meaning is kept, so no existing caller's styling kwargs
+  silently start doing something else (the committed example notebook relies on
+  exactly this for `plot_metric_bar`'s `title=`/`width=`). Column names are
+  separate, explicitly named parameters on both instead.
 - On every function new in 1.4.0+ (e.g. `plot_duration_distribution`),
   `**kwargs` is column-name passthrough to the underlying `vidigi.analysis`
   function instead - there is no single plotly call to forward general styling
@@ -26,7 +28,16 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-from vidigi.analysis import event_durations, queue_size_over_time, MatchMode
+from vidigi.analysis import (
+    DurationStat,
+    MatchMode,
+    _summarise_durations,
+    event_durations,
+    mean_confidence_interval,
+    queue_size_over_time,
+    replication_means,
+)
+from vidigi.utils import _resolve_run_column
 
 # Which plotly API draws the chart. Mirrors `vidigi.animation.AnimationBackend`'s
 # accepted spellings and case-insensitive matching, for consistency across the
@@ -620,5 +631,247 @@ def plot_duration_distribution(
 
     if title is not None:
         fig.update_layout(title=title)
+
+    return fig
+
+
+# Whether a bar's value/error is computed over pooled entities or over
+# replications. Editors offer these as completions, but the value is still
+# validated at runtime, since annotations are not enforced.
+Across: TypeAlias = Literal["entities", "runs"]
+
+# Which spread `plot_metric_bar` draws as an error bar around a bar computed
+# `across="runs"`.
+ErrorBars: TypeAlias = Literal["ci", "sd", "se", "range", "iqr"]
+_ERROR_BAR_KINDS = ("ci", "sd", "se", "range", "iqr")
+
+
+def plot_metric_bar(
+    event_log: pd.DataFrame,
+    event_pair_list: list,
+    *,
+    what: DurationStat = "mean",
+    exclude_incomplete: bool = True,
+    across: Across = "entities",
+    error_bars: Optional[ErrorBars] = None,
+    ci_level: float = 0.95,
+    show_runs: bool = False,
+    match: MatchMode = "first",
+    entity_col_name: str = "entity_id",
+    time_col_name: str = "time",
+    event_col_name: str = "event",
+    run_col_name: Optional[str] = "auto",
+    pathway_col_name: Optional[str] = "pathway",
+    **kwargs,
+) -> go.Figure:
+    """
+    Plot a bar chart of event duration statistics for a list of event pairs.
+
+    Thin wrapper over `vidigi.analysis.event_durations`, `replication_means` and
+    `mean_confidence_interval`: this function only aggregates their output into
+    one bar per pair and builds the figure.
+
+    Parameters
+    ----------
+    event_log : pandas.DataFrame
+        Long-format event log, e.g. the output of `TrialLogger.to_dataframe()`.
+    event_pair_list : list of dict
+        A list of dictionaries, each containing:
+
+        - ``"label"`` (str): A label for the event pair.
+        - ``"first_event"`` (str): The name of the first event.
+        - ``"second_event"`` (str): The name of the second event.
+    what : str, default="mean"
+        The statistic to compute. See `vidigi.analysis.event_durations`'s
+        module for the full set. When `across="runs"`, only a genuine
+        per-replication statistic is accepted - `"mean"`, `"median"`, `"max"`,
+        `"min"`, `"quantile"`, `"std"`, `"var"`, `"sum"` - see
+        `vidigi.analysis.replication_means`.
+    exclude_incomplete : bool, default=True
+        If True, incomplete pairings (where the second event is missing) are
+        excluded from the calculation. Must be True when `across="runs"` - a
+        missing duration cannot contribute to a per-replication statistic.
+    across : {"entities", "runs"}, default="entities"
+        Whether each bar is a statistic pooled over every entity (matching every
+        prior release), or the mean of a per-replication statistic computed
+        separately for each run. `error_bars` and `show_runs` both require
+        `across="runs"` - see *Notes*.
+    error_bars : {"ci", "sd", "se", "range", "iqr"} or None, default=None
+        The spread drawn as an error bar around each bar, computed over the
+        per-run values. `"ci"` is a confidence interval at `ci_level` (see
+        `vidigi.analysis.mean_confidence_interval` - requires the optional
+        `scipy` dependency, `pip install vidigi[stats]`); `"sd"` is the sample
+        standard deviation; `"se"` the standard error of the mean; `"range"` and
+        `"iqr"` are asymmetric, spanning min-to-max and the 25th-to-75th
+        percentile respectively. Requires `across="runs"`.
+    ci_level : float, default=0.95
+        Confidence level used when `error_bars="ci"`.
+    show_runs : bool, default=False
+        If True, overlays each replication's individual value as a semi-transparent
+        point on top of its bar. Requires `across="runs"`.
+    match : {"first", "last", "occurrence"}, default="first"
+        How repeated occurrences of the two events are paired. See
+        `vidigi.analysis.event_durations`.
+    entity_col_name, time_col_name, event_col_name, run_col_name,
+    pathway_col_name : str or None
+        Column names forwarded to `vidigi.analysis.event_durations`.
+    **kwargs : dict
+        Additional keyword arguments passed to `plotly.express.bar` - e.g.
+        `title=`, `width=`. This is the one function in `vidigi.plots` where
+        `**kwargs` is plotly passthrough rather than column-name passthrough,
+        preserved unchanged from every prior release.
+
+    Returns
+    -------
+    plotly.graph_objects.Figure
+
+    Raises
+    ------
+    ValueError
+        If `across` or `error_bars` is not one of the supported values; if
+        `error_bars` or `show_runs=True` is requested without `across="runs"`;
+        if `exclude_incomplete=False` is combined with `across="runs"`; or if
+        `what` is not a valid per-replication statistic when `across="runs"`.
+
+    Notes
+    -----
+    `error_bars` requires `across="runs"` by design: an interval computed over
+    replication means attached to a bar height pooled over entities would be
+    internally inconsistent, since entities within a run are correlated and
+    runs are the independent unit - see
+    `vidigi.analysis.mean_confidence_interval`'s *Notes*.
+
+    See Also
+    --------
+    plot_duration_distribution : The full distribution behind one of these bars.
+    vidigi.analysis.event_durations : The underlying per-entity durations.
+    vidigi.analysis.replication_means : The underlying per-run statistics used by `across="runs"`.
+
+    Examples
+    --------
+    >>> event_pairs = [
+    ...     {"label": "Start to End", "first_event": "start", "second_event": "end"},
+    ... ]
+    >>> plot_metric_bar(
+    ...     trial.to_dataframe(), event_pairs, across="runs", error_bars="ci"
+    ... )
+    <plotly.graph_objs._figure.Figure>
+    """
+    if across not in ("entities", "runs"):
+        raise ValueError(f"`across` must be 'entities' or 'runs'; got {across!r}.")
+
+    if error_bars is not None and error_bars not in _ERROR_BAR_KINDS:
+        raise ValueError(
+            f"`error_bars` must be one of {_ERROR_BAR_KINDS} or None; got "
+            f"{error_bars!r}."
+        )
+
+    if error_bars is not None and across != "runs":
+        raise ValueError(
+            "`error_bars` requires `across=\"runs\"`. An interval computed over "
+            "replication means attached to a bar height pooled over entities "
+            "would be internally inconsistent - entities within a run are "
+            "correlated, runs are the independent unit. Pass `across=\"runs\"`, "
+            "or drop `error_bars` for a plain pooled bar."
+        )
+
+    if show_runs and across != "runs":
+        raise ValueError(
+            "`show_runs=True` requires `across=\"runs\"` - there is one point "
+            "per run to overlay only when the bar itself is a statistic "
+            "computed across runs."
+        )
+
+    if across == "runs" and not exclude_incomplete:
+        raise ValueError(
+            "`exclude_incomplete=False` is not supported with `across=\"runs\"`: "
+            "a per-replication statistic cannot include an incomplete (NaN) "
+            "duration. Use `across=\"entities\"` for `exclude_incomplete=False` "
+            "semantics."
+        )
+
+    run_col = _resolve_run_column(event_log, run_col_name)
+    n_runs = event_log[run_col].nunique() if run_col else 1
+
+    rows = []
+    run_points = {}
+
+    for event_pair in event_pair_list:
+        label = event_pair["label"]
+        durations = event_durations(
+            event_log,
+            event_pair["first_event"],
+            event_pair["second_event"],
+            match=match,
+            entity_col_name=entity_col_name,
+            time_col_name=time_col_name,
+            event_col_name=event_col_name,
+            run_col_name=run_col_name,
+            pathway_col_name=pathway_col_name,
+        )
+
+        if across == "entities":
+            value = _summarise_durations(
+                durations["duration"], what, exclude_incomplete, n_runs
+            )
+            rows.append({"label": label, "value": value})
+            continue
+
+        run_values = replication_means(durations, what=what)["value"]
+        if run_values.empty:
+            raise ValueError(
+                f"No complete '{event_pair['first_event']}' -> "
+                f"'{event_pair['second_event']}' pairs were found in any run to "
+                f"compute a per-replication statistic from."
+            )
+        value = run_values.mean()
+        row = {"label": label, "value": value}
+        run_points[label] = run_values.to_numpy()
+
+        if error_bars == "ci":
+            ci = mean_confidence_interval(run_values, ci_level=ci_level)
+            row["error_plus"] = ci.half_width
+            row["error_minus"] = ci.half_width
+        elif error_bars == "sd":
+            sd = run_values.std(ddof=1)
+            row["error_plus"] = sd
+            row["error_minus"] = sd
+        elif error_bars == "se":
+            se = run_values.std(ddof=1) / (len(run_values) ** 0.5)
+            row["error_plus"] = se
+            row["error_minus"] = se
+        elif error_bars == "range":
+            row["error_plus"] = run_values.max() - value
+            row["error_minus"] = value - run_values.min()
+        elif error_bars == "iqr":
+            q1, q3 = run_values.quantile([0.25, 0.75])
+            row["error_plus"] = q3 - value
+            row["error_minus"] = value - q1
+
+        rows.append(row)
+
+    results_df = pd.DataFrame(rows)
+
+    bar_kwargs = dict(kwargs)
+    if error_bars is not None:
+        bar_kwargs["error_y"] = "error_plus"
+        bar_kwargs["error_y_minus"] = "error_minus"
+
+    fig = px.bar(results_df, x="label", y="value", **bar_kwargs)
+
+    if show_runs:
+        first_label = event_pair_list[0]["label"]
+        for label, values_arr in run_points.items():
+            fig.add_trace(
+                go.Scatter(
+                    x=[label] * len(values_arr),
+                    y=values_arr,
+                    mode="markers",
+                    marker=dict(color="black", opacity=0.4, size=6),
+                    name="Runs",
+                    legendgroup="runs",
+                    showlegend=(label == first_label),
+                )
+            )
 
     return fig

@@ -221,6 +221,41 @@ def two_run_loggers():
 
 
 @pytest.fixture
+def unequal_run_loggers():
+    """Three runs with different entity counts, so run means diverge from the pooled mean.
+
+    Run 1: 2 entities x duration 4. Run 2: 4 entities x duration 5. Run 3: 2 entities x
+    duration 9. Unlike ``two_run_loggers``, every duration is *not* the same value, so
+    ``std`` (and every CI half-width) is non-zero, and ``across="runs"`` gives a
+    genuinely different answer from ``across="entities"``.
+
+    Hand-computed for ``event_durations(..., "arrival", "depart")``:
+
+    ==========================  ==============
+    quantity                    value
+    ==========================  ==============
+    run means                   [4, 5, 9]
+    mean of run means           6.0
+    pooled entity mean          46/8 = 5.75
+    sample std (ddof=1)         sqrt(7) ~= 2.6458
+    standard error (n=3)        ~= 1.5275
+    t_0.975,2 (published table) 4.302653
+    CI half-width               ~= 6.5724
+    cumulative means            [4.0, 4.5, 6.0]
+    ==========================  ==============
+    """
+
+    def _run(run_number, n_entities, duration):
+        logger = EventLogger(run_number=run_number)
+        for entity_id in range(1, n_entities + 1):
+            logger.log_arrival(entity_id=entity_id, time=0.0)
+            logger.log_departure(entity_id=entity_id, time=float(duration))
+        return logger
+
+    return [_run(1, 2, 4), _run(2, 4, 5), _run(3, 2, 9)]
+
+
+@pytest.fixture
 def logger_with_unserved_entity():
     """One run where 2 of 3 entities depart, so unserved_rate is exactly 1/3."""
     return _build_logger(run_number=1, unserved_entity=True)
