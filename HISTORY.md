@@ -151,7 +151,7 @@
 
 ### Testing
 
-Test coverage grew from 31 to 443 tests, concentrated on the parts of the pipeline where a
+Test coverage grew from 31 to 454 tests, concentrated on the parts of the pipeline where a
 mistake changes what the animation *shows*, or what the reported numbers *say*, rather
 than raising an error.
 
@@ -174,7 +174,8 @@ than raising an error.
 - `plot_duration_distribution` is covered for every `kind` against hand-computed (or independently numpy-computed) bin edges, counts, densities, raw values and ECDF step arrays; `split_by` is checked as a full `{trace name: values}` mapping for both `"run"` and `"pathway"`, and proven to fail if the two columns were swapped; the ECDF's step shape is proven to fail if `line_shape="hv"` were dropped; incomplete pairs are confirmed dropped before plotting rather than erroring or appearing as `NaN`; and every `DistributionKind`/`SplitBy` literal value is asserted to be accepted at runtime, matching the pattern already used for `DurationStat`
 - `"ridgeline"` and `"heatmap"` are covered for the full per-group polygon/matrix against independently numpy-computed bin edges and densities/counts, that both require `split_by`, and - proven to fail if the density were swapped for a raw count - that a group with more observations draws the same ridge height as one with fewer, given the same underlying shape
 - `replication_means` and `mean_confidence_interval` are covered against a purpose-built fixture (`unequal_run_loggers`) whose durations are *not* all equal, so `std` and every CI half-width are non-zero and `across="entities"` genuinely differs from `across="runs"` - every expected value (run means, pooled mean, standard error, half-width) is hand-computed against a published Student's t table, never derived from `scipy` calling itself. Two mutations are proven to fail their respective tests before being reverted: computing the interval over pooled per-entity durations instead of replication means, and swapping `t.ppf` for a normal `z.ppf`. A missing `scipy` is simulated (not actually uninstalled) to confirm the `ImportError` names `pip install vidigi[stats]`
-- `plot_metric_bar` is covered for both `across` modes against the same hand-computed values, every `error_bars` kind against independently computed spreads (including the asymmetric `"range"`/`"iqr"`), `show_runs`'s overlay points, that `error_bars`/`show_runs` are rejected without `across="runs"`, and that `**kwargs` still reaches `plotly.express.bar` unchanged after the extraction into `vidigi.plots`
+- `plot_metric_bar` is covered for both `across` modes against the same hand-computed values, every `error_bars` kind against independently computed spreads (including the asymmetric `"range"`/`"iqr"`), that `ci_level` actually reaches the confidence-interval calculation rather than being silently ignored, `show_runs`'s overlay points, that `error_bars`/`show_runs` are rejected without `across="runs"`, the "no run has a complete pair" and single-replication (`NaN` half-width, with and without a warning) edge cases, and that `**kwargs` still reaches `plotly.express.bar` unchanged after the extraction into `vidigi.plots`
+- An independent adversarial review of the tests added for replication statistics and `plot_metric_bar` found one tautological test (a quantile assertion whose fixture had no per-run variation for `q` to distinguish) and one silently-untested parameter (`ci_level`); both are now fixed and mutation-proven, alongside the two edge-case gaps above
 
 # 1.3.1
 

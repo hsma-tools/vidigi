@@ -12,7 +12,7 @@ import numpy as np
 import plotly.graph_objects as go
 import pytest
 
-from vidigi.logging import TrialLogger
+from vidigi.logging import EventLogger, TrialLogger
 from vidigi.plots import Across, ErrorBars, plot_metric_bar
 
 _PAIRS = [{"label": "A", "first_event": "arrival", "second_event": "depart"}]
@@ -56,18 +56,67 @@ def test_across_runs_with_ci_error_bars_matches_the_hand_computed_half_width(
     assert round(fig.data[0].error_y.array[0], 3) == 6.572
 
 
-def test_across_entities_and_across_runs_together_are_the_meaningful_pair(
-    unequal_run_loggers,
-):
-    """The two must differ - proves `across` actually changes which mean is drawn,
-    not just which error bar is attached."""
-    entities_fig = plot_metric_bar(
-        _trial_df(unequal_run_loggers), _PAIRS, across="entities"
+def test_ci_level_reaches_the_figure(unequal_run_loggers):
+    """No prior test passes a non-default `ci_level` - pins that it actually
+    reaches the underlying `mean_confidence_interval` call rather than being
+    dropped somewhere in the delegation."""
+    fig_95 = plot_metric_bar(
+        _trial_df(unequal_run_loggers), _PAIRS, across="runs", error_bars="ci"
     )
-    runs_fig = plot_metric_bar(_trial_df(unequal_run_loggers), _PAIRS, across="runs")
+    fig_90 = plot_metric_bar(
+        _trial_df(unequal_run_loggers),
+        _PAIRS,
+        across="runs",
+        error_bars="ci",
+        ci_level=0.90,
+    )
 
-    assert entities_fig.data[0].y[0] == pytest.approx(5.75)
-    assert runs_fig.data[0].y[0] == pytest.approx(6.0)
+    # t_0.95,2 = 2.919986, from a published Student's t table (90% CI, df=2).
+    assert round(fig_90.data[0].error_y.array[0], 3) == 4.460
+    assert fig_90.data[0].error_y.array[0] != pytest.approx(
+        fig_95.data[0].error_y.array[0], abs=1e-3
+    )
+
+
+def test_across_runs_raises_when_no_run_has_a_complete_pair():
+    """Every run individually has an unmatched event - `event_durations` still
+    finds both event names in the log (so does not raise there), but no run
+    contributes a single complete pairing for `replication_means` to average."""
+    run1 = EventLogger(run_number=1)
+    run1.log_arrival(entity_id=1, time=0.0)  # never departs
+
+    run2 = EventLogger(run_number=2)
+    run2.log_departure(entity_id=1, time=5.0)  # never arrived
+
+    trial_df = TrialLogger([run1, run2]).to_dataframe()
+
+    with pytest.raises(ValueError, match="No complete"):
+        plot_metric_bar(trial_df, _PAIRS, across="runs")
+
+
+def test_across_runs_with_a_single_run_gives_nan_ci_and_warns(two_run_loggers):
+    """A single replication cannot support a confidence interval -
+    `mean_confidence_interval` warns and returns a NaN half-width rather than
+    raising, and that must survive the trip through `plot_metric_bar`."""
+    single_run_df = TrialLogger([two_run_loggers[0]]).to_dataframe()
+
+    with pytest.warns(UserWarning, match="at least 2"):
+        fig = plot_metric_bar(single_run_df, _PAIRS, across="runs", error_bars="ci")
+
+    assert np.isnan(fig.data[0].error_y.array[0])
+
+
+def test_across_runs_with_a_single_run_sd_and_se_are_also_nan(two_run_loggers):
+    """`"sd"`/`"se"` don't go through `mean_confidence_interval`'s warning path -
+    a single-point sample standard deviation (ddof=1) is NaN by construction,
+    with no warning, so this checks that path separately."""
+    single_run_df = TrialLogger([two_run_loggers[0]]).to_dataframe()
+
+    sd_fig = plot_metric_bar(single_run_df, _PAIRS, across="runs", error_bars="sd")
+    se_fig = plot_metric_bar(single_run_df, _PAIRS, across="runs", error_bars="se")
+
+    assert np.isnan(sd_fig.data[0].error_y.array[0])
+    assert np.isnan(se_fig.data[0].error_y.array[0])
 
 
 @pytest.mark.parametrize(

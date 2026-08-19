@@ -74,13 +74,24 @@ def test_every_simple_stat_is_accepted(what, unequal_run_loggers):
     assert len(result) == 3
 
 
-def test_quantile_forwards_kwargs(unequal_run_loggers):
-    durations = _unequal_run_durations(unequal_run_loggers)
+def test_quantile_forwards_kwargs():
+    """`unequal_run_loggers` gives every entity *within a run* the same duration,
+    so `quantile(q=...)` returns that constant regardless of `q` - it cannot
+    catch a dropped `q` kwarg. This uses within-run-varying durations instead,
+    where different `q` values give different, independently hand-computed
+    answers (linear interpolation, pandas' default)."""
+    durations = pd.DataFrame(
+        {
+            "run_number": [1, 1, 1, 1, 2, 2, 2, 2],
+            "duration": [1.0, 2.0, 3.0, 4.0, 10.0, 20.0, 30.0, 40.0],
+        }
+    )
 
-    result = replication_means(durations, what="quantile", q=0.5)
+    low = replication_means(durations, what="quantile", q=0.25)
+    high = replication_means(durations, what="quantile", q=0.75)
 
-    # Each run's 50th percentile of its own (repeated) duration is that duration.
-    assert dict(zip(result["run_number"], result["value"])) == {1: 4.0, 2: 5.0, 3: 9.0}
+    assert dict(zip(low["run_number"], low["value"])) == {1: 1.75, 2: 17.5}
+    assert dict(zip(high["run_number"], high["value"])) == {1: 3.25, 2: 32.5}
 
 
 def test_entity_counting_aggregations_are_rejected():
@@ -119,16 +130,19 @@ def test_ci_matches_the_hand_computed_unequal_run_example(unequal_run_loggers):
 
 def test_ci_over_pooled_entities_is_narrower_and_wrong(unequal_run_loggers):
     """Mutation-style regression: pooling per-entity durations instead of using
-    replication means treats correlated entities as independent, which
-    (deliberately, to prove the test bites) is checked here to differ from the
-    correct run-level answer computed above."""
+    replication means treats correlated entities as independent, which shrinks
+    the standard error and produces an interval that is too *narrow* - not just
+    different, which the direction check below pins explicitly."""
     durations = _unequal_run_durations(unequal_run_loggers)
 
     pooled_result = mean_confidence_interval(durations["duration"])
     run_result = mean_confidence_interval(replication_means(durations)["value"])
 
     assert pooled_result.mean != run_result.mean
-    assert pooled_result.half_width != pytest.approx(run_result.half_width, abs=1e-3)
+    # Hand-computed: pooled half-width ~= 1.716 (n=8, pooled std), run-level
+    # half-width ~= 6.572 (n=3, run means) - pooling is the narrower, wrong one.
+    assert pooled_result.half_width < run_result.half_width
+    assert pooled_result.half_width == pytest.approx(1.716, abs=1e-3)
 
 
 def test_fewer_than_two_replications_gives_nan_and_warns():
@@ -152,6 +166,22 @@ def test_n_equals_two_gives_a_large_but_real_interval():
     assert result.mean == pytest.approx(5.0)
     # std of [4, 6] = sqrt(2); se = sqrt(2)/sqrt(2) = 1
     assert result.half_width == pytest.approx(12.706, abs=1e-2)
+
+
+def test_ci_level_reaches_the_t_distribution_call(unequal_run_loggers):
+    """No prior test passes a non-default `ci_level` - this pins that the
+    argument actually reaches `scipy.stats.t.ppf` rather than being ignored."""
+    durations = _unequal_run_durations(unequal_run_loggers)
+    run_values = replication_means(durations)["value"]
+
+    result = mean_confidence_interval(run_values, ci_level=0.90)
+
+    se = run_values.std(ddof=1) / np.sqrt(3)
+    # t_0.95,2 = 2.919986, from a published Student's t table (90% CI, df=2).
+    assert result.half_width == pytest.approx(2.919986 * se, abs=1e-4)
+    assert result.half_width == pytest.approx(4.4604, abs=1e-3)
+    # And must differ from the default ci_level=0.95 answer computed above.
+    assert result.half_width != pytest.approx(6.5724, abs=1e-3)
 
 
 def test_unsupported_method_raises():
