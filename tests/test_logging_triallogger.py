@@ -506,6 +506,20 @@ def test_plot_metric_bar_across_entities_is_unchanged_at_defaults(unequal_run_lo
     assert fig.data[0].y == pytest.approx((5.75,))
 
 
+def test_get_resource_utilisation_is_passed_through(resource_use_loggers):
+    """`get_resource_utilisation` reaches `vidigi.analysis.resource_utilisation`,
+    and reproduces the hand-computed values from that fixture's docstring
+    exactly."""
+    trial = TrialLogger(resource_use_loggers)
+
+    result = trial.get_resource_utilisation(
+        by="resource", resource_capacities={"treatment_begins": 3}, limit_duration=20
+    )
+
+    run1 = result[result["run_number"] == 1]
+    assert dict(zip(run1["resource_id"], run1["busy_time"])) == {1: 10.0, 2: 5.0, 3: 0.0}
+
+
 @pytest.mark.parametrize("what", typing.get_args(DurationStat))
 def test_every_duration_stat_literal_is_accepted(what, two_run_loggers):
     """The annotation must not advertise a statistic the runtime check rejects.

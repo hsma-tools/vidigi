@@ -16,7 +16,7 @@ from typing import Literal, Optional, TypeAlias, Union
 import pandas as pd
 
 from vidigi.prep import reshape_for_animations
-from vidigi.utils import _resolve_run_column
+from vidigi.utils import _resolve_run_column, _resource_map_from_event_position_df
 
 MatchMode: TypeAlias = Literal["first", "last", "occurrence"]
 
@@ -56,6 +56,13 @@ _SPECIAL_DURATION_AGGS = (
     "served_rate",
     "summary",
 )
+
+# How an entity still holding a resource at the end of the analysis window is
+# handled by `resource_use_intervals`/`resource_utilisation`.
+UnclosedResourceUse: TypeAlias = Literal["censor", "drop"]
+
+# What each row of `resource_utilisation`'s output summarises.
+ResourceUtilisationBy: TypeAlias = Literal["step", "resource", "run"]
 
 
 def _nearest_match_hint(name, candidates, n: int = 3) -> str:
@@ -731,3 +738,512 @@ def queue_size_over_time(
     return event_counts.rename(columns={event_col_name: "event"})[
         ["run_number", "event", "snapshot_time", "count"]
     ]
+
+
+def resource_use_intervals(
+    event_log: pd.DataFrame,
+    *,
+    unclosed: UnclosedResourceUse = "censor",
+    warm_up: float = 0,
+    limit_duration: Optional[float] = None,
+    entity_col_name: str = "entity_id",
+    time_col_name: str = "time",
+    event_type_col_name: str = "event_type",
+    event_col_name: str = "event",
+    resource_col_name: str = "resource_id",
+    run_col_name: Optional[str] = "auto",
+) -> pd.DataFrame:
+    """
+    Pair `resource_use`/`resource_use_end` rows into one interval per bout of use.
+
+    Parameters
+    ----------
+    event_log : pandas.DataFrame
+        Long-format event log, e.g. the output of `TrialLogger.to_dataframe()`.
+    unclosed : {"censor", "drop"}, default="censor"
+        How to handle a `resource_use` row with no matching `resource_use_end` -
+        an entity still holding the resource when the window ends.
+
+        - ``"censor"`` (default): the interval's `end` is set to the window end
+          and `censored` is `True`. Dropping these understates utilisation
+          exactly when it matters most - entities still holding a resource at
+          the end of a run are disproportionately those in a congested system.
+        - ``"drop"``: the interval is excluded entirely.
+    warm_up : float, default=0
+        Start of the analysis window. See *Notes*.
+    limit_duration : float, optional
+        End of the analysis window. `None` (default) uses the latest time seen
+        anywhere in the trial - not per run, so every run shares the same
+        denominator. See *Notes*.
+    entity_col_name, time_col_name, event_type_col_name, event_col_name,
+    resource_col_name : str
+        Column names in `event_log`.
+    run_col_name : str or None, default="auto"
+        Column identifying which run each row belongs to. See
+        `event_durations`.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Columns ``run_number``, ``entity_id``, ``event`` (the *start* row's
+        event name - the end row's name is a label, not a key), ``resource_id``,
+        ``start``, ``end``, ``censored``, ``busy_time``.
+
+    Raises
+    ------
+    ValueError
+        If `unclosed` is not `"censor"` or `"drop"`; or if `resource_col_name`
+        is present for some `resource_use`/`resource_use_end` rows but not
+        others.
+
+    Notes
+    -----
+    Pairing is within `(run, entity, resource_id)`, matched in time order (the
+    *n*-th start of that combination with its *n*-th end) - mirroring
+    `event_durations`, but with no `match` argument, since a resource bout has
+    no ambiguity to choose between.
+
+    An end row with no matching start (a logging defect, not something to
+    compute from) is always dropped, with a warning.
+
+    If `resource_col_name` is missing from every row (dropped by
+    `to_dataframe()`'s `dropna(axis=1, how="all")`, or present but entirely
+    null), pairing falls back to `(run, entity)` only, with a warning: `busy_time`,
+    `mean_in_use` and `utilisation` stay exact, only the per-unit breakdown is
+    lost.
+
+    `busy_time` is clipped to the analysis window *last*, after pairing:
+    ``max(0, min(end, window_end) - max(start, warm_up))``. `window_end` is
+    `limit_duration` if given, else the latest time seen anywhere in the trial -
+    a per-run maximum would give each run a different denominator, making
+    utilisation incomparable across runs and any confidence interval computed
+    over them meaningless.
+
+    See Also
+    --------
+    resource_utilisation : Aggregates this function's output into one row per run per group.
+    """
+    if unclosed not in ("censor", "drop"):
+        raise ValueError(f"`unclosed` must be 'censor' or 'drop'; got {unclosed!r}.")
+
+    run_col = _resolve_run_column(event_log, run_col_name)
+    window_start, window_end = _resolve_window(
+        event_log, limit_duration, warm_up, time_col_name
+    )
+
+    starts = event_log[event_log[event_type_col_name] == "resource_use"].copy()
+    ends = event_log[event_log[event_type_col_name] == "resource_use_end"].copy()
+
+    has_resource_col = resource_col_name in event_log.columns
+    if has_resource_col:
+        combined = pd.concat([starts[resource_col_name], ends[resource_col_name]])
+        all_null = combined.isna().all()
+        any_null = combined.isna().any()
+    else:
+        all_null = True
+        any_null = False
+
+    if has_resource_col and any_null and not all_null:
+        raise ValueError(
+            f"'{resource_col_name}' is present for some resource_use/"
+            f"resource_use_end rows but not others - pairing would silently "
+            f"cross entities using different physical units. Every resource_use "
+            f"row needs a resource_id, or none of them do."
+        )
+
+    resource_id_missing = (not has_resource_col) or all_null
+    if resource_id_missing:
+        warnings.warn(
+            f"'{resource_col_name}' is missing from every resource_use row, so "
+            f"pairing falls back to (run, entity) only. busy_time, mean_in_use "
+            f"and utilisation stay exact; only the per-unit breakdown is lost.",
+            UserWarning,
+            stacklevel=2,
+        )
+        group_keys = ([run_col] if run_col else []) + [entity_col_name]
+    else:
+        group_keys = ([run_col] if run_col else []) + [
+            entity_col_name,
+            resource_col_name,
+        ]
+
+    starts = starts.sort_values(group_keys + [time_col_name])
+    starts["occurrence"] = starts.groupby(group_keys).cumcount()
+
+    ends = ends.sort_values(group_keys + [time_col_name])
+    ends["occurrence"] = ends.groupby(group_keys).cumcount()
+
+    rename_map = {entity_col_name: "entity_id"}
+    if run_col:
+        rename_map[run_col] = "run_number"
+    if not resource_id_missing:
+        rename_map[resource_col_name] = "resource_id"
+
+    keep_cols = (
+        (["run_number"] if run_col else [])
+        + ["entity_id"]
+        + (["resource_id"] if not resource_id_missing else [])
+        + ["occurrence"]
+    )
+
+    starts = starts.rename(columns={**rename_map, time_col_name: "start"})
+    ends = ends.rename(columns={**rename_map, time_col_name: "end"})
+
+    merged = starts[keep_cols + ["start", event_col_name]].merge(
+        ends[keep_cols + ["end"]], on=keep_cols, how="outer", indicator=True
+    )
+    merged = merged.rename(columns={event_col_name: "event"})
+
+    orphan_ends = merged["_merge"] == "right_only"
+    if orphan_ends.any():
+        warnings.warn(
+            f"{int(orphan_ends.sum())} resource_use_end row(s) had no matching "
+            f"resource_use start and were dropped - this is a logging defect, "
+            f"not something to compute from.",
+            UserWarning,
+            stacklevel=2,
+        )
+    merged = merged[~orphan_ends].copy()
+
+    unclosed_mask = merged["_merge"] == "left_only"
+    if unclosed_mask.any():
+        if unclosed == "drop":
+            merged = merged[~unclosed_mask].copy()
+            unclosed_mask = pd.Series(False, index=merged.index)
+        else:
+            warnings.warn(
+                f"{int(unclosed_mask.sum())} resource_use row(s) were still open "
+                f"at the end of the window - censored at {window_end} "
+                f"(unclosed='censor', the default). Pass unclosed='drop' to "
+                f"exclude them instead.",
+                UserWarning,
+                stacklevel=2,
+            )
+
+    merged["censored"] = unclosed_mask.astype(bool)
+    merged.loc[unclosed_mask, "end"] = window_end
+    merged = merged.drop(columns=["_merge"])
+
+    if resource_id_missing:
+        merged["resource_id"] = pd.NA
+    if "run_number" not in merged.columns:
+        merged["run_number"] = pd.NA
+
+    merged["busy_time"] = (
+        merged["end"].clip(upper=window_end) - merged["start"].clip(lower=window_start)
+    ).clip(lower=0)
+
+    return merged[
+        [
+            "run_number",
+            "entity_id",
+            "event",
+            "resource_id",
+            "start",
+            "end",
+            "censored",
+            "busy_time",
+        ]
+    ].reset_index(drop=True)
+
+
+def _resolve_resource_capacities(
+    intervals: pd.DataFrame,
+    *,
+    scenario=None,
+    resource_map: Optional[dict] = None,
+    event_position_df: Optional[pd.DataFrame] = None,
+    resource_capacities: Optional[dict] = None,
+    capacity: Optional[Literal["infer"]] = None,
+    step_col_name: str = "event",
+    resource_col_name: str = "resource_id",
+) -> dict:
+    """
+    Resolve a `{step: capacity}` mapping, from one of four routes.
+
+    Parameters
+    ----------
+    intervals : pandas.DataFrame
+        The output of `resource_use_intervals`. Only used for route D
+        (`capacity="infer"`) and for the "unknown step"/"unused capacity"
+        warnings; routes A-C need nothing from it beyond that.
+    scenario : object, optional
+        A scenario/parameters object exposing resource counts as attributes.
+        Required by routes B and C, unused by A and D.
+    resource_map : dict, optional
+        **Route B.** `{step: attribute_name}` - the name of the attribute on
+        `scenario` holding that step's capacity. Requires `scenario`.
+    event_position_df : pandas.DataFrame, optional
+        **Route C.** Reuses the `resource` column already used by the
+        animation functions - see `vidigi.utils.EventPosition`. Requires
+        `scenario`.
+    resource_capacities : dict, optional
+        **Route A**, highest precedence. `{step: capacity}` directly - no
+        `scenario` needed.
+    capacity : {"infer"}, optional
+        **Route D**, lowest precedence. Infers each step's capacity as the
+        number of distinct `resource_id` values seen for it anywhere in
+        `intervals` - a **lower bound**, since a unit that was never used is
+        invisible, so inferred utilisation is biased upward exactly for
+        underloaded resources. Always warns.
+    step_col_name, resource_col_name : str
+        Column names in `intervals`.
+
+    Returns
+    -------
+    dict
+        `{step: capacity}`, one entry per step seen in `intervals` (`NaN` for
+        a step with no resolvable capacity).
+
+    Raises
+    ------
+    ValueError
+        If `scenario` is given but none of `resource_map`, `event_position_df`
+        or `resource_capacities` accompanies it - naming all three routes.
+    AttributeError
+        If `resource_map`/`event_position_df` names an attribute `scenario`
+        does not have - naming the attribute, the step, and every non-private
+        attribute `scenario` does have.
+
+    Notes
+    -----
+    Routes are tried in precedence order A, B, C, D - the first one whose
+    required arguments are present is used; the rest are ignored. Passing
+    nothing at all is not an error: `resource_utilisation`'s `utilisation`
+    column is simply `NaN` throughout, falling back to `mean_in_use`, which
+    needs no capacity at all.
+    """
+
+    def _lookup(mapping: dict, source: str) -> dict:
+        result = {}
+        for step, attr in mapping.items():
+            try:
+                result[step] = getattr(scenario, attr)
+            except AttributeError:
+                available = [a for a in dir(scenario) if not a.startswith("_")]
+                raise AttributeError(
+                    f"{source} names '{attr}' as the capacity attribute for step "
+                    f"'{step}', but `scenario` has no such attribute. Available "
+                    f"attributes: {available}."
+                )
+        return result
+
+    route_chosen = (
+        resource_capacities is not None
+        or resource_map is not None
+        or event_position_df is not None
+        or capacity == "infer"
+    )
+
+    if resource_capacities is not None:
+        capacities = dict(resource_capacities)
+    elif resource_map is not None:
+        if scenario is None:
+            raise ValueError(
+                "`resource_map` was given without `scenario`. `resource_map` "
+                "only names *which attribute* on your scenario holds each "
+                "step's capacity - e.g. resource_map={'treatment_begins': "
+                "'n_cubicles'} - `scenario` is the object those names are "
+                "looked up on."
+            )
+        capacities = _lookup(resource_map, "`resource_map`")
+    elif event_position_df is not None:
+        if scenario is None:
+            raise ValueError(
+                "`event_position_df` was given without `scenario`. Its "
+                "`resource` column only names *which attribute* on your "
+                "scenario holds each step's capacity - `scenario` is the "
+                "object those names are looked up on."
+            )
+        attr_map = _resource_map_from_event_position_df(
+            event_position_df, event_col_name=step_col_name
+        )
+        capacities = _lookup(attr_map, "`event_position_df`")
+    elif capacity == "infer":
+        warnings.warn(
+            "capacity='infer' estimates each step's capacity as the number of "
+            "distinct resource_id values seen for it in the log. This is a "
+            "*lower bound* - a resource unit that was never used is invisible, "
+            "so inferred utilisation is biased upward for underloaded "
+            "resources. Pass resource_capacities=, or scenario= with "
+            "resource_map= or event_position_df=, for an exact answer.",
+            UserWarning,
+            stacklevel=2,
+        )
+        capacities = (
+            intervals.dropna(subset=[resource_col_name])
+            .groupby(step_col_name)[resource_col_name]
+            .nunique()
+            .to_dict()
+        )
+    elif scenario is not None:
+        raise ValueError(
+            "`scenario` was given, but none of the three ways to map it to a "
+            "capacity were: `resource_map={'step': 'attribute_name'}`, "
+            "`event_position_df=<df with a resource column>` (see "
+            "`vidigi.utils.EventPosition`), or `resource_capacities="
+            "{'step': count}` (which does not need `scenario` at all). Pass "
+            "one of these."
+        )
+    else:
+        capacities = {}
+
+    steps_in_log = set(intervals[step_col_name].dropna().unique())
+    if route_chosen:
+        missing = steps_in_log - set(capacities)
+        if missing:
+            warnings.warn(
+                f"No capacity given for step(s) {sorted(str(s) for s in missing)} "
+                f"- utilisation for these will be NaN.",
+                UserWarning,
+                stacklevel=2,
+            )
+            capacities.update({step: float("nan") for step in missing})
+
+        extra = set(capacities) - steps_in_log
+        if extra:
+            warnings.warn(
+                f"Capacity given for step(s) {sorted(str(s) for s in extra)}, "
+                f"which do not appear in the log - check for a typo.",
+                UserWarning,
+                stacklevel=2,
+            )
+
+    return capacities
+
+
+def resource_utilisation(
+    event_log: pd.DataFrame,
+    *,
+    by: ResourceUtilisationBy = "step",
+    scenario=None,
+    resource_map: Optional[dict] = None,
+    event_position_df: Optional[pd.DataFrame] = None,
+    resource_capacities: Optional[dict] = None,
+    capacity: Optional[Literal["infer"]] = None,
+    warm_up: float = 0,
+    limit_duration: Optional[float] = None,
+    unclosed: UnclosedResourceUse = "censor",
+    entity_col_name: str = "entity_id",
+    time_col_name: str = "time",
+    event_type_col_name: str = "event_type",
+    event_col_name: str = "event",
+    resource_col_name: str = "resource_id",
+    run_col_name: Optional[str] = "auto",
+) -> pd.DataFrame:
+    """
+    Summarise resource use into busy time, mean-in-use and utilisation, per run.
+
+    Always one row per run per group - aggregating across runs (a mean, a
+    confidence interval) is the plotting layer's job, exactly as
+    `replication_means`/`mean_confidence_interval` do for durations.
+
+    Parameters
+    ----------
+    event_log : pandas.DataFrame
+        Long-format event log, e.g. the output of `TrialLogger.to_dataframe()`.
+    by : {"step", "resource", "run"}, default="step"
+        What each row summarises.
+
+        - ``"step"``: one row per `(run, step)` - `step` is the *start* event's
+          name, e.g. `"treatment_begins"`. Capacity comes from whichever
+          capacity route was given for that step.
+        - ``"resource"``: one row per `(run, resource_id)` - one physical unit.
+          Capacity is always `1` (the unit itself).
+        - ``"run"``: one row per run, pooling every step/unit together.
+          Capacity is only well-defined when every step shares the same
+          capacity (a single-resource-type system); otherwise `NaN`.
+    scenario, resource_map, event_position_df, resource_capacities, capacity :
+        Capacity resolution - see `_resolve_resource_capacities` for the four
+        routes and their precedence order. All optional; with none given,
+        `utilisation` is `NaN` throughout and only `busy_time`/`mean_in_use`
+        are meaningful.
+    warm_up, limit_duration, unclosed, entity_col_name, time_col_name,
+    event_type_col_name, event_col_name, resource_col_name, run_col_name :
+        Forwarded to `resource_use_intervals` - see that function.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Columns depend on `by` (`"event"`, `"resource_id"`, or nothing extra),
+        plus ``run_number``, ``busy_time``, ``mean_in_use``, ``capacity``,
+        ``utilisation``. A `(run, group)` combination that appears in some run
+        but not others is filled with a genuine `busy_time` of `0`, not
+        omitted - the same "real zero" convention as `queue_size_over_time`.
+
+    See Also
+    --------
+    resource_use_intervals : The underlying per-bout intervals this aggregates.
+    """
+    if by not in ("step", "resource", "run"):
+        raise ValueError(f"`by` must be one of 'step', 'resource', 'run'; got {by!r}.")
+
+    intervals = resource_use_intervals(
+        event_log,
+        unclosed=unclosed,
+        warm_up=warm_up,
+        limit_duration=limit_duration,
+        entity_col_name=entity_col_name,
+        time_col_name=time_col_name,
+        event_type_col_name=event_type_col_name,
+        event_col_name=event_col_name,
+        resource_col_name=resource_col_name,
+        run_col_name=run_col_name,
+    )
+
+    capacities = _resolve_resource_capacities(
+        intervals,
+        scenario=scenario,
+        resource_map=resource_map,
+        event_position_df=event_position_df,
+        resource_capacities=resource_capacities,
+        capacity=capacity,
+        step_col_name="event",
+        resource_col_name="resource_id",
+    )
+
+    window_start, window_end = _resolve_window(
+        event_log, limit_duration, warm_up, time_col_name
+    )
+    window_length = window_end - window_start
+
+    group_col = {"step": "event", "resource": "resource_id", "run": None}[by]
+
+    run_ids = sorted(intervals["run_number"].dropna().unique().tolist()) or [pd.NA]
+
+    if group_col is None:
+        grouped = (
+            intervals.groupby("run_number", dropna=False)["busy_time"]
+            .sum()
+            .reindex(run_ids, fill_value=0)
+            .reset_index()
+            .rename(columns={"index": "run_number"})
+        )
+    else:
+        group_values = sorted(intervals[group_col].dropna().unique().tolist())
+        full_index = pd.MultiIndex.from_product(
+            [run_ids, group_values], names=["run_number", group_col]
+        )
+        grouped = (
+            intervals.groupby(["run_number", group_col], dropna=False)["busy_time"]
+            .sum()
+            .reindex(full_index, fill_value=0)
+            .reset_index()
+        )
+
+    grouped["mean_in_use"] = grouped["busy_time"] / window_length
+
+    if by == "step":
+        grouped["capacity"] = grouped["event"].map(capacities)
+    elif by == "resource":
+        grouped["capacity"] = 1.0
+    else:
+        unique_capacities = set(capacities.values()) if capacities else set()
+        grouped["capacity"] = (
+            next(iter(unique_capacities)) if len(unique_capacities) == 1 else float("nan")
+        )
+
+    grouped["utilisation"] = grouped["mean_in_use"] / grouped["capacity"]
+
+    ordered_cols = ["run_number"] + ([group_col] if group_col else [])
+    return grouped[ordered_cols + ["busy_time", "mean_in_use", "capacity", "utilisation"]]

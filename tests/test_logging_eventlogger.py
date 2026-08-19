@@ -103,6 +103,29 @@ def test_resource_use_helpers(method, expected_type, expected_event):
     assert logger.log[0]["resource_id"] == 2
 
 
+@pytest.mark.parametrize(
+    "method, expected_type",
+    [
+        ("log_resource_use_start", "resource_use"),
+        ("log_resource_use_end", "resource_use_end"),
+    ],
+)
+def test_resource_use_event_name_is_an_explicit_parameter(method, expected_type):
+    """`event=` names the specific step (e.g. distinguishing "treatment_begins"
+    from "triage_begins", both `event_type="resource_use"`) - this was already
+    possible as an undocumented extra kwarg, silently overriding the literal
+    default via `**extra_fields`. Now explicit and documented; behaviour for a
+    caller naming their own step is unchanged."""
+    logger = EventLogger()
+
+    getattr(logger, method)(
+        entity_id=1, resource_id=2, time=5.0, event="treatment_begins"
+    )
+
+    assert logger.log[0]["event_type"] == expected_type
+    assert logger.log[0]["event"] == "treatment_begins"
+
+
 def test_log_custom_event_passes_through_both_fields():
     logger = EventLogger()
 

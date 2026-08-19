@@ -23,8 +23,11 @@ from vidigi.process_mapping import (
 from vidigi.analysis import (
     DurationStat,
     MatchMode,
+    ResourceUtilisationBy,
+    UnclosedResourceUse,
     _summarise_durations,
     event_durations,
+    resource_utilisation,
 )
 from vidigi.plots import (
     plot_queue_size as _plot_queue_size,
@@ -279,6 +282,7 @@ class EventLogger:
         *,
         entity_id: Any,
         resource_id: int,
+        event: str = "start",
         time: Optional[float] = None,
         pathway: Optional[str] = None,
         run_number: Optional[int] = None,
@@ -286,11 +290,29 @@ class EventLogger:
     ):
         """
         Log the start of resource use. Requires resource_id.
+
+        Parameters
+        ----------
+        event : str, default="start"
+            Name of the specific step, e.g. `"treatment_begins"`. The default
+            of `"start"` is fine for a model with only one resource-use step;
+            with more than one, a distinct name per step is what lets
+            `vidigi.analysis.resource_use_intervals`/`resource_utilisation`
+            report them separately rather than pooling every resource
+            together under one name.
+
+        Notes
+        -----
+        This was already possible by passing `event=...` as an extra keyword
+        argument - it silently overrode the literal `"start"` above, since
+        `**extra_fields` is applied last. `event` is now an explicit,
+        documented parameter instead; behaviour for existing callers is
+        unchanged either way.
         """
         event_data = {
             "entity_id": entity_id,
             "event_type": "resource_use",
-            "event": "start",
+            "event": event,
             "time": time,
             "resource_id": resource_id,
             "pathway": pathway,
@@ -304,6 +326,7 @@ class EventLogger:
         *,
         entity_id: Any,
         resource_id: int,
+        event: str = "end",
         time: Optional[float] = None,
         pathway: Optional[str] = None,
         run_number: Optional[int] = None,
@@ -311,11 +334,27 @@ class EventLogger:
     ):
         """
         Log the end of resource use. Requires resource_id.
+
+        Parameters
+        ----------
+        event : str, default="end"
+            Name of the specific step, e.g. `"treatment_ends"`. Only used as a
+            label by `vidigi.analysis.resource_use_intervals` - grouping uses
+            the matching `log_resource_use_start` call's `event` instead - but
+            still worth naming distinctly for readability.
+
+        Notes
+        -----
+        This was already possible by passing `event=...` as an extra keyword
+        argument - it silently overrode the literal `"end"` above, since
+        `**extra_fields` is applied last. `event` is now an explicit,
+        documented parameter instead; behaviour for existing callers is
+        unchanged either way.
         """
         event_data = {
             "entity_id": entity_id,
             "event_type": "resource_use_end",
-            "event": "end",
+            "event": event,
             "time": time,
             "resource_id": resource_id,
             "pathway": pathway,
@@ -909,6 +948,68 @@ class TrialLogger:
             return {"stat": label, "value": result}
         else:
             return result
+
+    def get_resource_utilisation(
+        self,
+        *,
+        by: ResourceUtilisationBy = "step",
+        scenario=None,
+        resource_map: Optional[dict] = None,
+        event_position_df: Optional[pd.DataFrame] = None,
+        resource_capacities: Optional[dict] = None,
+        capacity: Optional[Literal["infer"]] = None,
+        warm_up: float = 0,
+        limit_duration: Optional[float] = None,
+        unclosed: UnclosedResourceUse = "censor",
+    ):
+        """
+        Summarise resource use into busy time, mean-in-use and utilisation, per run.
+
+        Thin wrapper over `vidigi.analysis.resource_utilisation`, called on the
+        trial's combined dataframe. See that function for the full parameter
+        list, the four capacity-resolution routes, and how an unclosed resource
+        use is handled.
+
+        Parameters
+        ----------
+        by : {"step", "resource", "run"}, default="step"
+            What each row summarises. See `vidigi.analysis.resource_utilisation`.
+        scenario, resource_map, event_position_df, resource_capacities, capacity :
+            Capacity resolution - see `vidigi.analysis._resolve_resource_capacities`
+            for the four routes. All optional; with none given, `utilisation`
+            is `NaN` throughout and only `busy_time`/`mean_in_use` are
+            meaningful.
+        warm_up : float, default=0
+            Start of the analysis window.
+        limit_duration : float, optional
+            End of the analysis window. `None` (default) uses the latest time
+            seen anywhere in the trial.
+        unclosed : {"censor", "drop"}, default="censor"
+            How an entity still holding a resource at the end of the window is
+            handled. See `vidigi.analysis.resource_use_intervals`.
+
+        Returns
+        -------
+        pandas.DataFrame
+            One row per run per group - see `vidigi.analysis.resource_utilisation`.
+
+        See Also
+        --------
+        vidigi.analysis.resource_utilisation : The underlying implementation.
+        vidigi.analysis.resource_use_intervals : The underlying per-bout intervals.
+        """
+        return resource_utilisation(
+            self._trial_dataframe,
+            by=by,
+            scenario=scenario,
+            resource_map=resource_map,
+            event_position_df=event_position_df,
+            resource_capacities=resource_capacities,
+            capacity=capacity,
+            warm_up=warm_up,
+            limit_duration=limit_duration,
+            unclosed=unclosed,
+        )
 
     def plot_duration_distribution(
         self,

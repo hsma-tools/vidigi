@@ -363,6 +363,42 @@ def _check_one_arrival_per_entity(
         )
 
 
+def _resource_map_from_event_position_df(
+    event_position_df: pd.DataFrame, event_col_name: str = "event"
+) -> dict:
+    """Map each event with a declared resource to its scenario attribute name.
+
+    `EventPosition.resource` holds the *name* of an attribute on a scenario
+    object, not a capacity count - resolving `getattr(scenario, name)` is left
+    to the caller, since `animation.py` wants one icon per resource unit and
+    `vidigi.analysis._resolve_resource_capacities` wants a capacity per step,
+    and the two fail differently when the named attribute is missing.
+
+    Shared by both, so the definition of "this event has a resource" - a
+    non-null `resource` column - cannot drift between them.
+
+    Parameters
+    ----------
+    event_position_df : pandas.DataFrame
+        E.g. the output of `create_event_position_df`. Must have `resource`
+        and `event_col_name` columns for anything to be returned; a frame
+        missing `resource` entirely (a purely queue-based model) is not an
+        error, just empty.
+    event_col_name : str, default="event"
+        Column holding the event name.
+
+    Returns
+    -------
+    dict
+        `{event_name: resource_attribute_name}`, one entry per row where
+        `resource` is not null.
+    """
+    if "resource" not in event_position_df.columns:
+        return {}
+    with_resource = event_position_df[event_position_df["resource"].notnull()]
+    return dict(zip(with_resource[event_col_name], with_resource["resource"]))
+
+
 def _ensure_int(value, name: str) -> int:
     if isinstance(value, numbers.Real):
         if not isinstance(value, int):

@@ -340,3 +340,105 @@ def emptying_queue_loggers():
     second.log_departure(entity_id=1, time=35.0)
 
     return [first, second]
+
+
+@pytest.fixture
+def resource_use_loggers():
+    """Two runs, one step ("treatment_begins"/"treatment_ends"), 3 resource units,
+    window 0-20 (pass ``limit_duration=20`` explicitly in tests).
+
+    ==============  =========  =========  =========  =====
+    resource_id     run 1      run 2      busy (r1)  busy (r2)
+    ==============  =========  =========  =========  =====
+    1               0 -> 10    (idle)     10         0
+    2               0 -> 5     0 -> 20    5          20
+    3               (idle)     5 -> 15    0          10
+    ==============  =========  =========  =========  =====
+
+    Hand-computed, with ``resource_capacities={"treatment_begins": 3}``:
+
+    - run 1: busy ``{1: 10, 2: 5, 3: 0}``, total 15, ``mean_in_use`` 0.75,
+      ``utilisation`` 0.25
+    - run 2: busy ``{1: 0, 2: 20, 3: 10}``, total 30, ``mean_in_use`` 1.5,
+      ``utilisation`` 0.5
+
+    Resource 3 being idle in run 1 (but used in run 2) is what proves a
+    resource unused in one run still reports a genuine zero there, rather than
+    being silently absent - the same convention as `queue_size_over_time`.
+    """
+    run1 = EventLogger(run_number=1)
+    run1.log_resource_use_start(
+        entity_id=1, resource_id=1, time=0.0, event="treatment_begins"
+    )
+    run1.log_resource_use_end(
+        entity_id=1, resource_id=1, time=10.0, event="treatment_ends"
+    )
+    run1.log_resource_use_start(
+        entity_id=2, resource_id=2, time=0.0, event="treatment_begins"
+    )
+    run1.log_resource_use_end(
+        entity_id=2, resource_id=2, time=5.0, event="treatment_ends"
+    )
+
+    run2 = EventLogger(run_number=2)
+    run2.log_resource_use_start(
+        entity_id=1, resource_id=2, time=0.0, event="treatment_begins"
+    )
+    run2.log_resource_use_end(
+        entity_id=1, resource_id=2, time=20.0, event="treatment_ends"
+    )
+    run2.log_resource_use_start(
+        entity_id=2, resource_id=3, time=5.0, event="treatment_begins"
+    )
+    run2.log_resource_use_end(
+        entity_id=2, resource_id=3, time=15.0, event="treatment_ends"
+    )
+
+    return [run1, run2]
+
+
+@pytest.fixture
+def unclosed_resource_use_logger():
+    """One run: a resource use starting at t=15, never closed, window end 20
+    (pass ``limit_duration=20`` explicitly in tests).
+
+    With ``unclosed="censor"`` (the default), the interval is censored at the
+    window end: ``busy_time == 5`` (20 - 15), ``censored == True``, and a
+    warning is raised. Asserting ``busy_time == 5`` rather than ``0`` is what
+    pins that the entity is not simply dropped.
+    """
+    logger = EventLogger(run_number=1)
+    logger.log_resource_use_start(
+        entity_id=1, resource_id=1, time=15.0, event="treatment_begins"
+    )
+    return logger
+
+
+@pytest.fixture
+def resource_use_no_resource_id_logger():
+    """One run: a resource use start/end pair logged with no ``resource_id`` at
+    all, via `log_event` directly (the `log_resource_use_start`/`_end` helpers
+    require `resource_id`, so it cannot be omitted through them).
+
+    ``to_dataframe()`` therefore has no `resource_id` column at all - this is
+    what exercises `resource_use_intervals`' `(run, entity)`-only pairing
+    fallback and its warning, rather than the "some rows null, some not" error
+    case. The pairing still finds the interval: entity 1, "treatment_begins" at
+    t=0 to t=10, busy_time 10.
+    """
+    logger = EventLogger(run_number=1)
+    logger.log_event(
+        entity_id=1,
+        event_type="resource_use",
+        event="treatment_begins",
+        time=0.0,
+        run_number=1,
+    )
+    logger.log_event(
+        entity_id=1,
+        event_type="resource_use_end",
+        event="treatment_ends",
+        time=10.0,
+        run_number=1,
+    )
+    return logger

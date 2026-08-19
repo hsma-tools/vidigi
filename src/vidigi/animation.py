@@ -13,6 +13,7 @@ from vidigi.utils import (
     _check_one_arrival_per_entity,
     _check_single_run,
     _enforce_int_params,
+    _resource_map_from_event_position_df,
 )
 import numpy as np
 from typing import Literal, Optional, TypeAlias
@@ -978,12 +979,11 @@ def generate_animation(
     # make them semi-transparent or you won't see the people using them!
     # A scenario can be supplied for a model where no event declares a resource - a
     # purely queue-based model, say. There is nothing to draw in that case, and the
-    # explode below would fail on the resulting empty frame.
-    if (
-        scenario is not None
-        and "resource" in event_position_df.columns
-        and event_position_df["resource"].notnull().any()
-    ):
+    # explode below would fail on the resulting empty frame. The truthy check below
+    # is shared with `vidigi.analysis._resolve_resource_capacities`'s route C, so
+    # the two cannot drift on what counts as "this event has a resource".
+    resource_attr_map = _resource_map_from_event_position_df(event_position_df)
+    if scenario is not None and resource_attr_map:
         events_with_resources = event_position_df[
             event_position_df["resource"].notnull()
         ].copy()
