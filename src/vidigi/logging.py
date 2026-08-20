@@ -964,6 +964,7 @@ class TrialLogger:
         warm_up: float = 0,
         limit_duration: Optional[float] = None,
         unclosed: UnclosedResourceUse = "censor",
+        resource_col_name: str = "resource_id",
     ):
         """
         Summarise resource use into busy time, mean-in-use and utilisation, per run.
@@ -990,6 +991,12 @@ class TrialLogger:
         unclosed : {"censor", "drop"}, default="censor"
             How an entity still holding a resource at the end of the window is
             handled. See `vidigi.analysis.resource_use_intervals`.
+        resource_col_name : str, default="resource_id"
+            Which column identifies the physical resource for `by="resource"`.
+            Point this at a globally-unique column (e.g. `"unique_resource_id"`,
+            logged via `log_resource_use_start`/`_end`'s `**extra_fields`) if
+            your model has more than one `VidigiStore`/`VidigiPriorityStore`
+            pool constructed with a `label=` - see `vidigi.resources.VidigiStore`.
 
         Returns
         -------
@@ -1012,6 +1019,7 @@ class TrialLogger:
             warm_up=warm_up,
             limit_duration=limit_duration,
             unclosed=unclosed,
+            resource_col_name=resource_col_name,
         )
 
     def plot_duration_distribution(
@@ -1295,6 +1303,7 @@ class TrialLogger:
         warm_up: float = 0,
         limit_duration: Optional[float] = None,
         unclosed: UnclosedResourceUse = "censor",
+        resource_col_name: str = "resource_id",
     ):
         """
         Plot a bar chart of resource utilisation, one bar per group, across runs.
@@ -1333,6 +1342,12 @@ class TrialLogger:
         unclosed : {"censor", "drop"}, default="censor"
             How an entity still holding a resource at the end of the window is
             handled. See `vidigi.analysis.resource_use_intervals`.
+        resource_col_name : str, default="resource_id"
+            Which column identifies the physical resource for `by="resource"`.
+            Point this at a globally-unique column (e.g. `"unique_resource_id"`,
+            logged via `log_resource_use_start`/`_end`'s `**extra_fields`) if
+            your model has more than one `VidigiStore`/`VidigiPriorityStore`
+            pool constructed with a `label=` - see `vidigi.resources.VidigiStore`.
 
         Returns
         -------
@@ -1359,6 +1374,7 @@ class TrialLogger:
             warm_up=warm_up,
             limit_duration=limit_duration,
             unclosed=unclosed,
+            resource_col_name=resource_col_name,
         )
 
     def plot_resource_utilisation_over_time(

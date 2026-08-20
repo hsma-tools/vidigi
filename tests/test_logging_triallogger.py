@@ -520,6 +520,39 @@ def test_get_resource_utilisation_is_passed_through(resource_use_loggers):
     assert dict(zip(run1["resource_id"], run1["busy_time"])) == {1: 10.0, 2: 5.0, 3: 0.0}
 
 
+def test_get_resource_utilisation_resource_col_name_is_passed_through():
+    """`resource_col_name` reaches `vidigi.analysis.resource_utilisation`,
+    proven by pointing it at a differently-named column that resolves a
+    resource_id collision the default column has - the motivating case for
+    `VidigiStore`'s `label=`/`unique_id_attribute`."""
+    logger = EventLogger(run_number=1)
+    logger.log_resource_use_start(
+        entity_id=1, resource_id=1, unique_resource_id="a_1", time=0.0, event="step_begins"
+    )
+    logger.log_resource_use_end(
+        entity_id=1, resource_id=1, unique_resource_id="a_1", time=10.0, event="step_ends"
+    )
+    logger.log_resource_use_start(
+        entity_id=2, resource_id=1, unique_resource_id="b_1", time=5.0, event="step_begins"
+    )
+    logger.log_resource_use_end(
+        entity_id=2, resource_id=1, unique_resource_id="b_1", time=15.0, event="step_ends"
+    )
+    trial = TrialLogger([logger])
+
+    with pytest.warns(UserWarning, match="overlapping"):
+        default = trial.get_resource_utilisation(by="resource", limit_duration=20)
+    assert set(default["resource_id"]) == {1}
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        fixed = trial.get_resource_utilisation(
+            by="resource", resource_col_name="unique_resource_id", limit_duration=20
+        )
+    assert not any("overlapping" in str(w.message) for w in caught)
+    assert set(fixed["resource_id"]) == {"a_1", "b_1"}
+
+
 @pytest.mark.parametrize("what", typing.get_args(DurationStat))
 def test_every_duration_stat_literal_is_accepted(what, two_run_loggers):
     """The annotation must not advertise a statistic the runtime check rejects.
@@ -694,6 +727,34 @@ def test_plot_resource_utilisation_is_passed_through(resource_use_loggers):
 
     assert fig.data[0].x == ("treatment_begins",)
     assert fig.data[0].y == pytest.approx((0.375,))
+
+
+def test_plot_resource_utilisation_resource_col_name_is_passed_through():
+    """`resource_col_name` reaches `vidigi.plots.plot_resource_utilisation`,
+    proven by the bar count: two colliding units under the default column
+    draw one bar, the same log under `unique_resource_id` draws two."""
+    logger = EventLogger(run_number=1)
+    logger.log_resource_use_start(
+        entity_id=1, resource_id=1, unique_resource_id="a_1", time=0.0, event="step_begins"
+    )
+    logger.log_resource_use_end(
+        entity_id=1, resource_id=1, unique_resource_id="a_1", time=10.0, event="step_ends"
+    )
+    logger.log_resource_use_start(
+        entity_id=2, resource_id=1, unique_resource_id="b_1", time=20.0, event="step_begins"
+    )
+    logger.log_resource_use_end(
+        entity_id=2, resource_id=1, unique_resource_id="b_1", time=30.0, event="step_ends"
+    )
+    trial = TrialLogger([logger])
+
+    default_fig = trial.plot_resource_utilisation(by="resource", limit_duration=40)
+    assert default_fig.data[0].x == ("1",)
+
+    fixed_fig = trial.plot_resource_utilisation(
+        by="resource", resource_col_name="unique_resource_id", limit_duration=40
+    )
+    assert set(fixed_fig.data[0].x) == {"a_1", "b_1"}
 
 
 def test_plot_resource_utilisation_over_time_is_passed_through(resource_use_loggers):
