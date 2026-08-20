@@ -1179,6 +1179,13 @@ def resource_utilisation(
         - ``"resource"``: one row per `(run, resource_id)` - one physical unit.
           Capacity is always `1` (the unit itself); no capacity route needs to
           be given at all, and none of the capacity arguments below are used.
+          This assumes `resource_id` is unique across the *whole* log, not
+          just within one step - if two different resource pools each number
+          their own units from 1 (e.g. two independent `vidigi.resources.VidigiStore`
+          instances), their busy time is silently summed as if it were one
+          unit, and `utilisation` can read above `1` with no error, only the
+          generic over-capacity warning below. Give each pool a distinct ID
+          range (or an offset) if you plan to use `by="resource"`.
         - ``"run"``: one row per run, pooling every step/unit together.
           `capacity` is the **sum** of every step's resolved capacity (`NaN`
           if any step's capacity is unresolved) - the maximum number of
