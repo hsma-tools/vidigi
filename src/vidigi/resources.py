@@ -23,9 +23,44 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 """
 
 import warnings
+import weakref
 
 import simpy
 from simpy.core import BoundClass
+
+# {env: {labels already used for a pool on that env}}. Keyed on the
+# environment (not a bare module-level set) because reusing a label across
+# separate replications - a fresh `simpy.Environment` per run, the normal
+# case - is correct and must not warn; only two pools sharing a label on the
+# *same* env is a real collision. A WeakKeyDictionary lets a finished run's
+# entry be freed once its env is garbage collected, instead of growing for
+# the life of the process across many replications.
+_seen_pool_labels: "weakref.WeakKeyDictionary" = weakref.WeakKeyDictionary()
+
+
+def _check_label_not_reused(env, label, *, stacklevel):
+    """Warn if `label` was already used for another pool on this `env`.
+
+    Two pools sharing a label produce colliding `unique_id_attribute` values,
+    silently reproducing the exact `resource_id` collision `label=` exists to
+    prevent - and unlike the bare `resource_id` collision, nothing else
+    catches it unless the two pools' resources happen to be busy at the same
+    instant (see `vidigi.analysis._check_no_overlapping_resource_bouts`).
+    """
+    if label is None:
+        return
+    seen = _seen_pool_labels.setdefault(env, set())
+    if label in seen:
+        warnings.warn(
+            f"label={label!r} was already used for another resource pool on "
+            "this simpy.Environment. Resources from different pools sharing "
+            "a label get colliding unique_id_attribute values, silently "
+            "reproducing the resource_id collision label= exists to prevent "
+            "- give each pool on the same environment a distinct label.",
+            UserWarning,
+            stacklevel=stacklevel,
+        )
+    seen.add(label)
 
 
 # MARK: VidigiResource Class
@@ -49,7 +84,7 @@ class VidigiResource:
         return f"VidigiResource(id={self.id_attribute})"
 
 
-def _new_pool_resource(env, index, label=None):
+def _new_pool_resource(env, index, label=None, *, stacklevel=3):
     """Build one `VidigiResource` for a `populate()`-style loop.
 
     `id_attribute` is always `index + 1`, unchanged from every prior release -
@@ -62,6 +97,17 @@ def _new_pool_resource(env, index, label=None):
     apart. Omitting `label` adds neither attribute at all (a true no-op), but
     warns once that `label` will become mandatory at vidigi 2.0 - see
     `pending_fixes.md`.
+
+    `stacklevel` must count frames from here up to the *caller's* call site -
+    `populate_store()` and a direct `.populate()` call are both one frame
+    away (the default, 3, is correct for both), but `VidigiStore`/
+    `VidigiPriorityStore.__init__` call `.populate()` internally, adding a
+    frame, so they must pass `stacklevel=4` through `.populate()`'s own
+    `_stacklevel` parameter. Getting this wrong doesn't just mislabel the
+    warning's reported line - it can make it vanish. Python's default warning
+    filter suppresses repeats sharing the same (message, category, module,
+    lineno), so two distinct unlabelled pools that both misattribute to the
+    same internal line only warn once between them.
     """
     if label is None:
         warnings.warn(
@@ -73,7 +119,7 @@ def _new_pool_resource(env, index, label=None):
             "label=\"...\" to give this pool's resources a collision-proof "
             "unique_id_attribute. `label` becomes mandatory in vidigi 2.0.",
             DeprecationWarning,
-            stacklevel=3,
+            stacklevel=stacklevel,
         )
         extra = {}
     else:
@@ -132,6 +178,7 @@ def populate_store(num_resources, simpy_store, sim_env, label=None):
     >>> len(resource_store.items)  # The store now contains 5 VidigiResource objects
     5
     """
+    _check_label_not_reused(sim_env, label, stacklevel=3)
     for i in range(num_resources):
         simpy_store.put(_new_pool_resource(sim_env, i, label))
 
@@ -180,14 +227,14 @@ class VidigiStore:
         self.store = simpy.Store(env, capacity)
 
         if num_resources is not None:
-            self.populate(num_resources, label=label)
+            self.populate(num_resources, label=label, _stacklevel=4)
 
         # # Initialize with items if provided
         # if init_items:
         #     for item in init_items:
         #         self.store.put(item)
 
-    def populate(self, num_resources, label=None):
+    def populate(self, num_resources, label=None, *, _stacklevel=3):
         """
         Populate this VidigiStore with VidigiResource objects.
 
@@ -208,13 +255,19 @@ class VidigiStore:
             produced, but warns that `label` will become mandatory at vidigi
             2.0 - see `vidigi.analysis.resource_utilisation`'s `by="resource"`
             docs for why.
+        _stacklevel : int, default=3
+            Internal - how many frames up from `_new_pool_resource` the
+            missing-`label` warning should attribute to. `__init__` calling
+            this internally passes `4` to still land on the caller's
+            `VidigiStore(...)` line rather than on this method.
 
         Returns
         -------
         None
         """
+        _check_label_not_reused(self.env, label, stacklevel=_stacklevel)
         for i in range(num_resources):
-            self.put(_new_pool_resource(self.env, i, label))
+            self.put(_new_pool_resource(self.env, i, label, stacklevel=_stacklevel))
 
     def request(self):
         """
@@ -461,9 +514,9 @@ class VidigiPriorityStore:
         self.put_queue = []
 
         if num_resources is not None:
-            self.populate(num_resources, label=label)
+            self.populate(num_resources, label=label, _stacklevel=4)
 
-    def populate(self, num_resources, label=None):
+    def populate(self, num_resources, label=None, *, _stacklevel=3):
         """
         Populate this VidigiPriorityStore with VidigiResource objects.
 
@@ -484,13 +537,19 @@ class VidigiPriorityStore:
             produced, but warns that `label` will become mandatory at vidigi
             2.0 - see `vidigi.analysis.resource_utilisation`'s `by="resource"`
             docs for why.
+        _stacklevel : int, default=3
+            Internal - how many frames up from `_new_pool_resource` the
+            missing-`label` warning should attribute to. `__init__` calling
+            this internally passes `4` to still land on the caller's
+            `VidigiPriorityStore(...)` line rather than on this method.
 
         Returns
         -------
         None
         """
+        _check_label_not_reused(self.env, label, stacklevel=_stacklevel)
         for i in range(num_resources):
-            self.put(_new_pool_resource(self.env, i, label))
+            self.put(_new_pool_resource(self.env, i, label, stacklevel=_stacklevel))
 
     def request(self, priority=0):
         """

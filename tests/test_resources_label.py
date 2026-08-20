@@ -92,6 +92,47 @@ def test_label_given_suppresses_the_deprecation_warning(build):
         build(_make_env())  # must not raise
 
 
+@pytest.mark.parametrize(
+    "build",
+    [
+        lambda env: VidigiStore(env, num_resources=1),
+        lambda env: VidigiPriorityStore(env, num_resources=1),
+    ],
+)
+def test_deprecation_warning_attributes_to_the_constructor_call_site(build):
+    """`__init__` calls `.populate()` internally, adding a stack frame beyond
+    the direct-`.populate()`/`populate_store()` case - the warning must still
+    point at the caller's `VidigiStore(...)`/`VidigiPriorityStore(...)` line
+    (this file), not at the internal `.populate()` call inside `resources.py`.
+    """
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        build(_make_env())
+
+    matching = [w for w in caught if issubclass(w.category, DeprecationWarning)]
+    assert len(matching) == 1
+    assert matching[0].filename == __file__
+
+
+def test_two_unlabelled_pools_each_warn_under_default_filter_semantics():
+    """Python's default warning filter suppresses repeats sharing the same
+    (message, category, module, lineno). If the two `VidigiStore(...)` calls
+    below misattributed to the same internal `resources.py` line, the second
+    pool's warning would be silently swallowed here - reproduced with an
+    explicit "default" filter (not "always", which pytest normally installs
+    and which would mask this by showing every warning regardless of
+    location).
+    """
+    env = _make_env()
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("default")
+        VidigiStore(env, num_resources=1)
+        VidigiStore(env, num_resources=1)
+
+    matching = [w for w in caught if issubclass(w.category, DeprecationWarning)]
+    assert len(matching) == 2
+
+
 # --------------------------------------------------------------------------- #
 # label given: unique_id_attribute
 # --------------------------------------------------------------------------- #
@@ -166,6 +207,49 @@ def test_mixed_usage_only_the_labelled_pool_gets_the_new_attributes():
     for r in labelled.store.items:
         assert r.label == "x"
         assert r.unique_id_attribute in ("x_1", "x_2")
+
+
+# --------------------------------------------------------------------------- #
+# Reusing the same label for two different pools
+# --------------------------------------------------------------------------- #
+
+
+@pytest.mark.parametrize(
+    "build_second",
+    [
+        lambda env: VidigiStore(env, num_resources=1, label="triage"),
+        lambda env: VidigiPriorityStore(env, num_resources=1, label="triage"),
+        lambda env: populate_store(1, simpy.Store(env), env, label="triage"),
+    ],
+)
+def test_reusing_a_label_on_the_same_env_warns(build_second):
+    """Two pools given the same label on the same env reproduce the exact
+    resource_id collision label= exists to prevent - and unlike a bare
+    resource_id collision, nothing else catches it unless the two pools
+    happen to be busy at the same instant, so this must warn on its own."""
+    env = _make_env()
+    VidigiStore(env, num_resources=1, label="triage")
+
+    with pytest.warns(UserWarning, match="already used"):
+        build_second(env)
+
+
+def test_reusing_a_label_across_different_envs_does_not_warn():
+    """Reusing a label across separate replications - a fresh
+    simpy.Environment per run, the normal case - is correct and must not
+    warn, or every replication after the first would falsely flag itself."""
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", UserWarning)
+        VidigiStore(_make_env(), num_resources=1, label="triage")
+        VidigiStore(_make_env(), num_resources=1, label="triage")  # must not raise
+
+
+def test_distinct_labels_on_the_same_env_do_not_warn():
+    env = _make_env()
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", UserWarning)
+        VidigiStore(env, num_resources=1, label="triage")
+        VidigiStore(env, num_resources=1, label="registration")  # must not raise
 
 
 # --------------------------------------------------------------------------- #
