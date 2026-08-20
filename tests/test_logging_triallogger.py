@@ -520,11 +520,10 @@ def test_get_resource_utilisation_is_passed_through(resource_use_loggers):
     assert dict(zip(run1["resource_id"], run1["busy_time"])) == {1: 10.0, 2: 5.0, 3: 0.0}
 
 
-def test_get_resource_utilisation_resource_col_name_is_passed_through():
-    """`resource_col_name` reaches `vidigi.analysis.resource_utilisation`,
-    proven by pointing it at a differently-named column that resolves a
-    resource_id collision the default column has - the motivating case for
-    `VidigiStore`'s `label=`/`unique_id_attribute`."""
+def _colliding_pool_logger():
+    """One run, two entities sharing resource_id=1 but with disjoint
+    unique_resource_id values, genuinely overlapping in time - the motivating
+    case for `VidigiStore`'s `label=`/`unique_id_attribute`."""
     logger = EventLogger(run_number=1)
     logger.log_resource_use_start(
         entity_id=1, resource_id=1, unique_resource_id="a_1", time=0.0, event="step_begins"
@@ -538,19 +537,98 @@ def test_get_resource_utilisation_resource_col_name_is_passed_through():
     logger.log_resource_use_end(
         entity_id=2, resource_id=1, unique_resource_id="b_1", time=15.0, event="step_ends"
     )
-    trial = TrialLogger([logger])
+    return logger
 
-    with pytest.warns(UserWarning, match="overlapping"):
-        default = trial.get_resource_utilisation(by="resource", limit_duration=20)
-    assert set(default["resource_id"]) == {1}
+
+def test_get_resource_utilisation_resource_col_name_auto_prefers_unique_resource_id():
+    """`resource_col_name=None` (the default) picks `unique_resource_id`
+    over `resource_id` whenever the log has it - so a model built the
+    recommended way needs no extra argument here to get a collision-proof
+    breakdown."""
+    trial = TrialLogger([_colliding_pool_logger()])
 
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
-        fixed = trial.get_resource_utilisation(
-            by="resource", resource_col_name="unique_resource_id", limit_duration=20
-        )
+        result = trial.get_resource_utilisation(by="resource", limit_duration=20)
+
     assert not any("overlapping" in str(w.message) for w in caught)
-    assert set(fixed["resource_id"]) == {"a_1", "b_1"}
+    assert set(result["resource_id"]) == {"a_1", "b_1"}
+
+
+def test_get_resource_utilisation_resource_col_name_explicit_override_still_works():
+    """Passing resource_col_name="resource_id" explicitly must still reach the
+    raw, collision-prone column, overriding the `None` (auto-detect) default."""
+    trial = TrialLogger([_colliding_pool_logger()])
+
+    with pytest.warns(UserWarning, match="overlapping"):
+        result = trial.get_resource_utilisation(
+            by="resource", resource_col_name="resource_id", limit_duration=20
+        )
+    assert set(result["resource_id"]) == {1}
+
+
+def test_resolve_resource_col_name_defaults_to_unique_resource_id_when_present():
+    trial = TrialLogger([_colliding_pool_logger()])
+    df = trial.to_dataframe()
+    assert trial._resolve_resource_col_name(None, df) == "unique_resource_id"
+
+
+def test_resolve_resource_col_name_falls_back_to_resource_id_when_absent(resource_use_loggers):
+    trial = TrialLogger(resource_use_loggers)
+    df = trial.to_dataframe()
+    assert trial._resolve_resource_col_name(None, df) == "resource_id"
+
+
+def test_resolve_resource_col_name_explicit_value_is_returned_unchanged(resource_use_loggers):
+    trial = TrialLogger(resource_use_loggers)
+    df = trial.to_dataframe()
+    assert trial._resolve_resource_col_name("something_else", df) == "something_else"
+
+
+def test_resolve_resource_col_name_uses_the_passed_dataframe_not_a_fresh_rebuild():
+    """The resolver must check `unique_resource_id` on the dataframe it is
+    given, not re-derive its own copy from `self._trial_dataframe` - that
+    would defeat the point of building the frame once per call and passing
+    it in (see the callers in get_resource_utilisation etc.)."""
+    trial = TrialLogger([_colliding_pool_logger()])  # has unique_resource_id
+    other_df = pd.DataFrame({"resource_id": [1, 2]})  # does not
+
+    assert trial._resolve_resource_col_name(None, other_df) == "resource_id"
+
+
+def test_get_resource_utilisation_auto_raises_on_a_partially_populated_column():
+    """Documented **BREAKING** edge case (see HISTORY.md): a trial where
+    unique_resource_id is present on some resource-use rows but not others -
+    e.g. only part of a model's logging was updated to the label= pattern -
+    used to succeed under the old hard-coded resource_id default. `None` now
+    picks unique_resource_id (it exists somewhere in the trial) and
+    resource_use_intervals correctly refuses to pair on a partially-populated
+    column, so this now raises instead of silently working. Passing
+    resource_col_name="resource_id" explicitly restores the old behaviour."""
+    with_unique_id = EventLogger(run_number=1)
+    with_unique_id.log_resource_use_start(
+        entity_id=1, resource_id=1, unique_resource_id="a_1", time=0.0, event="step_begins"
+    )
+    with_unique_id.log_resource_use_end(
+        entity_id=1, resource_id=1, unique_resource_id="a_1", time=10.0, event="step_ends"
+    )
+    without_unique_id = EventLogger(run_number=2)
+    without_unique_id.log_resource_use_start(
+        entity_id=1, resource_id=1, time=0.0, event="step_begins"
+    )
+    without_unique_id.log_resource_use_end(
+        entity_id=1, resource_id=1, time=10.0, event="step_ends"
+    )
+    trial = TrialLogger([with_unique_id, without_unique_id])
+
+    with pytest.raises(ValueError, match="unique_resource_id"):
+        trial.get_resource_utilisation(by="resource", limit_duration=20)
+
+    # The explicit escape hatch named in HISTORY.md must still work.
+    result = trial.get_resource_utilisation(
+        by="resource", resource_col_name="resource_id", limit_duration=20
+    )
+    assert set(result["run_number"]) == {1, 2}
 
 
 @pytest.mark.parametrize("what", typing.get_args(DurationStat))
@@ -729,10 +807,10 @@ def test_plot_resource_utilisation_is_passed_through(resource_use_loggers):
     assert fig.data[0].y == pytest.approx((0.375,))
 
 
-def test_plot_resource_utilisation_resource_col_name_is_passed_through():
-    """`resource_col_name` reaches `vidigi.plots.plot_resource_utilisation`,
-    proven by the bar count: two colliding units under the default column
-    draw one bar, the same log under `unique_resource_id` draws two."""
+def _two_units_sharing_a_resource_id_logger():
+    """One run, two entities using disjoint units (never overlapping in time)
+    that nonetheless share resource_id=1 - only unique_resource_id tells them
+    apart."""
     logger = EventLogger(run_number=1)
     logger.log_resource_use_start(
         entity_id=1, resource_id=1, unique_resource_id="a_1", time=0.0, event="step_begins"
@@ -746,15 +824,28 @@ def test_plot_resource_utilisation_resource_col_name_is_passed_through():
     logger.log_resource_use_end(
         entity_id=2, resource_id=1, unique_resource_id="b_1", time=30.0, event="step_ends"
     )
-    trial = TrialLogger([logger])
+    return logger
 
-    default_fig = trial.plot_resource_utilisation(by="resource", limit_duration=40)
-    assert default_fig.data[0].x == ("1",)
 
-    fixed_fig = trial.plot_resource_utilisation(
-        by="resource", resource_col_name="unique_resource_id", limit_duration=40
+def test_plot_resource_utilisation_resource_col_name_auto_prefers_unique_resource_id():
+    """`resource_col_name=None` (the default) draws one bar per
+    unique_resource_id whenever the log has that column, rather than
+    collapsing units that happen to share a resource_id."""
+    trial = TrialLogger([_two_units_sharing_a_resource_id_logger()])
+
+    fig = trial.plot_resource_utilisation(by="resource", limit_duration=40)
+
+    assert set(fig.data[0].x) == {"a_1", "b_1"}
+
+
+def test_plot_resource_utilisation_resource_col_name_explicit_override_still_works():
+    trial = TrialLogger([_two_units_sharing_a_resource_id_logger()])
+
+    fig = trial.plot_resource_utilisation(
+        by="resource", resource_col_name="resource_id", limit_duration=40
     )
-    assert set(fixed_fig.data[0].x) == {"a_1", "b_1"}
+
+    assert fig.data[0].x == ("1",)
 
 
 def test_plot_resource_utilisation_over_time_is_passed_through(resource_use_loggers):
@@ -771,3 +862,36 @@ def test_plot_resource_utilisation_over_time_is_passed_through(resource_use_logg
     assert list(run_traces["1"].y) == [2, 1, 0, 0, 0]
     assert list(run_traces["2"].y) == [1, 2, 2, 1, 0]
     assert all(trace.line.shape == "hv" for trace in fig.data)
+
+
+def test_plot_resource_utilisation_over_time_resource_col_name_is_passed_through():
+    """`resource_col_name` reaches `vidigi.plots.plot_resource_utilisation_over_time`
+    - previously not exposed on this method at all, with no `**kwargs` escape
+    hatch either. Proven by pointing it at a nonexistent column and seeing the
+    underlying missing-column fallback warning name it."""
+    logger = EventLogger(run_number=1)
+    logger.log_resource_use_start(entity_id=1, resource_id=1, time=0.0, event="step_begins")
+    logger.log_resource_use_end(entity_id=1, resource_id=1, time=10.0, event="step_ends")
+    trial = TrialLogger([logger])
+
+    with pytest.warns(UserWarning, match="totally_not_a_column"):
+        trial.plot_resource_utilisation_over_time(
+            resource_col_name="totally_not_a_column", limit_duration=20
+        )
+
+
+def test_plot_resource_utilisation_over_time_resource_col_name_auto_does_not_warn_when_absent(
+    resource_use_loggers,
+):
+    """No `unique_resource_id` column - `None` must resolve to plain
+    `resource_id`, which is genuinely present, rather than triggering the
+    missing-column fallback warning."""
+    trial = TrialLogger(resource_use_loggers)
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        trial.plot_resource_utilisation_over_time(limit_duration=20)
+
+    assert not any(
+        "missing from every resource_use row" in str(w.message) for w in caught
+    )

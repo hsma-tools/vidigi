@@ -952,6 +952,31 @@ class TrialLogger:
         else:
             return result
 
+    def _resolve_resource_col_name(
+        self, resource_col_name: Optional[str], trial_dataframe: pd.DataFrame
+    ) -> str:
+        """Resolve `resource_col_name=None` (the default) to `"unique_resource_id"`
+        when that column is present on `trial_dataframe`, else the canonical
+        `"resource_id"`.
+
+        This is what lets a model built the recommended way - `VidigiStore(...,
+        label=...)`, logging `unique_resource_id=resource.unique_id_attribute`
+        alongside `resource_id` - get a collision-proof `by="resource"`
+        breakdown from `TrialLogger` with no extra argument, while a model with
+        no `unique_resource_id` column behaves exactly as before. Any explicit
+        value other than `None` is returned unchanged.
+
+        Takes `trial_dataframe` as an argument rather than re-reading
+        `self._trial_dataframe` (a property rebuilt via `pd.concat` on every
+        access) so each caller only pays for that rebuild once, reusing the
+        same frame for both the column check and the actual call.
+        """
+        if resource_col_name is not None:
+            return resource_col_name
+        if "unique_resource_id" in trial_dataframe.columns:
+            return "unique_resource_id"
+        return "resource_id"
+
     def get_resource_utilisation(
         self,
         *,
@@ -964,7 +989,8 @@ class TrialLogger:
         warm_up: float = 0,
         limit_duration: Optional[float] = None,
         unclosed: UnclosedResourceUse = "censor",
-        resource_col_name: str = "resource_id",
+        resource_col_name: Optional[str] = None,
+        **kwargs,
     ):
         """
         Summarise resource use into busy time, mean-in-use and utilisation, per run.
@@ -991,12 +1017,19 @@ class TrialLogger:
         unclosed : {"censor", "drop"}, default="censor"
             How an entity still holding a resource at the end of the window is
             handled. See `vidigi.analysis.resource_use_intervals`.
-        resource_col_name : str, default="resource_id"
+        resource_col_name : str, optional
             Which column identifies the physical resource for `by="resource"`.
-            Point this at a globally-unique column (e.g. `"unique_resource_id"`,
-            logged via `log_resource_use_start`/`_end`'s `**extra_fields`) if
-            your model has more than one `VidigiStore`/`VidigiPriorityStore`
-            pool constructed with a `label=` - see `vidigi.resources.VidigiStore`.
+            `None` (the default) uses `"unique_resource_id"` if that column is
+            present on this trial's log, else `"resource_id"` - so a model
+            built with `VidigiStore(..., label=...)` and logging
+            `unique_resource_id` alongside `resource_id` (see
+            `vidigi.resources.VidigiStore`) gets a collision-proof breakdown
+            with no extra argument here. Pass an explicit column name to
+            override.
+        **kwargs : dict
+            Additional keyword arguments forwarded to
+            `vidigi.analysis.resource_utilisation` (e.g. `entity_col_name`,
+            `time_col_name`, `run_col_name`).
 
         Returns
         -------
@@ -1008,8 +1041,9 @@ class TrialLogger:
         vidigi.analysis.resource_utilisation : The underlying implementation.
         vidigi.analysis.resource_use_intervals : The underlying per-bout intervals.
         """
+        trial_dataframe = self._trial_dataframe
         return resource_utilisation(
-            self._trial_dataframe,
+            trial_dataframe,
             by=by,
             scenario=scenario,
             resource_map=resource_map,
@@ -1019,7 +1053,10 @@ class TrialLogger:
             warm_up=warm_up,
             limit_duration=limit_duration,
             unclosed=unclosed,
-            resource_col_name=resource_col_name,
+            resource_col_name=self._resolve_resource_col_name(
+                resource_col_name, trial_dataframe
+            ),
+            **kwargs,
         )
 
     def plot_duration_distribution(
@@ -1303,7 +1340,8 @@ class TrialLogger:
         warm_up: float = 0,
         limit_duration: Optional[float] = None,
         unclosed: UnclosedResourceUse = "censor",
-        resource_col_name: str = "resource_id",
+        resource_col_name: Optional[str] = None,
+        **kwargs,
     ):
         """
         Plot a bar chart of resource utilisation, one bar per group, across runs.
@@ -1342,12 +1380,19 @@ class TrialLogger:
         unclosed : {"censor", "drop"}, default="censor"
             How an entity still holding a resource at the end of the window is
             handled. See `vidigi.analysis.resource_use_intervals`.
-        resource_col_name : str, default="resource_id"
+        resource_col_name : str, optional
             Which column identifies the physical resource for `by="resource"`.
-            Point this at a globally-unique column (e.g. `"unique_resource_id"`,
-            logged via `log_resource_use_start`/`_end`'s `**extra_fields`) if
-            your model has more than one `VidigiStore`/`VidigiPriorityStore`
-            pool constructed with a `label=` - see `vidigi.resources.VidigiStore`.
+            `None` (the default) uses `"unique_resource_id"` if that column is
+            present on this trial's log, else `"resource_id"` - so a model
+            built with `VidigiStore(..., label=...)` and logging
+            `unique_resource_id` alongside `resource_id` (see
+            `vidigi.resources.VidigiStore`) gets a collision-proof breakdown
+            with no extra argument here. Pass an explicit column name to
+            override.
+        **kwargs : dict
+            Additional keyword arguments forwarded to
+            `vidigi.plots.plot_resource_utilisation` (e.g. `entity_col_name`,
+            `time_col_name`, `run_col_name`).
 
         Returns
         -------
@@ -1358,8 +1403,9 @@ class TrialLogger:
         vidigi.plots.plot_resource_utilisation : The underlying implementation.
         get_resource_utilisation : The underlying per-run, per-group summary.
         """
+        trial_dataframe = self._trial_dataframe
         return _plot_resource_utilisation(
-            self._trial_dataframe,
+            trial_dataframe,
             by=by,
             metric=metric,
             error_bars=error_bars,
@@ -1374,7 +1420,10 @@ class TrialLogger:
             warm_up=warm_up,
             limit_duration=limit_duration,
             unclosed=unclosed,
-            resource_col_name=resource_col_name,
+            resource_col_name=self._resolve_resource_col_name(
+                resource_col_name, trial_dataframe
+            ),
+            **kwargs,
         )
 
     def plot_resource_utilisation_over_time(
@@ -1391,6 +1440,8 @@ class TrialLogger:
         event_position_df: Optional[pd.DataFrame] = None,
         resource_capacities: Optional[dict] = None,
         capacity: Optional[Literal["infer"]] = None,
+        resource_col_name: Optional[str] = None,
+        **kwargs,
     ):
         """
         Plot how many units of each resource step were in use over time, across runs.
@@ -1420,6 +1471,16 @@ class TrialLogger:
             y-axis range.
         scenario, resource_map, event_position_df, resource_capacities, capacity :
             Capacity resolution, used only when `as_proportion=True`.
+        resource_col_name : str, optional
+            Which column identifies the physical resource, used to pair
+            `resource_use`/`resource_use_end` bouts. `None` (the default)
+            uses `"unique_resource_id"` if that column is present on this
+            trial's log, else `"resource_id"` - see `get_resource_utilisation`'s
+            same parameter for why. Pass an explicit column name to override.
+        **kwargs : dict
+            Additional keyword arguments forwarded to
+            `vidigi.plots.plot_resource_utilisation_over_time` (e.g.
+            `entity_col_name`, `time_col_name`, `run_col_name`).
 
         Returns
         -------
@@ -1436,8 +1497,9 @@ class TrialLogger:
         vidigi.plots.plot_resource_utilisation_over_time : The underlying implementation.
         vidigi.analysis.resource_occupancy_over_time : The underlying per-run, per-snapshot counts.
         """
+        trial_dataframe = self._trial_dataframe
         return _plot_resource_utilisation_over_time(
-            self._trial_dataframe,
+            trial_dataframe,
             every_x_time_units=every_x_time_units,
             warm_up=warm_up,
             limit_duration=limit_duration,
@@ -1449,5 +1511,9 @@ class TrialLogger:
             event_position_df=event_position_df,
             resource_capacities=resource_capacities,
             capacity=capacity,
+            resource_col_name=self._resolve_resource_col_name(
+                resource_col_name, trial_dataframe
+            ),
+            **kwargs,
         )
 
