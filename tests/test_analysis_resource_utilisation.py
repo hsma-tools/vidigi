@@ -116,6 +116,38 @@ def test_missing_resource_id_falls_back_to_run_entity_pairing(
     assert pd.isna(row["resource_id"])
 
 
+def test_resource_col_name_pointing_elsewhere_does_not_collide_with_a_literal_resource_id_column():
+    """`resource_col_name="unique_resource_id"` is renamed to the canonical
+    "resource_id" internally - but the log can genuinely carry both columns at
+    once (resource_id for animation, unique_resource_id for collision-proof
+    analysis, logged side by side). Regression test: this used to raise
+    `ValueError: The column label 'resource_id' is not unique`, since the
+    rename produced two identically-named columns."""
+    logger = EventLogger(run_number=1)
+    logger.log_resource_use_start(
+        entity_id=1,
+        resource_id=1,
+        unique_resource_id="triage_1",
+        time=0.0,
+        event="triage_begins",
+    )
+    logger.log_resource_use_end(
+        entity_id=1,
+        resource_id=1,
+        unique_resource_id="triage_1",
+        time=10.0,
+        event="triage_ends",
+    )
+
+    intervals = resource_use_intervals(
+        _trial_df([logger]), resource_col_name="unique_resource_id", limit_duration=20
+    )
+
+    assert len(intervals) == 1
+    assert intervals.iloc[0]["resource_id"] == "triage_1"
+    assert intervals.iloc[0]["busy_time"] == 10.0
+
+
 def test_partially_null_resource_id_raises():
     """One row with a resource_id, one row without, for the same event type -
     pairing on (run, entity) would silently cross physical units, so this must
@@ -365,6 +397,75 @@ def test_by_resource_gives_the_full_hand_computed_dict(resource_use_loggers):
     # capacity is always 1 per physical unit
     assert (result["capacity"] == 1.0).all()
     assert dict(zip(run1["resource_id"], run1["mean_in_use"])) == {1: 0.5, 2: 0.25, 3: 0.0}
+
+
+def test_by_resource_warns_on_genuinely_overlapping_bouts_for_one_resource_id(
+    colliding_pools_logger,
+):
+    """Two entities hold `resource_id=1` at overlapping times (t=5-10) - the
+    hallmark of two different resource pools sharing an ID, e.g. two
+    `VidigiStore`s both numbering from 1. Impossible for one physical unit,
+    so this should warn, naming the run/resource_id pair."""
+    with pytest.warns(UserWarning, match=r"overlapping busy bouts.*\(1, 1\)"):
+        resource_utilisation(_trial_df([colliding_pools_logger]), by="resource", limit_duration=20)
+
+
+def test_by_resource_does_not_warn_on_sequential_non_overlapping_reuse(
+    shared_pool_across_steps_logger,
+):
+    """One real resource legitimately reused across two different step names,
+    non-overlapping in time - must not trigger the overlap warning, and must
+    still return exactly one row for resource_id=1 (proof the grouping key
+    itself is unchanged, not split per step)."""
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", UserWarning)
+        result = resource_utilisation(
+            _trial_df([shared_pool_across_steps_logger]), by="resource", limit_duration=20
+        )
+
+    assert len(result) == 1
+    assert result.iloc[0]["resource_id"] == 1
+    assert result.iloc[0]["busy_time"] == 10.0  # 5 (triage) + 5 (registration)
+
+
+def test_by_resource_hand_computed_fixture_does_not_warn(resource_use_loggers):
+    """The existing hand-computed fixture has no overlapping bouts - locks in
+    that the new overlap check doesn't fire on ordinary, correct data."""
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", UserWarning)
+        resource_utilisation(
+            _trial_df(resource_use_loggers),
+            by="resource",
+            resource_capacities={"treatment_begins": 3},
+            limit_duration=20,
+        )
+
+
+def test_by_resource_does_not_warn_when_a_handoff_exactly_touches():
+    """A bout starting at exactly the moment the previous one for the same
+    resource_id ends is a legitimate handoff (the half-open [start, end)
+    convention used throughout this module), not a collision - proven to
+    fail if the comparison were `<=` instead of the intended strict `<`."""
+    logger = EventLogger(run_number=1)
+    logger.log_resource_use_start(
+        entity_id=1, resource_id=1, time=0.0, event="triage_begins"
+    )
+    logger.log_resource_use_end(
+        entity_id=1, resource_id=1, time=5.0, event="triage_ends"
+    )
+    logger.log_resource_use_start(
+        entity_id=2, resource_id=1, time=5.0, event="triage_begins"
+    )
+    logger.log_resource_use_end(
+        entity_id=2, resource_id=1, time=10.0, event="triage_ends"
+    )
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", UserWarning)
+        result = resource_utilisation(_trial_df([logger]), by="resource", limit_duration=20)
+
+    assert len(result) == 1
+    assert result.iloc[0]["busy_time"] == 10.0
 
 
 def test_resource_idle_in_one_run_but_used_in_another_reports_a_genuine_zero(

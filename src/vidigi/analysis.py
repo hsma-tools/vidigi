@@ -909,8 +909,20 @@ def resource_use_intervals(
         + ["occurrence"]
     )
 
-    starts = starts.rename(columns={**rename_map, time_col_name: "start"})
-    ends = ends.rename(columns={**rename_map, time_col_name: "end"})
+    # `resource_col_name` (or `entity_col_name`/`run_col_name`) may point at a
+    # column other than the canonical target name it's being renamed to (e.g.
+    # `resource_col_name="unique_resource_id"` on a log that also carries a
+    # literal "resource_id" column, logged separately for animation) - drop
+    # any such pre-existing column sharing a rename target's name first, or
+    # the rename below would produce two identically-named columns and every
+    # later `[col]` access would raise "not unique".
+    collisions = [target for target in set(rename_map.values()) if target not in rename_map]
+    starts = starts.drop(columns=[c for c in collisions if c in starts.columns]).rename(
+        columns={**rename_map, time_col_name: "start"}
+    )
+    ends = ends.drop(columns=[c for c in collisions if c in ends.columns]).rename(
+        columns={**rename_map, time_col_name: "end"}
+    )
 
     merged = starts[keep_cols + ["start", event_col_name]].merge(
         ends[keep_cols + ["end"]], on=keep_cols, how="outer", indicator=True
@@ -968,6 +980,50 @@ def resource_use_intervals(
             "busy_time",
         ]
     ].reset_index(drop=True)
+
+
+def _check_no_overlapping_resource_bouts(
+    intervals: pd.DataFrame,
+    *,
+    resource_col_name: str = "resource_id",
+    run_col_name: str = "run_number",
+) -> None:
+    """Warn if any `resource_id` has two busy bouts overlapping in time within
+    the same run.
+
+    Impossible for one physical unit - only one entity can hold it at once -
+    and a much sharper signal of an ID collision (two different resource pools
+    numbering their units the same way, e.g. two `vidigi.resources.VidigiStore`
+    instances) than `utilisation` silently exceeding 1. Half-open `[start,
+    end)`: a bout starting exactly when the previous one for the same
+    `resource_id` ends is a legitimate handoff, not a collision.
+    """
+    rows = intervals.dropna(subset=[resource_col_name]).sort_values(
+        [run_col_name, resource_col_name, "start"]
+    )
+    group_keys = [run_col_name, resource_col_name]
+    prev_end = rows.groupby(group_keys, dropna=False)["end"].shift()
+    overlapping = rows[rows["start"] < prev_end]
+
+    if overlapping.empty:
+        return
+
+    pairs = sorted(
+        {(row[run_col_name], row[resource_col_name]) for _, row in overlapping.iterrows()},
+        key=lambda pair: (str(pair[0]), str(pair[1])),
+    )
+    warnings.warn(
+        f"{len(pairs)} (run, resource_id) pair(s) have overlapping busy bouts "
+        f"within the same run - impossible for one physical unit: "
+        f"{pairs[:5]}{'...' if len(pairs) > 5 else ''}. This usually means two "
+        f"different resource pools are numbering their units the same way (e.g. "
+        f"two vidigi.resources.VidigiStore instances both starting from 1), so "
+        f"resource_id does not identify one physical unit as by=\"resource\" "
+        f"assumes. Pass a distinct label= to each pool (see "
+        f"vidigi.resources.VidigiStore) and use its unique_id_attribute instead.",
+        UserWarning,
+        stacklevel=2,
+    )
 
 
 def _resolve_resource_capacities(
@@ -1184,8 +1240,13 @@ def resource_utilisation(
           their own units from 1 (e.g. two independent `vidigi.resources.VidigiStore`
           instances), their busy time is silently summed as if it were one
           unit, and `utilisation` can read above `1` with no error, only the
-          generic over-capacity warning below. Give each pool a distinct ID
-          range (or an offset) if you plan to use `by="resource"`.
+          generic over-capacity warning below. Give each pool a distinct
+          `label=` (see `vidigi.resources.VidigiStore`) and use its
+          `unique_id_attribute` if you plan to use `by="resource"` - this mode
+          also warns directly whenever it finds two bouts for the same
+          `resource_id` genuinely overlapping in time, which is impossible for
+          one physical unit and a sharper signal of this exact collision than
+          the over-capacity warning alone.
         - ``"run"``: one row per run, pooling every step/unit together.
           `capacity` is the **sum** of every step's resolved capacity (`NaN`
           if any step's capacity is unresolved) - the maximum number of
@@ -1243,6 +1304,7 @@ def resource_utilisation(
     # would raise/warn about capacity information this mode has no use for.
     if by == "resource":
         capacities = {}
+        _check_no_overlapping_resource_bouts(intervals)
     else:
         capacities = _resolve_resource_capacities(
             intervals,

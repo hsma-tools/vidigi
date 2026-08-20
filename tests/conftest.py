@@ -442,3 +442,56 @@ def resource_use_no_resource_id_logger():
         run_number=1,
     )
     return logger
+
+
+@pytest.fixture
+def colliding_pools_logger():
+    """One run: two entities hold `resource_id=1` at genuinely overlapping
+    times, under two different step names - simulating two independent
+    resource pools (e.g. two `VidigiStore`s) that both numbered their units
+    from 1. Entity 1 holds it 0->10 ("triage_begins"); entity 2 holds it
+    5->15 ("registration_begins") - overlapping from t=5 to t=10, which is
+    impossible for one physical unit. This is what `by="resource"`'s overlap
+    check must catch.
+    """
+    logger = EventLogger(run_number=1)
+    logger.log_resource_use_start(
+        entity_id=1, resource_id=1, time=0.0, event="triage_begins"
+    )
+    logger.log_resource_use_end(
+        entity_id=1, resource_id=1, time=10.0, event="triage_ends"
+    )
+    logger.log_resource_use_start(
+        entity_id=2, resource_id=1, time=5.0, event="registration_begins"
+    )
+    logger.log_resource_use_end(
+        entity_id=2, resource_id=1, time=15.0, event="registration_ends"
+    )
+    return logger
+
+
+@pytest.fixture
+def shared_pool_across_steps_logger():
+    """One run: `resource_id=1` is reused *sequentially, non-overlapping*
+    across two different step names - entity 1 holds it 0->5
+    ("triage_begins"), entity 2 holds it 10->15 ("registration_begins"). One
+    real physical resource legitimately used for more than one step. Must
+    *not* trigger the overlap warning, and `by="resource"` must still return
+    exactly one row for resource_id=1, not one per step - proof that the
+    overlap check doesn't reintroduce the "split one physical unit" failure
+    mode the grouping key was deliberately kept as-is to avoid.
+    """
+    logger = EventLogger(run_number=1)
+    logger.log_resource_use_start(
+        entity_id=1, resource_id=1, time=0.0, event="triage_begins"
+    )
+    logger.log_resource_use_end(
+        entity_id=1, resource_id=1, time=5.0, event="triage_ends"
+    )
+    logger.log_resource_use_start(
+        entity_id=2, resource_id=1, time=10.0, event="registration_begins"
+    )
+    logger.log_resource_use_end(
+        entity_id=2, resource_id=1, time=15.0, event="registration_ends"
+    )
+    return logger

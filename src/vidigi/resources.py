@@ -22,6 +22,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 """
 
+import warnings
+
 import simpy
 from simpy.core import BoundClass
 
@@ -47,7 +49,39 @@ class VidigiResource:
         return f"VidigiResource(id={self.id_attribute})"
 
 
-def populate_store(num_resources, simpy_store, sim_env):
+def _new_pool_resource(env, index, label=None):
+    """Build one `VidigiResource` for a `populate()`-style loop.
+
+    `id_attribute` is always `index + 1`, unchanged from every prior release -
+    `vidigi.prep`'s animation icon positioning does arithmetic directly on it,
+    so it must stay a small per-pool index. When `label` is given, the
+    resource additionally gets `.label` (the raw label) and
+    `.unique_id_attribute` (`f"{label}_{index + 1}"`, unique across pools when
+    every pool is given a distinct label) - two separate attributes rather
+    than one, so a consumer never needs to parse the combined string back
+    apart. Omitting `label` adds neither attribute at all (a true no-op), but
+    warns once that `label` will become mandatory at vidigi 2.0 - see
+    `pending_fixes.md`.
+    """
+    if label is None:
+        warnings.warn(
+            "VidigiStore/populate_store/VidigiPriorityStore was used without a "
+            "`label`. Resources from different pools currently number "
+            "themselves 1..capacity independently, so the same resource_id can "
+            "mean different physical things in different pools - this silently "
+            "breaks vidigi.analysis.resource_utilisation(by=\"resource\"). Pass "
+            "label=\"...\" to give this pool's resources a collision-proof "
+            "unique_id_attribute. `label` becomes mandatory in vidigi 2.0.",
+            DeprecationWarning,
+            stacklevel=3,
+        )
+        extra = {}
+    else:
+        extra = {"label": label, "unique_id_attribute": f"{label}_{index + 1}"}
+    return VidigiResource(env=env, capacity=1, id_attribute=index + 1, **extra)
+
+
+def populate_store(num_resources, simpy_store, sim_env, label=None):
     """
     Populate a SimPy Store (or VidigiPriorityStore) with VidigiResource objects.
 
@@ -69,6 +103,14 @@ def populate_store(num_resources, simpy_store, sim_env):
         The SimPy Store object to populate with resources.
     sim_env : simpy.Environment
         The SimPy environment in which the resources and store exist.
+    label : str, optional
+        A name for this pool of resources, e.g. `"triage"`. When given, each
+        resource also gets `.unique_id_attribute` (`f"{label}_{id_attribute}"`)
+        - unique across pools when every pool is given a distinct label, unlike
+        `id_attribute` alone, which restarts at 1 in every pool. Omitting it
+        (the default) changes nothing about the resources produced, but warns
+        that `label` will become mandatory at vidigi 2.0 - see
+        `vidigi.analysis.resource_utilisation`'s `by="resource"` docs for why.
 
     Returns
     -------
@@ -86,14 +128,12 @@ def populate_store(num_resources, simpy_store, sim_env):
     >>> import simpy
     >>> env = simpy.Environment()
     >>> resource_store = simpy.Store(env)
-    >>> populate_store(5, resource_store, env)
+    >>> populate_store(5, resource_store, env, label="triage")
     >>> len(resource_store.items)  # The store now contains 5 VidigiResource objects
     5
     """
     for i in range(num_resources):
-        simpy_store.put(
-            VidigiResource(env=sim_env, capacity=1, id_attribute=i + 1)
-        )
+        simpy_store.put(_new_pool_resource(sim_env, i, label))
 
 
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\#
@@ -124,6 +164,7 @@ class VidigiStore:
         env,
         num_resources=None,
         capacity=float("inf"),
+        label=None,
         #  , init_items=None
     ):
         """
@@ -133,19 +174,20 @@ class VidigiStore:
             env: SimPy environment
             num_resources: Number of VidigiCustomResource objects to populate the store with
             capacity: Maximum capacity of the store
+            label: A name for this pool of resources - see `populate()`.
         """
         self.env = env
         self.store = simpy.Store(env, capacity)
 
         if num_resources is not None:
-            self.populate(num_resources)
+            self.populate(num_resources, label=label)
 
         # # Initialize with items if provided
         # if init_items:
         #     for item in init_items:
         #         self.store.put(item)
 
-    def populate(self, num_resources):
+    def populate(self, num_resources, label=None):
         """
         Populate this VidigiStore with VidigiResource objects.
 
@@ -157,15 +199,22 @@ class VidigiStore:
         ----------
         num_resources : int
             The number of VidigiResource objects to create and add to the store.
+        label : str, optional
+            A name for this pool of resources, e.g. `"triage"`. When given, each
+            resource also gets `.unique_id_attribute` (`f"{label}_{id_attribute}"`)
+            - unique across pools when every pool is given a distinct label,
+            unlike `id_attribute` alone, which restarts at 1 in every pool.
+            Omitting it (the default) changes nothing about the resources
+            produced, but warns that `label` will become mandatory at vidigi
+            2.0 - see `vidigi.analysis.resource_utilisation`'s `by="resource"`
+            docs for why.
 
         Returns
         -------
         None
         """
         for i in range(num_resources):
-            self.put(
-                VidigiResource(env=self.env, capacity=1, id_attribute=i + 1)
-            )
+            self.put(_new_pool_resource(self.env, i, label))
 
     def request(self):
         """
@@ -389,6 +438,7 @@ class VidigiPriorityStore:
         env,
         num_resources=None,
         capacity=float("inf"),
+        label=None,
         #  , init_items=None
     ):
         """
@@ -398,6 +448,7 @@ class VidigiPriorityStore:
             env: The SimPy environment.
             num_resources: Number of VidigiCustomResource objects to populate the store with
             capacity: Maximum capacity of the store (default: infinite).
+            label: A name for this pool of resources - see `populate()`.
 
         """
         self.env = env
@@ -410,9 +461,9 @@ class VidigiPriorityStore:
         self.put_queue = []
 
         if num_resources is not None:
-            self.populate(num_resources)
+            self.populate(num_resources, label=label)
 
-    def populate(self, num_resources):
+    def populate(self, num_resources, label=None):
         """
         Populate this VidigiPriorityStore with VidigiResource objects.
 
@@ -424,15 +475,22 @@ class VidigiPriorityStore:
         ----------
         num_resources : int
             The number of VidigiResource objects to create and add to the store.
+        label : str, optional
+            A name for this pool of resources, e.g. `"triage"`. When given, each
+            resource also gets `.unique_id_attribute` (`f"{label}_{id_attribute}"`)
+            - unique across pools when every pool is given a distinct label,
+            unlike `id_attribute` alone, which restarts at 1 in every pool.
+            Omitting it (the default) changes nothing about the resources
+            produced, but warns that `label` will become mandatory at vidigi
+            2.0 - see `vidigi.analysis.resource_utilisation`'s `by="resource"`
+            docs for why.
 
         Returns
         -------
         None
         """
         for i in range(num_resources):
-            self.put(
-                VidigiResource(env=self.env, capacity=1, id_attribute=i + 1)
-            )
+            self.put(_new_pool_resource(self.env, i, label))
 
     def request(self, priority=0):
         """

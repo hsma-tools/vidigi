@@ -189,3 +189,35 @@ animation is almost never what the caller wanted.
 
 **Not currently covered by any test.** Found while writing the multi-replication guard
 tests, where a fixture shifted a second run's times beyond the requested window.
+
+---
+
+## 6. `VidigiStore`/`populate_store`/`VidigiPriorityStore` should require a `label` (2.0)
+
+**Where:** `src/vidigi/resources.py` — `VidigiStore.__init__`/`.populate()`,
+`populate_store()`, `VidigiPriorityStore.__init__`/`.populate()`.
+
+**Current state (1.4.0):** each pool numbers its own units `1..capacity`
+independently. An optional `label=` (added in 1.4.0) lets a modeller opt into a
+collision-proof `unique_id_attribute`, and omitting it now emits a
+`DeprecationWarning` — but it remains optional, so
+`vidigi.analysis.resource_utilisation(by="resource")` can still silently pool two
+different physical resources that share a number by default (mitigated, not
+prevented, by a new overlap-detection warning added alongside this).
+
+**Why deferred rather than forced now:** making `label` mandatory is breaking under
+this repo's definition — every existing caller of the three populate-style
+functions/methods would need to add one — and the plain numeric `id_attribute` is
+still exactly correct for its original purpose (animation icon positioning via
+`vidigi.prep`'s arithmetic); only the newer `by="resource"` analysis path is exposed
+to the gap. This needs a deprecation period, not an immediate forced change.
+
+**Planned for 2.0:** drop the `None` default, making `label` required on all three
+call sites. Needs a `**BREAKING:**` HISTORY.md bullet and `### ⚠️ Breaking changes`
+entry at that point, plus updating every example/test currently constructing these
+without a label.
+
+**Pinned by:** the 1.4.0 no-op/deprecation-warning tests in
+`tests/test_resources_label.py` (asserting `label=None` still produces working,
+unchanged resources plus a warning) — when `label` becomes mandatory at 2.0, those
+tests are replaced by a missing-required-argument (`TypeError`) assertion instead.
