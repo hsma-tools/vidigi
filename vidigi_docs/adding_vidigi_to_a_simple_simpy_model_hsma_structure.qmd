@@ -502,7 +502,8 @@ def init_resources(self):
 def init_resources(self):
     self.treatment_cubicles = VidigiStore( #<<
         self.env, #<<
-        num_resources=g.n_cubicles #<<
+        num_resources=g.n_cubicles, #<<
+        label="treatment_cubicle" #<<
         ) #<<
 ```
 
@@ -1067,7 +1068,8 @@ class Model:
     def init_resources(self):
         self.treatment_cubicles = VidigiStore( #<<
             self.env, #<<
-            num_resources=g.n_cubicles #<<
+            num_resources=g.n_cubicles, #<<
+            label="treatment_cubicle" #<<
             ) #<<
 
     # A generator function that represents the DES generator for patient

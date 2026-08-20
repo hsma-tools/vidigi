@@ -50,7 +50,7 @@ class Carwash:
 
     def __init__(self, env, num_machines, washtime):
         self.env = env
-        self.machine = VidigiStore(env, num_resources=num_machines)
+        self.machine = VidigiStore(env, num_resources=num_machines, label="machine")
         self.washtime = washtime
         self.logger = EventLogger(env=self.env)
 

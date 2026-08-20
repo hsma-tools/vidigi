@@ -102,9 +102,9 @@ class Model:
             1. Nurses/treatment bays (same thing in this model)
 
         '''
-        self.beds_ward_ash = VidigiStore(self.env, num_resources=g.number_of_beds_ash)
-        self.beds_ward_oak = VidigiStore(self.env, num_resources=g.number_of_beds_oak)
-        self.beds_ward_maple = VidigiStore(self.env, num_resources=g.number_of_beds_maple)
+        self.beds_ward_ash = VidigiStore(self.env, num_resources=g.number_of_beds_ash, label="bed_ash")
+        self.beds_ward_oak = VidigiStore(self.env, num_resources=g.number_of_beds_oak, label="bed_oak")
+        self.beds_ward_maple = VidigiStore(self.env, num_resources=g.number_of_beds_maple, label="bed_maple")
 
     # A generator function that represents the DES generator for patient
     # arrivals

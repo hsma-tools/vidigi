@@ -123,7 +123,8 @@ class Model:
 
         populate_store(num_resources=g.n_cubicles,
                        simpy_store=self.treatment_cubicles,
-                       sim_env=self.env)
+                       sim_env=self.env,
+                       label="treatment_cubicle")
 
     # A generator function that represents the DES generator for patient arrivals
     def generator_patient_arrivals(self):

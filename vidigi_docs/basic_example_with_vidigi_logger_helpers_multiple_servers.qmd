@@ -163,7 +163,7 @@ def patient_process(env, patient_id, servers, logger):
 def run_simulation():
     params = Params()
     env = simpy.Environment()
-    servers = VidigiStore(env=env, num_resources=params.num_servers) #<<
+    servers = VidigiStore(env=env, num_resources=params.num_servers, label="server") #<<
     logger = EventLogger(env=env) #<<
 
     # Start patient generator

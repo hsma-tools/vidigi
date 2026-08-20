@@ -180,7 +180,7 @@ random.seed(RANDOM_SEED)
 
 # Create environment and start processes
 env = simpy.Environment()
-gas_station = VidigiStore(env, num_resources=2)
+gas_station = VidigiStore(env, num_resources=2, label="pump")
 station_tank = simpy.Container(env, capacity=STATION_TANK_SIZE, init=STATION_TANK_SIZE)
 logger = EventLogger(env=env)
 logger.log_queue(entity_id="parameter", event_type="parameter", event="tank_size", value=STATION_TANK_SIZE)

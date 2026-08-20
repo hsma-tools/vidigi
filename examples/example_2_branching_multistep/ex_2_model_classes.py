@@ -290,7 +290,8 @@ class Model:
         # Shared Resources
         self.triage_cubicles = simpy.Store(self.env)
         populate_store(
-            num_resources=g.n_triage, simpy_store=self.triage_cubicles, sim_env=self.env
+            num_resources=g.n_triage, simpy_store=self.triage_cubicles, sim_env=self.env,
+            label="triage",
         )
 
         self.registration_cubicles = simpy.Store(self.env)
@@ -298,12 +299,14 @@ class Model:
             num_resources=g.n_reg,
             simpy_store=self.registration_cubicles,
             sim_env=self.env,
+            label="registration",
         )
 
         # Non-trauma
         self.exam_cubicles = simpy.Store(self.env)
         populate_store(
-            num_resources=g.n_exam, simpy_store=self.exam_cubicles, sim_env=self.env
+            num_resources=g.n_exam, simpy_store=self.exam_cubicles, sim_env=self.env,
+            label="exam",
         )
 
         self.non_trauma_treatment_cubicles = simpy.Store(self.env)
@@ -311,6 +314,7 @@ class Model:
             num_resources=g.n_cubicles_non_trauma_treat,
             simpy_store=self.non_trauma_treatment_cubicles,
             sim_env=self.env,
+            label="non_trauma_treatment",
         )
 
         # Trauma
@@ -319,6 +323,7 @@ class Model:
             num_resources=g.n_trauma,
             simpy_store=self.trauma_stabilisation_bays,
             sim_env=self.env,
+            label="trauma_stabilisation",
         )
 
         self.trauma_treatment_cubicles = simpy.Store(self.env)
@@ -326,6 +331,7 @@ class Model:
             num_resources=g.n_cubicles_trauma_treat,
             simpy_store=self.trauma_treatment_cubicles,
             sim_env=self.env,
+            label="trauma_treatment",
         )
 
     # A generator function that represents the DES generator for patient

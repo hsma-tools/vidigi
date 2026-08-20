@@ -94,7 +94,7 @@ class Model:
             1. Nurses/treatment bays (same thing in this model)
 
         '''
-        self.beds = VidigiStore(self.env, num_resources=g.number_of_beds)
+        self.beds = VidigiStore(self.env, num_resources=g.number_of_beds, label="bed")
 
     # A generator function that represents the DES generator for patient
     # arrivals
