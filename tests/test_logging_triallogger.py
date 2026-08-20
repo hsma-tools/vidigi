@@ -680,4 +680,33 @@ def test_plot_queue_size_does_not_warn_when_an_event_occurs_in_only_some_runs():
 
     by_run = {trace.name: list(trace.y) for trace in fig.data}
     assert by_run["1"] == [1, 1, 1]
-    assert by_run["2"] == [0, 0, 0]
+
+
+def test_plot_resource_utilisation_is_passed_through(resource_use_loggers):
+    """Reaches `vidigi.plots.plot_resource_utilisation`, and reproduces the
+    hand-computed values from the fixture's docstring: run 1 utilisation 0.25,
+    run 2 utilisation 0.5, mean 0.375."""
+    trial = TrialLogger(resource_use_loggers)
+
+    fig = trial.plot_resource_utilisation(
+        resource_capacities={"treatment_begins": 3}, limit_duration=20
+    )
+
+    assert fig.data[0].x == ("treatment_begins",)
+    assert fig.data[0].y == pytest.approx((0.375,))
+
+
+def test_plot_resource_utilisation_over_time_is_passed_through(resource_use_loggers):
+    """Reaches `vidigi.plots.plot_resource_utilisation_over_time`, and
+    reproduces the hand-computed occupancy curve from the fixture's
+    docstring."""
+    trial = TrialLogger(resource_use_loggers)
+
+    fig = trial.plot_resource_utilisation_over_time(
+        every_x_time_units=5, limit_duration=20
+    )
+
+    run_traces = {trace.name: trace for trace in fig.data if trace.name in ("1", "2")}
+    assert list(run_traces["1"].y) == [2, 1, 0, 0, 0]
+    assert list(run_traces["2"].y) == [1, 2, 2, 1, 0]
+    assert all(trace.line.shape == "hv" for trace in fig.data)

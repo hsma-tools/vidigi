@@ -31,11 +31,17 @@ from plotly.subplots import make_subplots
 from vidigi.analysis import (
     DurationStat,
     MatchMode,
+    ResourceUtilisationBy,
+    UnclosedResourceUse,
+    _resolve_resource_capacities,
     _summarise_durations,
     event_durations,
     mean_confidence_interval,
     queue_size_over_time,
     replication_means,
+    resource_occupancy_over_time,
+    resource_use_intervals,
+    resource_utilisation,
 )
 from vidigi.utils import _resolve_run_column
 
@@ -640,10 +646,36 @@ def plot_duration_distribution(
 # validated at runtime, since annotations are not enforced.
 Across: TypeAlias = Literal["entities", "runs"]
 
-# Which spread `plot_metric_bar` draws as an error bar around a bar computed
-# `across="runs"`.
+# Which spread `plot_metric_bar` and `plot_resource_utilisation` draw as an
+# error bar around a bar computed over per-run values.
 ErrorBars: TypeAlias = Literal["ci", "sd", "se", "range", "iqr"]
 _ERROR_BAR_KINDS = ("ci", "sd", "se", "range", "iqr")
+
+
+def _error_bar_bounds(
+    run_values: pd.Series, error_bars: ErrorBars, ci_level: float, value: float
+) -> tuple:
+    """Return `(error_plus, error_minus)` for one group's per-run values.
+
+    Shared by `plot_metric_bar` and `plot_resource_utilisation` - both draw an
+    error bar around a bar height computed as the mean of values that are
+    already one-per-run, just sourced differently (`replication_means` vs.
+    `resource_utilisation`, which is already one row per run per group).
+    """
+    if error_bars == "ci":
+        ci = mean_confidence_interval(run_values, ci_level=ci_level)
+        return ci.half_width, ci.half_width
+    if error_bars == "sd":
+        sd = run_values.std(ddof=1)
+        return sd, sd
+    if error_bars == "se":
+        se = run_values.std(ddof=1) / (len(run_values) ** 0.5)
+        return se, se
+    if error_bars == "range":
+        return run_values.max() - value, value - run_values.min()
+    # "iqr"
+    q1, q3 = run_values.quantile([0.25, 0.75])
+    return q3 - value, value - q1
 
 
 def plot_metric_bar(
@@ -828,25 +860,10 @@ def plot_metric_bar(
         row = {"label": label, "value": value}
         run_points[label] = run_values.to_numpy()
 
-        if error_bars == "ci":
-            ci = mean_confidence_interval(run_values, ci_level=ci_level)
-            row["error_plus"] = ci.half_width
-            row["error_minus"] = ci.half_width
-        elif error_bars == "sd":
-            sd = run_values.std(ddof=1)
-            row["error_plus"] = sd
-            row["error_minus"] = sd
-        elif error_bars == "se":
-            se = run_values.std(ddof=1) / (len(run_values) ** 0.5)
-            row["error_plus"] = se
-            row["error_minus"] = se
-        elif error_bars == "range":
-            row["error_plus"] = run_values.max() - value
-            row["error_minus"] = value - run_values.min()
-        elif error_bars == "iqr":
-            q1, q3 = run_values.quantile([0.25, 0.75])
-            row["error_plus"] = q3 - value
-            row["error_minus"] = value - q1
+        if error_bars is not None:
+            row["error_plus"], row["error_minus"] = _error_bar_bounds(
+                run_values, error_bars, ci_level, value
+            )
 
         rows.append(row)
 
@@ -873,5 +890,433 @@ def plot_metric_bar(
                     showlegend=(label == first_label),
                 )
             )
+
+    return fig
+
+
+# What `plot_resource_utilisation` draws as a bar height.
+ResourceMetric: TypeAlias = Literal["busy_time", "mean_in_use", "utilisation"]
+_RESOURCE_METRICS = ("busy_time", "mean_in_use", "utilisation")
+
+
+def plot_resource_utilisation(
+    event_log: pd.DataFrame,
+    *,
+    by: ResourceUtilisationBy = "step",
+    metric: ResourceMetric = "utilisation",
+    error_bars: Optional[ErrorBars] = "ci",
+    ci_level: float = 0.95,
+    show_runs: bool = True,
+    sort_by: Optional[Literal["value"]] = None,
+    scenario=None,
+    resource_map: Optional[dict] = None,
+    event_position_df: Optional[pd.DataFrame] = None,
+    resource_capacities: Optional[dict] = None,
+    capacity: Optional[Literal["infer"]] = None,
+    warm_up: float = 0,
+    limit_duration: Optional[float] = None,
+    unclosed: UnclosedResourceUse = "censor",
+    entity_col_name: str = "entity_id",
+    time_col_name: str = "time",
+    event_type_col_name: str = "event_type",
+    event_col_name: str = "event",
+    resource_col_name: str = "resource_id",
+    run_col_name: Optional[str] = "auto",
+) -> go.Figure:
+    """
+    Plot a bar chart of resource utilisation, one bar per group, across runs.
+
+    Thin wrapper over `vidigi.analysis.resource_utilisation`: that function
+    already returns one row per run per group, so this only takes the mean
+    across runs, builds error bars from the same per-run values, and draws
+    the figure - no `replication_means` reduction step is needed first.
+
+    Parameters
+    ----------
+    event_log : pandas.DataFrame
+        Long-format event log, e.g. the output of `TrialLogger.to_dataframe()`.
+    by : {"step", "resource", "run"}, default="step"
+        What each bar summarises. See `vidigi.analysis.resource_utilisation`.
+        `by="run"` draws a single bar labelled "All resources".
+    metric : {"busy_time", "mean_in_use", "utilisation"}, default="utilisation"
+        Which column of `vidigi.analysis.resource_utilisation`'s output is the
+        bar height. If `metric="utilisation"` and no capacity was resolved for
+        any group (every value `NaN`), this falls back to `"mean_in_use"`
+        instead - which needs no capacity - with a warning and a note in the
+        title, rather than drawing an all-`NaN` chart.
+    error_bars : {"ci", "sd", "se", "range", "iqr"} or None, default="ci"
+        The spread drawn as an error bar around each bar, computed over the
+        per-run values for that group. See `vidigi.plots.plot_metric_bar` for
+        the full explanation of each. `"ci"` requires the optional `scipy`
+        dependency (`pip install vidigi[stats]`).
+    ci_level : float, default=0.95
+        Confidence level used when `error_bars="ci"`.
+    show_runs : bool, default=True
+        If True, overlays each run's individual value as a semi-transparent
+        point on top of its bar.
+    sort_by : {"value"} or None, default=None
+        If `"value"`, bars are ordered by descending metric value (`NaN` last)
+        rather than by group value.
+    scenario, resource_map, event_position_df, resource_capacities, capacity :
+        Capacity resolution - see `vidigi.analysis._resolve_resource_capacities`
+        for the four routes. Unused when `by="resource"`, whose capacity is
+        always 1.
+    warm_up, limit_duration, unclosed, entity_col_name, time_col_name,
+    event_type_col_name, event_col_name, resource_col_name, run_col_name :
+        Forwarded to `vidigi.analysis.resource_utilisation`.
+
+    Returns
+    -------
+    plotly.graph_objects.Figure
+
+    Raises
+    ------
+    ValueError
+        If `by`, `metric`, `error_bars` or `sort_by` is not one of the
+        supported values; or if no resource_use/resource_use_end pairs were
+        found to plot.
+
+    Notes
+    -----
+    A dashed line is drawn at y=1.0 when the plotted metric is (or falls back
+    to being) `"utilisation"` - a value above it is never valid for this
+    definition (mean number busy / capacity) and is diagnostic of a
+    mis-resolved capacity or overlapping resource_use intervals.
+
+    See Also
+    --------
+    vidigi.analysis.resource_utilisation : The underlying per-run, per-group summary.
+    plot_resource_utilisation_over_time : The same data, resolved over time instead of per group.
+
+    Examples
+    --------
+    >>> plot_resource_utilisation(
+    ...     trial.to_dataframe(), by="step", resource_capacities={"treatment_begins": 3}
+    ... )
+    <plotly.graph_objs._figure.Figure>
+    """
+    if by not in ("step", "resource", "run"):
+        raise ValueError(f"`by` must be one of 'step', 'resource', 'run'; got {by!r}.")
+    if metric not in _RESOURCE_METRICS:
+        raise ValueError(
+            f"`metric` must be one of {_RESOURCE_METRICS}; got {metric!r}."
+        )
+    if error_bars is not None and error_bars not in _ERROR_BAR_KINDS:
+        raise ValueError(
+            f"`error_bars` must be one of {_ERROR_BAR_KINDS} or None; got "
+            f"{error_bars!r}."
+        )
+    if sort_by is not None and sort_by != "value":
+        raise ValueError(f"`sort_by` must be 'value' or None; got {sort_by!r}.")
+
+    results = resource_utilisation(
+        event_log,
+        by=by,
+        scenario=scenario,
+        resource_map=resource_map,
+        event_position_df=event_position_df,
+        resource_capacities=resource_capacities,
+        capacity=capacity,
+        warm_up=warm_up,
+        limit_duration=limit_duration,
+        unclosed=unclosed,
+        entity_col_name=entity_col_name,
+        time_col_name=time_col_name,
+        event_type_col_name=event_type_col_name,
+        event_col_name=event_col_name,
+        resource_col_name=resource_col_name,
+        run_col_name=run_col_name,
+    )
+
+    if results.empty:
+        raise ValueError(
+            "No resource_use/resource_use_end pairs were found to plot resource "
+            "utilisation from."
+        )
+
+    effective_metric = metric
+    if metric == "utilisation" and results["utilisation"].isna().all():
+        warnings.warn(
+            "metric='utilisation' was requested, but no capacity was resolved "
+            "for any group - falling back to metric='mean_in_use', which needs "
+            "no capacity. Pass resource_capacities=, scenario= with "
+            "resource_map= or event_position_df=, or capacity='infer', for an "
+            "actual utilisation figure.",
+            UserWarning,
+            stacklevel=2,
+        )
+        effective_metric = "mean_in_use"
+
+    group_col = {"step": "event", "resource": "resource_id", "run": None}[by]
+    if group_col is None:
+        results = results.assign(_group="All resources")
+        group_col = "_group"
+
+    labels, values, run_arrays, error_plus, error_minus = [], [], [], [], []
+    for group_value, group_df in results.groupby(group_col, dropna=False):
+        run_values = group_df[effective_metric]
+        value = run_values.mean()
+        labels.append(str(group_value))
+        values.append(value)
+        run_arrays.append(run_values.to_numpy())
+        if error_bars is not None:
+            plus, minus = _error_bar_bounds(run_values, error_bars, ci_level, value)
+        else:
+            plus, minus = None, None
+        error_plus.append(plus)
+        error_minus.append(minus)
+
+    order = list(range(len(labels)))
+    if sort_by == "value":
+        order.sort(key=lambda i: (pd.isna(values[i]), -values[i] if pd.notna(values[i]) else 0))
+
+    labels = [labels[i] for i in order]
+    values = [values[i] for i in order]
+    run_arrays = [run_arrays[i] for i in order]
+    error_plus = [error_plus[i] for i in order]
+    error_minus = [error_minus[i] for i in order]
+
+    fig = go.Figure()
+    bar_kwargs = dict(x=labels, y=values, name=effective_metric)
+    if error_bars is not None:
+        bar_kwargs["error_y"] = dict(type="data", array=error_plus, arrayminus=error_minus)
+    fig.add_trace(go.Bar(**bar_kwargs))
+
+    if show_runs:
+        for i, (label, run_values) in enumerate(zip(labels, run_arrays)):
+            fig.add_trace(
+                go.Scatter(
+                    x=[label] * len(run_values),
+                    y=run_values,
+                    mode="markers",
+                    marker=dict(color="black", opacity=0.4, size=6),
+                    name="Runs",
+                    legendgroup="runs",
+                    showlegend=(i == 0),
+                )
+            )
+
+    if effective_metric == "utilisation":
+        fig.add_hline(y=1.0, line_dash="dash", line_color="red")
+
+    title = f"Resource {effective_metric} by {by}"
+    if effective_metric != metric:
+        title += " (capacity unresolved - showing mean_in_use)"
+    fig.update_layout(title=title)
+    fig.update_xaxes(title_text=by)
+    fig.update_yaxes(title_text=effective_metric)
+
+    return fig
+
+
+def plot_resource_utilisation_over_time(
+    event_log: pd.DataFrame,
+    *,
+    every_x_time_units: float = 1,
+    warm_up: float = 0,
+    limit_duration: Optional[float] = None,
+    as_proportion: bool = False,
+    show_all_runs: bool = True,
+    shared_y_axis: bool = True,
+    scenario=None,
+    resource_map: Optional[dict] = None,
+    event_position_df: Optional[pd.DataFrame] = None,
+    resource_capacities: Optional[dict] = None,
+    capacity: Optional[Literal["infer"]] = None,
+    entity_col_name: str = "entity_id",
+    time_col_name: str = "time",
+    event_type_col_name: str = "event_type",
+    event_col_name: str = "event",
+    resource_col_name: str = "resource_id",
+    run_col_name: Optional[str] = "auto",
+) -> go.Figure:
+    """
+    Plot how many units of each resource step were in use over time, across runs.
+
+    Thin wrapper over `vidigi.analysis.resource_occupancy_over_time`: this
+    function only takes the per-snapshot mean across runs (when
+    `as_proportion=True`, also resolving capacity) and builds the figure.
+
+    Parameters
+    ----------
+    event_log : pandas.DataFrame
+        Long-format event log, e.g. the output of `TrialLogger.to_dataframe()`.
+    every_x_time_units : float, default=1
+        Time granularity for snapshots.
+    warm_up : float, default=0
+        Time at which the plotted window begins. See
+        `vidigi.analysis.resource_use_intervals`.
+    limit_duration : float, optional
+        End of the plotted window. `None` (default) uses the latest time seen
+        anywhere in the trial.
+    as_proportion : bool, default=False
+        If True, each step's count is divided by its resolved capacity (see
+        `scenario`/`resource_map`/`event_position_df`/`resource_capacities`/
+        `capacity` below), so the y-axis is a proportion in use rather than a
+        raw count. Requires a capacity to be resolvable for every step
+        plotted - unlike `plot_resource_utilisation`, there is no fallback,
+        since a partially-`NaN` proportion plot is more misleading than an
+        error naming the problem.
+    show_all_runs : bool, default=True
+        If True, plots every run with semi-transparent lines and overlays the
+        mean trajectory. If False, only the mean trajectory is plotted.
+    shared_y_axis : bool, default=True
+        If True (and more than one step is plotted), every facet shares a
+        y-axis range. If False, each is scaled independently.
+    scenario, resource_map, event_position_df, resource_capacities, capacity :
+        Capacity resolution, used only when `as_proportion=True` - see
+        `vidigi.analysis._resolve_resource_capacities` for the four routes.
+    entity_col_name, time_col_name, event_type_col_name, event_col_name,
+    resource_col_name, run_col_name : str or None
+        Column names forwarded to `vidigi.analysis.resource_occupancy_over_time`.
+
+    Returns
+    -------
+    plotly.graph_objects.Figure
+
+    Raises
+    ------
+    ValueError
+        If no resource_use/resource_use_end pairs were found to plot; or (with
+        `as_proportion=True`) if a step being plotted has no resolvable
+        capacity.
+
+    Notes
+    -----
+    Traces use `line_shape="hv"` - occupancy is a step function (a bout is
+    occupied on the half-open interval `[start, end)`), and linear
+    interpolation between snapshots would draw fractional resource counts that
+    never existed.
+
+    See Also
+    --------
+    vidigi.analysis.resource_occupancy_over_time : The underlying per-run, per-snapshot counts.
+    plot_resource_utilisation : The same data pooled per group instead of over time.
+
+    Examples
+    --------
+    >>> plot_resource_utilisation_over_time(
+    ...     trial.to_dataframe(), every_x_time_units=5, limit_duration=500
+    ... )
+    <plotly.graph_objs._figure.Figure>
+    """
+    occupancy = resource_occupancy_over_time(
+        event_log,
+        every_x_time_units=every_x_time_units,
+        warm_up=warm_up,
+        limit_duration=limit_duration,
+        entity_col_name=entity_col_name,
+        time_col_name=time_col_name,
+        event_type_col_name=event_type_col_name,
+        event_col_name=event_col_name,
+        resource_col_name=resource_col_name,
+        run_col_name=run_col_name,
+    )
+
+    if occupancy.empty:
+        raise ValueError(
+            "No resource_use/resource_use_end pairs were found to plot resource "
+            "occupancy from."
+        )
+
+    steps = sorted(occupancy["event"].unique().tolist(), key=str)
+    y_col, y_title = "count", "count in use"
+
+    if as_proportion:
+        intervals = resource_use_intervals(
+            event_log,
+            unclosed="censor",
+            warm_up=warm_up,
+            limit_duration=limit_duration,
+            entity_col_name=entity_col_name,
+            time_col_name=time_col_name,
+            event_type_col_name=event_type_col_name,
+            event_col_name=event_col_name,
+            resource_col_name=resource_col_name,
+            run_col_name=run_col_name,
+        )
+        capacities = _resolve_resource_capacities(
+            intervals,
+            scenario=scenario,
+            resource_map=resource_map,
+            event_position_df=event_position_df,
+            resource_capacities=resource_capacities,
+            capacity=capacity,
+            step_col_name="event",
+            resource_col_name=resource_col_name,
+        )
+        missing = [step for step in steps if pd.isna(capacities.get(step))]
+        if missing:
+            raise ValueError(
+                f"`as_proportion=True` needs a resolvable capacity for every "
+                f"step being plotted, but {missing} has none. Pass "
+                f"resource_capacities=, scenario= with resource_map= or "
+                f"event_position_df=, or capacity='infer'."
+            )
+        occupancy = occupancy.assign(
+            proportion=occupancy["count"] / occupancy["event"].map(capacities)
+        )
+        y_col, y_title = "proportion", "proportion in use"
+
+    mean_df = occupancy.groupby(["snapshot_time", "event"], as_index=False)[y_col].mean()
+
+    n_steps = len(steps)
+    if n_steps > 1:
+        fig = make_subplots(
+            rows=n_steps, cols=1, shared_yaxes=shared_y_axis, subplot_titles=steps
+        )
+    else:
+        fig = go.Figure()
+
+    step_to_row = {step: i + 1 for i, step in enumerate(steps)}
+
+    def _add_trace(trace, step):
+        if n_steps > 1:
+            fig.add_trace(trace, row=step_to_row[step], col=1)
+        else:
+            fig.add_trace(trace)
+
+    if show_all_runs:
+        run_ids = sorted(occupancy["run_number"].dropna().unique().tolist()) or [pd.NA]
+        for run_id in run_ids:
+            run_rows = (
+                occupancy[occupancy["run_number"] == run_id]
+                if pd.notna(run_id)
+                else occupancy[occupancy["run_number"].isna()]
+            )
+            for j, step in enumerate(steps):
+                sub = run_rows[run_rows["event"] == step].sort_values("snapshot_time")
+                _add_trace(
+                    go.Scatter(
+                        x=sub["snapshot_time"],
+                        y=sub[y_col],
+                        mode="lines",
+                        line_shape="hv",
+                        opacity=0.2,
+                        legendgroup=str(run_id),
+                        name=str(run_id),
+                        showlegend=(j == 0),
+                    ),
+                    step,
+                )
+
+    for step in steps:
+        sub = mean_df[mean_df["event"] == step].sort_values("snapshot_time")
+        _add_trace(
+            go.Scatter(
+                x=sub["snapshot_time"],
+                y=sub[y_col],
+                mode="lines",
+                line_shape="hv",
+                line=dict(color="black", width=3),
+                name="Mean",
+                legendgroup="Mean",
+                showlegend=(step == steps[0]),
+            ),
+            step,
+        )
+
+    fig.update_xaxes(title_text="snapshot_time")
+    fig.update_yaxes(title_text=y_title)
 
     return fig

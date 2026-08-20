@@ -33,10 +33,13 @@ from vidigi.plots import (
     plot_queue_size as _plot_queue_size,
     plot_duration_distribution as _plot_duration_distribution,
     plot_metric_bar as _plot_metric_bar,
+    plot_resource_utilisation as _plot_resource_utilisation,
+    plot_resource_utilisation_over_time as _plot_resource_utilisation_over_time,
     Across,
     DistributionKind,
     ErrorBars,
     PlotBackend,
+    ResourceMetric,
     SplitBy,
 )
 
@@ -1273,5 +1276,162 @@ class TrialLogger:
             shared_y_axis=shared_y_axis,
             backend=backend,
             **kwargs,
+        )
+
+    def plot_resource_utilisation(
+        self,
+        *,
+        by: ResourceUtilisationBy = "step",
+        metric: ResourceMetric = "utilisation",
+        error_bars: Optional[ErrorBars] = "ci",
+        ci_level: float = 0.95,
+        show_runs: bool = True,
+        sort_by: Optional[Literal["value"]] = None,
+        scenario=None,
+        resource_map: Optional[dict] = None,
+        event_position_df: Optional[pd.DataFrame] = None,
+        resource_capacities: Optional[dict] = None,
+        capacity: Optional[Literal["infer"]] = None,
+        warm_up: float = 0,
+        limit_duration: Optional[float] = None,
+        unclosed: UnclosedResourceUse = "censor",
+    ):
+        """
+        Plot a bar chart of resource utilisation, one bar per group, across runs.
+
+        Thin wrapper over `vidigi.plots.plot_resource_utilisation`, called on
+        this trial's combined dataframe. See that function for the full
+        parameter list.
+
+        Parameters
+        ----------
+        by : {"step", "resource", "run"}, default="step"
+            What each bar summarises. See `vidigi.analysis.resource_utilisation`.
+        metric : {"busy_time", "mean_in_use", "utilisation"}, default="utilisation"
+            Which quantity is the bar height. Falls back to `"mean_in_use"`,
+            with a warning, if no capacity was resolved for any group.
+        error_bars : {"ci", "sd", "se", "range", "iqr"} or None, default="ci"
+            The spread drawn as an error bar around each bar, computed over
+            the per-run values. `"ci"` requires the optional `scipy`
+            dependency (`pip install vidigi[stats]`).
+        ci_level : float, default=0.95
+            Confidence level used when `error_bars="ci"`.
+        show_runs : bool, default=True
+            If True, overlays each run's individual value as a
+            semi-transparent point on top of its bar.
+        sort_by : {"value"} or None, default=None
+            If `"value"`, bars are ordered by descending metric value.
+        scenario, resource_map, event_position_df, resource_capacities, capacity :
+            Capacity resolution - see
+            `vidigi.analysis._resolve_resource_capacities` for the four
+            routes. Unused when `by="resource"`.
+        warm_up : float, default=0
+            Start of the analysis window.
+        limit_duration : float, optional
+            End of the analysis window. `None` (default) uses the latest time
+            seen anywhere in the trial.
+        unclosed : {"censor", "drop"}, default="censor"
+            How an entity still holding a resource at the end of the window is
+            handled. See `vidigi.analysis.resource_use_intervals`.
+
+        Returns
+        -------
+        plotly.graph_objects.Figure
+
+        See Also
+        --------
+        vidigi.plots.plot_resource_utilisation : The underlying implementation.
+        get_resource_utilisation : The underlying per-run, per-group summary.
+        """
+        return _plot_resource_utilisation(
+            self._trial_dataframe,
+            by=by,
+            metric=metric,
+            error_bars=error_bars,
+            ci_level=ci_level,
+            show_runs=show_runs,
+            sort_by=sort_by,
+            scenario=scenario,
+            resource_map=resource_map,
+            event_position_df=event_position_df,
+            resource_capacities=resource_capacities,
+            capacity=capacity,
+            warm_up=warm_up,
+            limit_duration=limit_duration,
+            unclosed=unclosed,
+        )
+
+    def plot_resource_utilisation_over_time(
+        self,
+        *,
+        every_x_time_units: float = 1,
+        warm_up: float = 0,
+        limit_duration: Optional[float] = None,
+        as_proportion: bool = False,
+        show_all_runs: bool = True,
+        shared_y_axis: bool = True,
+        scenario=None,
+        resource_map: Optional[dict] = None,
+        event_position_df: Optional[pd.DataFrame] = None,
+        resource_capacities: Optional[dict] = None,
+        capacity: Optional[Literal["infer"]] = None,
+    ):
+        """
+        Plot how many units of each resource step were in use over time, across runs.
+
+        Thin wrapper over `vidigi.plots.plot_resource_utilisation_over_time`,
+        called on this trial's combined dataframe. See that function for the
+        full parameter list.
+
+        Parameters
+        ----------
+        every_x_time_units : float, default=1
+            Time granularity for snapshots.
+        warm_up : float, default=0
+            Time at which the plotted window begins.
+        limit_duration : float, optional
+            End of the plotted window. `None` (default) uses the latest time
+            seen anywhere in the trial.
+        as_proportion : bool, default=False
+            If True, each step's count is divided by its resolved capacity, so
+            the y-axis is a proportion in use rather than a raw count. Requires
+            a capacity to be resolvable for every step plotted.
+        show_all_runs : bool, default=True
+            If True, plots every run with semi-transparent lines and overlays
+            the mean trajectory.
+        shared_y_axis : bool, default=True
+            If True (and more than one step is plotted), every facet shares a
+            y-axis range.
+        scenario, resource_map, event_position_df, resource_capacities, capacity :
+            Capacity resolution, used only when `as_proportion=True`.
+
+        Returns
+        -------
+        plotly.graph_objects.Figure
+
+        Notes
+        -----
+        Traces use `line_shape="hv"` - occupancy is a step function, and linear
+        interpolation between snapshots would draw fractional resource counts
+        that never existed.
+
+        See Also
+        --------
+        vidigi.plots.plot_resource_utilisation_over_time : The underlying implementation.
+        vidigi.analysis.resource_occupancy_over_time : The underlying per-run, per-snapshot counts.
+        """
+        return _plot_resource_utilisation_over_time(
+            self._trial_dataframe,
+            every_x_time_units=every_x_time_units,
+            warm_up=warm_up,
+            limit_duration=limit_duration,
+            as_proportion=as_proportion,
+            show_all_runs=show_all_runs,
+            shared_y_axis=shared_y_axis,
+            scenario=scenario,
+            resource_map=resource_map,
+            event_position_df=event_position_df,
+            resource_capacities=resource_capacities,
+            capacity=capacity,
         )
 

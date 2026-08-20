@@ -13,6 +13,7 @@ import warnings
 from collections import namedtuple
 from typing import Literal, Optional, TypeAlias, Union
 
+import numpy as np
 import pandas as pd
 
 from vidigi.prep import reshape_for_animations
@@ -1348,3 +1349,157 @@ def resource_utilisation(
 
     ordered_cols = ["run_number"] + ([group_col] if group_col else [])
     return grouped[ordered_cols + ["busy_time", "mean_in_use", "capacity", "utilisation"]]
+
+
+def resource_occupancy_over_time(
+    event_log: pd.DataFrame,
+    *,
+    every_x_time_units: float = 1,
+    warm_up: float = 0,
+    limit_duration: Optional[float] = None,
+    entity_col_name: str = "entity_id",
+    time_col_name: str = "time",
+    event_type_col_name: str = "event_type",
+    event_col_name: str = "event",
+    resource_col_name: str = "resource_id",
+    run_col_name: Optional[str] = "auto",
+) -> pd.DataFrame:
+    """
+    Compute how many units of each resource step were busy at regular snapshots.
+
+    Unlike `queue_size_over_time` (built on `reshape_for_animations`, "most
+    recent event per entity wins"), resource occupancy is interval containment
+    - a different question. This computes it exactly via a +1/-1 sweep over
+    `resource_use_intervals`'s bouts rather than a per-snapshot membership
+    scan: +1 at each bout's start, -1 at its end, sorted and cumulatively
+    summed, then looked up onto the snapshot grid with `searchsorted`.
+
+    Parameters
+    ----------
+    event_log : pandas.DataFrame
+        Long-format event log, e.g. the output of `TrialLogger.to_dataframe()`.
+    every_x_time_units : float, default=1
+        Time granularity for snapshots.
+    warm_up : float, default=0
+        Start of the analysis window. See `resource_use_intervals`.
+    limit_duration : float, optional
+        End of the analysis window. `None` (default) uses the latest time seen
+        anywhere in the trial - not per run, so every run shares the same grid.
+    entity_col_name, time_col_name, event_type_col_name, event_col_name,
+    resource_col_name : str
+        Column names forwarded to `resource_use_intervals`.
+    run_col_name : str or None, default="auto"
+        Column identifying which run each row belongs to. See `event_durations`.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Columns ``run_number``, ``event`` (the step - the *start* event's
+        name), ``snapshot_time``, ``count``. One row per step per snapshot per
+        run, including snapshots where nothing was in use - a genuine zero,
+        not a missing row, matching `queue_size_over_time`'s convention.
+        Empty (no rows, correct columns) if the log has no resource_use bouts
+        at all.
+
+    Raises
+    ------
+    ValueError
+        If `every_x_time_units` is not positive.
+
+    Notes
+    -----
+    Unclosed resource use (an entity still holding a resource when the window
+    ends) is always treated as occupied through to the window end - dropping
+    it would understate occupancy exactly when it matters most, the same
+    reasoning as `resource_use_intervals`'s `unclosed="censor"` default. This
+    function always uses that behaviour; there is no `unclosed` parameter.
+
+    A bout is occupied on the half-open interval ``[start, end)`` - a unit
+    freed exactly at a snapshot time is not counted as busy there. Paired with
+    `plot_resource_utilisation_over_time`'s `line_shape="hv"` traces, this
+    draws a resource as busy right up to, and not including, the instant it is
+    freed.
+
+    See Also
+    --------
+    resource_use_intervals : The underlying per-bout intervals this sweeps over.
+    queue_size_over_time : The equivalent computation for a queue rather than a resource.
+    """
+    if every_x_time_units <= 0:
+        raise ValueError(
+            f"`every_x_time_units` must be positive, but {every_x_time_units} "
+            f"was passed."
+        )
+
+    window_start, window_end = _resolve_window(
+        event_log, limit_duration, warm_up, time_col_name
+    )
+
+    intervals = resource_use_intervals(
+        event_log,
+        unclosed="censor",
+        warm_up=warm_up,
+        limit_duration=limit_duration,
+        entity_col_name=entity_col_name,
+        time_col_name=time_col_name,
+        event_type_col_name=event_type_col_name,
+        event_col_name=event_col_name,
+        resource_col_name=resource_col_name,
+        run_col_name=run_col_name,
+    )
+
+    steps = sorted(intervals["event"].dropna().unique().tolist(), key=str)
+    if not steps:
+        return pd.DataFrame(columns=["run_number", "event", "snapshot_time", "count"])
+
+    n_snapshots = int((window_end - window_start) // every_x_time_units) + 1
+    snapshot_times = window_start + np.arange(n_snapshots) * every_x_time_units
+    snapshot_times = snapshot_times[snapshot_times <= window_end]
+
+    run_ids = sorted(intervals["run_number"].dropna().unique().tolist()) or [pd.NA]
+
+    rows = []
+    for run_id in run_ids:
+        run_intervals = (
+            intervals[intervals["run_number"] == run_id]
+            if pd.notna(run_id)
+            else intervals[intervals["run_number"].isna()]
+        )
+        for step in steps:
+            step_intervals = run_intervals[run_intervals["event"] == step]
+            starts = step_intervals["start"].clip(lower=window_start).to_numpy()
+            ends = step_intervals["end"].clip(upper=window_end).to_numpy()
+            valid = starts < ends
+            starts, ends = starts[valid], ends[valid]
+
+            if len(starts) == 0:
+                counts = np.zeros(len(snapshot_times), dtype=int)
+            else:
+                change_times = np.concatenate([starts, ends])
+                deltas = np.concatenate(
+                    [np.ones(len(starts)), -np.ones(len(ends))]
+                )
+                order = np.argsort(change_times, kind="stable")
+                change_times = change_times[order]
+                cum_counts = np.cumsum(deltas[order])
+
+                positions = (
+                    np.searchsorted(change_times, snapshot_times, side="right") - 1
+                )
+                counts = np.where(
+                    positions >= 0,
+                    cum_counts[np.clip(positions, 0, len(cum_counts) - 1)],
+                    0,
+                ).astype(int)
+
+            rows.extend(
+                {
+                    "run_number": run_id,
+                    "event": step,
+                    "snapshot_time": t,
+                    "count": c,
+                }
+                for t, c in zip(snapshot_times, counts)
+            )
+
+    return pd.DataFrame(rows)[["run_number", "event", "snapshot_time", "count"]]
