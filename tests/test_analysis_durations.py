@@ -131,6 +131,37 @@ def test_default_pathway_column_absent_is_tolerated():
     assert result["pathway"].isna().all()
 
 
+@pytest.mark.parametrize(
+    "match,expected",
+    [
+        ("first", [5.0]),
+        ("last", [6.0]),
+        ("occurrence", [5.0, 6.0]),
+    ],
+)
+def test_nan_entity_id_pairs_correctly_instead_of_cross_joining(match, expected):
+    """Regression test: `groupby(...).cumcount()`/`.head(1)`/`.tail(1)` default to
+    `dropna=True`, under which every row in a NaN-keyed group gets `occurrence=NaN`
+    (cumcount) or is silently dropped entirely (head/tail) - pandas' `merge` then
+    treats `NaN == NaN` as a match, so two starts and two ends with the same NaN
+    entity_id previously merged into a spurious 4-row cross-join for
+    `match="occurrence"`, and the entity vanished entirely for `match="first"`/
+    `"last"`. An entity with no ID is unusual but not something that should
+    fabricate or silently drop data.
+    """
+    log = pd.DataFrame(
+        {
+            "entity_id": [float("nan")] * 4,
+            "event": ["a", "a", "b", "b"],
+            "time": [0.0, 2.0, 5.0, 8.0],
+        }
+    )
+
+    result = event_durations(log, "a", "b", match=match)
+
+    assert list(result["duration"]) == expected
+
+
 def test_same_event_twice_raises():
     log = _rows(("A", "start", 1))
     with pytest.raises(ValueError, match="are both 'start'"):

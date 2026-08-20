@@ -979,9 +979,12 @@ def generate_animation(
     # make them semi-transparent or you won't see the people using them!
     # A scenario can be supplied for a model where no event declares a resource - a
     # purely queue-based model, say. There is nothing to draw in that case, and the
-    # explode below would fail on the resulting empty frame. The truthy check below
-    # is shared with `vidigi.analysis._resolve_resource_capacities`'s route C, so
-    # the two cannot drift on what counts as "this event has a resource".
+    # explode below would fail on the resulting empty frame. Only the truthy check
+    # below is shared with `vidigi.analysis._resolve_resource_capacities`'s route C
+    # (via `_resource_map_from_event_position_df`) - the row selection immediately
+    # below still re-derives its own filter on the raw `resource` column, rather
+    # than consuming the helper's mapping, so this only guarantees the two agree on
+    # *whether* a resource exists, not on every detail of *which* rows count.
     resource_attr_map = _resource_map_from_event_position_df(event_position_df)
     if scenario is not None and resource_attr_map:
         events_with_resources = event_position_df[

@@ -261,12 +261,12 @@ def event_durations(
             .sort_values(group_keys + [time_col_name])
             .copy()
         )
-        subset["occurrence"] = subset.groupby(group_keys).cumcount()
+        subset["occurrence"] = subset.groupby(group_keys, dropna=False).cumcount()
         if match == "first":
-            subset = subset.groupby(group_keys).head(1).copy()
+            subset = subset.groupby(group_keys, dropna=False).head(1).copy()
             subset["occurrence"] = 0
         elif match == "last":
-            subset = subset.groupby(group_keys).tail(1).copy()
+            subset = subset.groupby(group_keys, dropna=False).tail(1).copy()
             subset["occurrence"] = 0
         return subset
 
@@ -274,8 +274,8 @@ def event_durations(
     seconds = _prepare(second_event)
 
     if match == "occurrence":
-        first_counts = firsts.groupby(group_keys).size()
-        second_counts = seconds.groupby(group_keys).size()
+        first_counts = firsts.groupby(group_keys, dropna=False).size()
+        second_counts = seconds.groupby(group_keys, dropna=False).size()
         counts = pd.concat(
             [first_counts.rename("n_first"), second_counts.rename("n_second")],
             axis=1,
@@ -819,12 +819,34 @@ def resource_use_intervals(
     utilisation incomparable across runs and any confidence interval computed
     over them meaningless.
 
+    For a censored row (`censored=True`), `end` is the window boundary, not a
+    real completion time - safe for `busy_time` (an interval genuinely was
+    occupied up to that point), but **not** for a service-time-type analysis.
+    A naive `end - start` on a censored row understates nothing since it's
+    right-truncated - filter `censored` rows out first, or pass
+    `unclosed="drop"`, before treating `start`/`end` as observed bout
+    durations.
+
+    This assumes each step's capacity is constant across the whole analysis
+    window. A resource whose capacity varies within the window (e.g.
+    shift-based staffing) will not be represented correctly by a single
+    capacity value - `resource_utilisation`'s `mean_in_use` is still a valid
+    time-average, but `utilisation` (which divides by one static number) is
+    not.
+
     See Also
     --------
     resource_utilisation : Aggregates this function's output into one row per run per group.
     """
     if unclosed not in ("censor", "drop"):
         raise ValueError(f"`unclosed` must be 'censor' or 'drop'; got {unclosed!r}.")
+
+    if event_type_col_name not in event_log.columns:
+        raise ValueError(
+            f"`event_type_col_name` was given as '{event_type_col_name}', but "
+            f"that column is not present. Available columns: "
+            f"{sorted(str(c) for c in event_log.columns)}."
+        )
 
     run_col = _resolve_run_column(event_log, run_col_name)
     window_start, window_end = _resolve_window(
@@ -868,10 +890,10 @@ def resource_use_intervals(
         ]
 
     starts = starts.sort_values(group_keys + [time_col_name])
-    starts["occurrence"] = starts.groupby(group_keys).cumcount()
+    starts["occurrence"] = starts.groupby(group_keys, dropna=False).cumcount()
 
     ends = ends.sort_values(group_keys + [time_col_name])
-    ends["occurrence"] = ends.groupby(group_keys).cumcount()
+    ends["occurrence"] = ends.groupby(group_keys, dropna=False).cumcount()
 
     rename_map = {entity_col_name: "entity_id"}
     if run_col:
@@ -1063,10 +1085,15 @@ def _resolve_resource_capacities(
         warnings.warn(
             "capacity='infer' estimates each step's capacity as the number of "
             "distinct resource_id values seen for it in the log. This is a "
-            "*lower bound* - a resource unit that was never used is invisible, "
-            "so inferred utilisation is biased upward for underloaded "
-            "resources. Pass resource_capacities=, or scenario= with "
-            "resource_map= or event_position_df=, for an exact answer.",
+            "*lower bound* even in the best case - a resource unit that was "
+            "never used is invisible, so inferred utilisation is biased "
+            "upward for underloaded resources. It can be far worse than a "
+            "small undercount: if resource_id does not identify individual "
+            "physical units (e.g. every grant of a plain simpy.Resource pool "
+            "logs the same id, or none at all), this infers a capacity of 1 "
+            "regardless of the real capacity, and utilisation is inflated by "
+            "roughly that factor. Pass resource_capacities=, or scenario= "
+            "with resource_map= or event_position_df=, for an exact answer.",
             UserWarning,
             stacklevel=2,
         )
@@ -1149,10 +1176,18 @@ def resource_utilisation(
           name, e.g. `"treatment_begins"`. Capacity comes from whichever
           capacity route was given for that step.
         - ``"resource"``: one row per `(run, resource_id)` - one physical unit.
-          Capacity is always `1` (the unit itself).
+          Capacity is always `1` (the unit itself); no capacity route needs to
+          be given at all, and none of the capacity arguments below are used.
         - ``"run"``: one row per run, pooling every step/unit together.
-          Capacity is only well-defined when every step shares the same
-          capacity (a single-resource-type system); otherwise `NaN`.
+          `capacity` is the **sum** of every step's resolved capacity (`NaN`
+          if any step's capacity is unresolved) - the maximum number of
+          resource-things that could have been busy at once, treating every
+          unit of every step as equally countable. If more than one distinct
+          step is pooled, a warning is raised: this is a blended figure across
+          (typically different) resource *types*, e.g. doctors and beds
+          summed together, which is rarely the number a capacity-planning
+          question is actually asking - prefer `by="step"` unless a single
+          blended load figure is genuinely what is wanted.
     scenario, resource_map, event_position_df, resource_capacities, capacity :
         Capacity resolution - see `_resolve_resource_capacities` for the four
         routes and their precedence order. All optional; with none given,
@@ -1174,6 +1209,10 @@ def resource_utilisation(
     See Also
     --------
     resource_use_intervals : The underlying per-bout intervals this aggregates.
+    mean_confidence_interval : A confidence interval over one group's `utilisation`
+        (or `mean_in_use`) column, filtered to that group, across runs - already
+        one value per run, so no `replication_means` reduction step is needed
+        first, unlike the `event_durations` -> `replication_means` route.
     """
     if by not in ("step", "resource", "run"):
         raise ValueError(f"`by` must be one of 'step', 'resource', 'run'; got {by!r}.")
@@ -1191,21 +1230,33 @@ def resource_utilisation(
         run_col_name=run_col_name,
     )
 
-    capacities = _resolve_resource_capacities(
-        intervals,
-        scenario=scenario,
-        resource_map=resource_map,
-        event_position_df=event_position_df,
-        resource_capacities=resource_capacities,
-        capacity=capacity,
-        step_col_name="event",
-        resource_col_name="resource_id",
-    )
+    # `by="resource"`'s capacity is always 1 (a physical unit's own capacity is
+    # itself), so none of the four routes are consulted - calling them anyway
+    # would raise/warn about capacity information this mode has no use for.
+    if by == "resource":
+        capacities = {}
+    else:
+        capacities = _resolve_resource_capacities(
+            intervals,
+            scenario=scenario,
+            resource_map=resource_map,
+            event_position_df=event_position_df,
+            resource_capacities=resource_capacities,
+            capacity=capacity,
+            step_col_name="event",
+            resource_col_name="resource_id",
+        )
 
     window_start, window_end = _resolve_window(
         event_log, limit_duration, warm_up, time_col_name
     )
     window_length = window_end - window_start
+    if window_length == 0:
+        raise ValueError(
+            f"`warm_up` ({warm_up}) equals the end of the analysis window "
+            f"({window_end}), so it has zero length - mean_in_use would be a "
+            f"division by zero. Widen the window, or lower `warm_up`."
+        )
 
     group_col = {"step": "event", "resource": "resource_id", "run": None}[by]
 
@@ -1216,11 +1267,30 @@ def resource_utilisation(
             intervals.groupby("run_number", dropna=False)["busy_time"]
             .sum()
             .reindex(run_ids, fill_value=0)
+            .rename_axis("run_number")
             .reset_index()
-            .rename(columns={"index": "run_number"})
         )
     else:
-        group_values = sorted(intervals[group_col].dropna().unique().tolist())
+        # A step's own event name is never null, but `resource_id` is entirely
+        # null whenever `resource_use_intervals` fell back to (run, entity)
+        # pairing - `.dropna()` would then discard the only group there is,
+        # silently returning zero rows instead of one pooled row per run.
+        distinct_values = intervals[group_col].unique().tolist()
+        non_null_values = sorted(v for v in distinct_values if pd.notna(v))
+        if group_col == "resource_id" and not non_null_values and not intervals.empty:
+            warnings.warn(
+                "by='resource' was requested, but no bout has a resource_id "
+                "(see resource_use_intervals's warning above) - reporting one "
+                "pooled row per run instead of a per-unit breakdown. Use "
+                "by='step' or by='run' for a breakdown that does not depend "
+                "on resource_id.",
+                UserWarning,
+                stacklevel=2,
+            )
+            group_values = [pd.NA]
+        else:
+            group_values = non_null_values
+
         full_index = pd.MultiIndex.from_product(
             [run_ids, group_values], names=["run_number", group_col]
         )
@@ -1238,12 +1308,43 @@ def resource_utilisation(
     elif by == "resource":
         grouped["capacity"] = 1.0
     else:
-        unique_capacities = set(capacities.values()) if capacities else set()
-        grouped["capacity"] = (
-            next(iter(unique_capacities)) if len(unique_capacities) == 1 else float("nan")
-        )
+        distinct_steps = set(intervals["event"].dropna().unique())
+        if len(distinct_steps) > 1:
+            warnings.warn(
+                f"by='run' is pooling {len(distinct_steps)} distinct steps "
+                f"({sorted(str(s) for s in distinct_steps)}) into one blended "
+                f"busy-time and utilisation figure. This treats every unit of "
+                f"every step as interchangeable, which is rarely the number a "
+                f"capacity-planning question is asking for a system with more "
+                f"than one resource type - consider by='step' instead.",
+                UserWarning,
+                stacklevel=2,
+            )
+        # Sum, not "must all agree": the pooled busy_time already sums across
+        # every step, so its denominator is the total number of resource-things
+        # that could have been busy at once - NaN propagates automatically if
+        # any step's own capacity is unresolved.
+        total_capacity = sum(capacities.values()) if capacities else float("nan")
+        grouped["capacity"] = total_capacity
 
     grouped["utilisation"] = grouped["mean_in_use"] / grouped["capacity"]
+
+    # Utilisation over 1 is never a valid steady-state reading for this
+    # definition (mean number busy / capacity) - it always means the capacity,
+    # the intervals, or both are wrong (e.g. an under-counted capacity, or
+    # overlapping resource_use bouts for one unit), so it is worth surfacing
+    # here rather than only as a visual cue once the plotting layer exists.
+    over_capacity = grouped["utilisation"] > 1
+    if over_capacity.any():
+        warnings.warn(
+            f"{int(over_capacity.sum())} row(s) have utilisation over 1 (up to "
+            f"{grouped['utilisation'].max():.2f}) - this is never valid for "
+            f"mean-number-busy/capacity, and usually means the resolved "
+            f"capacity is too low, or overlapping resource_use intervals for "
+            f"the same unit.",
+            UserWarning,
+            stacklevel=2,
+        )
 
     ordered_cols = ["run_number"] + ([group_col] if group_col else [])
     return grouped[ordered_cols + ["busy_time", "mean_in_use", "capacity", "utilisation"]]
