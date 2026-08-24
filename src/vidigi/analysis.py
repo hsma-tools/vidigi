@@ -1662,7 +1662,9 @@ def welch_moving_average(
           for the first `window` points, where a full-width window would run
           off the start of the series, it shrinks to the narrower symmetric
           window that does exist (`2i - 1` points, i.e. only the `i - 1`
-          points actually available on each side) rather than returning
+          points actually available on each side - `i` here is Welch's own
+          1-indexed position in the series, `i = 1` being the first point,
+          not this function's 0-indexed output array) rather than returning
           `NaN` there - this is the detail a `pandas.rolling(center=True)`
           call gets wrong. A window this wide also has no full-width
           neighbourhood in the last `window` points of the series, so those
