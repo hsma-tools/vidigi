@@ -90,6 +90,23 @@ def test_box_and_violin_carry_the_raw_durations(kind):
     assert sorted(fig.data[0].y) == [float(d) for d in DURATIONS]
 
 
+def test_warm_up_reaches_event_durations_via_kwargs():
+    """`plot_duration_distribution` has no explicit `warm_up=` of its own - it
+    reaches `vidigi.analysis.event_durations` purely through `**kwargs`, same
+    as `entity_col_name`/`run_col_name`. Entity 1 arrives at t=0, entity 2 at
+    t=10 (both depart 5 later); `warm_up=5` must exclude entity 1's pairing."""
+    logger = EventLogger(run_number=1)
+    logger.log_arrival(entity_id=1, time=0.0)
+    logger.log_departure(entity_id=1, time=5.0)
+    logger.log_arrival(entity_id=2, time=10.0)
+    logger.log_departure(entity_id=2, time=15.0)
+    event_log = TrialLogger([logger]).to_dataframe()
+
+    fig = plot_duration_distribution(event_log, "arrival", "depart", kind="box", warm_up=5)
+
+    assert list(fig.data[0].y) == [5.0]
+
+
 # --------------------------------------------------------------------------- #
 # kind="ecdf"
 # --------------------------------------------------------------------------- #

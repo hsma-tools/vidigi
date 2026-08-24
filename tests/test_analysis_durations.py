@@ -263,3 +263,87 @@ def test_event_absent_from_the_whole_log_raises_clearly_on_both(no_departure_log
 
     with pytest.raises(ValueError, match="'depart'"):
         event_durations(no_departure_log, "arrival", "depart")
+
+
+# --------------------------------------------------------------------------- #
+# warm_up
+# --------------------------------------------------------------------------- #
+
+
+def test_warm_up_default_is_a_verified_no_op():
+    log = _rows(("A", "start", 0), ("A", "end", 5), ("B", "start", 10), ("B", "end", 12))
+
+    with_default = event_durations(log, "start", "end")
+    explicit_zero = event_durations(log, "start", "end", warm_up=0)
+
+    pd.testing.assert_frame_equal(with_default, explicit_zero)
+
+
+def test_warm_up_excludes_pairings_that_started_before_it():
+    log = _rows(
+        ("A", "start", 0),
+        ("A", "end", 5),
+        ("B", "start", 10),
+        ("B", "end", 12),
+        ("C", "start", 20),
+        ("C", "end", 25),
+    )
+
+    result = event_durations(log, "start", "end", warm_up=10)
+
+    assert sorted(result["entity_id"]) == ["B", "C"]
+
+
+def test_warm_up_boundary_is_inclusive():
+    """A pairing starting *exactly* on the boundary is kept (`>=`, not `>`) -
+    mutation-proven below."""
+    log = _rows(("A", "start", 10), ("A", "end", 15))
+
+    result = event_durations(log, "start", "end", warm_up=10)
+
+    assert list(result["entity_id"]) == ["A"]
+
+
+def test_warm_up_does_not_exclude_a_pairing_with_no_first_time():
+    """An `end` with no matching `start` has a `NaN` `first_time` - there is no
+    time to compare against `warm_up`, so it must survive regardless. `B` gives
+    `"start"` a genuine occurrence in the log so the event-presence check passes;
+    it starts and ends after `warm_up` and is unaffected."""
+    log = _rows(("A", "end", 5), ("B", "start", 200), ("B", "end", 205))
+
+    result = event_durations(log, "start", "end", warm_up=100)
+
+    a = result.set_index("entity_id").loc["A"]
+    assert pd.isna(a["first_time"])
+    assert a["second_time"] == 5
+
+
+def test_warm_up_combines_with_keep_incomplete_false():
+    log = _rows(
+        ("A", "start", 0),  # before warm_up - excluded regardless
+        ("B", "start", 10),  # after warm_up, never finishes - excluded by keep_incomplete
+        ("C", "start", 20),
+        ("C", "end", 25),
+    )
+
+    result = event_durations(log, "start", "end", warm_up=10, keep_incomplete=False)
+
+    assert list(result["entity_id"]) == ["C"]
+
+
+def test_warm_up_filters_per_occurrence_not_per_entity(rework_loop_logger):
+    """Entity 1 hits `assessment` at t=1 and t=20, `treated` at t=5 and t=30.
+    With `match='occurrence'` and `warm_up=10`, the first pairing (started at
+    t=1) is excluded while the second (started at t=20) survives - proof the
+    filter applies per pairing, not by dropping the whole entity."""
+    df = rework_loop_logger.to_dataframe()
+
+    result = event_durations(df, "assessment", "treated", match="occurrence", warm_up=10)
+
+    assert list(result["duration"]) == [10.0]
+
+
+def test_negative_warm_up_raises():
+    log = _rows(("A", "start", 0), ("A", "end", 5))
+    with pytest.raises(ValueError, match="warm_up"):
+        event_durations(log, "start", "end", warm_up=-1)

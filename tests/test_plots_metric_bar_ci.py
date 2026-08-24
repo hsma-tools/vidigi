@@ -155,6 +155,34 @@ def test_show_runs_overlays_one_point_per_run(unequal_run_loggers):
     assert sorted(scatter_traces[0].y) == [4.0, 5.0, 9.0]
 
 
+def _warm_up_loggers():
+    """One run: entity 1's pairing starts before t=10, entity 2's starts after."""
+    logger = EventLogger(run_number=1)
+    logger.log_arrival(entity_id=1, time=0.0)
+    logger.log_departure(entity_id=1, time=4.0)
+    logger.log_arrival(entity_id=2, time=10.0)
+    logger.log_departure(entity_id=2, time=16.0)
+    return [logger]
+
+
+def test_warm_up_default_is_a_no_op(two_run_loggers):
+    with_default = plot_metric_bar(_trial_df(two_run_loggers), _PAIRS)
+    explicit_zero = plot_metric_bar(_trial_df(two_run_loggers), _PAIRS, warm_up=0)
+    assert with_default.data[0].y == explicit_zero.data[0].y
+
+
+def test_warm_up_excludes_pairings_that_started_before_it():
+    """Entity 1 (duration 4) started before t=10 and is excluded; only entity
+    2 (duration 6) contributes to the bar."""
+    fig = plot_metric_bar(_trial_df(_warm_up_loggers()), _PAIRS, warm_up=10)
+    assert fig.data[0].y == pytest.approx((6.0,))
+
+
+def test_warm_up_zero_includes_everything():
+    fig = plot_metric_bar(_trial_df(_warm_up_loggers()), _PAIRS)
+    assert fig.data[0].y == pytest.approx((5.0,))  # mean of 4 and 6
+
+
 def test_kwargs_still_forward_to_plotly_express_bar(two_run_loggers):
     """`**kwargs` on `plot_metric_bar` is unlike every other new-style plot
     function - it keeps forwarding to `plotly.express.bar` unchanged, since the

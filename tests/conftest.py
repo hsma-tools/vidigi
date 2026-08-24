@@ -495,3 +495,54 @@ def shared_pool_across_steps_logger():
         entity_id=2, resource_id=1, time=15.0, event="registration_ends"
     )
     return logger
+
+
+@pytest.fixture
+def welch_series():
+    """Three deterministic runs, *not* linear, for `welch_moving_average` arithmetic.
+
+    Plain lists, not loggers - `welch_moving_average` takes raw per-run
+    series, not an event log. Deliberately non-linear so the shrinking-edge
+    window (`2i - 1` points) produces a value distinguishable from what an
+    interior full-width window - or a naive ``pandas.rolling(center=True)``
+    returning ``NaN`` at the edges - would give.
+
+    Hand-computed:
+
+    ==========================  ==============================
+    quantity                    value
+    ==========================  ==============================
+    run 1                       [10, 4, 2, 8, 6, 12]
+    run 2                       [8, 6, 4, 6, 8, 10]
+    run 3                       [6, 2, 6, 4, 10, 8]
+    ensemble mean (i=1..6)      [8, 4, 4, 6, 8, 10]
+    ``window=2``, method=welch  [8, 16/3, 6, 6.4]  (length 6-2=4)
+    method=cumulative           [8, 6, 16/3, 5.5, 6, 20/3]  (length 6)
+    ==========================  ==============================
+    """
+    return [
+        [10, 4, 2, 8, 6, 12],
+        [8, 6, 4, 6, 8, 10],
+        [6, 2, 6, 4, 10, 8],
+    ]
+
+
+@pytest.fixture
+def nonstationary_logger():
+    """Three runs whose per-entity duration rises then plateaus, in arrival order.
+
+    Entity k (k=0..29) has ``duration = min(k / 5, 5)`` - rising from 0 up to
+    5 by k=25, then flat for k=25..29. For shape assertions on
+    `plot_warm_up_diagnostic` only (does the smoothed curve rise then
+    flatten) - never "does it find warm-up = X", since Welch's procedure is a
+    visual one with no correct numeric answer to pin.
+    """
+    loggers = []
+    for run_number in (1, 2, 3):
+        logger = EventLogger(run_number=run_number)
+        for k in range(30):
+            duration = min(k / 5, 5.0)
+            logger.log_arrival(entity_id=k, time=float(k))
+            logger.log_departure(entity_id=k, time=float(k) + duration)
+        loggers.append(logger)
+    return loggers

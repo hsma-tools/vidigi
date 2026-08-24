@@ -11,7 +11,7 @@ import difflib
 import inspect
 import warnings
 from collections import namedtuple
-from typing import Literal, Optional, TypeAlias, Union
+from typing import Literal, Optional, Sequence, TypeAlias, Union
 
 import numpy as np
 import pandas as pd
@@ -154,6 +154,7 @@ def event_durations(
     second_event: str,
     *,
     match: MatchMode = "first",
+    warm_up: float = 0,
     entity_col_name: str = "entity_id",
     event_col_name: str = "event",
     time_col_name: str = "time",
@@ -186,6 +187,17 @@ def event_durations(
           in time order. An entity with an unequal number of the two events has its
           excess occurrences paired with nothing (`NaN` on the missing side), and a
           warning names how many entities are affected.
+    warm_up : float, default=0
+        Pairings whose `first_time` is before `warm_up` are excluded - the
+        standard truncation rule for duration data (Law & Kelton): a pairing
+        is discarded by when it *started*, not by whether it later straddles
+        the cutoff. Unlike `resource_use_intervals`/`resource_occupancy_over_time`'s
+        `warm_up`, nothing is censored or clipped mid-interval - a duration is
+        one atomic observation, not a bout that can be partially inside the
+        window. A pairing with no `first_time` at all (a `second_event` with
+        no matching `first_event`) is never excluded by this, since there is
+        no time to compare against `warm_up`. The default of `0` is a
+        verified no-op.
     entity_col_name : str, default="entity_id"
         Column identifying the entity.
     event_col_name : str, default="event"
@@ -218,7 +230,8 @@ def event_durations(
     ------
     ValueError
         If `first_event` equals `second_event`; if either is not present in
-        `event_col_name`; or if `pathway_col_name` names a column that does not exist.
+        `event_col_name`; if `pathway_col_name` names a column that does not
+        exist; or if `warm_up` is negative.
 
     Notes
     -----
@@ -243,6 +256,9 @@ def event_durations(
             f"`event_durations` measures the time between two *different* events - "
             f"pass distinct event names."
         )
+
+    if warm_up < 0:
+        raise ValueError(f"`warm_up` must not be negative, but {warm_up} was passed.")
 
     if match not in ("first", "last", "occurrence"):
         raise ValueError(
@@ -329,6 +345,8 @@ def event_durations(
         merged["run_number"] = pd.NA
 
     merged["duration"] = merged["second_time"] - merged["first_time"]
+
+    merged = merged[merged["first_time"].isna() | (merged["first_time"] >= warm_up)]
 
     if not keep_incomplete:
         merged = merged[merged["duration"].notna()]
@@ -1572,3 +1590,149 @@ def resource_occupancy_over_time(
             )
 
     return pd.DataFrame(rows)[["run_number", "event", "snapshot_time", "count"]]
+
+
+def _ensemble_mean(series_by_run: Sequence[Sequence[float]]):
+    """Truncate every run to the shortest length and average across runs.
+
+    Shared by `welch_moving_average` and `plot_warm_up_diagnostic`, so the
+    latter can draw the raw ensemble-average trace and feed the *same*
+    length-matched runs onward to `welch_moving_average` for each window -
+    truncating twice would otherwise warn twice for the same unequal-length
+    input.
+
+    Returns
+    -------
+    tuple
+        `(m, ensemble_mean, trimmed)`: the common length, the length-`m`
+        array of per-index means, and the list of length-`m` per-run arrays
+        it was computed from.
+    """
+    lengths = [len(run) for run in series_by_run]
+    m = min(lengths)
+    if max(lengths) != m:
+        warnings.warn(
+            f"Runs of unequal length were passed (lengths {lengths}); every "
+            f"run is truncated to the shortest, {m}.",
+            UserWarning,
+            stacklevel=3,
+        )
+    trimmed = [np.asarray(run[:m], dtype=float) for run in series_by_run]
+    ensemble_mean = np.mean(np.array(trimmed), axis=0)
+    return m, ensemble_mean, trimmed
+
+
+# How `welch_moving_average` smooths the ensemble-averaged series.
+WarmUpMethod: TypeAlias = Literal["welch", "cumulative"]
+
+
+def welch_moving_average(
+    series_by_run: Sequence[Sequence[float]],
+    window: Optional[int] = None,
+    *,
+    method: WarmUpMethod = "welch",
+) -> np.ndarray:
+    """
+    Smooth an ensemble-averaged series to visually locate a warm-up length.
+
+    Underlies `plot_warm_up_diagnostic`. Takes one series per replication -
+    e.g. queue length at each snapshot, resource occupancy at each snapshot,
+    or per-entity durations in arrival order - and reduces the replications
+    to a single smoothed curve whose early instability (or lack of it) is the
+    visual signal a modeller reads off to choose `warm_up=`.
+
+    Parameters
+    ----------
+    series_by_run : sequence of sequence of float
+        One series per replication, each already in the order its warm-up
+        length will be judged against (snapshot time order, or entity
+        arrival order). Runs of unequal length are truncated to the
+        shortest, with a warning - the ensemble average at index i needs a
+        value from every run at that index, so a longer run contributes no
+        extra information past the shortest run's end.
+    window : int, optional
+        Half-width of the moving-average window. Required, and must be a
+        positive integer less than the (truncated) series length, when
+        `method="welch"`. Ignored when `method="cumulative"`, which has no
+        window.
+    method : {"welch", "cumulative"}, default="welch"
+        - `"welch"`: Welch's (1983) moving-average procedure, as described
+          in Law, *Simulation Modeling and Analysis*. The ensemble average is
+          smoothed with a symmetric window of full width `2 * window + 1`;
+          for the first `window` points, where a full-width window would run
+          off the start of the series, it shrinks to the narrower symmetric
+          window that does exist (`2i - 1` points, i.e. only the `i - 1`
+          points actually available on each side) rather than returning
+          `NaN` there - this is the detail a `pandas.rolling(center=True)`
+          call gets wrong. A window this wide also has no full-width
+          neighbourhood in the last `window` points of the series, so those
+          are not returned at all: the output has length
+          `len(series) - window`, not `len(series)` - a larger `window`
+          gives a smoother curve at the cost of a shorter one.
+        - `"cumulative"`: the plain expanding mean of the ensemble average,
+          `mean(ensemble[:i + 1])` for every `i` - simpler and needs no
+          window, but each new point only shifts the running mean by `1/i`,
+          so a biased early transient decays out of it far more slowly than
+          out of Welch's fixed-width window. The risk is not that this curve
+          looks rougher - it is *smoother*, in a way that can make it look
+          settled long after (or hide a real shift long before) the series
+          has actually stabilised. Returned at the series' full length.
+
+    Returns
+    -------
+    numpy.ndarray
+        The smoothed series. See `method` above for its length.
+
+    Raises
+    ------
+    ValueError
+        If `series_by_run` is empty; if `method` is not `"welch"` or
+        `"cumulative"`; or if `method="welch"` and `window` is `None`, not a
+        positive integer, or `>=` the (truncated) series length, leaving
+        nothing to return.
+
+    Notes
+    -----
+    Deliberately has no automatic warm-up-length selector. Welch's procedure
+    is explicitly a visual one - a flatness threshold returns a confident
+    number that is wrong on any series with slow drift, silently discarding
+    the wrong amount of data with no signal anything went awry. Overlay
+    several `window` values (see `plot_warm_up_diagnostic`) and read off the
+    point where they agree, by eye.
+
+    See Also
+    --------
+    plot_warm_up_diagnostic : Builds the figure this function's output is drawn into.
+    """
+    if len(series_by_run) == 0:
+        raise ValueError("`series_by_run` must contain at least one run.")
+
+    if method not in ("welch", "cumulative"):
+        raise ValueError(f"`method` must be 'welch' or 'cumulative'; got {method!r}.")
+
+    m, ensemble_mean, _ = _ensemble_mean(series_by_run)
+
+    if method == "cumulative":
+        return np.cumsum(ensemble_mean) / np.arange(1, m + 1)
+
+    if window is None or window < 1:
+        raise ValueError(
+            f"`window` must be a positive integer when method='welch'; got "
+            f"{window!r}."
+        )
+    if window >= m:
+        raise ValueError(
+            f"`window` ({window}) leaves nothing to return from a series of "
+            f"length {m} - Welch's procedure only defines a moving average up "
+            f"to `len(series) - window` points. Pass a smaller `window`."
+        )
+
+    output_length = m - window
+    smoothed = np.empty(output_length)
+    for i in range(output_length):
+        if i < window:
+            smoothed[i] = ensemble_mean[: 2 * i + 1].mean()
+        else:
+            smoothed[i] = ensemble_mean[i - window : i + window + 1].mean()
+
+    return smoothed

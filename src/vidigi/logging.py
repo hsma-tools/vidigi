@@ -5,7 +5,7 @@ from pydantic import (
     model_validator,
     ValidationInfo,
 )
-from typing import Optional, Any, List, ClassVar, Set, Literal, TypeAlias
+from typing import Optional, Any, List, ClassVar, Set, Literal, Sequence, TypeAlias
 import json
 import pandas as pd
 from pathlib import Path
@@ -35,12 +35,14 @@ from vidigi.plots import (
     plot_metric_bar as _plot_metric_bar,
     plot_resource_utilisation as _plot_resource_utilisation,
     plot_resource_utilisation_over_time as _plot_resource_utilisation_over_time,
+    plot_warm_up_diagnostic as _plot_warm_up_diagnostic,
     Across,
     DistributionKind,
     ErrorBars,
     PlotBackend,
     ResourceMetric,
     SplitBy,
+    WarmUpMethod,
 )
 
 RECOGNIZED_EVENT_TYPES = {
@@ -837,6 +839,7 @@ class TrialLogger:
         second_event,
         *,
         match: MatchMode = "first",
+        warm_up: float = 0,
         **kwargs,
     ):
         """
@@ -855,6 +858,9 @@ class TrialLogger:
         match : {"first", "last", "occurrence"}, default="first"
             How repeated occurrences of the two events for the same entity are
             paired. See `vidigi.analysis.event_durations`.
+        warm_up : float, default=0
+            Pairings whose `first_time` is before `warm_up` are excluded. See
+            `vidigi.analysis.event_durations`'s same parameter.
         **kwargs : dict
             Additional keyword arguments forwarded to
             `vidigi.analysis.event_durations` (e.g. `entity_col_name`,
@@ -872,7 +878,12 @@ class TrialLogger:
         vidigi.analysis.event_durations : Full parameter list and pairing semantics.
         """
         return event_durations(
-            self._trial_dataframe, first_event, second_event, match=match, **kwargs
+            self._trial_dataframe,
+            first_event,
+            second_event,
+            match=match,
+            warm_up=warm_up,
+            **kwargs,
         )
 
     def get_event_duration_stat(
@@ -884,6 +895,7 @@ class TrialLogger:
         dp=2,
         label=None,
         match: MatchMode = "first",
+        warm_up: float = 0,
         **kwargs,
     ):
         """
@@ -914,6 +926,12 @@ class TrialLogger:
             `vidigi.analysis.event_durations` for the full explanation. The
             default matches the behaviour of every prior release, where an
             entity visiting either event more than once was unsupported.
+        warm_up : float, default=0
+            Pairings whose `first_time` is before `warm_up` are excluded
+            before the statistic is computed. See
+            `vidigi.analysis.event_durations`'s same parameter. `n_runs`
+            (used by `"unserved_rate"`/`"served_rate"`/`"summary"`) is
+            unaffected - it always counts every run in the trial.
         **kwargs : dict
             Additional arguments passed to the pandas Series method
             corresponding to `what` (e.g., `quantile(q=0.9)`).
@@ -939,9 +957,9 @@ class TrialLogger:
         # inflating served/unserved rates that are meant to be per-run averages.
         n_runs = len(self._event_logs)
 
-        series = self.get_event_durations(first_event, second_event, match=match)[
-            "duration"
-        ]
+        series = self.get_event_durations(
+            first_event, second_event, match=match, warm_up=warm_up
+        )["duration"]
 
         result = _summarise_durations(
             series, what, exclude_incomplete, n_runs, dp=dp, **kwargs
@@ -1103,7 +1121,7 @@ class TrialLogger:
             Figure title.
         **kwargs : dict
             Additional keyword arguments forwarded to
-            `vidigi.analysis.event_durations`.
+            `vidigi.analysis.event_durations` (e.g. `warm_up`, `entity_col_name`).
 
         Returns
         -------
@@ -1137,6 +1155,7 @@ class TrialLogger:
         ci_level: float = 0.95,
         show_runs: bool = False,
         match: MatchMode = "first",
+        warm_up: float = 0,
         interactive=True,
         **kwargs,
     ):
@@ -1179,6 +1198,9 @@ class TrialLogger:
         match : {"first", "last", "occurrence"}, default="first"
             How repeated occurrences of the two events are paired. See
             `vidigi.analysis.event_durations`.
+        warm_up : float, default=0
+            Pairings whose `first_time` is before `warm_up` are excluded from
+            every bar. See `vidigi.analysis.event_durations`'s same parameter.
         interactive : bool, default=True
             If True, returns an interactive Plotly bar chart. If False, static
             plotting is not currently supported (a message will be printed).
@@ -1220,6 +1242,7 @@ class TrialLogger:
             ci_level=ci_level,
             show_runs=show_runs,
             match=match,
+            warm_up=warm_up,
             **kwargs,
         )
 
@@ -1514,6 +1537,77 @@ class TrialLogger:
             resource_col_name=self._resolve_resource_col_name(
                 resource_col_name, trial_dataframe
             ),
+            **kwargs,
+        )
+
+    def plot_warm_up_diagnostic(
+        self,
+        *,
+        series: Literal["queue", "occupancy", "duration"] = "queue",
+        event: Optional[str] = None,
+        first_event: Optional[str] = None,
+        second_event: Optional[str] = None,
+        method: WarmUpMethod = "welch",
+        windows: Sequence[int] = (5, 10, 20),
+        every_x_time_units: float = 1,
+        limit_duration: Optional[float] = None,
+        show_ensemble: bool = True,
+        **kwargs,
+    ):
+        """
+        Plot a Welch (or cumulative-mean) diagnostic for choosing `warm_up=`.
+
+        Thin wrapper over `vidigi.plots.plot_warm_up_diagnostic`, called on
+        this trial's combined dataframe. See that function for the full
+        parameter list.
+
+        Parameters
+        ----------
+        series : {"queue", "occupancy", "duration"}, default="queue"
+            What per-run series to diagnose. See
+            `vidigi.plots.plot_warm_up_diagnostic`.
+        event : str, optional
+            The queue's or resource step's event name. Required, and only
+            used, for `series="queue"`/`"occupancy"`.
+        first_event, second_event : str, optional
+            The two events to pair. Required, and only used, for
+            `series="duration"`.
+        method : {"welch", "cumulative"}, default="welch"
+            Smoothing procedure - see `vidigi.analysis.welch_moving_average`.
+        windows : sequence of int, default=(5, 10, 20)
+            Window half-widths to overlay when `method="welch"`.
+        every_x_time_units : float, default=1
+            Snapshot granularity. Only used for `series="queue"`/`"occupancy"`.
+        limit_duration : float, optional
+            End of the window snapshots are taken over. `None` (default)
+            uses the latest time seen anywhere in the trial.
+        show_ensemble : bool, default=True
+            If True, also draws the raw (unsmoothed) ensemble-average series.
+        **kwargs : dict
+            Additional keyword arguments forwarded to
+            `vidigi.plots.plot_warm_up_diagnostic` (e.g. `entity_col_name`,
+            `time_col_name`, `run_col_name`, `match=` for `series="duration"`).
+
+        Returns
+        -------
+        plotly.graph_objects.Figure
+
+        See Also
+        --------
+        vidigi.plots.plot_warm_up_diagnostic : The underlying implementation.
+        vidigi.analysis.welch_moving_average : The underlying smoothing procedure.
+        """
+        return _plot_warm_up_diagnostic(
+            self._trial_dataframe,
+            series=series,
+            event=event,
+            first_event=first_event,
+            second_event=second_event,
+            method=method,
+            windows=windows,
+            every_x_time_units=every_x_time_units,
+            limit_duration=limit_duration,
+            show_ensemble=show_ensemble,
             **kwargs,
         )
 

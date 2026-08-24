@@ -178,6 +178,18 @@ def test_get_event_durations_returns_the_full_per_entity_frame(two_run_loggers):
     ]
 
 
+def test_get_event_durations_warm_up_is_passed_through(two_run_loggers):
+    """Entity 1 arrives at t=1, entity 2 at t=2, in both runs (see
+    `_build_logger`). `warm_up=1.5` excludes entity 1 from every run,
+    leaving only entity 2's four pairings."""
+    trial = TrialLogger(two_run_loggers)
+
+    result = trial.get_event_durations("arrival", "depart", warm_up=1.5)
+
+    assert set(result["entity_id"]) == {2}
+    assert len(result) == 2
+
+
 def test_get_event_durations_handles_a_rework_loop(rework_loop_logger):
     """The old pivot-based calculation cannot run against this fixture at all."""
     trial = TrialLogger([rework_loop_logger])
@@ -278,6 +290,16 @@ def test_duration_statistics(two_run_loggers, what, expected):
     trial = TrialLogger(two_run_loggers)
 
     assert trial.get_event_duration_stat("arrival", "depart", what=what) == expected
+
+
+def test_get_event_duration_stat_warm_up_is_passed_through(two_run_loggers):
+    """Entity 1 arrives at t=1, entity 2 at t=2 (see `_build_logger`).
+    `warm_up=1.5` excludes entity 1 from both runs, leaving only entity 2's
+    two durations - `count` drops from 4 to 2, proven to fail if `warm_up`
+    were dropped on the way to `get_event_durations`."""
+    trial = TrialLogger(two_run_loggers)
+
+    assert trial.get_event_duration_stat("arrival", "depart", what="count", warm_up=1.5) == 2
 
 
 def test_quantile_accepts_kwargs(two_run_loggers):
@@ -504,6 +526,26 @@ def test_plot_metric_bar_across_entities_is_unchanged_at_defaults(unequal_run_lo
     )
 
     assert fig.data[0].y == pytest.approx((5.75,))
+
+
+def test_plot_metric_bar_warm_up_is_passed_through():
+    """One entity's pairing starts before t=10 (duration 4), the other after
+    (duration 6) - a dropped `warm_up` would pool both into a mean of 5.0,
+    so this distinguishes a working passthrough from a silently ignored one
+    purely through `plot_metric_bar` itself."""
+    logger = EventLogger(run_number=1)
+    logger.log_arrival(entity_id=1, time=0.0)
+    logger.log_departure(entity_id=1, time=4.0)
+    logger.log_arrival(entity_id=2, time=10.0)
+    logger.log_departure(entity_id=2, time=16.0)
+    trial = TrialLogger([logger])
+
+    fig = trial.plot_metric_bar(
+        [{"label": "A", "first_event": "arrival", "second_event": "depart"}],
+        warm_up=10,
+    )
+
+    assert fig.data[0].y == pytest.approx((6.0,))
 
 
 def test_get_resource_utilisation_is_passed_through(resource_use_loggers):
@@ -895,3 +937,83 @@ def test_plot_resource_utilisation_over_time_resource_col_name_auto_does_not_war
     assert not any(
         "missing from every resource_use row" in str(w.message) for w in caught
     )
+
+
+def test_plot_warm_up_diagnostic_is_passed_through(resource_use_loggers):
+    """Reaches `vidigi.plots.plot_warm_up_diagnostic`, and reproduces the
+    hand-computed occupancy curve from the fixture's docstring.
+
+    `limit_duration=10` is deliberately shorter than the fixture's natural
+    log end (t=20) - passing 20 here would coincidentally match what
+    `resource_occupancy_over_time`'s own default resolves to if
+    `limit_duration` were silently dropped on the way through, so that value
+    would not prove the passthrough works. Snapshots are [0, 5, 10]; both
+    runs' bouts are clipped to the window and so end exactly *at* t=10 -
+    counted as free there under the half-open `[start, end)` convention -
+    giving ensemble [1.5, 1.5, 0.0]. `window=1` welch then drops the last
+    snapshot (output length `3 - 1 = 2`): `[1.5, mean(1.5, 1.5, 0.0)]` =
+    `[1.5, 1.0]`. Verified by running the call directly, not by hand alone -
+    an earlier version of this test had the wrong expected values because it
+    missed the boundary-clipping effect."""
+    trial = TrialLogger(resource_use_loggers)
+
+    fig = trial.plot_warm_up_diagnostic(
+        series="occupancy",
+        event="treatment_begins",
+        every_x_time_units=5,
+        limit_duration=10,
+        windows=(1,),
+        show_ensemble=False,
+    )
+
+    trace = fig.data[0]
+    assert trace.name == "window=1"
+    assert list(trace.x) == [0, 5]
+    assert list(trace.y) == pytest.approx([1.5, 1.0])
+
+
+def test_plot_warm_up_diagnostic_duration_series_and_cumulative_method_are_passed_through():
+    """`series="duration"` and `method="cumulative"` are the two `plot_warm_up_diagnostic`
+    options the occupancy-based test above never exercises. Two runs,
+    durations [4, 2, 8] and [6, 4, 2] -> ensemble [5, 3, 5] -> cumulative
+    mean [5.0, 4.0, 13/3] (hand-computed and independently verified, same
+    fixture shape as `test_plots_warm_up_diagnostic.py::_duration_loggers`)."""
+    run1 = EventLogger(run_number=1)
+    run2 = EventLogger(run_number=2)
+    for logger, durations in ((run1, [4, 2, 8]), (run2, [6, 4, 2])):
+        for i, duration in enumerate(durations):
+            logger.log_arrival(entity_id=i, time=float(i))
+            logger.log_departure(entity_id=i, time=float(i) + duration)
+    trial = TrialLogger([run1, run2])
+
+    fig = trial.plot_warm_up_diagnostic(
+        series="duration",
+        first_event="arrival",
+        second_event="depart",
+        method="cumulative",
+        show_ensemble=False,
+    )
+
+    trace = fig.data[0]
+    assert trace.name == "cumulative mean"
+    assert list(trace.y) == pytest.approx([5.0, 4.0, 13 / 3])
+
+
+def test_plot_warm_up_diagnostic_match_kwarg_reaches_event_durations(rework_loop_logger):
+    """`match=` isn't a named parameter on `plot_warm_up_diagnostic` - it
+    reaches `vidigi.analysis.event_durations` purely via `**kwargs`, the same
+    path `run_col_name` would take. Entity 1 hits `assessment`/`treated`
+    twice (see `rework_loop_logger`); `match="occurrence"` must produce two
+    observations instead of the one `match="first"` (the default) would."""
+    trial = TrialLogger([rework_loop_logger])
+
+    fig = trial.plot_warm_up_diagnostic(
+        series="duration",
+        first_event="assessment",
+        second_event="treated",
+        match="occurrence",
+        method="cumulative",
+        show_ensemble=False,
+    )
+
+    assert len(fig.data[0].y) == 2

@@ -20,7 +20,7 @@ docstring says which:
 """
 
 import warnings
-from typing import Literal, Optional, TypeAlias, Union
+from typing import Literal, Optional, Sequence, TypeAlias, Union
 
 import numpy as np
 import pandas as pd
@@ -33,6 +33,9 @@ from vidigi.analysis import (
     MatchMode,
     ResourceUtilisationBy,
     UnclosedResourceUse,
+    WarmUpMethod,
+    _ensemble_mean,
+    _nearest_match_hint,
     _resolve_resource_capacities,
     _summarise_durations,
     event_durations,
@@ -42,6 +45,7 @@ from vidigi.analysis import (
     resource_occupancy_over_time,
     resource_use_intervals,
     resource_utilisation,
+    welch_moving_average,
 )
 from vidigi.utils import _resolve_run_column
 
@@ -451,7 +455,7 @@ def plot_duration_distribution(
     **kwargs : dict
         Additional keyword arguments forwarded to
         `vidigi.analysis.event_durations` (e.g. `entity_col_name`,
-        `run_col_name`).
+        `run_col_name`, `warm_up`).
 
     Returns
     -------
@@ -462,8 +466,9 @@ def plot_duration_distribution(
     ValueError
         If `kind` or `split_by` is not one of the supported values; if `kind`
         is `"ridgeline"` or `"heatmap"` and `split_by` is not set; if no
-        complete pairs are found to plot; or if `split_by` is set but the
-        corresponding column is entirely missing from the durations.
+        complete pairs are found to plot; if `split_by` is set but the
+        corresponding column is entirely missing from the durations; or if
+        `warm_up` is negative.
 
     See Also
     --------
@@ -689,6 +694,7 @@ def plot_metric_bar(
     ci_level: float = 0.95,
     show_runs: bool = False,
     match: MatchMode = "first",
+    warm_up: float = 0,
     entity_col_name: str = "entity_id",
     time_col_name: str = "time",
     event_col_name: str = "event",
@@ -744,6 +750,9 @@ def plot_metric_bar(
     match : {"first", "last", "occurrence"}, default="first"
         How repeated occurrences of the two events are paired. See
         `vidigi.analysis.event_durations`.
+    warm_up : float, default=0
+        Pairings whose `first_time` is before `warm_up` are excluded from
+        every bar. See `vidigi.analysis.event_durations`'s same parameter.
     entity_col_name, time_col_name, event_col_name, run_col_name,
     pathway_col_name : str or None
         Column names forwarded to `vidigi.analysis.event_durations`.
@@ -835,6 +844,7 @@ def plot_metric_bar(
             event_pair["first_event"],
             event_pair["second_event"],
             match=match,
+            warm_up=warm_up,
             entity_col_name=entity_col_name,
             time_col_name=time_col_name,
             event_col_name=event_col_name,
@@ -1317,6 +1327,281 @@ def plot_resource_utilisation_over_time(
         )
 
     fig.update_xaxes(title_text="snapshot_time")
+    fig.update_yaxes(title_text=y_title)
+
+    return fig
+
+
+def plot_warm_up_diagnostic(
+    event_log: pd.DataFrame,
+    *,
+    series: Literal["queue", "occupancy", "duration"] = "queue",
+    event: Optional[str] = None,
+    first_event: Optional[str] = None,
+    second_event: Optional[str] = None,
+    method: WarmUpMethod = "welch",
+    windows: Sequence[int] = (5, 10, 20),
+    every_x_time_units: float = 1,
+    limit_duration: Optional[float] = None,
+    show_ensemble: bool = True,
+    **col_kwargs,
+) -> go.Figure:
+    """
+    Plot a Welch (or cumulative-mean) diagnostic for choosing `warm_up=`.
+
+    Ensemble-averages a per-run series across replications, then smooths it
+    (see `vidigi.analysis.welch_moving_average`) so the point at which the
+    curve stops drifting - the visual signal a modeller reads off to pick
+    `warm_up=` for the other analysis functions in this module - is legible.
+
+    Parameters
+    ----------
+    event_log : pandas.DataFrame
+        Long-format event log spanning one or more runs.
+    series : {"queue", "occupancy", "duration"}, default="queue"
+        What per-run series to diagnose:
+
+        - ``"queue"``: queue length at regular snapshots, from
+          `vidigi.analysis.queue_size_over_time`. Requires `event=` naming
+          the queue's event.
+        - ``"occupancy"``: resource occupancy at regular snapshots, from
+          `vidigi.analysis.resource_occupancy_over_time`. Requires `event=`
+          naming the resource step.
+        - ``"duration"``: per-entity durations in arrival order, from
+          `vidigi.analysis.event_durations`. Requires `first_event=` and
+          `second_event=`. There is no time axis for this series - the
+          x-axis is the entity's position in arrival order, not simulated
+          time, so a cutoff read off this plot is an entity count, not a
+          time. Apply it via `event_durations`'s own `warm_up=` (a pairing
+          is excluded by when it *started*, i.e. `first_time`) - note this
+          is a genuinely different truncation rule from `warm_up=` on the
+          other two series, which censor/clip a bout rather than exclude an
+          atomic observation by its start time. See
+          `vidigi.analysis.event_durations`'s `warm_up` parameter.
+    event : str, optional
+        The queue's or resource step's event name. Required, and only used,
+        for `series="queue"`/`"occupancy"`.
+    first_event, second_event : str, optional
+        The two events to pair. Required, and only used, for
+        `series="duration"`.
+    method : {"welch", "cumulative"}, default="welch"
+        Smoothing procedure - see `vidigi.analysis.welch_moving_average`.
+        `"welch"` overlays one curve per entry in `windows`; `"cumulative"`
+        draws a single curve and ignores `windows`.
+    windows : sequence of int, default=(5, 10, 20)
+        Window half-widths to overlay when `method="welch"`. More smoothing
+        (a larger window) gives a shorter usable curve - see
+        `vidigi.analysis.welch_moving_average`.
+    every_x_time_units : float, default=1
+        Snapshot granularity. Only used for `series="queue"`/`"occupancy"`.
+    limit_duration : float, optional
+        End of the window snapshots are taken over. `None` (default) uses
+        the latest time seen anywhere in the trial. Only used for
+        `series="queue"`/`"occupancy"`.
+    show_ensemble : bool, default=True
+        If True, also draws the raw (unsmoothed) ensemble-average series as
+        a thin dotted line, for comparison against the smoothed curve(s).
+    **col_kwargs : dict
+        Column-name keyword arguments forwarded to whichever underlying
+        `vidigi.analysis` function `series` selects
+        (`queue_size_over_time`/`resource_occupancy_over_time`/
+        `event_durations`) - e.g. `run_col_name=`, or `match=` for
+        `series="duration"`.
+
+    Returns
+    -------
+    plotly.graph_objects.Figure
+
+    Raises
+    ------
+    ValueError
+        If `series` is not one of the three supported values; if the
+        `event=` (for `series="queue"`/`"occupancy"`) or
+        `first_event=`/`second_event=` (for `series="duration"`) the chosen
+        `series` requires is missing, or an argument for a different
+        `series` is given; or (`series="occupancy"`) if `event` names a step
+        that never occurred.
+
+    Notes
+    -----
+    There is deliberately no automatic warm-up-length selector - see
+    `vidigi.analysis.welch_moving_average`.
+
+    See Also
+    --------
+    vidigi.analysis.welch_moving_average : The underlying smoothing procedure.
+
+    Examples
+    --------
+    >>> plot_warm_up_diagnostic(trial.to_dataframe(), series="queue", event="waiting")
+    <plotly.graph_objs._figure.Figure>
+    """
+    if series not in ("queue", "occupancy", "duration"):
+        raise ValueError(
+            f"`series` must be one of 'queue', 'occupancy', 'duration'; got "
+            f"{series!r}."
+        )
+
+    if series in ("queue", "occupancy"):
+        if event is None:
+            raise ValueError(
+                f"`series={series!r}` requires `event=` naming the "
+                f"{'queue' if series == 'queue' else 'resource step'} to "
+                f"diagnose."
+            )
+        if first_event is not None or second_event is not None:
+            raise ValueError(
+                f"`first_event`/`second_event` are only used with "
+                f"`series='duration'`, not `series={series!r}`."
+            )
+    else:
+        if first_event is None or second_event is None:
+            raise ValueError(
+                "`series='duration'` requires both `first_event=` and "
+                "`second_event=`."
+            )
+        if event is not None:
+            raise ValueError(
+                "`event=` is only used with `series='queue'`/`'occupancy'`, "
+                "not `series='duration'`."
+            )
+
+    x_title = "snapshot_time"
+    x_values = None
+
+    if series == "queue":
+        time_col_name = col_kwargs.get("time_col_name", "time")
+        resolved_limit = (
+            limit_duration
+            if limit_duration is not None
+            # `int(round(...))`, not the bare numpy scalar `.max()` returns -
+            # `queue_size_over_time` warns whenever it has to coerce a
+            # non-`int` `limit_duration`, and an auto-resolved end of window
+            # doing that on every call with no explicit `limit_duration`
+            # would be a self-inflicted, uninformative warning.
+            else int(round(event_log[time_col_name].max()))
+        )
+        counts = queue_size_over_time(
+            event_log,
+            [event],
+            resolved_limit,
+            every_x_time_units=every_x_time_units,
+            warm_up=0,
+            **col_kwargs,
+        )
+        run_ids = sorted(counts["run_number"].dropna().unique().tolist()) or [pd.NA]
+
+        def _run_rows(run_id):
+            frame = (
+                counts[counts["run_number"] == run_id]
+                if pd.notna(run_id)
+                else counts[counts["run_number"].isna()]
+            )
+            return frame.sort_values("snapshot_time")
+
+        series_by_run = [_run_rows(r)["count"].to_numpy() for r in run_ids]
+        x_values = _run_rows(run_ids[0])["snapshot_time"].to_numpy()
+        y_title = f"queue length ({event})"
+
+    elif series == "occupancy":
+        occupancy = resource_occupancy_over_time(
+            event_log,
+            every_x_time_units=every_x_time_units,
+            warm_up=0,
+            limit_duration=limit_duration,
+            **col_kwargs,
+        )
+        if occupancy.empty:
+            raise ValueError(
+                "No resource_use/resource_use_end pairs were found to "
+                "diagnose resource occupancy from."
+            )
+        available = sorted(occupancy["event"].unique().tolist(), key=str)
+        if event not in available:
+            raise ValueError(
+                f"`event='{event}'` is not a resource step in this event "
+                f"log{_nearest_match_hint(event, available)}. Available "
+                f"steps: {available}."
+            )
+        occupancy = occupancy[occupancy["event"] == event]
+        run_ids = sorted(occupancy["run_number"].dropna().unique().tolist()) or [
+            pd.NA
+        ]
+
+        def _run_rows(run_id):
+            frame = (
+                occupancy[occupancy["run_number"] == run_id]
+                if pd.notna(run_id)
+                else occupancy[occupancy["run_number"].isna()]
+            )
+            return frame.sort_values("snapshot_time")
+
+        series_by_run = [_run_rows(r)["count"].to_numpy() for r in run_ids]
+        x_values = _run_rows(run_ids[0])["snapshot_time"].to_numpy()
+        y_title = f"occupancy ({event})"
+
+    else:
+        durations = event_durations(
+            event_log, first_event, second_event, keep_incomplete=False, **col_kwargs
+        )
+        run_ids = sorted(durations["run_number"].dropna().unique().tolist()) or [
+            pd.NA
+        ]
+
+        def _run_rows(run_id):
+            frame = (
+                durations[durations["run_number"] == run_id]
+                if pd.notna(run_id)
+                else durations[durations["run_number"].isna()]
+            )
+            return frame.sort_values("first_time")
+
+        series_by_run = [_run_rows(r)["duration"].to_numpy() for r in run_ids]
+        x_title = "nth entity (arrival order)"
+        y_title = f"duration ({first_event} -> {second_event})"
+
+    m, ensemble_mean, trimmed = _ensemble_mean(series_by_run)
+    x_values = np.arange(1, m + 1) if x_values is None else x_values[:m]
+
+    fig = go.Figure()
+
+    if show_ensemble:
+        fig.add_trace(
+            go.Scatter(
+                x=x_values,
+                y=ensemble_mean,
+                mode="lines",
+                line=dict(color="grey", dash="dot", width=1),
+                opacity=0.6,
+                name="ensemble mean",
+            )
+        )
+
+    if method == "cumulative":
+        cumulative = welch_moving_average(trimmed, method="cumulative")
+        fig.add_trace(
+            go.Scatter(
+                x=x_values,
+                y=cumulative,
+                mode="lines",
+                line=dict(width=3),
+                name="cumulative mean",
+            )
+        )
+    else:
+        for w in windows:
+            smoothed = welch_moving_average(trimmed, window=w, method="welch")
+            fig.add_trace(
+                go.Scatter(
+                    x=x_values[: len(smoothed)],
+                    y=smoothed,
+                    mode="lines",
+                    line=dict(width=3),
+                    name=f"window={w}",
+                )
+            )
+
+    fig.update_xaxes(title_text=x_title)
     fig.update_yaxes(title_text=y_title)
 
     return fig
