@@ -25,7 +25,7 @@
 - Reverting proves a test catches *that* regression; it doesn't prove the test pins the behaviour. Where reverting is tautological — a test asserting the DeprecationWarning a fix just added, say — mutate the code *towards* the plausible wrong behaviour instead and confirm the test fails.
 - Assert whole mappings, not two sampled entries, when checking positional or derived data (icon assignment, rank→position, ordered lists). Spot checks pass by coincidence: reversing icon assignment left positions 0 and 3 unchanged, so a test asserting exactly those two entities passed against reversed output. Caught only by mutating.
 - When a test's expected values are hand-computed, verify them against a scratch run *before* writing the assertion, then let the test encode the confirmed result. Several plausible-looking expectations here were wrong about existing behaviour, not about the code being wrong.
-- Tests marked `slow_grasp` (medium/large-scale GRASP configs, run on their own CI job — see `tests.yml`) are excluded from the default local run. Don't run them routinely (e.g. as part of a general "run the tests" pass) — only run `-m slow_grasp` when specifically asked to, or when a change actually touches GRASP solver internals.
+- Before mutating a file to prove a test catches a regression, `git add` the real (pre-mutation) change first, or apply the mutation as an `Edit` you can `Edit` back rather than a raw file overwrite. Reverting a mutation with `git checkout -- <file>`/`git restore <file>` discards *everything* uncommitted in that file, not just the mutation — it has already wiped a real, un-staged fix once. Prefer reverting via the same tool that applied the mutation.
 
 # Deferred work
 
@@ -48,10 +48,9 @@
 
 # Example notebooks
 
-- Lives at `examples/<category>/<name>/index.ipynb` (`location`, `eda`, `travel_time_matrices`, `routing`, `other`). Front matter markdown cell: `title`, `toc: true`, `execute: {enabled: true}`, `image:`.
+- Lives at `examples/<name>/index.ipynb`. Front matter markdown cell: `title`, `toc: true`, `execute: {enabled: true}`, `image:`.
 - `image:` is expected in practice, not truly optional -- it's the listing grid's thumbnail. This will need to be a manually generated gif, so remind the author to do so if a brand new notebook is created.
 - Must be wired into either `examples/examples.qmd` or `examples/feature_breakdowns.qmd`  (both the `listing` metadata's `contents` list and the matching `:::{#id}:::` div) or it's invisible.
-- Prefer extending an existing example's setup (sample data, site/matrix registration) over a new one; cross-link with relative markdown links.
 - Committed with real executed outputs. After editing code cells, run `python -m jupyter nbconvert --to notebook --execute --inplace <path>` from the notebook's own directory and check for error outputs.
 - Don't fabricate numbers in prose — derive by running the scenario. Re-run and check any notebook whose narrated numbers a core-code change could have shifted.
 - Revert re-execution diffs that are pure timestamp/widget-ID/execution-count churn with no value change.
