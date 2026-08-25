@@ -999,6 +999,23 @@ def test_plot_warm_up_diagnostic_duration_series_and_cumulative_method_are_passe
     assert list(trace.y) == pytest.approx([5.0, 4.0, 13 / 3])
 
 
+def test_plot_warm_up_diagnostic_show_runs_is_passed_through(resource_use_loggers):
+    trial = TrialLogger(resource_use_loggers)
+
+    fig = trial.plot_warm_up_diagnostic(
+        series="occupancy",
+        event="treatment_begins",
+        every_x_time_units=5,
+        limit_duration=20,
+        windows=(1,),
+        show_ensemble=False,
+        show_runs=True,
+    )
+
+    run_traces = [trace for trace in fig.data if trace.name == "individual runs"]
+    assert [list(t.y) for t in run_traces] == [[2, 1, 0, 0, 0], [1, 2, 2, 1, 0]]
+
+
 def test_plot_warm_up_diagnostic_match_kwarg_reaches_event_durations(rework_loop_logger):
     """`match=` isn't a named parameter on `plot_warm_up_diagnostic` - it
     reaches `vidigi.analysis.event_durations` purely via `**kwargs`, the same

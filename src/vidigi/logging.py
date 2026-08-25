@@ -1552,6 +1552,7 @@ class TrialLogger:
         every_x_time_units: float = 1,
         limit_duration: Optional[float] = None,
         show_ensemble: bool = True,
+        show_runs: bool = False,
         **kwargs,
     ):
         """
@@ -1583,6 +1584,10 @@ class TrialLogger:
             uses the latest time seen anywhere in the trial.
         show_ensemble : bool, default=True
             If True, also draws the raw (unsmoothed) ensemble-average series.
+        show_runs : bool, default=False
+            If True, also draws every individual replication's own raw
+            series, at `opacity=0.2` under one shared legend entry. See
+            `vidigi.plots.plot_warm_up_diagnostic`.
         **kwargs : dict
             Additional keyword arguments forwarded to
             `vidigi.plots.plot_warm_up_diagnostic` (e.g. `entity_col_name`,
@@ -1608,6 +1613,7 @@ class TrialLogger:
             every_x_time_units=every_x_time_units,
             limit_duration=limit_duration,
             show_ensemble=show_ensemble,
+            show_runs=show_runs,
             **kwargs,
         )
 

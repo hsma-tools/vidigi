@@ -1344,6 +1344,7 @@ def plot_warm_up_diagnostic(
     every_x_time_units: float = 1,
     limit_duration: Optional[float] = None,
     show_ensemble: bool = True,
+    show_runs: bool = False,
     **col_kwargs,
 ) -> go.Figure:
     """
@@ -1409,6 +1410,19 @@ def plot_warm_up_diagnostic(
         If True, also draws the raw (unsmoothed) ensemble-average series as
         a thin dotted line, for comparison against the smoothed curve(s).
         Ignored when `method="none"` - see `method` above.
+    show_runs : bool, default=False
+        If True, also draws every individual replication's own raw series -
+        the shape underlying the DES RAP book's own presentation of
+        `method="none"` (see above), and useful with any `method` for seeing
+        how much cross-replication spread the smoothing/pooling is hiding.
+        Drawn at `opacity=0.2` under one shared legend entry ("individual
+        runs") rather than one entry per run, since with a realistic
+        replication count a full per-run legend would swamp the `windows=`/
+        `method` entries that are the actual point of this plot - unlike
+        `plot_queue_size`/`plot_resource_utilisation_over_time`, which plot
+        one series at a time and so can afford to label each run. Drawn at
+        each run's own full length, not truncated to the shortest run the
+        way the summary trace(s) are.
     **col_kwargs : dict
         Column-name keyword arguments forwarded to whichever underlying
         `vidigi.analysis` function `series` selects
@@ -1568,10 +1582,32 @@ def plot_warm_up_diagnostic(
         x_title = "nth entity (arrival order)"
         y_title = f"duration ({first_event} -> {second_event})"
 
+    full_x_values = x_values
+
     m, ensemble_mean, trimmed = _ensemble_mean(series_by_run)
     x_values = np.arange(1, m + 1) if x_values is None else x_values[:m]
 
     fig = go.Figure()
+
+    if show_runs:
+        for j, run_series in enumerate(series_by_run):
+            run_x = (
+                np.arange(1, len(run_series) + 1)
+                if full_x_values is None
+                else full_x_values[: len(run_series)]
+            )
+            fig.add_trace(
+                go.Scatter(
+                    x=run_x,
+                    y=run_series,
+                    mode="lines",
+                    line=dict(width=1),
+                    opacity=0.2,
+                    legendgroup="individual runs",
+                    name="individual runs",
+                    showlegend=(j == 0),
+                )
+            )
 
     if show_ensemble and method != "none":
         fig.add_trace(

@@ -101,6 +101,85 @@ def test_occupancy_show_ensemble_adds_the_raw_trace(resource_use_loggers):
     assert list(fig.data[0].y) == pytest.approx([1.5, 1.5, 1.0, 0.5, 0.0])
 
 
+def test_show_runs_defaults_to_off(resource_use_loggers):
+    fig = plot_warm_up_diagnostic(
+        _trial_df(resource_use_loggers),
+        series="occupancy",
+        event="treatment_begins",
+        every_x_time_units=5,
+        limit_duration=20,
+        windows=(1,),
+        show_ensemble=False,
+    )
+
+    assert not any(trace.name == "individual runs" for trace in fig.data)
+
+
+def test_occupancy_show_runs_adds_one_trace_per_run_at_the_hand_computed_values(
+    resource_use_loggers,
+):
+    """Run 1's occupancy is [2, 1, 0, 0, 0], run 2's is [1, 2, 2, 1, 0] - see
+    `resource_use_loggers`'s own docstring. Each must appear as its own raw
+    trace, not just folded into the ensemble mean."""
+    fig = plot_warm_up_diagnostic(
+        _trial_df(resource_use_loggers),
+        series="occupancy",
+        event="treatment_begins",
+        every_x_time_units=5,
+        limit_duration=20,
+        windows=(1,),
+        show_ensemble=False,
+        show_runs=True,
+    )
+
+    run_traces = [trace for trace in fig.data if trace.name == "individual runs"]
+    assert len(run_traces) == 2
+    assert [list(t.y) for t in run_traces] == [[2, 1, 0, 0, 0], [1, 2, 2, 1, 0]]
+    assert [list(t.x) for t in run_traces] == [[0, 5, 10, 15, 20]] * 2
+
+
+def test_show_runs_traces_share_one_legend_entry(resource_use_loggers):
+    """A full per-run legend (one entry per replication) would swamp the
+    windows=/method entries that are the actual point of this plot - so every
+    run's trace shares a single legendgroup/name, and only the first one is
+    marked to actually appear in the legend."""
+    fig = plot_warm_up_diagnostic(
+        _trial_df(resource_use_loggers),
+        series="occupancy",
+        event="treatment_begins",
+        every_x_time_units=5,
+        limit_duration=20,
+        windows=(1,),
+        show_ensemble=False,
+        show_runs=True,
+    )
+
+    run_traces = [trace for trace in fig.data if trace.name == "individual runs"]
+    assert all(trace.legendgroup == "individual runs" for trace in run_traces)
+    assert [trace.showlegend for trace in run_traces] == [True, False]
+
+
+def test_duration_show_runs_uses_each_runs_own_full_length(unequal_run_loggers):
+    """Run 1 has 2 entities, run 2 has 4, run 3 has 2 (see
+    `unequal_run_loggers`) - `_ensemble_mean` truncates the *summary* traces
+    to the shortest run (2), but each run's own raw trace must keep its full
+    length, not be truncated to match."""
+    fig = plot_warm_up_diagnostic(
+        _trial_df(unequal_run_loggers),
+        series="duration",
+        first_event="arrival",
+        second_event="depart",
+        method="cumulative",
+        show_ensemble=False,
+        show_runs=True,
+    )
+
+    run_traces = [trace for trace in fig.data if trace.name == "individual runs"]
+    assert sorted(len(t.y) for t in run_traces) == [2, 2, 4]
+    for trace in run_traces:
+        assert list(trace.x) == list(range(1, len(trace.y) + 1))
+
+
 def test_occupancy_none_method_matches_the_ensemble_mean(resource_use_loggers):
     fig = plot_warm_up_diagnostic(
         _trial_df(resource_use_loggers),
