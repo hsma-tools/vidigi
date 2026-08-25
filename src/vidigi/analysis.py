@@ -692,13 +692,24 @@ def replication_precision(
 
     Notes
     -----
-    Recomputing a confidence interval at every k and reading off a
-    threshold-crossing point is a "look-elsewhere"-style repeated test, not a
-    single test at a chosen n - this function makes no correction for that,
-    and neither does Hoad, Robinson & Davies (2010), the method it follows.
-    Treat the reported `stays_below_threshold`/recommended count as a
-    starting point for judgement, not a statistically-corrected stopping
-    rule - matching this package's deliberate choice not to fully automate
+    Recomputing a confidence interval at every k and reading off the first
+    crossing of `deviation_threshold` risks "early convergence" - a spurious
+    dip from a run of similar-by-chance values, not a genuinely settled
+    interval. Hoad, Robinson & Davies (2010) name this problem directly and
+    address it with a "look ahead": once precision first crosses the
+    threshold, their algorithm runs a further, fixed number of replications
+    (their `kLimit`, for which they recommend a default of 5) and checks
+    precision stays crossed before accepting the result - shown empirically
+    to remove the coverage failures a naive first-crossing rule produced in
+    their own tests. `stays_below_threshold` here is a simpler stand-in for
+    that same idea - checking all the way to the end of the supplied batch,
+    not a fixed look-ahead window - rather than a literal implementation of
+    `kLimit`, and, like the source paper's own procedure, validated only
+    empirically rather than derived as a formal statistical correction for
+    the underlying repeated-test problem. Treat the reported
+    `stays_below_threshold`/recommended count as a starting point for
+    judgement, not a fully-automated stopping rule - matching this
+    package's deliberate choice not to fully automate
     `welch_moving_average`'s warm-up selection either.
     """
     series = pd.Series(values).reset_index(drop=True)
