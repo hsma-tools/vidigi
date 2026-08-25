@@ -1675,6 +1675,8 @@ def plot_replication_analysis(
     deviation_threshold: float = 0.05,
     show_deviation: bool = True,
     match: MatchMode = "first",
+    marker_size: float = 6,
+    line_width: float = 3,
     **col_kwargs,
 ) -> go.Figure:
     """
@@ -1710,6 +1712,14 @@ def plot_replication_analysis(
     match : {"first", "last", "occurrence"}, default="first"
         How repeated occurrences of the two events are paired. See
         `vidigi.analysis.event_durations`.
+    marker_size : float, default=6
+        Marker size for the cumulative-mean and deviation traces. The
+        default suits a handful of replications; at a few hundred, markers
+        this size can overlap heavily enough to read as a solid, thickened
+        line - pass a smaller value (e.g. 3) to keep individual points
+        distinguishable.
+    line_width : float, default=3
+        Line width for the same two traces.
     **col_kwargs : dict
         Column-name keyword arguments forwarded to
         `vidigi.analysis.event_durations`, e.g. `run_col_name=`.
@@ -1806,7 +1816,8 @@ def plot_replication_analysis(
             x=x,
             y=precision["cumulative_mean"],
             mode="lines+markers",
-            line=dict(width=3),
+            line=dict(width=line_width),
+            marker=dict(size=marker_size),
             name="cumulative mean",
         ),
         row=1,
@@ -1818,7 +1829,8 @@ def plot_replication_analysis(
                 x=x,
                 y=precision["deviation"],
                 mode="lines+markers",
-                line=dict(width=3, color="black"),
+                line=dict(width=line_width, color="black"),
+                marker=dict(size=marker_size),
                 name="deviation",
                 showlegend=False,
             ),

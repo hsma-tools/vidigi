@@ -97,6 +97,28 @@ def test_deviation_threshold_reaches_the_reference_line(unequal_run_loggers):
     assert any(shape.y0 == pytest.approx(0.2) for shape in hlines)
 
 
+def test_marker_size_and_line_width_default_to_the_previous_hardcoded_values(unequal_run_loggers):
+    fig = plot_replication_analysis(_trial_df(unequal_run_loggers), "arrival", "depart")
+    assert fig.data[1].marker.size == 6
+    assert fig.data[1].line.width == 3
+    assert fig.data[2].marker.size == 6
+    assert fig.data[2].line.width == 3
+
+
+def test_marker_size_and_line_width_reach_both_traces(unequal_run_loggers):
+    """Neither parameter is used anywhere else in the function body - pins
+    that both actually reach the cumulative-mean and deviation traces rather
+    than being silently dropped."""
+    fig = plot_replication_analysis(
+        _trial_df(unequal_run_loggers), "arrival", "depart",
+        marker_size=2, line_width=1,
+    )
+    assert fig.data[1].marker.size == 2
+    assert fig.data[1].line.width == 1
+    assert fig.data[2].marker.size == 2
+    assert fig.data[2].line.width == 1
+
+
 def test_recommended_n_appears_in_the_title_when_it_converges():
     """Every run identical -> deviation is 0.0 from k=2 onward, so it stays
     below any positive threshold immediately - recommended n=2 (the smallest
