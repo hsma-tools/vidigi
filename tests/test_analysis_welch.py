@@ -40,6 +40,25 @@ def test_cumulative_method_ignores_window(welch_series):
     assert with_window == pytest.approx(without_window)
 
 
+def test_none_method_matches_the_ensemble_mean(welch_series):
+    result = welch_moving_average(welch_series, method="none")
+
+    assert result == pytest.approx([8.0, 4.0, 4.0, 6.0, 8.0, 10.0])
+
+
+def test_none_method_output_is_full_length(welch_series):
+    result = welch_moving_average(welch_series, method="none")
+
+    assert len(result) == 6
+
+
+def test_none_method_ignores_window(welch_series):
+    with_window = welch_moving_average(welch_series, window=1, method="none")
+    without_window = welch_moving_average(welch_series, method="none")
+
+    assert with_window == pytest.approx(without_window)
+
+
 def test_shrinking_edge_differs_from_naive_full_width_average(welch_series):
     """The first output point (i=1) must be the single value ensemble[0]=8, not
     a `NaN` (as `pandas.rolling(center=True)` would give) and not an average
@@ -85,6 +104,11 @@ def test_empty_series_by_run_raises():
 def test_unknown_method_raises(welch_series):
     with pytest.raises(ValueError, match="method"):
         welch_moving_average(welch_series, window=2, method="bogus")
+
+
+@pytest.mark.parametrize("method", ["welch", "cumulative", "none"])
+def test_every_method_literal_is_accepted(welch_series, method):
+    welch_moving_average(welch_series, window=2, method=method)
 
 
 def test_missing_window_raises_for_welch_method(welch_series):

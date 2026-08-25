@@ -101,6 +101,43 @@ def test_occupancy_show_ensemble_adds_the_raw_trace(resource_use_loggers):
     assert list(fig.data[0].y) == pytest.approx([1.5, 1.5, 1.0, 0.5, 0.0])
 
 
+def test_occupancy_none_method_matches_the_ensemble_mean(resource_use_loggers):
+    fig = plot_warm_up_diagnostic(
+        _trial_df(resource_use_loggers),
+        series="occupancy",
+        event="treatment_begins",
+        every_x_time_units=5,
+        limit_duration=20,
+        method="none",
+        show_ensemble=False,
+    )
+
+    trace = fig.data[0]
+    assert trace.name == "ensemble mean (unsmoothed)"
+    assert list(trace.x) == [0, 5, 10, 15, 20]
+    assert list(trace.y) == pytest.approx([1.5, 1.5, 1.0, 0.5, 0.0])
+
+
+def test_occupancy_none_method_ignores_show_ensemble_to_avoid_a_duplicate_trace(
+    resource_use_loggers,
+):
+    """`method="none"` already draws the raw ensemble mean as its one trace -
+    `show_ensemble=True`'s reference line would be a second, identical trace,
+    so it must not be drawn here."""
+    fig = plot_warm_up_diagnostic(
+        _trial_df(resource_use_loggers),
+        series="occupancy",
+        event="treatment_begins",
+        every_x_time_units=5,
+        limit_duration=20,
+        method="none",
+        show_ensemble=True,
+    )
+
+    assert len(fig.data) == 1
+    assert fig.data[0].name == "ensemble mean (unsmoothed)"
+
+
 def test_occupancy_multiple_windows_draw_one_trace_each(resource_use_loggers):
     fig = plot_warm_up_diagnostic(
         _trial_df(resource_use_loggers),

@@ -1572,7 +1572,7 @@ class TrialLogger:
         first_event, second_event : str, optional
             The two events to pair. Required, and only used, for
             `series="duration"`.
-        method : {"welch", "cumulative"}, default="welch"
+        method : {"welch", "cumulative", "none"}, default="welch"
             Smoothing procedure - see `vidigi.analysis.welch_moving_average`.
         windows : sequence of int, default=(5, 10, 20)
             Window half-widths to overlay when `method="welch"`.

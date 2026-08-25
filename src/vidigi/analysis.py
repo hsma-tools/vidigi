@@ -1623,7 +1623,7 @@ def _ensemble_mean(series_by_run: Sequence[Sequence[float]]):
 
 
 # How `welch_moving_average` smooths the ensemble-averaged series.
-WarmUpMethod: TypeAlias = Literal["welch", "cumulative"]
+WarmUpMethod: TypeAlias = Literal["welch", "cumulative", "none"]
 
 
 def welch_moving_average(
@@ -1653,9 +1653,9 @@ def welch_moving_average(
     window : int, optional
         Half-width of the moving-average window. Required, and must be a
         positive integer less than the (truncated) series length, when
-        `method="welch"`. Ignored when `method="cumulative"`, which has no
-        window.
-    method : {"welch", "cumulative"}, default="welch"
+        `method="welch"`. Ignored when `method="cumulative"` or
+        `method="none"`, neither of which has a window.
+    method : {"welch", "cumulative", "none"}, default="welch"
         - `"welch"`: Welch's (1983) moving-average procedure, as described
           in Law, *Simulation Modeling and Analysis*. The ensemble average is
           smoothed with a symmetric window of full width `2 * window + 1`;
@@ -1679,6 +1679,21 @@ def welch_moving_average(
           looks rougher - it is *smoother*, in a way that can make it look
           settled long after (or hide a real shift long before) the series
           has actually stabilised. Returned at the series' full length.
+        - `"none"`: the ensemble average itself, completely unsmoothed - no
+          window, no running mean, nothing. This is the "time series
+          inspection" approach described in Robinson, S. (2007), *Simulation:
+          The Practice of Model Development and Use* (Wiley), and demonstrated
+          in the DES RAP book (Heather et al., 2026 -
+          https://pythonhealthdatascience.github.io/des_rap_book/pages/guide/output_analysis/length_warmup.html):
+          plot the raw pooled series - usually alongside every individual
+          replication's own trace, so the eye does the averaging Welch's
+          window would otherwise do - and look directly for where it settles
+          down, rather than looking at a derived curve. Noisier than either
+          other method by construction, since nothing here reduces the
+          within-replication variance the ensemble average didn't already
+          remove; useful specifically when you want to see that noise rather
+          than have it smoothed away. Returned at the series' full length,
+          identical to what `_ensemble_mean` computes.
 
     Returns
     -------
@@ -1688,10 +1703,10 @@ def welch_moving_average(
     Raises
     ------
     ValueError
-        If `series_by_run` is empty; if `method` is not `"welch"` or
-        `"cumulative"`; or if `method="welch"` and `window` is `None`, not a
-        positive integer, or `>=` the (truncated) series length, leaving
-        nothing to return.
+        If `series_by_run` is empty; if `method` is not `"welch"`,
+        `"cumulative"` or `"none"`; or if `method="welch"` and `window` is
+        `None`, not a positive integer, or `>=` the (truncated) series
+        length, leaving nothing to return.
 
     Notes
     -----
@@ -1709,10 +1724,15 @@ def welch_moving_average(
     if len(series_by_run) == 0:
         raise ValueError("`series_by_run` must contain at least one run.")
 
-    if method not in ("welch", "cumulative"):
-        raise ValueError(f"`method` must be 'welch' or 'cumulative'; got {method!r}.")
+    if method not in ("welch", "cumulative", "none"):
+        raise ValueError(
+            f"`method` must be 'welch', 'cumulative' or 'none'; got {method!r}."
+        )
 
     m, ensemble_mean, _ = _ensemble_mean(series_by_run)
+
+    if method == "none":
+        return ensemble_mean
 
     if method == "cumulative":
         return np.cumsum(ensemble_mean) / np.arange(1, m + 1)

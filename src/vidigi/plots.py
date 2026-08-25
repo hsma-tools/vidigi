@@ -1384,10 +1384,17 @@ def plot_warm_up_diagnostic(
     first_event, second_event : str, optional
         The two events to pair. Required, and only used, for
         `series="duration"`.
-    method : {"welch", "cumulative"}, default="welch"
+    method : {"welch", "cumulative", "none"}, default="welch"
         Smoothing procedure - see `vidigi.analysis.welch_moving_average`.
         `"welch"` overlays one curve per entry in `windows`; `"cumulative"`
-        draws a single curve and ignores `windows`.
+        and `"none"` each draw a single curve and ignore `windows`. `"none"`
+        is the raw ensemble average with no smoothing at all - the "time
+        series inspection" approach of Robinson (2007), as demonstrated in
+        the DES RAP book (Heather et al., 2026 -
+        https://pythonhealthdatascience.github.io/des_rap_book/pages/guide/output_analysis/length_warmup.html) -
+        and is drawn the same way `show_ensemble`'s reference line would be,
+        so `show_ensemble` is a no-op here to avoid drawing the identical
+        line twice.
     windows : sequence of int, default=(5, 10, 20)
         Window half-widths to overlay when `method="welch"`. More smoothing
         (a larger window) gives a shorter usable curve - see
@@ -1401,6 +1408,7 @@ def plot_warm_up_diagnostic(
     show_ensemble : bool, default=True
         If True, also draws the raw (unsmoothed) ensemble-average series as
         a thin dotted line, for comparison against the smoothed curve(s).
+        Ignored when `method="none"` - see `method` above.
     **col_kwargs : dict
         Column-name keyword arguments forwarded to whichever underlying
         `vidigi.analysis` function `series` selects
@@ -1565,7 +1573,7 @@ def plot_warm_up_diagnostic(
 
     fig = go.Figure()
 
-    if show_ensemble:
+    if show_ensemble and method != "none":
         fig.add_trace(
             go.Scatter(
                 x=x_values,
@@ -1577,7 +1585,17 @@ def plot_warm_up_diagnostic(
             )
         )
 
-    if method == "cumulative":
+    if method == "none":
+        fig.add_trace(
+            go.Scatter(
+                x=x_values,
+                y=ensemble_mean,
+                mode="lines",
+                line=dict(width=3),
+                name="ensemble mean (unsmoothed)",
+            )
+        )
+    elif method == "cumulative":
         cumulative = welch_moving_average(trimmed, method="cumulative")
         fig.add_trace(
             go.Scatter(
