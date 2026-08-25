@@ -659,16 +659,22 @@ def replication_precision(
         - ``half_width``, ``lower``, ``upper`` : float - the confidence
           interval from the first k values. `NaN` at k=1 - a spread needs at
           least 2 points, matching `mean_confidence_interval`.
-        - ``deviation`` : float - `half_width / cumulative_mean`, the
-          relative precision. `NaN` wherever `half_width` is `NaN`, or if
-          `cumulative_mean` is `0`.
+        - ``deviation`` : float - `half_width / abs(cumulative_mean)`, the
+          relative precision. Always non-negative, so a metric with a
+          negative mean (e.g. a before/after difference) is not read as
+          trivially "precise" by a negative ratio. `NaN` wherever
+          `half_width` is `NaN`, or if `cumulative_mean` is `0`.
         - ``stays_below_threshold`` : bool - True at row k if `deviation` is
           defined and no greater than `deviation_threshold` at k *and every
-          later row*. Deliberately "stays below", not "first drops below": a
-          noisy early curve can dip under the threshold once by chance and
-          rise again, which would be a spurious recommendation. The smallest
-          `n_replications` with `stays_below_threshold=True` is the
-          recommended minimum replication count; always `False` at k=1.
+          later row, up to n*. Deliberately "stays below", not "first drops
+          below": a noisy early curve can dip under the threshold once by
+          chance and rise again, which would be a spurious recommendation.
+          The smallest `n_replications` with `stays_below_threshold=True` is
+          the recommended minimum replication count; always `False` at k=1.
+          This is a property of the batch of `n` replications actually
+          supplied, not a guarantee that deviation stays low forever - a run
+          flagged `True` from a 20-replication batch could fail to qualify
+          once replications 21+ are added and re-checked.
 
     Raises
     ------
@@ -683,6 +689,17 @@ def replication_precision(
     mean_confidence_interval : The single-k confidence interval this is built from.
     replication_means : Produces the per-replication values this function consumes.
     vidigi.plots.plot_replication_analysis : Plots this table.
+
+    Notes
+    -----
+    Recomputing a confidence interval at every k and reading off a
+    threshold-crossing point is a "look-elsewhere"-style repeated test, not a
+    single test at a chosen n - this function makes no correction for that,
+    and neither does Hoad, Robinson & Davies (2010), the method it follows.
+    Treat the reported `stays_below_threshold`/recommended count as a
+    starting point for judgement, not a statistically-corrected stopping
+    rule - matching this package's deliberate choice not to fully automate
+    `welch_moving_average`'s warm-up selection either.
     """
     series = pd.Series(values).reset_index(drop=True)
     n = len(series)
@@ -698,7 +715,7 @@ def replication_precision(
         else:
             ci = mean_confidence_interval(window, ci_level=ci_level)
             half_width, lower, upper = ci.half_width, ci.lower, ci.upper
-        deviation = half_width / mean if mean != 0 else float("nan")
+        deviation = half_width / abs(mean) if mean != 0 else float("nan")
         rows.append(
             {
                 "n_replications": k,

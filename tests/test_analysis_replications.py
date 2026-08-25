@@ -275,10 +275,11 @@ def test_k_equals_one_is_always_below_threshold_false():
 
 
 def test_stays_below_threshold_is_true_once_deviation_settles():
-    """Deviation drops to 0 for k=2..6 (identical values), rises to ~0.37 at
-    k=6->7 after a genuine outlier, then keeps falling - every one of those
-    points is <= the 0.5 threshold, so every k from 2 onward should be
-    flagged, matching the "stays below from here to the end" contract."""
+    """Deviation drops to 0 for k=2..5 (identical values), rises to ~0.37 at
+    k=6 (once the one genuine outlier enters the running window), then keeps
+    falling - every one of those points is <= the 0.5 threshold, so every k
+    from 2 onward should be flagged, matching the "stays below from here to
+    the end" contract."""
     values = [10, 10, 10, 10, 10, 20, 10, 10]
 
     result = replication_precision(values, deviation_threshold=0.5)
@@ -319,6 +320,25 @@ def test_deviation_is_nan_when_cumulative_mean_is_zero():
     assert result.loc[1, "stays_below_threshold"] == False  # noqa: E712
 
 
+def test_deviation_is_non_negative_for_a_negative_cumulative_mean():
+    """A metric with a negative mean (e.g. a before/after difference) must
+    not read as trivially "precise" because half_width / mean came out
+    negative - deviation is always a non-negative relative half-width.
+    Found by an independent OR-specialist review, which showed a naive
+    `half_width / mean` (no `abs()`) makes `stays_below_threshold` flip
+    `True` from k=2 onward on a genuinely imprecise, negative-mean series."""
+    values = [-8, -12, -6, -15, -9, -11, -7, -13, -10, -14]
+
+    result = replication_precision(values, deviation_threshold=0.05)
+
+    assert (result["cumulative_mean"] < 0).all()
+    deviations = result["deviation"].dropna()
+    assert (deviations >= 0).all()
+    # The true relative half-width here is large (~250% at k=2) - nothing
+    # should stay below a 5% threshold within this series.
+    assert not result["stays_below_threshold"].any()
+
+
 def test_empty_values_raises():
     with pytest.raises(ValueError, match="at least one replication"):
         replication_precision([])
@@ -357,3 +377,21 @@ def test_deviation_threshold_reaches_the_stays_below_computation():
 
     assert generous["stays_below_threshold"].any()
     assert not impossible["stays_below_threshold"].any()
+
+
+def test_ci_level_reaches_replication_precision_directly():
+    """`ci_level` is tested indirectly through `plot_replication_analysis`/
+    `TrialLogger` elsewhere in this suite, but never directly against
+    `replication_precision` itself - pins that it reaches the per-k
+    `mean_confidence_interval` call in this function's own body, using the
+    same published-t-table values already pinned for `mean_confidence_interval`
+    (`test_ci_level_reaches_the_t_distribution_call`)."""
+    result_95 = replication_precision([4.0, 5.0, 9.0])
+    result_90 = replication_precision([4.0, 5.0, 9.0], ci_level=0.90)
+
+    assert result_95.loc[2, "half_width"] == pytest.approx(6.5724, abs=1e-3)
+    # t_0.95,2 = 2.919986, from a published Student's t table (90% CI, df=2).
+    assert result_90.loc[2, "half_width"] == pytest.approx(4.4604, abs=1e-3)
+    assert result_90.loc[2, "half_width"] != pytest.approx(
+        result_95.loc[2, "half_width"], abs=1e-3
+    )

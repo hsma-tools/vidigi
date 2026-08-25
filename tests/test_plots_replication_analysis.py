@@ -64,6 +64,10 @@ def test_ci_band_uses_the_precision_table_bounds(unequal_run_loggers):
 
     band = fig.data[0]
     assert band.fill == "toself"
+    # x is [1, 2, 3] followed by its own reverse [3, 2, 1] - the closed
+    # polygon walk (forward along upper, backward along lower) the fill
+    # needs, not just a coincidentally-matching y array.
+    assert list(band.x) == [1, 2, 3, 3, 2, 1]
     # index 2 = upper at k=3 (6.0 + 6.5724); index 3 = lower at k=3 (6.0 - 6.5724).
     assert band.y[2] == pytest.approx(6.0 + 6.5724, abs=1e-3)
     assert band.y[3] == pytest.approx(6.0 - 6.5724, abs=1e-3)

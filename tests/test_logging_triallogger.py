@@ -1095,6 +1095,66 @@ def test_get_replication_precision_no_complete_pairs_raises():
         trial.get_replication_precision("arrival", "depart")
 
 
+def test_get_replication_precision_what_is_passed_through():
+    """`what="max"` vs the default `"mean"` must reach `replication_means` -
+    a run with internal duration variation is needed, since a constant-per-run
+    fixture like `unequal_run_loggers` can't distinguish the two."""
+    logger = EventLogger(run_number=1)
+    logger.log_arrival(entity_id=1, time=0.0)
+    logger.log_departure(entity_id=1, time=2.0)
+    logger.log_arrival(entity_id=2, time=0.0)
+    logger.log_departure(entity_id=2, time=8.0)
+    logger2 = EventLogger(run_number=2)
+    logger2.log_arrival(entity_id=1, time=0.0)
+    logger2.log_departure(entity_id=1, time=10.0)
+    trial = TrialLogger([logger, logger2])
+
+    mean_result = trial.get_replication_precision("arrival", "depart", what="mean")
+    max_result = trial.get_replication_precision("arrival", "depart", what="max")
+
+    assert mean_result["cumulative_mean"].tolist() == pytest.approx([5.0, 7.5])
+    assert max_result["cumulative_mean"].tolist() == pytest.approx([8.0, 9.0])
+
+
+def test_get_replication_precision_match_kwarg_reaches_event_durations():
+    """`match=` reaches `vidigi.analysis.event_durations` via `**kwargs` -
+    `match="occurrence"` must give each run two observations for its repeated
+    `assessment`/`treated` pair (mean per run = mean(4, 10) = 7.0) instead of
+    the single observation `match="first"` (the default) would give (4.0)."""
+    loggers = []
+    for run_number in (1, 2):
+        logger = EventLogger(run_number=run_number)
+        logger.log_custom_event(entity_id=1, event_type="milestone", event="assessment", time=1.0)
+        logger.log_custom_event(entity_id=1, event_type="milestone", event="treated", time=5.0)
+        logger.log_custom_event(entity_id=1, event_type="milestone", event="assessment", time=20.0)
+        logger.log_custom_event(entity_id=1, event_type="milestone", event="treated", time=30.0)
+        loggers.append(logger)
+    trial = TrialLogger(loggers)
+
+    first_result = trial.get_replication_precision("assessment", "treated", match="first")
+    occurrence_result = trial.get_replication_precision(
+        "assessment", "treated", match="occurrence"
+    )
+
+    assert first_result["cumulative_mean"].tolist() == pytest.approx([4.0, 4.0])
+    assert occurrence_result["cumulative_mean"].tolist() == pytest.approx([7.0, 7.0])
+
+
+def test_get_replication_precision_succeeds_at_a_single_replication(two_run_loggers):
+    """Unlike `plot_replication_analysis`, `get_replication_precision` has no
+    `n >= 2` guard - it returns the same graceful one-row, NaN-spread table
+    `vidigi.analysis.replication_precision` gives for any single-replication
+    input, rather than raising. This pins that as intentional, not an
+    oversight."""
+    trial = TrialLogger([two_run_loggers[0]])
+
+    result = trial.get_replication_precision("arrival", "depart")
+
+    assert len(result) == 1
+    assert result.loc[0, "cumulative_mean"] == pytest.approx(5.0)
+    assert pd.isna(result.loc[0, "half_width"])
+
+
 def test_plot_replication_analysis_is_passed_through(unequal_run_loggers):
     trial = TrialLogger(unequal_run_loggers)
 
