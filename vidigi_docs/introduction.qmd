@@ -203,6 +203,12 @@ You can again include any extra fields you find useful for downstream analysis; 
 
 :::
 
+::: {.callout-tip}
+## A simpler way to log resource use
+
+If you're using `VidigiStore` or `VidigiPriorityStore`, you don't have to call `log_resource_use_start`/`log_resource_use_end` by hand as shown above. Pass `logger=` when you create the store, then `entity_id=` when you request a resource, and both events are logged for you automatically. See [Automatic resource-use logging](basic_example_with_vidigi_logger_helpers_multiple_servers.qmd#automatic-resource-use-logging) for a worked example.
+:::
+
 ### Step 4. Ensure you have a class with resource counts
 
 When you later define event positions for `resource_use` steps, you will also need to provide an identifier for the resource (for example a parameter such as `n_treatment_cubicles`) so vidigi knows how many resources to draw at that step. This, in turn, requires a small class or object to hold your resource counts that you can pass into the animation function.

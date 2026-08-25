@@ -179,7 +179,7 @@ def run_simulation():
 
 ::::
 
-## Step 3b. An alternative: automatic resource-use logging
+## Step 3b. An alternative: automatic resource-use logging {#automatic-resource-use-logging}
 
 Calling `log_resource_use_start` and `log_resource_use_end` by hand around every resource request works, but it's easy to get wrong - forgetting the closing call, or passing the wrong `resource_id`.
 
