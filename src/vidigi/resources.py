@@ -24,9 +24,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 import warnings
 import weakref
+from typing import Optional
 
 import simpy
 from simpy.core import BoundClass
+
+from vidigi.logging import EventLogger
 
 # {env: {labels already used for a pool on that env}}. Keyed on the
 # environment (not a bare module-level set) because reusing a label across
@@ -184,6 +187,120 @@ def populate_store(num_resources, simpy_store, sim_env, label=None):
 
 
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\#
+# Automatic resource-use logging helpers
+# \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\#
+# Shared by VidigiStore and VidigiPriorityStore's request()/get()/get_direct()/put()/
+# return_item() - see each class's `logger=` constructor parameter.
+
+
+def _default_resource_event_names(label):
+    """Default (start, end) event names for auto-logged resource-use events.
+
+    Derived from the pool's `label` (`f"{label}_start"`/`f"{label}_end"`) so a labelled
+    pool's auto-logged events are identifiable without an extra argument at every call site,
+    falling back to the same `"start"`/`"end"` literals `EventLogger.log_resource_use_start`/
+    `log_resource_use_end` themselves already default to when there is no label.
+    """
+    if label is None:
+        return "start", "end"
+    return f"{label}_start", f"{label}_end"
+
+
+def _should_auto_log(store, entity_id, method_name, *, stacklevel):
+    """Whether an auto-logging call should proceed for this request/get/put call.
+
+    False, silently, when `store.logger` is None - the feature is then simply unused and
+    `entity_id` (if passed anyway) is ignored, so mixing auto-logging stores with
+    non-logging ones in the same model needs no special-casing.
+
+    False, with a one-time warning per `store`, when a logger *is* configured but
+    `entity_id` was not passed to this call - this is what stops a forgotten `entity_id=`
+    from silently producing a quieter-than-expected log with no signal anything is wrong,
+    while still not erroring on every single such call in a long run. Mirrors the throttled
+    `DeprecationWarning` pattern already used for a missing `label` in `_new_pool_resource`.
+    """
+    if store.logger is None:
+        return False
+    if entity_id is not None:
+        return True
+    if not store._warned_missing_entity_id:
+        warnings.warn(
+            f"{type(store).__name__} has a logger configured, but entity_id was not passed "
+            f"to {method_name}() - auto-logging skipped for this call. This will not be "
+            "reported again for this store.",
+            UserWarning,
+            stacklevel=stacklevel,
+        )
+        store._warned_missing_entity_id = True
+    return False
+
+
+def _resource_use_log_kwargs(store, item, phase, *, event, pathway, extra_fields):
+    """Build the kwargs for one auto-logged `log_resource_use_start`/`_end` call.
+
+    `resource_id` is read via `getattr(item, "id_attribute", None)` rather than assumed -
+    both stores are generic pools with no type constraint on what gets `put()` into them, so
+    an item lacking `id_attribute` (e.g. put in by mistake via some more complex get/put
+    pattern) must degrade to an unresourced log entry rather than crash the model with an
+    `AttributeError`. `EventLogger` already has a dedicated warning for a missing/invalid
+    `resource_id` (`BaseEvent.warn_if_missing_resource_id`), so that case is still surfaced.
+
+    `unique_resource_id` is added automatically, mirroring the pattern already recommended
+    in `TrialLogger._resolve_resource_col_name`'s docstring, whenever the item carries a
+    `unique_id_attribute` (i.e. the pool was built with `label=`).
+    """
+    default_start, default_end = _default_resource_event_names(store.label)
+    default_event = default_start if phase == "start" else default_end
+
+    kwargs = dict(extra_fields)
+    unique_id = getattr(item, "unique_id_attribute", None)
+    if unique_id is not None:
+        kwargs.setdefault("unique_resource_id", unique_id)
+
+    kwargs["resource_id"] = getattr(item, "id_attribute", None)
+    kwargs["event"] = event if event is not None else default_event
+    kwargs["pathway"] = pathway
+    return kwargs
+
+
+def _register_start_log_callback(store, get_event, entity_id, event, pathway, extra_fields):
+    """Append a callback to `get_event` that logs `resource_use` once it is granted.
+
+    A simpy `Event`'s callbacks aren't invoked until `env.step()` processes it - even when
+    `.succeed()` was already called synchronously at creation time (the immediate-availability
+    path in both `VidigiStore`/`VidigiPriorityStore`) - so appending here, immediately after
+    the event is created and before it's returned to the caller, reliably fires once the item
+    is actually granted, with `env.now` at that moment being the true grant time (not the
+    request time). If the request is later cancelled via `cancel_get()`, the event is removed
+    from its queue and `.succeed()` is never called on it, so this callback never fires - no
+    phantom "start" is logged for a request that was given up on.
+    """
+
+    def _on_grant(triggered_event):
+        if not triggered_event.ok:
+            return
+        kwargs = _resource_use_log_kwargs(
+            store,
+            triggered_event.value,
+            "start",
+            event=event,
+            pathway=pathway,
+            extra_fields=extra_fields,
+        )
+        store.logger.log_resource_use_start(entity_id=entity_id, **kwargs)
+
+    get_event.callbacks.append(_on_grant)
+
+
+def _log_resource_use_end_now(store, item, entity_id, event, pathway, extra_fields):
+    """Log a `resource_use_end` event for `item` immediately (item already in hand)."""
+    kwargs = _resource_use_log_kwargs(
+        store, item, "end", event=event, pathway=pathway, extra_fields=extra_fields
+    )
+    store.logger.log_resource_use_end(entity_id=entity_id, **kwargs)
+
+
+# \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\#
 # VidigiStore and Associated Methods
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\#
 
@@ -212,6 +329,7 @@ class VidigiStore:
         num_resources=None,
         capacity=float("inf"),
         label=None,
+        logger: Optional[EventLogger] = None,
         #  , init_items=None
     ):
         """
@@ -222,9 +340,18 @@ class VidigiStore:
             num_resources: Number of VidigiCustomResource objects to populate the store with
             capacity: Maximum capacity of the store
             label: A name for this pool of resources - see `populate()`.
+            logger: An `EventLogger` (see `vidigi.logging`), optional. When given,
+                `request()`/`get()`/`get_direct()`/`put()` automatically log
+                `resource_use`/`resource_use_end` events around resource acquisition and
+                release whenever also passed `entity_id=` - see `request()`'s docstring for
+                the full behaviour. `None` (the default) leaves logging entirely manual,
+                exactly as before this parameter existed.
         """
         self.env = env
         self.store = simpy.Store(env, capacity)
+        self.logger = logger
+        self.label = label
+        self._warned_missing_entity_id = False
 
         if num_resources is not None:
             self.populate(num_resources, label=label, _stacklevel=4)
@@ -254,7 +381,11 @@ class VidigiStore:
             Omitting it (the default) changes nothing about the resources
             produced, but warns that `label` will become mandatory at vidigi
             2.0 - see `vidigi.analysis.resource_utilisation`'s `by="resource"`
-            docs for why.
+            docs for why. Also updates `self.label` (used to derive automatic
+            resource-use logging event names - see `__init__`'s `logger=`) when
+            given - a no-arg top-up call (`store.populate(5)`, adding resources
+            to an already-running pool) leaves `self.label` and therefore every
+            default event name for the whole store untouched.
         _stacklevel : int, default=3
             Internal - how many frames up from `_new_pool_resource` the
             missing-`label` warning should attribute to. `__init__` calling
@@ -265,11 +396,16 @@ class VidigiStore:
         -------
         None
         """
+        if label is not None:
+            self.label = label
         _check_label_not_reused(self.env, label, stacklevel=_stacklevel)
         for i in range(num_resources):
-            self.put(_new_pool_resource(self.env, i, label, stacklevel=_stacklevel))
+            # self.store.put(...) directly, not self.put(...) - populating the pool is not
+            # a resource being released by an entity, so it must never trigger auto-logging
+            # or the "missing entity_id" warning.
+            self.store.put(_new_pool_resource(self.env, i, label, stacklevel=_stacklevel))
 
-    def request(self):
+    def request(self, entity_id=None, start_event=None, end_event=None, pathway=None, **extra_fields):
         """
         Request context manager for getting an item from the store.
         The item is automatically returned when exiting the context.
@@ -281,47 +417,130 @@ class VidigiStore:
                 yield env.timeout(10)
                 # Item is automatically returned when exiting the context
 
+        Automatic resource-use logging
+        -------------------------------
+        If this store was constructed with `logger=` and `entity_id` is passed here, a
+        `resource_use` event is logged automatically once the item is actually granted (not
+        when it's requested - if the request has to queue, the logged time reflects the
+        grant, not the request), and a matching `resource_use_end` event is logged
+        automatically in `__exit__`, right before the item is returned to the store. This
+        replaces the need to call `EventLogger.log_resource_use_start`/
+        `log_resource_use_end` by hand.
+
+        If a logger is configured on this store but `entity_id` is omitted here,
+        auto-logging is silently skipped for this call (after a one-time warning per store)
+        - so a model can still mix auto-logging with manual `EventLogger` calls per call.
+
+        Args:
+            entity_id: Identifier of the entity making this request, for auto-logging. Only
+                meaningful when this store was constructed with `logger=`.
+            start_event: Event name for the auto-logged `resource_use` start event.
+                Defaults to `f"{label}_start"` (or `"start"` if this pool has no `label`).
+            end_event: Event name for the auto-logged `resource_use_end` event. Defaults to
+                `f"{label}_end"` (or `"end"` if this pool has no `label`).
+            pathway: Optional `pathway` value forwarded to both auto-logged events.
+            **extra_fields: Additional fields forwarded to both auto-logged events (on top
+                of `unique_resource_id`, which is added automatically when this pool has a
+                `label`).
+
         Returns:
             A context manager that returns the get event and handles returning the item
         """
-        return _StoreRequest(self)
+        return _StoreRequest(
+            self,
+            entity_id=entity_id,
+            start_event=start_event,
+            end_event=end_event,
+            pathway=pathway,
+            extra_fields=extra_fields,
+        )
 
-    def get(self):
+    def get(self, entity_id=None, start_event=None, end_event=None, pathway=None, **extra_fields):
         """
         Alias for request() to maintain compatibility with both patterns.
+
+        See `request()` for the full parameter list, including automatic resource-use
+        logging.
 
         Returns:
             A context manager for getting an item
         """
-        return self.request()
+        return self.request(
+            entity_id=entity_id,
+            start_event=start_event,
+            end_event=end_event,
+            pathway=pathway,
+            **extra_fields,
+        )
 
-    def put(self, item):
+    def put(self, item, entity_id=None, event=None, pathway=None, **extra_fields):
         """
         Put an item into the store.
 
+        Automatic resource-use logging
+        -------------------------------
+        If this store was constructed with `logger=` and `entity_id` is passed here, a
+        `resource_use_end` event is logged automatically for `item` before it's returned to
+        the store - pairs with a matching `get_direct(entity_id=..., event=...)` call. If a
+        logger is configured but `entity_id` is omitted, auto-logging is silently skipped
+        for this call (after a one-time warning per store).
+
         Args:
             item: The item to put in the store
+            entity_id: Identifier of the entity releasing this item, for auto-logging.
+            event: Event name for the auto-logged `resource_use_end` event. Defaults to
+                `f"{label}_end"` (or `"end"` if this pool has no `label`).
+            pathway: Optional `pathway` value forwarded to the auto-logged event.
+            **extra_fields: Additional fields forwarded to the auto-logged event.
         """
+        if _should_auto_log(self, entity_id, "put", stacklevel=3):
+            _log_resource_use_end_now(self, item, entity_id, event, pathway, extra_fields)
         return self.store.put(item)
 
-    def get_direct(self):
+    def get_direct(self, entity_id=None, event=None, pathway=None, **extra_fields):
         """
         Get an item from the store without the context manager.
         Use this if you don't want to automatically return the item.
 
+        Automatic resource-use logging
+        -------------------------------
+        If this store was constructed with `logger=` and `entity_id` is passed here, a
+        `resource_use` event is logged automatically once the item is actually granted (not
+        when it's requested). Pair this with a matching `put(entity_id=..., event=...)` call
+        to also auto-log the `resource_use_end` event when the item is returned. If a logger
+        is configured but `entity_id` is omitted, auto-logging is silently skipped for this
+        call (after a one-time warning per store).
+
+        Args:
+            entity_id: Identifier of the entity making this request, for auto-logging.
+            event: Event name for the auto-logged `resource_use` start event. Defaults to
+                `f"{label}_start"` (or `"start"` if this pool has no `label`).
+            pathway: Optional `pathway` value forwarded to the auto-logged event.
+            **extra_fields: Additional fields forwarded to the auto-logged event.
+
         Returns:
             A get event that can be yielded
         """
-        return self.store.get()
+        get_event = self.store.get()
+        if _should_auto_log(self, entity_id, "get_direct", stacklevel=3):
+            _register_start_log_callback(
+                self, get_event, entity_id, event, pathway, extra_fields
+            )
+        return get_event
 
-    def request_direct(self):
+    def request_direct(self, entity_id=None, event=None, pathway=None, **extra_fields):
         """
         Alias for get_direct() to maintain consistent API with SimPy resources.
 
+        See `get_direct()` for the full parameter list, including automatic resource-use
+        logging.
+
         Returns:
             A get event that can be yielded
         """
-        return self.get_direct()
+        return self.get_direct(
+            entity_id=entity_id, event=event, pathway=pathway, **extra_fields
+        )
 
     def cancel_get(self, get_event):
         """
@@ -369,21 +588,58 @@ class _StoreRequest:
     and tested by a human.
     """
 
-    def __init__(self, store):
+    def __init__(
+        self,
+        store,
+        *,
+        entity_id=None,
+        start_event=None,
+        end_event=None,
+        pathway=None,
+        extra_fields=None,
+    ):
         self.store = store
         self.item = None
+        self.entity_id = entity_id
+        self.end_event = end_event
+        self.pathway = pathway
+        self.extra_fields = extra_fields or {}
         self.get_event = store.store.get()  # Create the get event
+
+        # See `_register_start_log_callback`'s docstring for why appending here, before
+        # returning the event, still reliably captures the true grant time.
+        self._should_log = _should_auto_log(store, entity_id, "request", stacklevel=4)
+        if self._should_log:
+            _register_start_log_callback(
+                store, self.get_event, entity_id, start_event, pathway, self.extra_fields
+            )
 
     def __enter__(self):
         # Return the get event which will be yielded by the user
         return self.get_event
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        # If the get event has been processed and we have an item, put it back
+        # If the get event has been processed and we have an item, put it back. This runs
+        # whether or not an exception was raised during resource use (Python always calls
+        # __exit__ on the way out of the `with` block), so the end-log fires unconditionally
+        # once the item was actually granted.
         if self.get_event.processed and hasattr(self.get_event, "value"):
             self.item = self.get_event.value
-            # Return the item to the store
-            self.store.put(self.item)
+            if self._should_log:
+                _log_resource_use_end_now(
+                    self.store,
+                    self.item,
+                    self.entity_id,
+                    self.end_event,
+                    self.pathway,
+                    self.extra_fields,
+                )
+            # Return the item to the store DIRECTLY via the wrapped simpy.Store, not
+            # self.store.put() (VidigiStore's own logging-aware wrapper) - the logging above
+            # already covers this; going through VidigiStore.put() would either log the end
+            # event twice, or (since it wouldn't have this request's entity_id) spuriously
+            # warn about a missing entity_id.
+            self.store.store.put(self.item)
         return False  # Don't suppress exceptions
 
 
@@ -492,6 +748,7 @@ class VidigiPriorityStore:
         num_resources=None,
         capacity=float("inf"),
         label=None,
+        logger: Optional[EventLogger] = None,
         #  , init_items=None
     ):
         """
@@ -502,11 +759,20 @@ class VidigiPriorityStore:
             num_resources: Number of VidigiCustomResource objects to populate the store with
             capacity: Maximum capacity of the store (default: infinite).
             label: A name for this pool of resources - see `populate()`.
+            logger: An `EventLogger` (see `vidigi.logging`), optional. When given,
+                `request()`/`get_direct()`/`put()`/`return_item()` automatically log
+                `resource_use`/`resource_use_end` events around resource acquisition and
+                release whenever also passed `entity_id=` - see `request()`'s docstring for
+                the full behaviour. `None` (the default) leaves logging entirely manual,
+                exactly as before this parameter existed.
 
         """
         self.env = env
         self.capacity = capacity
         self.items = []  # if init_items is None else list(init_items)
+        self.logger = logger
+        self.label = label
+        self._warned_missing_entity_id = False
 
         # Custom priority queue for get requests
         self.get_queue = []  # We'll maintain this as a sorted list
@@ -536,7 +802,11 @@ class VidigiPriorityStore:
             Omitting it (the default) changes nothing about the resources
             produced, but warns that `label` will become mandatory at vidigi
             2.0 - see `vidigi.analysis.resource_utilisation`'s `by="resource"`
-            docs for why.
+            docs for why. Also updates `self.label` (used to derive automatic
+            resource-use logging event names - see `__init__`'s `logger=`) when
+            given - a no-arg top-up call (`store.populate(5)`, adding resources
+            to an already-running pool) leaves `self.label` and therefore every
+            default event name for the whole store untouched.
         _stacklevel : int, default=3
             Internal - how many frames up from `_new_pool_resource` the
             missing-`label` warning should attribute to. `__init__` calling
@@ -547,22 +817,67 @@ class VidigiPriorityStore:
         -------
         None
         """
+        if label is not None:
+            self.label = label
         _check_label_not_reused(self.env, label, stacklevel=_stacklevel)
         for i in range(num_resources):
-            self.put(_new_pool_resource(self.env, i, label, stacklevel=_stacklevel))
+            # self._put_item(...) directly, not self.put(...) - populating the pool is not
+            # a resource being released by an entity, so it must never trigger auto-logging
+            # or the "missing entity_id" warning.
+            self._put_item(_new_pool_resource(self.env, i, label, stacklevel=_stacklevel))
 
-    def request(self, priority=0):
+    def request(
+        self,
+        priority=0,
+        entity_id=None,
+        start_event=None,
+        end_event=None,
+        pathway=None,
+        **extra_fields,
+    ):
         """
         Request context manager for getting an item from the store.
         The item is automatically returned when exiting the context.
 
+        Automatic resource-use logging
+        -------------------------------
+        If this store was constructed with `logger=` and `entity_id` is passed here, a
+        `resource_use` event is logged automatically once the item is actually granted (not
+        when it's requested - if the request has to queue, the logged time reflects the
+        grant, not the request), and a matching `resource_use_end` event is logged
+        automatically in `__exit__`, right before the item is returned to the store. This
+        replaces the need to call `EventLogger.log_resource_use_start`/
+        `log_resource_use_end` by hand.
+
+        If a logger is configured on this store but `entity_id` is omitted here,
+        auto-logging is silently skipped for this call (after a one-time warning per store)
+        - so a model can still mix auto-logging with manual `EventLogger` calls per call.
+
         Args:
             priority: Lower values indicate higher priority (default: 0)
+            entity_id: Identifier of the entity making this request, for auto-logging. Only
+                meaningful when this store was constructed with `logger=`.
+            start_event: Event name for the auto-logged `resource_use` start event.
+                Defaults to `f"{label}_start"` (or `"start"` if this pool has no `label`).
+            end_event: Event name for the auto-logged `resource_use_end` event. Defaults to
+                `f"{label}_end"` (or `"end"` if this pool has no `label`).
+            pathway: Optional `pathway` value forwarded to both auto-logged events.
+            **extra_fields: Additional fields forwarded to both auto-logged events (on top
+                of `unique_resource_id`, which is added automatically when this pool has a
+                `label`).
 
         Returns:
             A context manager that yields the get event and handles item return
         """
-        return _OptimizedStoreRequest(store=self, priority=priority)
+        return _OptimizedStoreRequest(
+            store=self,
+            priority=priority,
+            entity_id=entity_id,
+            start_event=start_event,
+            end_event=end_event,
+            pathway=pathway,
+            extra_fields=extra_fields,
+        )
 
     def get(self, priority=0):
         """
@@ -602,15 +917,38 @@ class VidigiPriorityStore:
 
             return request
 
-    def put(self, item):
+    def put(self, item, entity_id=None, event=None, pathway=None, **extra_fields):
         """
         Put an item into the store.
 
+        Automatic resource-use logging
+        -------------------------------
+        If this store was constructed with `logger=` and `entity_id` is passed here, a
+        `resource_use_end` event is logged automatically for `item` before it's put into the
+        store - pairs with a matching `get_direct(entity_id=..., event=...)` call. If a
+        logger is configured but `entity_id` is omitted, auto-logging is silently skipped
+        for this call (after a one-time warning per store).
+
         Args:
             item: The item to put in the store
+            entity_id: Identifier of the entity releasing this item, for auto-logging.
+            event: Event name for the auto-logged `resource_use_end` event. Defaults to
+                `f"{label}_end"` (or `"end"` if this pool has no `label`).
+            pathway: Optional `pathway` value forwarded to the auto-logged event.
+            **extra_fields: Additional fields forwarded to the auto-logged event.
 
         Returns:
             A put event that can be yielded
+        """
+        if _should_auto_log(self, entity_id, "put", stacklevel=3):
+            _log_resource_use_end_now(self, item, entity_id, event, pathway, extra_fields)
+        return self._put_item(item)
+
+    def _put_item(self, item):
+        """Raw put logic, with no auto-logging - used internally by `put()` and `populate()`.
+
+        `populate()` seeds the pool with this directly (not through `put()`) because pool
+        initialization is not a resource being released by an entity.
         """
         if len(self.items) < self.capacity:
             # Space available - try to satisfy a waiting get request
@@ -663,15 +1001,39 @@ class VidigiPriorityStore:
             # Directly satisfy the get request
             request.succeed(item)
 
-    def return_item(self, item):
+    def return_item(self, item, entity_id=None, event=None, pathway=None, **extra_fields):
         """
         Return an item to the store and immediately process any waiting get requests.
 
         This is the key to eliminating delays - it directly triggers waiting get
         requests without going through the normal put/get mechanism.
 
+        Automatic resource-use logging
+        -------------------------------
+        If this store was constructed with `logger=` and `entity_id` is passed here, a
+        `resource_use_end` event is logged automatically for `item` before it's returned -
+        pairs with a matching `get_direct(entity_id=..., event=...)` call. If a logger is
+        configured but `entity_id` is omitted, auto-logging is silently skipped for this
+        call (after a one-time warning per store).
+
         Args:
             item: The item to return to the store
+            entity_id: Identifier of the entity releasing this item, for auto-logging.
+            event: Event name for the auto-logged `resource_use_end` event. Defaults to
+                `f"{label}_end"` (or `"end"` if this pool has no `label`).
+            pathway: Optional `pathway` value forwarded to the auto-logged event.
+            **extra_fields: Additional fields forwarded to the auto-logged event.
+        """
+        if _should_auto_log(self, entity_id, "return_item", stacklevel=3):
+            _log_resource_use_end_now(self, item, entity_id, event, pathway, extra_fields)
+        self._return_item_raw(item)
+
+    def _return_item_raw(self, item):
+        """Raw return logic, with no auto-logging.
+
+        Used internally by `return_item()` and by `_OptimizedStoreRequest.__exit__`, which
+        already does its own logging (with the request's own event names/pathway/extra
+        fields) before calling this - going through `return_item()` there would log twice.
         """
         # Check if there are waiting get requests
         if self.get_queue:
@@ -684,24 +1046,56 @@ class VidigiPriorityStore:
             # No waiting get requests - add to items
             self.items.append(item)
 
-    def get_direct(self, priority=0):
+    def get_direct(self, priority=0, entity_id=None, event=None, pathway=None, **extra_fields):
         """
         Get an item from the store without the context manager.
         Use this if you don't want to automatically return the item.
 
+        Automatic resource-use logging
+        -------------------------------
+        If this store was constructed with `logger=` and `entity_id` is passed here, a
+        `resource_use` event is logged automatically once the item is actually granted (not
+        when it's requested). Pair this with a matching `put(entity_id=..., event=...)` or
+        `return_item(entity_id=..., event=...)` call to also auto-log the `resource_use_end`
+        event when the item is returned. If a logger is configured but `entity_id` is
+        omitted, auto-logging is silently skipped for this call (after a one-time warning
+        per store).
+
+        Args:
+            priority: Lower values indicate higher priority (default: 0)
+            entity_id: Identifier of the entity making this request, for auto-logging.
+            event: Event name for the auto-logged `resource_use` start event. Defaults to
+                `f"{label}_start"` (or `"start"` if this pool has no `label`).
+            pathway: Optional `pathway` value forwarded to the auto-logged event.
+            **extra_fields: Additional fields forwarded to the auto-logged event.
+
         Returns:
             A get event that can be yielded
         """
-        return self.get(priority=priority)
+        get_event = self.get(priority=priority)
+        if _should_auto_log(self, entity_id, "get_direct", stacklevel=3):
+            _register_start_log_callback(
+                self, get_event, entity_id, event, pathway, extra_fields
+            )
+        return get_event
 
-    def request_direct(self, priority=0):
+    def request_direct(self, priority=0, entity_id=None, event=None, pathway=None, **extra_fields):
         """
         Alias for get_direct() to maintain consistent API.
 
+        See `get_direct()` for the full parameter list, including automatic resource-use
+        logging.
+
         Returns:
             A get event that can be yielded
         """
-        return self.get_direct(priority=priority)
+        return self.get_direct(
+            priority=priority,
+            entity_id=entity_id,
+            event=event,
+            pathway=pathway,
+            **extra_fields,
+        )
 
     def cancel_get(self, get_event):
         """
@@ -728,24 +1122,62 @@ class _OptimizedStoreRequest:
     immediate release through direct event triggering.
     """
 
-    def __init__(self, store, priority=0):
+    def __init__(
+        self,
+        store,
+        priority=0,
+        *,
+        entity_id=None,
+        start_event=None,
+        end_event=None,
+        pathway=None,
+        extra_fields=None,
+    ):
         self.store = store
         self.item = None
         self.priority = priority
+        self.entity_id = entity_id
+        self.end_event = end_event
+        self.pathway = pathway
+        self.extra_fields = extra_fields or {}
         self.get_event = store.get(
             priority=self.priority
         )  # Create the get event
+
+        # See `_register_start_log_callback`'s docstring for why appending here, before
+        # returning the event, still reliably captures the true grant time - including for
+        # this store's immediate-availability path, where `.succeed()` already ran
+        # synchronously inside `store.get()` above.
+        self._should_log = _should_auto_log(store, entity_id, "request", stacklevel=4)
+        if self._should_log:
+            _register_start_log_callback(
+                store, self.get_event, entity_id, start_event, pathway, self.extra_fields
+            )
 
     def __enter__(self):
         # Return the get event which will be yielded by the user
         return self.get_event
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        # If the get event has been processed and we have an item, put it back
+        # If the get event has been processed and we have an item, put it back. This runs
+        # whether or not an exception was raised during resource use (Python always calls
+        # __exit__ on the way out of the `with` block), so the end-log fires unconditionally
+        # once the item was actually granted.
         if self.get_event.processed and hasattr(self.get_event, "value"):
             self.item = self.get_event.value
-            # Return the item to the store DIRECTLY - key optimization point
-            self.store.return_item(self.item)
+            if self._should_log:
+                _log_resource_use_end_now(
+                    self.store,
+                    self.item,
+                    self.entity_id,
+                    self.end_event,
+                    self.pathway,
+                    self.extra_fields,
+                )
+            # Return the item to the store DIRECTLY - key optimization point. Uses the raw
+            # method, not return_item(), since the logging above already covers this - going
+            # through return_item() would log the end event twice.
+            self.store._return_item_raw(self.item)
         return False  # Don't suppress exceptions
 
 
