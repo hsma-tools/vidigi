@@ -179,6 +179,70 @@ def run_simulation():
 
 ::::
 
+## Step 3b. An alternative: automatic resource-use logging
+
+Calling `log_resource_use_start` and `log_resource_use_end` by hand around every resource request works, but it's easy to get wrong - forgetting the closing call, or passing the wrong `resource_id`.
+
+If you pass a `logger` to `VidigiStore` (or `VidigiPriorityStore`) when you create it, and pass `entity_id` when you request a resource, both events are logged for you automatically - no manual `log_resource_use_start`/`log_resource_use_end` calls needed. This is entirely opt-in: a store built without `logger=` behaves exactly as before, and you can still log some steps manually while auto-logging others.
+
+```{python}
+def patient_generator_auto(env, servers, logger):
+    """Generate patients arriving - identical to patient_generator above,
+    just calling patient_process_auto instead."""
+    patient_id = 0
+
+    while True:
+        patient_id += 1
+
+        logger.log_arrival(entity_id=patient_id)
+
+        env.process(patient_process_auto(env, patient_id, servers, logger))
+
+        yield env.timeout(random.expovariate(ARRIVAL_RATE))
+
+def patient_process_auto(env, patient_id, servers, logger):
+    """Process a single patient through the system, letting VidigiStore
+    log resource use automatically instead of calling
+    log_resource_use_start/log_resource_use_end ourselves."""
+
+    logger.log_queue(entity_id=patient_id, event='queue_wait_begins')
+
+    # entity_id (and, optionally, start_event/end_event) is all VidigiStore
+    # needs to log resource_use/resource_use_end itself
+    with servers.request(
+        entity_id=patient_id, start_event="service_begins", end_event="service_complete"
+    ) as request:
+        yield request
+
+        service_duration = random.expovariate(1.0/SERVICE_TIME)
+        yield env.timeout(service_duration)
+
+    logger.log_departure(entity_id=patient_id)
+
+def run_simulation_auto():
+    params = Params()
+    env = simpy.Environment()
+    logger = EventLogger(env=env)
+    # Pass the logger straight to VidigiStore instead of calling
+    # log_resource_use_start/log_resource_use_end by hand in patient_process
+    servers = VidigiStore(
+        env=env, num_resources=params.num_servers, label="server", logger=logger
+    )
+
+    env.process(patient_generator_auto(env, servers, logger))
+    env.run(until=SIM_DURATION)
+
+    return logger.to_dataframe()
+```
+
+```{python}
+auto_event_log_df = run_simulation_auto()
+print(f"Generated {len(auto_event_log_df)} events")
+auto_event_log_df.head()
+```
+
+The two versions above are run with independent random draws, so their event *timings* won't match - but the logged event shape (`resource_use`/`resource_use_end` rows carrying `entity_id`, `resource_id`, `event` and `time`, one matched pair per patient) is identical either way. vidigi's own test suite pins this more rigorously: the same scenario run once with manual `log_resource_use_start`/`log_resource_use_end` calls and once with `logger=`/`entity_id=` auto-logging (and no manual calls at all) is asserted to produce byte-identical event logs.
+
 ## Step 4. Run simulation
 
 ```{python}
