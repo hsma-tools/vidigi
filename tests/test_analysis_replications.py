@@ -16,6 +16,7 @@ from vidigi.analysis import (
     event_durations,
     mean_confidence_interval,
     replication_means,
+    replication_precision,
 )
 from vidigi.logging import TrialLogger
 
@@ -216,3 +217,143 @@ def test_missing_scipy_raises_a_legible_import_error(monkeypatch):
 
     with pytest.raises(ImportError, match=r"pip install vidigi\[stats\]"):
         mean_confidence_interval([1.0, 2.0, 3.0])
+
+
+# --------------------------------------------------------------------------- #
+# replication_precision
+# --------------------------------------------------------------------------- #
+
+
+def test_replication_precision_matches_hand_computed_unequal_run_example():
+    """Each row's (mean, half_width) is independently checked against
+    `mean_confidence_interval` applied to the same prefix - k=3 also matches
+    the published-t-table value already pinned in
+    `test_ci_matches_the_hand_computed_unequal_run_example` (half-width
+    6.5724). k=2's half-width is verified against scipy directly (t_0.975,1 =
+    12.706205, std([4,5],ddof=1) = sqrt(0.5)) since no published-table value
+    for that exact case exists elsewhere in this file."""
+    result = replication_precision([4.0, 5.0, 9.0])
+
+    assert list(result["n_replications"]) == [1, 2, 3]
+    assert result["cumulative_mean"].tolist() == pytest.approx([4.0, 4.5, 6.0])
+
+    assert np.isnan(result.loc[0, "half_width"])
+    assert np.isnan(result.loc[0, "deviation"])
+
+    assert result.loc[1, "half_width"] == pytest.approx(6.353102, abs=1e-4)
+    assert result.loc[1, "deviation"] == pytest.approx(6.353102 / 4.5, abs=1e-4)
+
+    assert result.loc[2, "half_width"] == pytest.approx(6.5724, abs=1e-3)
+    assert result.loc[2, "deviation"] == pytest.approx(6.5724 / 6.0, abs=1e-3)
+    assert result.loc[2, "lower"] == pytest.approx(6.0 - 6.5724, abs=1e-3)
+    assert result.loc[2, "upper"] == pytest.approx(6.0 + 6.5724, abs=1e-3)
+
+
+def test_replication_precision_columns_and_length():
+    result = replication_precision([1.0, 2.0, 3.0, 4.0])
+
+    assert len(result) == 4
+    assert list(result.columns) == [
+        "n_replications",
+        "cumulative_mean",
+        "half_width",
+        "lower",
+        "upper",
+        "deviation",
+        "stays_below_threshold",
+    ]
+
+
+def test_k_equals_one_is_always_below_threshold_false():
+    """`deviation` is undefined at k=1 (no spread from a single point), so
+    `stays_below_threshold` must be False there regardless of how generous
+    `deviation_threshold` is - even a threshold of infinity cannot make an
+    undefined deviation count as "below" it."""
+    result = replication_precision([4.0], deviation_threshold=float("inf"))
+
+    assert result.loc[0, "stays_below_threshold"] == False  # noqa: E712
+
+
+def test_stays_below_threshold_is_true_once_deviation_settles():
+    """Deviation drops to 0 for k=2..6 (identical values), rises to ~0.37 at
+    k=6->7 after a genuine outlier, then keeps falling - every one of those
+    points is <= the 0.5 threshold, so every k from 2 onward should be
+    flagged, matching the "stays below from here to the end" contract."""
+    values = [10, 10, 10, 10, 10, 20, 10, 10]
+
+    result = replication_precision(values, deviation_threshold=0.5)
+
+    assert result["stays_below_threshold"].tolist() == [
+        False, True, True, True, True, True, True, True,
+    ]
+
+
+def test_stays_below_threshold_is_false_when_a_later_point_never_recovers():
+    """Mutation-proof for "stays below", not "first drops below": deviation is
+    genuinely 0.0 (<= the 0.15 threshold) at k=2..6, which a naive
+    first-drops-below check would flag True - but a later outlier (k=7) pushes
+    deviation to ~0.89 and it never comes back under 0.15 within the data
+    given, so *every* row, including the early zero-deviation ones, must be
+    False."""
+    values = [10, 10, 10, 10, 10, 10, 50, 9, 10, 10]
+
+    result = replication_precision(values, deviation_threshold=0.15)
+
+    assert not result["stays_below_threshold"].any()
+
+    # Prove the "stays below" semantics, not a coincidence: reverting to a
+    # "this row's own deviation <= threshold" check would flag k=2..6.
+    naive = (result["deviation"] <= 0.15).fillna(False)
+    assert naive.tolist() != result["stays_below_threshold"].tolist()
+    assert naive.sum() == 5
+
+
+def test_deviation_is_nan_when_cumulative_mean_is_zero():
+    """A cumulative mean of exactly 0 makes the relative half-width
+    (half_width / mean) undefined - must be NaN, not a ZeroDivisionError or
+    +/-inf."""
+    result = replication_precision([-5.0, 5.0, 3.0])
+
+    assert result.loc[1, "cumulative_mean"] == 0.0
+    assert np.isnan(result.loc[1, "deviation"])
+    assert result.loc[1, "stays_below_threshold"] == False  # noqa: E712
+
+
+def test_empty_values_raises():
+    with pytest.raises(ValueError, match="at least one replication"):
+        replication_precision([])
+
+
+def test_single_value_needs_no_scipy(monkeypatch):
+    """k never reaches 2, so `mean_confidence_interval` (and therefore scipy)
+    is never called - a single-replication call must not raise ImportError
+    even without scipy installed."""
+    monkeypatch.setitem(sys.modules, "scipy", None)
+    monkeypatch.setitem(sys.modules, "scipy.stats", None)
+
+    result = replication_precision([7.0])
+
+    assert result.loc[0, "cumulative_mean"] == 7.0
+    assert np.isnan(result.loc[0, "half_width"])
+
+
+def test_missing_scipy_raises_once_a_second_replication_is_reached(monkeypatch):
+    monkeypatch.setitem(sys.modules, "scipy", None)
+    monkeypatch.setitem(sys.modules, "scipy.stats", None)
+
+    with pytest.raises(ImportError, match=r"pip install vidigi\[stats\]"):
+        replication_precision([7.0, 8.0])
+
+
+def test_deviation_threshold_reaches_the_stays_below_computation():
+    """No prior test passes a non-default `deviation_threshold` for this
+    exact array - pins that the argument actually reaches
+    `stays_below_threshold`'s comparison rather than being ignored (a
+    threshold of 0.0 makes even a converged run fail every row)."""
+    values = [10, 10, 10, 10, 10, 20, 10, 10]
+
+    generous = replication_precision(values, deviation_threshold=0.5)
+    impossible = replication_precision(values, deviation_threshold=0.0)
+
+    assert generous["stays_below_threshold"].any()
+    assert not impossible["stays_below_threshold"].any()

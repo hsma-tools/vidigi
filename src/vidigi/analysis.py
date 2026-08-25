@@ -618,6 +618,106 @@ def mean_confidence_interval(
     )
 
 
+def replication_precision(
+    values,
+    *,
+    ci_level: float = 0.95,
+    deviation_threshold: float = 0.05,
+) -> pd.DataFrame:
+    """
+    Running confidence-interval precision as replications accumulate.
+
+    For k = 1..n, in the order `values` is given, computes the confidence
+    interval using only the first k replications, plus its *relative*
+    half-width (`deviation`) - the standard diagnostic (Hoad, Robinson &
+    Davies, 2010) for deciding how many replications a study needs: run more
+    until the interval is tight enough relative to the mean, not just "run
+    some fixed number and hope."
+
+    Parameters
+    ----------
+    values : array-like
+        Per-replication values, **already in run order** - typically
+        `replication_means(...)["value"]`. This function does not sort them;
+        a cumulative diagnostic is only meaningful walked through in the
+        order replications were actually generated.
+    ci_level : float, default=0.95
+        Confidence level for each cumulative interval - see
+        `mean_confidence_interval`.
+    deviation_threshold : float, default=0.05
+        Relative half-width threshold used for `stays_below_threshold` (see
+        *Returns*). `0.05` means the CI half-width must be within 5% of the
+        cumulative mean.
+
+    Returns
+    -------
+    pandas.DataFrame
+        One row per k = 1..n, columns:
+
+        - ``n_replications`` : int - k.
+        - ``cumulative_mean`` : float - mean of `values[:k]`.
+        - ``half_width``, ``lower``, ``upper`` : float - the confidence
+          interval from the first k values. `NaN` at k=1 - a spread needs at
+          least 2 points, matching `mean_confidence_interval`.
+        - ``deviation`` : float - `half_width / cumulative_mean`, the
+          relative precision. `NaN` wherever `half_width` is `NaN`, or if
+          `cumulative_mean` is `0`.
+        - ``stays_below_threshold`` : bool - True at row k if `deviation` is
+          defined and no greater than `deviation_threshold` at k *and every
+          later row*. Deliberately "stays below", not "first drops below": a
+          noisy early curve can dip under the threshold once by chance and
+          rise again, which would be a spurious recommendation. The smallest
+          `n_replications` with `stays_below_threshold=True` is the
+          recommended minimum replication count; always `False` at k=1.
+
+    Raises
+    ------
+    ValueError
+        If `values` is empty.
+    ImportError
+        If `scipy` is not installed and `n >= 2` - see
+        `mean_confidence_interval`.
+
+    See Also
+    --------
+    mean_confidence_interval : The single-k confidence interval this is built from.
+    replication_means : Produces the per-replication values this function consumes.
+    vidigi.plots.plot_replication_analysis : Plots this table.
+    """
+    series = pd.Series(values).reset_index(drop=True)
+    n = len(series)
+    if n == 0:
+        raise ValueError("`values` must contain at least one replication.")
+
+    rows = []
+    for k in range(1, n + 1):
+        window = series.iloc[:k]
+        mean = window.mean()
+        if k < 2:
+            half_width = lower = upper = float("nan")
+        else:
+            ci = mean_confidence_interval(window, ci_level=ci_level)
+            half_width, lower, upper = ci.half_width, ci.lower, ci.upper
+        deviation = half_width / mean if mean != 0 else float("nan")
+        rows.append(
+            {
+                "n_replications": k,
+                "cumulative_mean": mean,
+                "half_width": half_width,
+                "lower": lower,
+                "upper": upper,
+                "deviation": deviation,
+            }
+        )
+
+    result = pd.DataFrame(rows)
+    suffix_max = result["deviation"][::-1].cummax()[::-1]
+    result["stays_below_threshold"] = (
+        result["deviation"].notna() & (suffix_max <= deviation_threshold)
+    )
+    return result
+
+
 def queue_size_over_time(
     event_log: pd.DataFrame,
     event_list: list,

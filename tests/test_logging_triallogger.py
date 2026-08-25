@@ -1034,3 +1034,110 @@ def test_plot_warm_up_diagnostic_match_kwarg_reaches_event_durations(rework_loop
     )
 
     assert len(fig.data[0].y) == 2
+
+
+# --------------------------------------------------------------------------- #
+# get_replication_precision / plot_replication_analysis
+# --------------------------------------------------------------------------- #
+
+
+def test_get_replication_precision_is_passed_through(unequal_run_loggers):
+    """Reaches `vidigi.analysis.replication_precision` via `event_durations`
+    and `replication_means`, and reproduces `unequal_run_loggers`'s own
+    hand-computed cumulative means [4.0, 4.5, 6.0]."""
+    trial = TrialLogger(unequal_run_loggers)
+
+    result = trial.get_replication_precision("arrival", "depart")
+
+    assert list(result["n_replications"]) == [1, 2, 3]
+    assert result["cumulative_mean"].tolist() == pytest.approx([4.0, 4.5, 6.0])
+    assert result["half_width"].iloc[2] == pytest.approx(6.5724, abs=1e-3)
+
+
+def test_get_replication_precision_ci_level_is_passed_through(unequal_run_loggers):
+    trial = TrialLogger(unequal_run_loggers)
+
+    result_95 = trial.get_replication_precision("arrival", "depart")
+    result_90 = trial.get_replication_precision("arrival", "depart", ci_level=0.90)
+
+    assert result_90["half_width"].iloc[2] != pytest.approx(
+        result_95["half_width"].iloc[2], abs=1e-4
+    )
+    # t_0.95,2 = 2.919986 (published table) vs t_0.975,2 = 4.302653: narrower.
+    assert result_90["half_width"].iloc[2] < result_95["half_width"].iloc[2]
+
+
+def test_get_replication_precision_deviation_threshold_is_passed_through():
+    """Every run identical -> deviation is 0.0 from k=2 onward, so a generous
+    threshold recommends k=2 while an impossible one (negative - deviation can
+    never be negative) never converges."""
+    loggers = [EventLogger(run_number=r) for r in (1, 2, 3)]
+    for logger in loggers:
+        logger.log_arrival(entity_id=1, time=0.0)
+        logger.log_departure(entity_id=1, time=5.0)
+    trial = TrialLogger(loggers)
+
+    generous = trial.get_replication_precision("arrival", "depart", deviation_threshold=0.5)
+    impossible = trial.get_replication_precision("arrival", "depart", deviation_threshold=-0.01)
+
+    assert generous["stays_below_threshold"].any()
+    assert not impossible["stays_below_threshold"].any()
+
+
+def test_get_replication_precision_no_complete_pairs_raises():
+    run1 = EventLogger(run_number=1)
+    run1.log_arrival(entity_id=1, time=0.0)  # never departs
+    run2 = EventLogger(run_number=2)
+    run2.log_departure(entity_id=1, time=5.0)  # never arrived
+    trial = TrialLogger([run1, run2])
+
+    with pytest.raises(ValueError, match="No complete"):
+        trial.get_replication_precision("arrival", "depart")
+
+
+def test_plot_replication_analysis_is_passed_through(unequal_run_loggers):
+    trial = TrialLogger(unequal_run_loggers)
+
+    fig = trial.plot_replication_analysis("arrival", "depart")
+
+    assert isinstance(fig, go.Figure)
+    mean_trace = fig.data[1]
+    assert mean_trace.name == "cumulative mean"
+    assert list(mean_trace.y) == pytest.approx([4.0, 4.5, 6.0])
+
+
+def test_plot_replication_analysis_show_deviation_is_passed_through(unequal_run_loggers):
+    trial = TrialLogger(unequal_run_loggers)
+
+    with_deviation = trial.plot_replication_analysis("arrival", "depart")
+    without_deviation = trial.plot_replication_analysis(
+        "arrival", "depart", show_deviation=False
+    )
+
+    assert "deviation" in [t.name for t in with_deviation.data]
+    assert "deviation" not in [t.name for t in without_deviation.data]
+
+
+def test_plot_replication_analysis_match_kwarg_reaches_event_durations():
+    """`match=` reaches `vidigi.analysis.event_durations` the same way it does
+    for `plot_warm_up_diagnostic` above - `match="occurrence"` must give each
+    run two observations for its repeated `assessment`/`treated` pair
+    (mean per run = mean(4, 10) = 7.0) instead of the single observation
+    `match="first"` (the default) would give (duration 4.0 per run)."""
+    loggers = []
+    for run_number in (1, 2):
+        logger = EventLogger(run_number=run_number)
+        logger.log_custom_event(entity_id=1, event_type="milestone", event="assessment", time=1.0)
+        logger.log_custom_event(entity_id=1, event_type="milestone", event="treated", time=5.0)
+        logger.log_custom_event(entity_id=1, event_type="milestone", event="assessment", time=20.0)
+        logger.log_custom_event(entity_id=1, event_type="milestone", event="treated", time=30.0)
+        loggers.append(logger)
+    trial = TrialLogger(loggers)
+
+    first_fig = trial.plot_replication_analysis("assessment", "treated", match="first")
+    occurrence_fig = trial.plot_replication_analysis(
+        "assessment", "treated", match="occurrence"
+    )
+
+    assert list(first_fig.data[1].y) == pytest.approx([4.0, 4.0])
+    assert list(occurrence_fig.data[1].y) == pytest.approx([7.0, 7.0])

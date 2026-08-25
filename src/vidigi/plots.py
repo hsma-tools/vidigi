@@ -42,6 +42,7 @@ from vidigi.analysis import (
     mean_confidence_interval,
     queue_size_over_time,
     replication_means,
+    replication_precision,
     resource_occupancy_over_time,
     resource_use_intervals,
     resource_utilisation,
@@ -1657,5 +1658,195 @@ def plot_warm_up_diagnostic(
 
     fig.update_xaxes(title_text=x_title)
     fig.update_yaxes(title_text=y_title)
+
+    return fig
+
+
+def plot_replication_analysis(
+    event_log: pd.DataFrame,
+    first_event: str,
+    second_event: str,
+    *,
+    what: DurationStat = "mean",
+    ci_level: float = 0.95,
+    deviation_threshold: float = 0.05,
+    show_deviation: bool = True,
+    match: MatchMode = "first",
+    **col_kwargs,
+) -> go.Figure:
+    """
+    Plot cumulative-mean precision against replication count.
+
+    Ensemble-averages `vidigi.analysis.replication_precision`'s running
+    confidence interval into a chart: the cumulative mean and its CI band as
+    replications accumulate, plus (optionally) the relative half-width
+    (`deviation`) underneath - the diagnostic a modeller reads to decide "how
+    many replications is enough" for one event-pair metric, the counterpart
+    to `plot_warm_up_diagnostic` for "how much warm-up to discard."
+
+    Parameters
+    ----------
+    event_log : pandas.DataFrame
+        Long-format event log spanning one or more runs.
+    first_event, second_event : str
+        The two events to pair - see `vidigi.analysis.event_durations`.
+    what : str, default="mean"
+        The per-replication statistic to compute - see
+        `vidigi.analysis.replication_means`.
+    ci_level : float, default=0.95
+        Confidence level for each cumulative interval.
+    deviation_threshold : float, default=0.05
+        Relative half-width threshold drawn as a dashed reference line on the
+        deviation panel, and used to compute the recommended replication
+        count annotated there - see
+        `vidigi.analysis.replication_precision`'s `stays_below_threshold`.
+    show_deviation : bool, default=True
+        If True, draws the relative half-width (`deviation`) in a second
+        panel stacked below the mean+CI panel, sharing the same x-axis. If
+        False, only the mean+CI panel is drawn.
+    match : {"first", "last", "occurrence"}, default="first"
+        How repeated occurrences of the two events are paired. See
+        `vidigi.analysis.event_durations`.
+    **col_kwargs : dict
+        Column-name keyword arguments forwarded to
+        `vidigi.analysis.event_durations`, e.g. `run_col_name=`.
+
+    Returns
+    -------
+    plotly.graph_objects.Figure
+
+    Raises
+    ------
+    ValueError
+        If no complete pairs are found in any run, or fewer than 2
+        replications have a complete pair.
+    ImportError
+        If `scipy` is not installed - see
+        `vidigi.analysis.mean_confidence_interval`.
+
+    Notes
+    -----
+    Replications are read in `run_number` order - the same deterministic
+    ordering `vidigi.analysis.replication_precision` requires - since a
+    cumulative diagnostic only means "as replications accumulate" walked
+    through in the order they were actually generated.
+
+    See Also
+    --------
+    vidigi.analysis.replication_precision : The underlying per-k table.
+    plot_warm_up_diagnostic : The companion diagnostic for choosing `warm_up=`.
+
+    Examples
+    --------
+    >>> plot_replication_analysis(trial.to_dataframe(), "start", "end")
+    <plotly.graph_objs._figure.Figure>
+    """
+    durations = event_durations(
+        event_log, first_event, second_event, match=match, keep_incomplete=False, **col_kwargs
+    )
+    run_values = replication_means(durations, what=what)["value"]
+    if run_values.empty:
+        raise ValueError(
+            f"No complete '{first_event}' -> '{second_event}' pairs were found "
+            f"in any run to compute a per-replication statistic from."
+        )
+    if len(run_values) < 2:
+        raise ValueError(
+            f"Replication analysis needs at least 2 replications with a "
+            f"complete '{first_event}' -> '{second_event}' pair; got "
+            f"{len(run_values)}."
+        )
+
+    precision = replication_precision(
+        run_values, ci_level=ci_level, deviation_threshold=deviation_threshold
+    )
+    recommended = precision.loc[precision["stays_below_threshold"], "n_replications"]
+    recommended_n = int(recommended.min()) if not recommended.empty else None
+
+    x = precision["n_replications"]
+
+    if show_deviation:
+        fig = make_subplots(
+            rows=2,
+            cols=1,
+            shared_xaxes=True,
+            row_heights=[0.65, 0.35],
+            vertical_spacing=0.08,
+            subplot_titles=(
+                f"cumulative mean ({first_event} -> {second_event})",
+                "relative half-width (deviation)",
+            ),
+        )
+    else:
+        fig = go.Figure()
+
+    def _add_trace(trace, row):
+        if show_deviation:
+            fig.add_trace(trace, row=row, col=1)
+        else:
+            fig.add_trace(trace)
+
+    _add_trace(
+        go.Scatter(
+            x=pd.concat([x, x[::-1]]),
+            y=pd.concat([precision["upper"], precision["lower"][::-1]]),
+            fill="toself",
+            fillcolor="rgba(0,100,200,0.15)",
+            line=dict(width=0),
+            hoverinfo="skip",
+            name=f"{int(ci_level * 100)}% CI",
+        ),
+        row=1,
+    )
+    _add_trace(
+        go.Scatter(
+            x=x,
+            y=precision["cumulative_mean"],
+            mode="lines+markers",
+            line=dict(width=3),
+            name="cumulative mean",
+        ),
+        row=1,
+    )
+
+    if show_deviation:
+        _add_trace(
+            go.Scatter(
+                x=x,
+                y=precision["deviation"],
+                mode="lines+markers",
+                line=dict(width=3, color="black"),
+                name="deviation",
+                showlegend=False,
+            ),
+            row=2,
+        )
+        fig.add_hline(
+            y=deviation_threshold,
+            line_dash="dash",
+            line_color="red",
+            row=2,
+            col=1,
+            annotation_text=f"threshold={deviation_threshold}",
+            annotation_position="top left",
+        )
+        fig.update_yaxes(title_text="deviation", row=2, col=1)
+        fig.update_xaxes(title_text="n replications", row=2, col=1)
+    else:
+        fig.update_xaxes(title_text="n replications")
+
+    if show_deviation:
+        fig.update_yaxes(title_text="cumulative mean", row=1, col=1)
+    else:
+        fig.update_yaxes(title_text="cumulative mean")
+
+    subtitle = (
+        f"recommended: {recommended_n} replications (deviation stays below "
+        f"{deviation_threshold})"
+        if recommended_n is not None
+        else f"deviation never stays below {deviation_threshold} within the "
+        f"{len(run_values)} replications available"
+    )
+    fig.update_layout(title=subtitle)
 
     return fig

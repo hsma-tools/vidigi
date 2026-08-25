@@ -27,12 +27,15 @@ from vidigi.analysis import (
     UnclosedResourceUse,
     _summarise_durations,
     event_durations,
+    replication_means,
+    replication_precision,
     resource_utilisation,
 )
 from vidigi.plots import (
     plot_queue_size as _plot_queue_size,
     plot_duration_distribution as _plot_duration_distribution,
     plot_metric_bar as _plot_metric_bar,
+    plot_replication_analysis as _plot_replication_analysis,
     plot_resource_utilisation as _plot_resource_utilisation,
     plot_resource_utilisation_over_time as _plot_resource_utilisation_over_time,
     plot_warm_up_diagnostic as _plot_warm_up_diagnostic,
@@ -1614,6 +1617,139 @@ class TrialLogger:
             limit_duration=limit_duration,
             show_ensemble=show_ensemble,
             show_runs=show_runs,
+            **kwargs,
+        )
+
+    def get_replication_precision(
+        self,
+        first_event,
+        second_event,
+        *,
+        what: DurationStat = "mean",
+        ci_level: float = 0.95,
+        deviation_threshold: float = 0.05,
+        match: MatchMode = "first",
+        **kwargs,
+    ):
+        """
+        Running confidence-interval precision as replications accumulate.
+
+        Thin wrapper over `vidigi.analysis.event_durations`,
+        `replication_means` and `vidigi.analysis.replication_precision`,
+        called on this trial's combined dataframe.
+
+        Parameters
+        ----------
+        first_event, second_event : str
+            The two events to pair. See `vidigi.analysis.event_durations`.
+        what : str, default="mean"
+            The per-replication statistic to compute. See
+            `vidigi.analysis.replication_means`.
+        ci_level : float, default=0.95
+            Confidence level for each cumulative interval.
+        deviation_threshold : float, default=0.05
+            Relative half-width threshold used for `stays_below_threshold` -
+            see `vidigi.analysis.replication_precision`.
+        match : {"first", "last", "occurrence"}, default="first"
+            How repeated occurrences of the two events are paired.
+        **kwargs : dict
+            Additional keyword arguments forwarded to
+            `vidigi.analysis.event_durations` (e.g. `run_col_name`).
+
+        Returns
+        -------
+        pandas.DataFrame
+            One row per replication count k - see
+            `vidigi.analysis.replication_precision`.
+
+        Raises
+        ------
+        ValueError
+            If no complete pairs are found in any run.
+        ImportError
+            If `scipy` is not installed - see
+            `vidigi.analysis.mean_confidence_interval`.
+
+        See Also
+        --------
+        vidigi.analysis.replication_precision : The underlying implementation.
+        plot_replication_analysis : Plots this table.
+        """
+        durations = event_durations(
+            self._trial_dataframe,
+            first_event,
+            second_event,
+            match=match,
+            keep_incomplete=False,
+            **kwargs,
+        )
+        run_values = replication_means(durations, what=what)["value"]
+        if run_values.empty:
+            raise ValueError(
+                f"No complete '{first_event}' -> '{second_event}' pairs were "
+                f"found in any run to compute a per-replication statistic from."
+            )
+        return replication_precision(
+            run_values, ci_level=ci_level, deviation_threshold=deviation_threshold
+        )
+
+    def plot_replication_analysis(
+        self,
+        first_event,
+        second_event,
+        *,
+        what: DurationStat = "mean",
+        ci_level: float = 0.95,
+        deviation_threshold: float = 0.05,
+        show_deviation: bool = True,
+        match: MatchMode = "first",
+        **kwargs,
+    ):
+        """
+        Plot cumulative-mean precision against replication count.
+
+        Thin wrapper over `vidigi.plots.plot_replication_analysis`, called on
+        this trial's combined dataframe. See that function for the full
+        parameter list.
+
+        Parameters
+        ----------
+        first_event, second_event : str
+            The two events to pair. See `vidigi.analysis.event_durations`.
+        what : str, default="mean"
+            The per-replication statistic to compute.
+        ci_level : float, default=0.95
+            Confidence level for each cumulative interval.
+        deviation_threshold : float, default=0.05
+            Relative half-width threshold - drawn as a reference line and
+            used for the recommended-replication-count annotation.
+        show_deviation : bool, default=True
+            If True, draws the relative half-width in a second panel below
+            the mean+CI panel.
+        match : {"first", "last", "occurrence"}, default="first"
+            How repeated occurrences of the two events are paired.
+        **kwargs : dict
+            Additional keyword arguments forwarded to
+            `vidigi.plots.plot_replication_analysis` (e.g. `run_col_name`).
+
+        Returns
+        -------
+        plotly.graph_objects.Figure
+
+        See Also
+        --------
+        vidigi.plots.plot_replication_analysis : The underlying implementation.
+        get_replication_precision : The underlying per-k table.
+        """
+        return _plot_replication_analysis(
+            self._trial_dataframe,
+            first_event,
+            second_event,
+            what=what,
+            ci_level=ci_level,
+            deviation_threshold=deviation_threshold,
+            show_deviation=show_deviation,
+            match=match,
             **kwargs,
         )
 
