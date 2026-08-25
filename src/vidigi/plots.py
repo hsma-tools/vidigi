@@ -1389,14 +1389,15 @@ def plot_warm_up_diagnostic(
     method : {"welch", "cumulative", "none"}, default="welch"
         Smoothing procedure - see `vidigi.analysis.welch_moving_average`.
         `"welch"` overlays one curve per entry in `windows`; `"cumulative"`
-        and `"none"` each draw a single curve and ignore `windows`. `"none"`
-        is the raw ensemble average with no smoothing at all - the "time
-        series inspection" approach of Robinson (2007), as demonstrated in
-        the DES RAP book (Heather et al., 2026 -
-        https://pythonhealthdatascience.github.io/des_rap_book/pages/guide/output_analysis/length_warmup.html) -
-        and is drawn the same way `show_ensemble`'s reference line would be,
-        so `show_ensemble` is a no-op here to avoid drawing the identical
-        line twice.
+        and `"none"` each draw a single curve and ignore `windows`.
+        `"cumulative"` is the "time series inspection" technique the DES RAP
+        book demonstrates (Heather et al., 2026 -
+        https://pythonhealthdatascience.github.io/des_rap_book/pages/guide/output_analysis/length_warmup.html);
+        `"none"` is the raw ensemble average with no smoothing at all - a
+        further step beyond that, not itself what the DES RAP book shows.
+        `"none"` is drawn the same way `show_ensemble`'s reference line
+        would be, so `show_ensemble` is a no-op under it to avoid drawing
+        the identical line twice.
     windows : sequence of int, default=(5, 10, 20)
         Window half-widths to overlay when `method="welch"`. More smoothing
         (a larger window) gives a shorter usable curve - see
@@ -1413,9 +1414,11 @@ def plot_warm_up_diagnostic(
         Ignored when `method="none"` - see `method` above.
     show_runs : bool, default=False
         If True, also draws every individual replication's own raw series -
-        the shape underlying the DES RAP book's own presentation of
-        `method="none"` (see above), and useful with any `method` for seeing
-        how much cross-replication spread the smoothing/pooling is hiding.
+        the same idea as the DES RAP book's own per-replication traces
+        (though those plot each run's *cumulative* mean, matching
+        `method="cumulative"` above, rather than the fully raw series drawn
+        here), and useful with any `method` for seeing how much
+        cross-replication spread the smoothing/pooling is hiding.
         Drawn at `opacity=0.2` under one shared legend entry ("individual
         runs") rather than one entry per run, since with a realistic
         replication count a full per-run legend would swamp the `windows=`/

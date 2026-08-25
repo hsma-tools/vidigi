@@ -1795,22 +1795,25 @@ def welch_moving_average(
           out of Welch's fixed-width window. The risk is not that this curve
           looks rougher - it is *smoother*, in a way that can make it look
           settled long after (or hide a real shift long before) the series
-          has actually stabilised. Returned at the series' full length.
+          has actually stabilised. This is the "cumulative mean" time series
+          inspection technique demonstrated in the DES RAP book (Heather et
+          al., 2026 -
+          https://pythonhealthdatascience.github.io/des_rap_book/pages/guide/output_analysis/length_warmup.html),
+          which plots both the pooled cumulative mean and each replication's
+          own cumulative mean (matching `show_runs=True` below) and cites
+          Robinson, S. (2004), *Simulation: The Practice of Model Development
+          and Use* (Wiley), for the general "look for where the curve
+          stabilises" principle. Returned at the series' full length.
         - `"none"`: the ensemble average itself, completely unsmoothed - no
-          window, no running mean, nothing. This is the "time series
-          inspection" approach described in Robinson, S. (2007), *Simulation:
-          The Practice of Model Development and Use* (Wiley), and demonstrated
-          in the DES RAP book (Heather et al., 2026 -
-          https://pythonhealthdatascience.github.io/des_rap_book/pages/guide/output_analysis/length_warmup.html):
-          plot the raw pooled series - usually alongside every individual
-          replication's own trace, so the eye does the averaging Welch's
-          window would otherwise do - and look directly for where it settles
-          down, rather than looking at a derived curve. Noisier than either
-          other method by construction, since nothing here reduces the
-          within-replication variance the ensemble average didn't already
-          remove; useful specifically when you want to see that noise rather
-          than have it smoothed away. Returned at the series' full length,
-          identical to what `_ensemble_mean` computes.
+          window, no running mean, nothing. A further step beyond the
+          cumulative-mean inspection above - here dropping the running-mean
+          smoothing entirely rather than only the fixed window - not itself
+          the specific technique the DES RAP book demonstrates. Noisier than
+          either other method by construction, since nothing here reduces
+          the within-replication variance the ensemble average didn't
+          already remove; useful specifically when you want to see that
+          noise rather than have it smoothed away. Returned at the series'
+          full length, identical to what `_ensemble_mean` computes.
 
     Returns
     -------
