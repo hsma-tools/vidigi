@@ -12,7 +12,7 @@ docstring says which:
   silently start doing something else (the committed example notebook relies on
   exactly this for `plot_metric_bar`'s `title=`/`width=`). Column names are
   separate, explicitly named parameters on both instead.
-- On every function new in 1.4.0+ (e.g. `plot_duration_distribution`),
+- On every function new in 2.0.0+ (e.g. `plot_duration_distribution`),
   `**kwargs` is column-name passthrough to the underlying `vidigi.analysis`
   function instead - there is no single plotly call to forward general styling
   to, since `go` builds several traces by hand. Style the returned figure

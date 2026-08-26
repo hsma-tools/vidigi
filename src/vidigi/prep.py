@@ -637,7 +637,7 @@ def generate_animation_df(
         .. deprecated::
             This parameter has never had any effect and is ignored. All columns are
             retained regardless of the value passed. Passing it emits a
-            DeprecationWarning. Column dropping is planned for vidigi 2.0.
+            DeprecationWarning. Column dropping is planned for vidigi 3.0.
     run_col_name : str or None, optional
         Name of the column identifying which simulation run (replication) each row
         belongs to, used to reject data containing more than one replication.
@@ -1028,12 +1028,12 @@ def generate_animation_df(
     # it called .drop() without assigning the result, so every column was retained
     # regardless. Rather than start dropping columns now - which would change the output
     # of every existing caller, including removing `run` - the parameter is deprecated and
-    # left inert. Columns will be dropped in 2.0.
+    # left inert. Columns will be dropped in 3.0.
     if minimize_output_df is not _UNSET:
         warnings.warn(
             "`minimize_output_df` has never had any effect and is deprecated. It is "
             "currently ignored, and all columns are retained. Column dropping will be "
-            "introduced in vidigi 2.0; pass no value to keep the current behaviour.",
+            "introduced in vidigi 3.0; pass no value to keep the current behaviour.",
             DeprecationWarning,
             stacklevel=3,
         )

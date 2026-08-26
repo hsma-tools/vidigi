@@ -4,7 +4,7 @@
 `label=None` (the default) must be a true no-op on the resources produced -
 `id_attribute` unchanged, and no new attributes added at all - but now also
 emits a `DeprecationWarning`, since `label` is planned to become mandatory at
-vidigi 2.0 (see `pending_fixes.md`). When given, `label` produces a new,
+vidigi 3.0 (see `pending_fixes.md`). When given, `label` produces a new,
 separate `unique_id_attribute` that stays unique across pools even though
 `id_attribute` itself still restarts at 1 in every pool.
 """

@@ -172,7 +172,7 @@ reshape_for_animations(log, every_x_time_units=10, limit_duration=50)
 # KeyError: 'entity_id'
 ```
 
-**Why it matters:** this is the same failure the v1.4.0 no-departures fix addressed, reached
+**Why it matters:** this is the same failure the v2.0.0 no-departures fix addressed, reached
 by a different route, so the fix there did not cover it. The usual causes are benign and
 easy to hit by accident — a `limit_duration` shorter than the model's warm-up, or filtering
 to a replication whose events all fall outside the window. The error names an internal
@@ -192,13 +192,13 @@ tests, where a fixture shifted a second run's times beyond the requested window.
 
 ---
 
-## 6. `VidigiStore`/`populate_store`/`VidigiPriorityStore` should require a `label` (2.0)
+## 6. `VidigiStore`/`populate_store`/`VidigiPriorityStore` should require a `label` (3.0)
 
 **Where:** `src/vidigi/resources.py` — `VidigiStore.__init__`/`.populate()`,
 `populate_store()`, `VidigiPriorityStore.__init__`/`.populate()`.
 
-**Current state (1.4.0):** each pool numbers its own units `1..capacity`
-independently. An optional `label=` (added in 1.4.0) lets a modeller opt into a
+**Current state (2.0.0):** each pool numbers its own units `1..capacity`
+independently. An optional `label=` (added in 2.0.0) lets a modeller opt into a
 collision-proof `unique_id_attribute`, and omitting it now emits a
 `DeprecationWarning` — but it remains optional, so
 `vidigi.analysis.resource_utilisation(by="resource")` can still silently pool two
@@ -210,14 +210,15 @@ this repo's definition — every existing caller of the three populate-style
 functions/methods would need to add one — and the plain numeric `id_attribute` is
 still exactly correct for its original purpose (animation icon positioning via
 `vidigi.prep`'s arithmetic); only the newer `by="resource"` analysis path is exposed
-to the gap. This needs a deprecation period, not an immediate forced change.
+to the gap. This needs a deprecation period, not an immediate forced change — and
+2.0.0 is the release that just introduced the warning, so it is not that period.
 
-**Planned for 2.0:** drop the `None` default, making `label` required on all three
+**Planned for 3.0:** drop the `None` default, making `label` required on all three
 call sites. Needs a `**BREAKING:**` HISTORY.md bullet and `### ⚠️ Breaking changes`
 entry at that point, plus updating every example/test currently constructing these
 without a label.
 
-**Pinned by:** the 1.4.0 no-op/deprecation-warning tests in
+**Pinned by:** the 2.0.0 no-op/deprecation-warning tests in
 `tests/test_resources_label.py` (asserting `label=None` still produces working,
-unchanged resources plus a warning) — when `label` becomes mandatory at 2.0, those
+unchanged resources plus a warning) — when `label` becomes mandatory at 3.0, those
 tests are replaced by a missing-required-argument (`TypeError`) assertion instead.

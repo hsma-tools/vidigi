@@ -98,7 +98,7 @@ def _new_pool_resource(env, index, label=None, *, stacklevel=3):
     every pool is given a distinct label) - two separate attributes rather
     than one, so a consumer never needs to parse the combined string back
     apart. Omitting `label` adds neither attribute at all (a true no-op), but
-    warns once that `label` will become mandatory at vidigi 2.0 - see
+    warns once that `label` will become mandatory at vidigi 3.0 - see
     `pending_fixes.md`.
 
     `stacklevel` must count frames from here up to the *caller's* call site -
@@ -120,7 +120,7 @@ def _new_pool_resource(env, index, label=None, *, stacklevel=3):
             "mean different physical things in different pools - this silently "
             "breaks vidigi.analysis.resource_utilisation(by=\"resource\"). Pass "
             "label=\"...\" to give this pool's resources a collision-proof "
-            "unique_id_attribute. `label` becomes mandatory in vidigi 2.0.",
+            "unique_id_attribute. `label` becomes mandatory in vidigi 3.0.",
             DeprecationWarning,
             stacklevel=stacklevel,
         )
@@ -158,7 +158,7 @@ def populate_store(num_resources, simpy_store, sim_env, label=None):
         - unique across pools when every pool is given a distinct label, unlike
         `id_attribute` alone, which restarts at 1 in every pool. Omitting it
         (the default) changes nothing about the resources produced, but warns
-        that `label` will become mandatory at vidigi 2.0 - see
+        that `label` will become mandatory at vidigi 3.0 - see
         `vidigi.analysis.resource_utilisation`'s `by="resource"` docs for why.
 
     Returns
@@ -380,7 +380,7 @@ class VidigiStore:
             unlike `id_attribute` alone, which restarts at 1 in every pool.
             Omitting it (the default) changes nothing about the resources
             produced, but warns that `label` will become mandatory at vidigi
-            2.0 - see `vidigi.analysis.resource_utilisation`'s `by="resource"`
+            3.0 - see `vidigi.analysis.resource_utilisation`'s `by="resource"`
             docs for why. Also updates `self.label` (used to derive automatic
             resource-use logging event names - see `__init__`'s `logger=`) when
             given - a no-arg top-up call (`store.populate(5)`, adding resources
@@ -801,7 +801,7 @@ class VidigiPriorityStore:
             unlike `id_attribute` alone, which restarts at 1 in every pool.
             Omitting it (the default) changes nothing about the resources
             produced, but warns that `label` will become mandatory at vidigi
-            2.0 - see `vidigi.analysis.resource_utilisation`'s `by="resource"`
+            3.0 - see `vidigi.analysis.resource_utilisation`'s `by="resource"`
             docs for why. Also updates `self.label` (used to derive automatic
             resource-use logging event names - see `__init__`'s `logger=`) when
             given - a no-arg top-up call (`store.populate(5)`, adding resources
