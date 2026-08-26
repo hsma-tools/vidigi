@@ -11,19 +11,8 @@
 - `TrialLogger.get_event_duration_stat(what="summary")` computed its per-run denominator only from runs where the event pair occurred at all. A run with neither event was silently excluded, so `served_count_mean_per_run` and `unserved_count_mean_per_run` were inflated whenever any run had zero of both events; both now divide by the true number of runs in the trial.
 - `TrialLogger.get_resource_utilisation()`, `.plot_resource_utilisation()` and `.plot_resource_utilisation_over_time()` now default `resource_col_name` to `None` (auto-detect) instead of the literal `"resource_id"`. If your trial has a `unique_resource_id` column on *some* resource-use rows but not others, a call that used to succeed under the old default now raises `ValueError` — pass `resource_col_name="resource_id"` explicitly to keep the old behaviour, or fix the partial logging.
 
-### Notes
+### New features
 
-- **BREAKING:** Multi-replication event logs are rejected rather than silently blended
-    - Passing an event log containing several runs never raised and never warned — it produced an animation representing *no* run of your model. `reshape_for_animations` pivots the arrival and departure rows to work out when each entity was present, and that pivot averages duplicates: an entity arriving at t=1 in run 1 and t=41 in run 2 was given an arrival of 21 and a departure of 71. A later `groupby(...).tail(1)` then discarded one run's rows entirely
-    - Every downstream check still passed, because the resulting frame is internally consistent and completely fictional
-    - `reshape_for_animations`, `generate_animation_df`, `generate_animation` and `animate_activity_log` now all raise a `ValueError` naming the offending column and showing how to filter
-    - Two independent checks, because neither alone suffices. A **run column** carrying more than one value is caught even when entity IDs are unique across runs; **an entity with more than one `arrival` or `depart`** is caught even when the run column is named something unexpected or is absent entirely. The second also catches entity IDs reused within a single run, which corrupts an animation in exactly the same way
-    - New `run_col_name` argument on all four functions. Defaults to `"auto"`, which looks for a column named (case-insensitively) `run`, `run_number`, `replication`, `rep` or `run_id`. Pass an explicit name to override, or `None` to disable the check
-    - Chosen over a deprecation period deliberately: warning first would mean another release cycle of users presenting wrong animations to stakeholders, and the only behaviour being removed is "silently produce a wrong answer". The constraint was previously documented only in a tutorial page and in a source comment sitting above code that did not enforce it
-- **BREAKING:** `reshape_for_animations` now writes the exit step's event type to the column named by `event_type_col_name`
-    - Previously it always assigned to a literal `"event_type"` column. A log using a custom event type column therefore came out with *two* type columns: the caller's, left empty on every exit row, and a spurious `event_type` containing nothing but `"exit"`
-    - `generate_animation_df` filters on the caller's column, so exit steps were not being recognised as exits
-    - If you use the default column names, nothing changes
 - New `warm_up` argument on `reshape_for_animations` and `animate_activity_log`, for discarding a warm-up period without damaging the animation
     - Discarding warm-up is routine, and the obvious way to do it to an event log — `event_log[event_log["time"] >= warm_up]` — quietly breaks the result. Presence at each snapshot is worked out from arrival and departure rows, so truncating the log removes the `arrival` row of everyone who was already in the system, and those entities then appear in *no* frame at all. The entities lost are precisely the ones a steady-state animation exists to show: on a log with five entities queuing since before the boundary and two arriving after it, the queue was drawn holding two
     - `warm_up` trims the animation window instead of the log. Pass the whole event log and set `warm_up` to the end of your warm-up period; by default the snapshot grid is anchored on it, so the first frame lands exactly on the boundary — see `snapshot_alignment` below to keep the original grid instead
@@ -40,9 +29,6 @@
     - This is a plain time-based filter, not a port of `reshape_for_animations`' `warm_up`. `discover_dfg` builds each case's edges from its own consecutive rows rather than reconstructing who was present at a given moment from arrival and departure rows, so dropping early rows here cannot make a case silently vanish from output it should still appear in — the animation's failure mode does not apply here
     - Two consequences worth knowing before relying on this for reporting: a case entirely within the warm-up is dropped completely, and a case that spans the cutoff loses the single edge connecting its last pre-cutoff event to its first post-cutoff event, since one side of that pair is no longer in the log. Both are intentional, so warm-up activity does not contribute to the transition statistics
     - The default of `None` keeps every row, matching current behaviour exactly, and is a drop-in replacement for filtering the event log by time before calling `add_sim_timestamp`, which is how this has been taught until now
-- `backend` now matches case-insensitively for every spelling
-    - The plotly express branch lowercased its input and the graph objects branch did not, so `backend="EXPRESS"` was accepted while `backend="GO"` was rejected as invalid
-    - The error message also listed only two of the four graph objects spellings, so `"plotly graph objects"` and `"plotly go"` worked but were never advertised
 - Closed-set string arguments are now typed as literals, so editors offer the valid values and type checkers catch a typo before the call runs
     - `backend` and `simulation_time_unit` on `generate_animation` and `animate_activity_log`, `what` on `TrialLogger.get_event_duration_stat` and `plot_metric_bar`, and the new `snapshot_alignment`
     - The runtime checks are unchanged — annotations are not enforced, and a wrong value typed into a notebook still needs to raise
@@ -51,65 +37,9 @@
     - These are silently absent from every frame, because presence is decided by comparing arrival and departure times and a missing arrival compares as `False` against every snapshot
     - Nearly always the signature of a log truncated to remove a warm-up period, so the warning names the entities, explains why they will not appear, and points at `warm_up`
     - Both shapes are caught: an entity left with a `depart` row but no `arrival`, and an entity still in the system whose remaining rows are all queue or resource events, which is absent from the arrival/departure pivot entirely
-- `reshape_for_animations` no longer fails on an event log in which no entity has departed
-    - A truncated run, a warm-up period, or a model whose entities never leave produces no `depart` events, so the pivoted log had no `depart` column. Every snapshot was silently emptied and the function then failed with an opaque `KeyError: 'entity_id'`
-    - A missing `depart` column is now read as "everyone is still in the system", which is what an absent departure means
-    - A log with no `arrival` events now raises a `ValueError` naming the arguments to check, rather than failing later with an unrelated error
-- `limit_duration=None` now behaves as the docstring describes in `reshape_for_animations`
-    - The integer coercion applied to the argument rejected `None` before the function's own handling could run, and that handling would itself have failed by reading a column consumed by the pivot
-    - It now resolves to the largest time in the event log, matching how `animate_activity_log` already computed the same default
-- `wrap_queues_at=None` now behaves as documented in `generate_animation_df`
-    - Two sites used the value arithmetically before the existing `None` branch was reached: the `step_snapshot_max` multiple check, and the overflow label offset inside an `np.where` (which evaluates both branches, so the condition could not short-circuit the division)
-- `animate_activity_log` now respects `time_col_name` when working out a default `limit_duration`
-    - It previously read a literal `"time"` column, so every caller with a custom time column hit `KeyError: 'time'`
-- `hover_text_entity=None` now disables hover as documented
-    - The underlying plotly express call does not accept the `hoverinfo` argument that was being passed, so this option raised `TypeError` rather than doing anything
-- Passing a `scenario` for a model where no event position declares a resource no longer fails
-    - This produced `KeyError: 'x_final'`, which read like a problem with the caller's data rather than a missing guard
-- `custom_hover_data` is no longer modified in place
-    - The list passed in was appended to directly, so it grew by an entry on every call and eventually referenced the same column twice
-    - The resource column is now only offered when the event log actually contains one
-- Invalid `backend` and `time_display_units` values now raise `ValueError` carrying the intended guidance
-    - Both were raised as bare strings, which Python rejects with `TypeError: exceptions must derive from BaseException`, so the message explaining the valid options never reached the user
-- An unrecognised `simulation_time_unit` now raises `ValueError` listing the valid units, instead of `UnboundLocalError`
 - New warning when `time_display_units` is coarser than the snapshot interval
     - The animation frame is the formatted time, so e.g. ten-minute snapshots displayed as `'d'` all carry the same label. Snapshots are merged, entities from different moments are drawn on top of one another, and plotly may produce no frames at all
     - This previously happened silently and returned a plausible-looking static figure
-- **BREAKING:** `TrialLogger` statistics now reflect logs added after construction
-    - The combined trial dataframe was built once in `__init__` and never rebuilt, so a run added with `add_log` was counted by `summary()` while being absent from every statistic computed from that frame
-    - A trial assembled by constructing empty and adding runs in a loop — a natural way to write it — produced statistics for no runs at all
-    - The frame is now derived from the current set of logs on each access, so it cannot go stale
-    - Any figure you have previously reported from a trial built this way was computed from a subset of your runs and will change
-- **BREAKING:** `get_event_duration_stat(what="summary")` reports the number of unserved entities under `unserved_count`
-    - It returned `series.size`, the total number of entities, so a trial where everyone was served still reported every entity as unserved. `unserved_count_mean_per_run` carried the same error
-    - The standalone `what="unserved_count"` path was already correct, so the two routes to the same statistic disagreed
-- **BREAKING:** `TrialLogger.plot_queue_size` reports the queue length that actually formed
-    - Three separate errors, each of which made a queue look better than it was, and none of which produced any visual cue that something had been discarded
-    - **Long queues saturated.** The chart was built by reshaping the log with the default `step_snapshot_max=60`, which caps how many entity icons an *animation* draws. With the cap applied to a line chart, a queue of 150 plotted as a flat 61 — a growing bottleneck reading as a stable queue. The cap is no longer applied here, since a line has no drawing limit
-    - **Empty queues went missing.** A snapshot with nobody queuing produced no row to count, so no point was plotted and the line was drawn straight across the gap — asserting a queue over precisely the interval it had emptied. Genuine zeros are now plotted
-    - **The mean was biased upwards.** It averaged only the runs that had somebody waiting at that moment, so two runs holding 1 and 0 gave a mean of 1.0 rather than 0.5. Every run now contributes at every snapshot
-    - An event named in `event_list` that occurs in no run is plotted as zero throughout and now warns, since zero-filling would otherwise make a misspelt event name indistinguishable from a queue that never formed
-    - Reshaping without the cap uses more memory than an equivalent animation
-- `TrialLogger()` can be constructed with no arguments
-    - This raised `ValueError: No objects to concatenate`, which ruled out creating an empty trial and filling it with `add_log`
-- `TrialLogger.get_log_by_run(run, as_df=True)` returns a DataFrame
-    - Both branches of the `as_df` check returned the same thing, so the parameter did nothing
-- `TrialLogger` now rejects an `EventLogger` with no events or no `run_number`
-    - The run id is read from the first event, so these previously failed with `IndexError` or stored `None` as the run id, making the log unretrievable by run
-- `EventLogger.from_csv` now leaves the logger in a usable state
-    - It assigned the DataFrame directly to the internal log, which is a list of records everywhere else. Afterwards `get_events_by_entity` and friends walked column names and failed with `AttributeError`, `to_json`/`to_json_string` failed with `TypeError`, and `to_csv` failed on an ambiguous truth value
-    - Only `to_dataframe` and `summary` happened to work, so the breakage was easy to miss
-- The "resource_id is recommended" warning now actually fires
-    - It was defined as a validator on a field with a default, and pydantic skips those when the caller omits the field — precisely the case the check exists to catch. It only ever fired when a resource id *was* supplied but had the wrong type
-    - Logging a `resource_use` or `resource_use_end` event with no `resource_id` now warns, as documented
-- Removed a stray debug `print` from `EventLogger.plot_entity_timeline`, which dumped the entity's events to stdout on every call
-- `VidigiStore.cancel_get` now works
-    - It looked for the pending-request queue on itself, but `VidigiStore` wraps a `simpy.Store` rather than subclassing it. Every call raised `AttributeError`, which the method's `except ValueError` did not catch, so cancelling a request — and therefore modelling reneging with this class — was impossible
-    - `VidigiPriorityStore` was unaffected, as it keeps `get_queue` as its own attribute
-- `minimize_output_df` is deprecated and remains inert
-    - It has never had any effect: the loop meant to implement it discarded the result of `.drop()`, so the documented default of `True` was always a no-op
-    - Making it work now would change the output of every existing caller, including removing the `run` column, so the behaviour is deferred to 2.0
-    - Passing it emits a `DeprecationWarning`; callers who never passed it are unaffected
 - New `vidigi.analysis` module — the first piece of a numbers-in-DataFrames-out layer that the plotting functions will sit on top of
     - `event_durations(event_log, first_event, second_event, match=...)` pairs occurrences of two events per entity and computes the time between them, usable standalone on any event log, including one where an entity revisits a step
     - `match` controls how repeated occurrences are paired: `"first"`/`"last"` take the entity's earliest or latest of each event regardless of how many times either occurs; `"occurrence"` pairs the *n*-th of each in time order, and warns if an entity has an unequal count of the two
@@ -214,6 +144,82 @@
     - `unique_resource_id` is added automatically alongside `resource_id` whenever the pool was built with `label=`, matching the pattern `TrialLogger` already recommends for a collision-proof `by="resource"` breakdown
     - If a logger is configured but `entity_id` is omitted on a given call, auto-logging is skipped for that call, after a one-time `UserWarning` per store (not per call) - so a model can deliberately mix auto-logging with manual `EventLogger` calls without being warned on every one of the calls it wants to log itself
     - Both stores are generic pools with no type constraint on what's `put()` into them; an item lacking `id_attribute` (e.g. one that slipped in via a more complex get/put pattern) degrades to `resource_id=None` in the auto-logged event rather than crashing the model with an `AttributeError` - `EventLogger`'s existing missing-`resource_id` warning still surfaces the problem
+
+### Fixes
+
+- **BREAKING:** Multi-replication event logs are rejected rather than silently blended
+    - Passing an event log containing several runs never raised and never warned — it produced an animation representing *no* run of your model. `reshape_for_animations` pivots the arrival and departure rows to work out when each entity was present, and that pivot averages duplicates: an entity arriving at t=1 in run 1 and t=41 in run 2 was given an arrival of 21 and a departure of 71. A later `groupby(...).tail(1)` then discarded one run's rows entirely
+    - Every downstream check still passed, because the resulting frame is internally consistent and completely fictional
+    - `reshape_for_animations`, `generate_animation_df`, `generate_animation` and `animate_activity_log` now all raise a `ValueError` naming the offending column and showing how to filter
+    - Two independent checks, because neither alone suffices. A **run column** carrying more than one value is caught even when entity IDs are unique across runs; **an entity with more than one `arrival` or `depart`** is caught even when the run column is named something unexpected or is absent entirely. The second also catches entity IDs reused within a single run, which corrupts an animation in exactly the same way
+    - New `run_col_name` argument on all four functions. Defaults to `"auto"`, which looks for a column named (case-insensitively) `run`, `run_number`, `replication`, `rep` or `run_id`. Pass an explicit name to override, or `None` to disable the check
+    - Chosen over a deprecation period deliberately: warning first would mean another release cycle of users presenting wrong animations to stakeholders, and the only behaviour being removed is "silently produce a wrong answer". The constraint was previously documented only in a tutorial page and in a source comment sitting above code that did not enforce it
+- **BREAKING:** `reshape_for_animations` now writes the exit step's event type to the column named by `event_type_col_name`
+    - Previously it always assigned to a literal `"event_type"` column. A log using a custom event type column therefore came out with *two* type columns: the caller's, left empty on every exit row, and a spurious `event_type` containing nothing but `"exit"`
+    - `generate_animation_df` filters on the caller's column, so exit steps were not being recognised as exits
+    - If you use the default column names, nothing changes
+- `backend` now matches case-insensitively for every spelling
+    - The plotly express branch lowercased its input and the graph objects branch did not, so `backend="EXPRESS"` was accepted while `backend="GO"` was rejected as invalid
+    - The error message also listed only two of the four graph objects spellings, so `"plotly graph objects"` and `"plotly go"` worked but were never advertised
+- `reshape_for_animations` no longer fails on an event log in which no entity has departed
+    - A truncated run, a warm-up period, or a model whose entities never leave produces no `depart` events, so the pivoted log had no `depart` column. Every snapshot was silently emptied and the function then failed with an opaque `KeyError: 'entity_id'`
+    - A missing `depart` column is now read as "everyone is still in the system", which is what an absent departure means
+    - A log with no `arrival` events now raises a `ValueError` naming the arguments to check, rather than failing later with an unrelated error
+- `limit_duration=None` now behaves as the docstring describes in `reshape_for_animations`
+    - The integer coercion applied to the argument rejected `None` before the function's own handling could run, and that handling would itself have failed by reading a column consumed by the pivot
+    - It now resolves to the largest time in the event log, matching how `animate_activity_log` already computed the same default
+- `wrap_queues_at=None` now behaves as documented in `generate_animation_df`
+    - Two sites used the value arithmetically before the existing `None` branch was reached: the `step_snapshot_max` multiple check, and the overflow label offset inside an `np.where` (which evaluates both branches, so the condition could not short-circuit the division)
+- `animate_activity_log` now respects `time_col_name` when working out a default `limit_duration`
+    - It previously read a literal `"time"` column, so every caller with a custom time column hit `KeyError: 'time'`
+- `hover_text_entity=None` now disables hover as documented
+    - The underlying plotly express call does not accept the `hoverinfo` argument that was being passed, so this option raised `TypeError` rather than doing anything
+- Passing a `scenario` for a model where no event position declares a resource no longer fails
+    - This produced `KeyError: 'x_final'`, which read like a problem with the caller's data rather than a missing guard
+- `custom_hover_data` is no longer modified in place
+    - The list passed in was appended to directly, so it grew by an entry on every call and eventually referenced the same column twice
+    - The resource column is now only offered when the event log actually contains one
+- Invalid `backend` and `time_display_units` values now raise `ValueError` carrying the intended guidance
+    - Both were raised as bare strings, which Python rejects with `TypeError: exceptions must derive from BaseException`, so the message explaining the valid options never reached the user
+- An unrecognised `simulation_time_unit` now raises `ValueError` listing the valid units, instead of `UnboundLocalError`
+- **BREAKING:** `TrialLogger` statistics now reflect logs added after construction
+    - The combined trial dataframe was built once in `__init__` and never rebuilt, so a run added with `add_log` was counted by `summary()` while being absent from every statistic computed from that frame
+    - A trial assembled by constructing empty and adding runs in a loop — a natural way to write it — produced statistics for no runs at all
+    - The frame is now derived from the current set of logs on each access, so it cannot go stale
+    - Any figure you have previously reported from a trial built this way was computed from a subset of your runs and will change
+- **BREAKING:** `get_event_duration_stat(what="summary")` reports the number of unserved entities under `unserved_count`
+    - It returned `series.size`, the total number of entities, so a trial where everyone was served still reported every entity as unserved. `unserved_count_mean_per_run` carried the same error
+    - The standalone `what="unserved_count"` path was already correct, so the two routes to the same statistic disagreed
+- **BREAKING:** `TrialLogger.plot_queue_size` reports the queue length that actually formed
+    - Three separate errors, each of which made a queue look better than it was, and none of which produced any visual cue that something had been discarded
+    - **Long queues saturated.** The chart was built by reshaping the log with the default `step_snapshot_max=60`, which caps how many entity icons an *animation* draws. With the cap applied to a line chart, a queue of 150 plotted as a flat 61 — a growing bottleneck reading as a stable queue. The cap is no longer applied here, since a line has no drawing limit
+    - **Empty queues went missing.** A snapshot with nobody queuing produced no row to count, so no point was plotted and the line was drawn straight across the gap — asserting a queue over precisely the interval it had emptied. Genuine zeros are now plotted
+    - **The mean was biased upwards.** It averaged only the runs that had somebody waiting at that moment, so two runs holding 1 and 0 gave a mean of 1.0 rather than 0.5. Every run now contributes at every snapshot
+    - An event named in `event_list` that occurs in no run is plotted as zero throughout and now warns, since zero-filling would otherwise make a misspelt event name indistinguishable from a queue that never formed
+    - Reshaping without the cap uses more memory than an equivalent animation
+- `TrialLogger()` can be constructed with no arguments
+    - This raised `ValueError: No objects to concatenate`, which ruled out creating an empty trial and filling it with `add_log`
+- `TrialLogger.get_log_by_run(run, as_df=True)` returns a DataFrame
+    - Both branches of the `as_df` check returned the same thing, so the parameter did nothing
+- `TrialLogger` now rejects an `EventLogger` with no events or no `run_number`
+    - The run id is read from the first event, so these previously failed with `IndexError` or stored `None` as the run id, making the log unretrievable by run
+- `EventLogger.from_csv` now leaves the logger in a usable state
+    - It assigned the DataFrame directly to the internal log, which is a list of records everywhere else. Afterwards `get_events_by_entity` and friends walked column names and failed with `AttributeError`, `to_json`/`to_json_string` failed with `TypeError`, and `to_csv` failed on an ambiguous truth value
+    - Only `to_dataframe` and `summary` happened to work, so the breakage was easy to miss
+- The "resource_id is recommended" warning now actually fires
+    - It was defined as a validator on a field with a default, and pydantic skips those when the caller omits the field — precisely the case the check exists to catch. It only ever fired when a resource id *was* supplied but had the wrong type
+    - Logging a `resource_use` or `resource_use_end` event with no `resource_id` now warns, as documented
+- Removed a stray debug `print` from `EventLogger.plot_entity_timeline`, which dumped the entity's events to stdout on every call
+- `VidigiStore.cancel_get` now works
+    - It looked for the pending-request queue on itself, but `VidigiStore` wraps a `simpy.Store` rather than subclassing it. Every call raised `AttributeError`, which the method's `except ValueError` did not catch, so cancelling a request — and therefore modelling reneging with this class — was impossible
+    - `VidigiPriorityStore` was unaffected, as it keeps `get_queue` as its own attribute
+
+### Deprecations
+
+- `minimize_output_df` is deprecated and remains inert
+    - It has never had any effect: the loop meant to implement it discarded the result of `.drop()`, so the documented default of `True` was always a no-op
+    - Making it work now would change the output of every existing caller, including removing the `run` column, so the behaviour is deferred to 2.0
+    - Passing it emits a `DeprecationWarning`; callers who never passed it are unaffected
 
 ### Testing
 
@@ -406,7 +412,7 @@ To access the attribute, it does necessitate some small change -
 with self.nurse.request() as req:
     # Freeze the function until the request for a nurse can be met.
     # The patient is currently queuing.
-    nurse_resource = yield req ## NEED TO ASSIGN HERE
+    nurse_resource = yield req  ## NEED TO ASSIGN HERE
 ```
 
 So
