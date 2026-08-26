@@ -1,13 +1,26 @@
 ---
 title: "Getting Started"
 listing:
-  - id: getting_started
+  - id: getting_started_simpy
     contents:
       - "basic_example_with_vidigi_logger_helpers.qmd"
       - "basic_example_with_vidigi_logger_helpers_multiple_servers.qmd"
       - "basic_example_minimal_required_vidigi_functions.qmd"
       - "adding_vidigi_to_a_simple_simpy_model_hsma_structure.qmd"
-      - "../examples/example_4_ciw/ex_4_ciw.ipynb"
+    type: grid # A list style instead of a grid
+    sort: false
+    grid-columns: 3
+    template: listing.ejs
+  - id: getting_started_ciw
+    contents:
+      - "../examples/example_10_advanced_ciw/example_10_advanced_ciw.ipynb"
+    type: grid # A list style instead of a grid
+    sort: false
+    grid-columns: 3
+    template: listing.ejs
+  - id: getting_started_salabim
+    contents:
+      - "../examples/salabim_bank/salabim_bank.ipynb"
     type: grid # A list style instead of a grid
     sort: false
     grid-columns: 3
@@ -27,9 +40,36 @@ The rest of this page walks you through each step.
 
 The fastest way to understand vidigi is through worked examples. We recommend starting with these:
 
-::: {#getting_started}
+
+### SimPy
+
+::: {#getting_started_simpy}
+:::
+
+### Salabim
+
+::: {#getting_started_salabim}
+:::
+
+### Ciw
+
+::: {#getting_started_ciw}
 :::
 
 **Want all examples in one place? [Browse the full example gallery →](/examples/examples.qmd)**
+
+## An overview of the key vidigi functions
+
+Following through the addition of vidigi to a SimPy model is a good way to get an overview of the key steps in adding vidigi to many kinds of models. Models created in Salabim, or without the use of a DES framework, will follow a very similar pattern.
+
+::: {.callout-tip}
+
+Ciw is perhaps the most different as you don't need to manually add logging steps.
+
+However, the animation generation steps will be identical if using Ciw, so the latter half of the following instructions will still be relevant!
+
+:::
+
+
 
 {{< include introduction.qmd >}}
