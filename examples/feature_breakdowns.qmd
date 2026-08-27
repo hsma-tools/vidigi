@@ -6,6 +6,7 @@ listing:
     contents:
       - "feat_*/*.ipynb"
       - "feat_*/*.qmd"
+      - "v2_release_additions/*.ipynb"
     exclude:
       title: "BupaR"
     type: grid # A list style instead of a grid

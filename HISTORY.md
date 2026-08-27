@@ -164,6 +164,12 @@
     - `return_fig=False` (the default, unchanged) still calls `fig.show()` and returns `None`, exactly as before. `return_fig=True` returns the figure instead, without calling `fig.show()`, for further styling or export (e.g. `fig.write_image(...)`)
     - The default will flip to `True` at vidigi 3.0, at which point the method stops calling `fig.show()` itself — noted in the docstring now so existing script callers relying on the display side-effect are not broken without warning
 
+### New examples
+
+- New `examples/v2_release_additions/v2_release_additions.ipynb`, a tour of everything above: `event_durations`/`get_event_durations`, resource utilisation (`resource_use_intervals`, `resource_occupancy_over_time`, `resource_utilisation`'s four capacity-resolution routes, `plot_resource_utilisation`/`plot_resource_utilisation_over_time`), `plot_entity_timeline`'s new `return_fig=`, and `VidigiStore(..., logger=...)` auto-logging - none of which had a working code example anywhere in the repo before this. `plot_duration_distribution`, `plot_metric_bar`'s `across=`/`error_bars=`, and the warm-up/replication-count/metric-vs-arrival-time diagnostics get a short, real demonstration with a link to their existing dedicated notebook (`feat_trial_logger.ipynb`, `feat_warm_up.ipynb`, `feat_replication_analysis.ipynb`, `feat_metric_vs_arrival_time.ipynb` respectively) rather than being re-explained from scratch
+    - Reuses the same single-resource clinic model as the warm-up/replication/arrival-time notebooks, so every number is directly comparable - including an independently-derived ~78% cubicle utilisation matching the figure `feat_warm_up.ipynb` already quotes
+    - Demonstrates that `VidigiStore(..., logger=...)` auto-logging and manual `log_resource_use_start`/`log_resource_use_end` calls produce byte-identical `resource_use_intervals` output for the same model and seed, once `limit_duration=` is pinned explicitly on both sides - `resource_use_intervals` resolves its analysis window's end from the latest time in whichever log it's given, which differs between a single run's own log and a multi-run trial's combined log
+
 ### Fixes
 
 - **BREAKING:** Multi-replication event logs are rejected rather than silently blended
