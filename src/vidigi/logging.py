@@ -530,6 +530,7 @@ class EventLogger:
         entity_id: any,
         split_by_entity_type: bool = False,
         show_labels: bool = False,
+        return_fig: bool = False,
     ):
         """
         Plot a timeline of events for a given entity.
@@ -550,6 +551,18 @@ class EventLogger:
         show_labels : bool, default=False
             If True, the event labels are displayed as text on the plot.
             If False, no labels are shown.
+        return_fig : bool, default=False
+            If True, return the Plotly figure instead of calling `fig.show()`.
+            Use this to customise the figure further or export it (e.g.
+            `fig.write_image(...)`). Defaults to False for backwards
+            compatibility; this default will flip to True in vidigi 3.0, at
+            which point the method will stop calling `fig.show()` itself.
+
+        Returns
+        -------
+        plotly.graph_objects.Figure or None
+            The figure if `return_fig=True`, otherwise None (the figure is
+            displayed via `fig.show()` and not returned).
 
         Raises
         ------
@@ -564,7 +577,7 @@ class EventLogger:
 
         Notes
         -----
-        - The plot is displayed using `plotly.express.scatter`.
+        - The plot is built using `plotly.express.scatter`.
         - The y-axis is treated as categorical to improve readability.
         - Marker styling includes a fixed size and outline color for clarity.
         """
@@ -614,6 +627,9 @@ class EventLogger:
         )
 
         fig.update_yaxes(type="category")  # treat event_type as categorical on y-axis
+
+        if return_fig:
+            return fig
 
         fig.show()
 

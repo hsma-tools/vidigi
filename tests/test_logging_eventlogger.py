@@ -10,6 +10,7 @@ import warnings
 from datetime import datetime
 
 import pandas as pd
+import plotly.graph_objects as go
 import pytest
 
 from vidigi.logging import BaseEvent, EventLogger
@@ -529,6 +530,33 @@ def test_plot_entity_timeline_rejects_unknown_entity(populated_logger):
 def test_plot_entity_timeline_rejects_empty_log():
     with pytest.raises(ValueError, match="Event log is empty"):
         EventLogger().plot_entity_timeline(entity_id=1)
+
+
+def test_plot_entity_timeline_default_shows_and_returns_none(populated_logger, monkeypatch):
+    shown = []
+    monkeypatch.setattr(go.Figure, "show", lambda self, *a, **k: shown.append(self))
+
+    result = populated_logger.plot_entity_timeline(entity_id=1)
+
+    assert result is None
+    assert len(shown) == 1
+
+
+def test_plot_entity_timeline_return_fig_true_returns_figure_without_showing(
+    populated_logger, monkeypatch
+):
+    def fail_if_shown(self, *a, **k):
+        raise AssertionError("fig.show() should not be called when return_fig=True")
+
+    monkeypatch.setattr(go.Figure, "show", fail_if_shown)
+
+    fig = populated_logger.plot_entity_timeline(entity_id=1, return_fig=True)
+
+    assert isinstance(fig, go.Figure)
+    # entity 1's own three events (arrival, waiting, depart) - one trace per
+    # event_type, so gather x-values across all traces.
+    all_times = sorted(t for trace in fig.data for t in trace.x)
+    assert all_times == pytest.approx([0.0, 1.0, 5.0])
 
 
 def test_generate_dfg_rejects_unknown_output_format(populated_logger):
