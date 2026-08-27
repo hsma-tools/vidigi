@@ -107,6 +107,30 @@ quartodoc:
       contents:
         - logging.EventLogger
         - logging.TrialLogger
+    - title: Analysis Functions
+      desc: "Numbers-in, DataFrames-out - the compute twin behind every function in Analysis Plots below."
+      contents:
+        - analysis.event_durations
+        - analysis.entity_metric_by_arrival
+        - analysis.replication_means
+        - analysis.mean_confidence_interval
+        - analysis.replication_precision
+        - analysis.queue_size_over_time
+        - analysis.resource_use_intervals
+        - analysis.resource_utilisation
+        - analysis.resource_occupancy_over_time
+        - analysis.welch_moving_average
+    - title: Analysis Plots
+      desc: "go.Figure-returning charts, each a thin wrapper over the matching function in Analysis Functions above."
+      contents:
+        - plots.plot_queue_size
+        - plots.plot_duration_distribution
+        - plots.plot_metric_bar
+        - plots.plot_resource_utilisation
+        - plots.plot_resource_utilisation_over_time
+        - plots.plot_warm_up_diagnostic
+        - plots.plot_replication_analysis
+        - plots.plot_metric_vs_arrival_time
     - title: Event Positioning Utility Functions and Classes
       desc: ""
       contents:
