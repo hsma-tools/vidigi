@@ -26,6 +26,7 @@ from vidigi.analysis import (
     ResourceUtilisationBy,
     UnclosedResourceUse,
     _summarise_durations,
+    entity_metric_by_arrival,
     event_durations,
     replication_means,
     replication_precision,
@@ -35,6 +36,7 @@ from vidigi.plots import (
     plot_queue_size as _plot_queue_size,
     plot_duration_distribution as _plot_duration_distribution,
     plot_metric_bar as _plot_metric_bar,
+    plot_metric_vs_arrival_time as _plot_metric_vs_arrival_time,
     plot_replication_analysis as _plot_replication_analysis,
     plot_resource_utilisation as _plot_resource_utilisation,
     plot_resource_utilisation_over_time as _plot_resource_utilisation_over_time,
@@ -1750,6 +1752,129 @@ class TrialLogger:
             deviation_threshold=deviation_threshold,
             show_deviation=show_deviation,
             match=match,
+            **kwargs,
+        )
+
+    def get_entity_metric_by_arrival(
+        self,
+        first_event,
+        second_event,
+        *,
+        arrival_event: str = "arrival",
+        match: MatchMode = "first",
+        **kwargs,
+    ):
+        """
+        Per-entity duration joined with each entity's arrival time.
+
+        Thin wrapper over `vidigi.analysis.entity_metric_by_arrival`, called on
+        this trial's combined dataframe.
+
+        Parameters
+        ----------
+        first_event, second_event : str
+            The two events to pair. See `vidigi.analysis.event_durations`.
+        arrival_event : str, default="arrival"
+            The event marking an entity's arrival.
+        match : {"first", "last", "occurrence"}, default="first"
+            How repeated occurrences of the two events are paired. Does not
+            affect the arrival-time lookup.
+        **kwargs : dict
+            Additional keyword arguments forwarded to
+            `vidigi.analysis.entity_metric_by_arrival` (e.g. `run_col_name`).
+
+        Returns
+        -------
+        pandas.DataFrame
+
+        See Also
+        --------
+        vidigi.analysis.entity_metric_by_arrival : The underlying implementation.
+        plot_metric_vs_arrival_time : The matching chart.
+        """
+        return entity_metric_by_arrival(
+            self._trial_dataframe,
+            first_event,
+            second_event,
+            arrival_event=arrival_event,
+            match=match,
+            **kwargs,
+        )
+
+    def plot_metric_vs_arrival_time(
+        self,
+        first_event,
+        second_event,
+        *,
+        arrival_event: str = "arrival",
+        colour_by: Optional[SplitBy] = None,
+        rolling_window: Optional[int] = None,
+        rolling_time: Optional[float] = None,
+        warm_up: float = 0,
+        match: MatchMode = "first",
+        marker_size: float = 6,
+        line_width: float = 3,
+        title: Optional[str] = None,
+        **kwargs,
+    ):
+        """
+        Plot a duration/metric against the arrival time of the entity it belongs to.
+
+        Thin wrapper over `vidigi.plots.plot_metric_vs_arrival_time`, called on
+        this trial's combined dataframe. See that function for the full
+        parameter list.
+
+        Parameters
+        ----------
+        first_event, second_event : str
+            The two events to measure the duration between.
+        arrival_event : str, default="arrival"
+            The event marking an entity's arrival - drawn on the x-axis.
+        colour_by : {"run", "pathway"} or None, default=None
+            If given, draws one trace per distinct value of the corresponding
+            column instead of a single pooled trace.
+        rolling_window : int, optional
+            Half-width, in points, of a count-based moving average. Mutually
+            exclusive with `rolling_time`.
+        rolling_time : float, optional
+            Half-width, in time units, of a time-window moving average.
+            Mutually exclusive with `rolling_window`.
+        warm_up : float, default=0
+            Points whose `arrival_time` is before `warm_up` are excluded.
+        match : {"first", "last", "occurrence"}, default="first"
+            How repeated occurrences of the two events are paired.
+        marker_size : float, default=6
+            Marker size for the scatter points.
+        line_width : float, default=3
+            Line width for the rolling-mean trend line, when drawn.
+        title : str, optional
+            Figure title.
+        **kwargs : dict
+            Additional keyword arguments forwarded to
+            `vidigi.plots.plot_metric_vs_arrival_time` (e.g. `run_col_name`).
+
+        Returns
+        -------
+        plotly.graph_objects.Figure
+
+        See Also
+        --------
+        vidigi.plots.plot_metric_vs_arrival_time : The underlying implementation.
+        get_entity_metric_by_arrival : The underlying per-entity table.
+        """
+        return _plot_metric_vs_arrival_time(
+            self._trial_dataframe,
+            first_event,
+            second_event,
+            arrival_event=arrival_event,
+            colour_by=colour_by,
+            rolling_window=rolling_window,
+            rolling_time=rolling_time,
+            warm_up=warm_up,
+            match=match,
+            marker_size=marker_size,
+            line_width=line_width,
+            title=title,
             **kwargs,
         )
 

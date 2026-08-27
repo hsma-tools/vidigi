@@ -37,7 +37,10 @@ from vidigi.analysis import (
     _ensemble_mean,
     _nearest_match_hint,
     _resolve_resource_capacities,
+    _rolling_mean_by_count,
+    _rolling_mean_by_time,
     _summarise_durations,
+    entity_metric_by_arrival,
     event_durations,
     mean_confidence_interval,
     queue_size_over_time,
@@ -1863,5 +1866,199 @@ def plot_replication_analysis(
         f"{len(run_values)} replications available"
     )
     fig.update_layout(title=subtitle)
+
+    return fig
+
+
+def plot_metric_vs_arrival_time(
+    event_log: pd.DataFrame,
+    first_event: str,
+    second_event: str,
+    *,
+    arrival_event: str = "arrival",
+    colour_by: Optional[SplitBy] = None,
+    rolling_window: Optional[int] = None,
+    rolling_time: Optional[float] = None,
+    warm_up: float = 0,
+    match: MatchMode = "first",
+    marker_size: float = 6,
+    line_width: float = 3,
+    title: Optional[str] = None,
+    **col_kwargs,
+) -> go.Figure:
+    """
+    Plot a duration/metric against the arrival time of the entity it belongs to.
+
+    Thin wrapper over `vidigi.analysis.entity_metric_by_arrival`: a scatter of
+    duration against arrival time, for spotting whether the metric drifts
+    depending on when the entity arrived - a non-stationary arrival process or
+    a time-of-day/load effect, for example. The counterpart to
+    `plot_replication_analysis` (precision across replications) and
+    `plot_warm_up_diagnostic` (the startup transient) - this is the diagnostic
+    for drift *within* a run's steady operation, ordered by arrival rather than
+    by replication count.
+
+    Parameters
+    ----------
+    event_log : pandas.DataFrame
+        Long-format event log, e.g. the output of `TrialLogger.to_dataframe()`.
+    first_event, second_event : str
+        The two events to measure the duration between. See
+        `vidigi.analysis.event_durations`.
+    arrival_event : str, default="arrival"
+        The event marking an entity's arrival - drawn on the x-axis. See
+        `vidigi.analysis.entity_metric_by_arrival`.
+    colour_by : {"run", "pathway"} or None, default=None
+        If given, draws one trace per distinct value of the corresponding
+        column (`run_number` or `pathway`) instead of a single trace over
+        every point pooled together - matches `plot_duration_distribution`'s
+        `split_by`.
+    rolling_window : int, optional
+        Half-width, in points, of a symmetric moving average drawn over the
+        scatter (in arrival-time order) - a count-based smoothing window.
+        Mutually exclusive with `rolling_time`. `None` (default) draws no
+        trend line.
+    rolling_time : float, optional
+        Half-width, in the event log's time units, of a symmetric moving
+        average drawn over the scatter - every point within `rolling_time` on
+        either side of a given arrival time is averaged, so unlike
+        `rolling_window` the number of points contributing can vary with local
+        arrival density. Mutually exclusive with `rolling_window`. `None`
+        (default) draws no trend line.
+    warm_up : float, default=0
+        Points whose `arrival_time` is before `warm_up` are excluded, applied
+        before any rolling average so excluded points cannot leak into the
+        smoothing near the boundary. Filtered by `arrival_time` - this chart's
+        x-axis - not `first_time`; the default of `0` is a verified no-op.
+    match : {"first", "last", "occurrence"}, default="first"
+        How repeated occurrences of `first_event`/`second_event` are paired.
+        See `vidigi.analysis.event_durations`. Does not affect the arrival-time
+        lookup - see `vidigi.analysis.entity_metric_by_arrival`.
+    marker_size : float, default=6
+        Marker size for the scatter points.
+    line_width : float, default=3
+        Line width for the rolling-mean trend line, when drawn.
+    title : str, optional
+        Figure title.
+    **col_kwargs : dict
+        Column-name keyword arguments forwarded to
+        `vidigi.analysis.entity_metric_by_arrival`, e.g. `run_col_name=`.
+
+    Returns
+    -------
+    plotly.graph_objects.Figure
+
+    Raises
+    ------
+    ValueError
+        If `colour_by` is not one of the supported values; if both
+        `rolling_window` and `rolling_time` are given; if either is given but
+        not a positive number; if `warm_up` is negative; if `colour_by` is set
+        but the corresponding column is entirely missing; or if no points
+        remain to plot after excluding incomplete pairs, missing arrival
+        times, and `warm_up`.
+
+    See Also
+    --------
+    vidigi.analysis.entity_metric_by_arrival : The underlying per-entity data.
+    plot_warm_up_diagnostic : The companion diagnostic for the startup transient.
+
+    Notes
+    -----
+    When `colour_by` groups the scatter, the rolling-mean trend line (if
+    requested) is still computed once, pooled over every group - matching the
+    "faint per-group traces + one bold pooled mean" visual language already
+    used by `plot_resource_utilisation_over_time`/`plot_queue_size`, rather
+    than drawing a separate trend per group.
+
+    Examples
+    --------
+    >>> plot_metric_vs_arrival_time(trial.to_dataframe(), "wait_begins", "treatment_begins")
+    <plotly.graph_objs._figure.Figure>
+    """
+    if colour_by is not None and colour_by not in _SPLIT_BY_COLUMNS:
+        raise ValueError(
+            f"`colour_by` must be one of 'run', 'pathway', or None; got {colour_by!r}."
+        )
+    if rolling_window is not None and rolling_time is not None:
+        raise ValueError(
+            f"`rolling_window` ({rolling_window}) and `rolling_time` "
+            f"({rolling_time}) are mutually exclusive smoothing strategies - "
+            f"pass at most one."
+        )
+    if rolling_window is not None and rolling_window <= 0:
+        raise ValueError(
+            f"`rolling_window` must be a positive integer; got {rolling_window!r}."
+        )
+    if rolling_time is not None and rolling_time <= 0:
+        raise ValueError(f"`rolling_time` must be positive; got {rolling_time!r}.")
+    if warm_up < 0:
+        raise ValueError(f"`warm_up` must not be negative, but {warm_up} was passed.")
+
+    df = entity_metric_by_arrival(
+        event_log, first_event, second_event, arrival_event=arrival_event, match=match, **col_kwargs
+    )
+    df = df[df["duration"].notna() & df["arrival_time"].notna()]
+    df = df[df["arrival_time"] >= warm_up]
+
+    if df.empty:
+        raise ValueError(
+            f"No points to plot: either no complete '{first_event}' -> "
+            f"'{second_event}' pairs were found, none have a recorded "
+            f"'{arrival_event}' time, or `warm_up` ({warm_up}) excludes every "
+            f"remaining point."
+        )
+
+    df = df.sort_values(["arrival_time", "entity_id"]).reset_index(drop=True)
+
+    axis_label = f"{first_event} -> {second_event} duration"
+
+    if colour_by is None:
+        groups = [(None, df)]
+    else:
+        group_col = _SPLIT_BY_COLUMNS[colour_by]
+        if df[group_col].isna().all():
+            raise ValueError(
+                f"`colour_by=\"{colour_by}\"` was requested, but the '{group_col}' "
+                f"column is entirely missing from the data - `event_log` has no "
+                f"{colour_by} information for this event pair. Pass "
+                f"`colour_by=None`, or check `run_col_name`/`pathway_col_name`."
+            )
+        groups = list(df.groupby(group_col, dropna=True))
+
+    fig = go.Figure()
+
+    for group_value, group_df in groups:
+        fig.add_trace(
+            go.Scatter(
+                x=group_df["arrival_time"],
+                y=group_df["duration"],
+                mode="markers",
+                marker=dict(size=marker_size),
+                name=str(group_value) if group_value is not None else axis_label,
+            )
+        )
+
+    if rolling_window is not None or rolling_time is not None:
+        if rolling_window is not None:
+            smoothed = _rolling_mean_by_count(df["duration"].to_numpy(), rolling_window)
+        else:
+            smoothed = _rolling_mean_by_time(
+                df["duration"].to_numpy(), df["arrival_time"].to_numpy(), rolling_time
+            )
+        fig.add_trace(
+            go.Scatter(
+                x=df["arrival_time"],
+                y=smoothed,
+                mode="lines",
+                line=dict(color="black", width=line_width),
+                name="rolling mean",
+            )
+        )
+
+    fig.update_xaxes(title_text=f"{arrival_event} time")
+    fig.update_yaxes(title_text=axis_label)
+    if title is not None:
+        fig.update_layout(title=title)
 
     return fig

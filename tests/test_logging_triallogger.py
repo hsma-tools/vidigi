@@ -1201,3 +1201,105 @@ def test_plot_replication_analysis_match_kwarg_reaches_event_durations():
 
     assert list(first_fig.data[1].y) == pytest.approx([4.0, 4.0])
     assert list(occurrence_fig.data[1].y) == pytest.approx([7.0, 7.0])
+
+
+# --------------------------------------------------------------------------- #
+# get_entity_metric_by_arrival / plot_metric_vs_arrival_time
+# --------------------------------------------------------------------------- #
+
+
+def test_get_entity_metric_by_arrival_is_passed_through(unequal_run_loggers):
+    trial = TrialLogger(unequal_run_loggers)
+
+    result = trial.get_entity_metric_by_arrival("arrival", "depart")
+
+    assert list(result.columns) == [
+        "entity_id",
+        "run_number",
+        "pathway",
+        "occurrence",
+        "first_time",
+        "second_time",
+        "duration",
+        "arrival_time",
+    ]
+    assert list(result["duration"]) == pytest.approx([4] * 2 + [5] * 4 + [9] * 2)
+
+
+def test_get_entity_metric_by_arrival_arrival_event_is_passed_through():
+    """`arrival_event="assessment"` must reach `entity_metric_by_arrival` -
+    `rework_loop_logger`'s own event set has no 'arrival' event at all, so
+    the default would raise if this kwarg were silently dropped."""
+    logger = EventLogger(run_number=1)
+    logger.log_custom_event(entity_id=1, event_type="milestone", event="assessment", time=1.0)
+    logger.log_custom_event(entity_id=1, event_type="milestone", event="treated", time=5.0)
+    trial = TrialLogger([logger])
+
+    result = trial.get_entity_metric_by_arrival(
+        "assessment", "treated", arrival_event="assessment"
+    )
+
+    assert result["arrival_time"].iloc[0] == pytest.approx(1.0)
+
+
+def test_plot_metric_vs_arrival_time_is_passed_through(unequal_run_loggers):
+    trial = TrialLogger(unequal_run_loggers)
+
+    fig = trial.plot_metric_vs_arrival_time("arrival", "depart")
+
+    assert isinstance(fig, go.Figure)
+    # Every entity arrives at t=0.0, so the secondary sort key (entity_id)
+    # decides order: entity 1's three runs (4, 5, 9), then entity 2's (4, 5,
+    # 9), then run 2's extra entities 3 and 4 (5, 5).
+    assert list(fig.data[0].y) == pytest.approx([4, 5, 9, 4, 5, 9, 5, 5])
+
+
+def test_plot_metric_vs_arrival_time_colour_by_is_passed_through(unequal_run_loggers):
+    trial = TrialLogger(unequal_run_loggers)
+
+    fig = trial.plot_metric_vs_arrival_time("arrival", "depart", colour_by="run")
+
+    by_name = {trace.name: sorted(trace.y) for trace in fig.data}
+    assert by_name == {"1": [4.0, 4.0], "2": [5.0, 5.0, 5.0, 5.0], "3": [9.0, 9.0]}
+
+
+def test_plot_metric_vs_arrival_time_rolling_window_is_passed_through():
+    logger = EventLogger(run_number=1)
+    for i, (arrival, duration) in enumerate([(0.0, 10.0), (2.0, 20.0), (4.0, 30.0)], start=1):
+        logger.log_arrival(entity_id=i, time=arrival)
+        logger.log_departure(entity_id=i, time=arrival + duration)
+    trial = TrialLogger([logger])
+
+    no_trend = trial.plot_metric_vs_arrival_time("arrival", "depart")
+    with_trend = trial.plot_metric_vs_arrival_time("arrival", "depart", rolling_window=1)
+
+    assert "rolling mean" not in [t.name for t in no_trend.data]
+    trend = [t for t in with_trend.data if t.name == "rolling mean"][0]
+    assert list(trend.y) == pytest.approx([15.0, 20.0, 25.0])
+
+
+def test_plot_metric_vs_arrival_time_rolling_time_is_passed_through():
+    logger = EventLogger(run_number=1)
+    for i, (arrival, duration) in enumerate([(0.0, 10.0), (2.0, 20.0), (4.0, 30.0)], start=1):
+        logger.log_arrival(entity_id=i, time=arrival)
+        logger.log_departure(entity_id=i, time=arrival + duration)
+    trial = TrialLogger([logger])
+
+    fig = trial.plot_metric_vs_arrival_time("arrival", "depart", rolling_time=2.5)
+
+    trend = [t for t in fig.data if t.name == "rolling mean"][0]
+    assert list(trend.y) == pytest.approx([15.0, 20.0, 25.0])
+
+
+def test_plot_metric_vs_arrival_time_warm_up_is_passed_through():
+    logger = EventLogger(run_number=1)
+    for i, (arrival, duration) in enumerate([(0.0, 10.0), (10.0, 20.0)], start=1):
+        logger.log_arrival(entity_id=i, time=arrival)
+        logger.log_departure(entity_id=i, time=arrival + duration)
+    trial = TrialLogger([logger])
+
+    unfiltered = trial.plot_metric_vs_arrival_time("arrival", "depart")
+    filtered = trial.plot_metric_vs_arrival_time("arrival", "depart", warm_up=5)
+
+    assert list(unfiltered.data[0].y) == pytest.approx([10.0, 20.0])
+    assert list(filtered.data[0].y) == pytest.approx([20.0])

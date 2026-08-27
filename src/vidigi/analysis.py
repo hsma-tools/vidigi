@@ -364,6 +364,176 @@ def event_durations(
     ].reset_index(drop=True)
 
 
+def _first_event_time(
+    event_log: pd.DataFrame,
+    event_name: str,
+    *,
+    entity_col_name: str = "entity_id",
+    event_col_name: str = "event",
+    time_col_name: str = "time",
+    run_col_name: Optional[str] = "auto",
+) -> pd.DataFrame:
+    """Each entity's earliest occurrence of `event_name`, one row per (run, entity).
+
+    Used by `entity_metric_by_arrival` to look up arrival time independently of
+    whatever `match` mode governs the metric's own event pairing - an entity
+    arrives once, so there is no first/last/occurrence choice to make here.
+    """
+    run_col = _resolve_run_column(event_log, run_col_name)
+    group_keys = ([run_col] if run_col else []) + [entity_col_name]
+
+    subset = (
+        event_log[event_log[event_col_name] == event_name]
+        .sort_values(group_keys + [time_col_name])
+        .groupby(group_keys, dropna=False)
+        .head(1)
+        .copy()
+    )
+
+    rename_map = {entity_col_name: "entity_id", time_col_name: "arrival_time"}
+    if run_col:
+        rename_map[run_col] = "run_number"
+    subset = subset.rename(columns=rename_map)
+
+    if run_col:
+        result = subset[["run_number", "entity_id", "arrival_time"]]
+    else:
+        result = subset[["entity_id", "arrival_time"]].copy()
+        result["run_number"] = pd.NA
+
+    return result[["entity_id", "run_number", "arrival_time"]].reset_index(drop=True)
+
+
+def entity_metric_by_arrival(
+    event_log: pd.DataFrame,
+    first_event: str,
+    second_event: str,
+    *,
+    arrival_event: str = "arrival",
+    match: MatchMode = "first",
+    entity_col_name: str = "entity_id",
+    event_col_name: str = "event",
+    time_col_name: str = "time",
+    run_col_name: Optional[str] = "auto",
+    pathway_col_name: Optional[str] = "pathway",
+    keep_incomplete: bool = True,
+) -> pd.DataFrame:
+    """
+    Pair two events per entity, as `event_durations` does, and attach each
+    entity's arrival time alongside the resulting duration.
+
+    Answers a different question from `event_durations` alone: not "how long
+    did this interval take", but "does this duration vary depending on *when*
+    the entity arrived at the system" - a non-stationary arrival process or a
+    time-of-day/load effect, for example. Underlies `plot_metric_vs_arrival_time`.
+
+    Parameters
+    ----------
+    event_log : pandas.DataFrame
+        Long-format event log, e.g. the output of `EventLogger.to_dataframe()` or
+        `TrialLogger.to_dataframe()`.
+    first_event, second_event : str
+        The two events to pair - see `event_durations`.
+    arrival_event : str, default="arrival"
+        The event marking an entity's arrival at the system. Deliberately
+        independent of `first_event`/`second_event`: it can coincide with
+        `first_event` (e.g. measuring time from arrival itself), but does not
+        have to - the arrival time is looked up separately regardless of which
+        two events the duration itself is measured between.
+    match : {"first", "last", "occurrence"}, default="first"
+        How repeated occurrences of `first_event`/`second_event` are paired -
+        see `event_durations`. Does **not** affect the arrival-time lookup,
+        which always uses the entity's earliest occurrence of `arrival_event`
+        regardless of `match` - an entity ordinarily arrives once.
+    entity_col_name : str, default="entity_id"
+        Column identifying the entity.
+    event_col_name : str, default="event"
+        Column holding the event name.
+    time_col_name : str, default="time"
+        Column holding the event time.
+    run_col_name : str or None, default="auto"
+        Column identifying which simulation run each row belongs to - see
+        `event_durations`.
+    pathway_col_name : str or None, default="pathway"
+        Column holding the entity's pathway, carried through to the output -
+        see `event_durations`.
+    keep_incomplete : bool, default=True
+        If True (default), rows with no complete `first_event`/`second_event`
+        pairing are kept, with `NaN` duration - see `event_durations`.
+
+    Returns
+    -------
+    pandas.DataFrame
+        One row per matched `(first_event, second_event)` pair - the same
+        granularity as `event_durations` - with columns ``entity_id``,
+        ``run_number``, ``pathway``, ``occurrence``, ``first_time``,
+        ``second_time``, ``duration``, ``arrival_time``. An entity with a
+        complete duration pairing but no `arrival_event` recorded in that run
+        has ``arrival_time = NaN`` rather than being dropped.
+
+    Raises
+    ------
+    ValueError
+        Everything `event_durations` raises, plus if `arrival_event` is not
+        present in `event_col_name`.
+
+    Notes
+    -----
+    The merge joining the duration and arrival frames is keyed on
+    `(run_number, entity_id)` only, not `occurrence` - every occurrence-row for
+    one entity (e.g. a rework loop under `match="occurrence"`) shares the same
+    `arrival_time`, since there is one arrival per entity per run regardless of
+    how many times the metric's event pair repeats.
+
+    See Also
+    --------
+    event_durations : The duration pairing this builds on.
+    vidigi.plots.plot_metric_vs_arrival_time : The matching chart.
+
+    Examples
+    --------
+    >>> entity_metric_by_arrival(event_log, "treatment_wait_begins", "treatment_begins")
+    """
+    _check_events_present(event_log, event_col_name, arrival_event)
+
+    durations = event_durations(
+        event_log,
+        first_event,
+        second_event,
+        match=match,
+        entity_col_name=entity_col_name,
+        event_col_name=event_col_name,
+        time_col_name=time_col_name,
+        run_col_name=run_col_name,
+        pathway_col_name=pathway_col_name,
+        keep_incomplete=keep_incomplete,
+    )
+
+    arrivals = _first_event_time(
+        event_log,
+        arrival_event,
+        entity_col_name=entity_col_name,
+        event_col_name=event_col_name,
+        time_col_name=time_col_name,
+        run_col_name=run_col_name,
+    )
+
+    merged = durations.merge(arrivals, on=["entity_id", "run_number"], how="left")
+
+    return merged[
+        [
+            "entity_id",
+            "run_number",
+            "pathway",
+            "occurrence",
+            "first_time",
+            "second_time",
+            "duration",
+            "arrival_time",
+        ]
+    ].reset_index(drop=True)
+
+
 def _summarise_durations(
     series: pd.Series,
     what: str,
@@ -1889,3 +2059,48 @@ def welch_moving_average(
             smoothed[i] = ensemble_mean[i - window : i + window + 1].mean()
 
     return smoothed
+
+
+def _rolling_mean_by_count(values: np.ndarray, half_width: int) -> np.ndarray:
+    """Symmetric moving average over an ordered array, shrinking - not dropping -
+    at both edges.
+
+    Underlies `vidigi.plots.plot_metric_vs_arrival_time`'s `rolling_window=`.
+    Unlike `welch_moving_average`'s `"welch"` method, every input point keeps
+    an output value here, since every entity needs to stay visible on that
+    chart - `pandas.rolling(center=True)` clips asymmetrically at the edges
+    rather than matching Welch's narrower-symmetric-window behaviour, so this
+    is hand-rolled the same way, but vectorised via a cumulative sum rather
+    than looped, since callers here can have thousands of points rather than a
+    handful of snapshot indices.
+    """
+    values = np.asarray(values, dtype=float)
+    n = len(values)
+    cumsum = np.concatenate([[0.0], np.cumsum(values)])
+    idx = np.arange(n)
+    lo = np.maximum(0, idx - half_width)
+    hi = np.minimum(n, idx + half_width + 1)
+    return (cumsum[hi] - cumsum[lo]) / (hi - lo)
+
+
+def _rolling_mean_by_time(
+    values: np.ndarray, times: np.ndarray, half_span: float
+) -> np.ndarray:
+    """Symmetric moving average over an array ordered by `times`, averaging
+    every point within `half_span` on either side.
+
+    Underlies `vidigi.plots.plot_metric_vs_arrival_time`'s `rolling_time=` - a
+    genuine time-window rolling mean for irregularly-spaced data, unlike
+    `_rolling_mean_by_count`'s fixed-point-count window. `times` must already
+    be sorted ascending. Implemented via `searchsorted` against a cumulative
+    sum, the same idiom `resource_occupancy_over_time` uses for its snapshot
+    lookups - not `pandas.rolling`, which needs a `DatetimeIndex`/`on=`
+    datetime column for an offset-based window and has no direct support for a
+    plain numeric time-like axis.
+    """
+    values = np.asarray(values, dtype=float)
+    times = np.asarray(times, dtype=float)
+    cumsum = np.concatenate([[0.0], np.cumsum(values)])
+    lo = np.searchsorted(times, times - half_span, side="left")
+    hi = np.searchsorted(times, times + half_span, side="right")
+    return (cumsum[hi] - cumsum[lo]) / (hi - lo)
