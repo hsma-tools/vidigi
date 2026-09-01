@@ -243,6 +243,8 @@ def generate_animation(
     background_image_opacity: float = 0.5,
     overflow_text_color: str = "black",
     stage_label_text_colour: str = "black",
+    plot_bgcolor: Optional[str] = None,
+    paper_bgcolor: Optional[str] = None,
     backend: AnimationBackend = "express",
     run_col_name: Optional[str] = "auto",
 ) -> go.Figure:
@@ -405,6 +407,16 @@ def generate_animation(
     stage_label_text_colour : str, optional
         Color of the stage label text added next to each event position when
         display_stage_labels is True (default is black).
+    plot_bgcolor : str, optional
+        Background colour of the plotting area (inside the axes), passed
+        straight to ``fig.update_layout(plot_bgcolor=...)``. Accepts any CSS
+        colour string, e.g. "white" or "#f5f5f5". If None (default), Plotly's
+        template default is left untouched.
+    paper_bgcolor : str, optional
+        Background colour of the area surrounding the plotting area (behind the
+        title, play button and timeline), passed straight to
+        ``fig.update_layout(paper_bgcolor=...)``. Accepts any CSS colour string.
+        If None (default), Plotly's template default is left untouched.
     backend: str, optional
         EXPERIMENTAL. Whether to use the plotly express backend for the initial
         plot (default), or the experimental plotly go backend. The go approach
@@ -1285,6 +1297,13 @@ def generate_animation(
         sliders=[dict(currentvalue=dict(font=dict(size=35), prefix=""))],
     )
 
+    # Optional overrides of the figure background colours. Left untouched when
+    # None so the active Plotly template keeps control.
+    if plot_bgcolor is not None:
+        fig.update_layout(plot_bgcolor=plot_bgcolor)
+    if paper_bgcolor is not None:
+        fig.update_layout(paper_bgcolor=paper_bgcolor)
+
     # Keep auto-positioned content on the canvas. With no override_x_max /
     # override_y_max the axis range is derived purely from event anchor points,
     # so long stage labels (drawn past the rightmost anchor) and queue/resource
@@ -1380,6 +1399,8 @@ def animate_activity_log(
     background_image_opacity: float = 0.5,
     overflow_text_color: str = "black",
     stage_label_text_colour: str = "black",
+    plot_bgcolor: Optional[str] = None,
+    paper_bgcolor: Optional[str] = None,
     backend: AnimationBackend = "express",
     step_snapshot_limit_gauges: bool = False,
     gauge_segments: int = 10,
@@ -1574,6 +1595,16 @@ def animate_activity_log(
     stage_label_text_colour : str, optional
         Color of the stage label text added next to each event position when
         display_stage_labels is True (default is black).
+    plot_bgcolor : str, optional
+        Background colour of the plotting area (inside the axes), passed
+        straight to ``fig.update_layout(plot_bgcolor=...)``. Accepts any CSS
+        colour string, e.g. "white" or "#f5f5f5". If None (default), Plotly's
+        template default is left untouched.
+    paper_bgcolor : str, optional
+        Background colour of the area surrounding the plotting area (behind the
+        title, play button and timeline), passed straight to
+        ``fig.update_layout(paper_bgcolor=...)``. Accepts any CSS colour string.
+        If None (default), Plotly's template default is left untouched.
     backend: str, optional
         EXPERIMENTAL. Whether to use the plotly express backend for the
         initial plot (default), or the experimental plotly go backend. The go
@@ -1751,6 +1782,8 @@ def animate_activity_log(
         background_image_opacity=background_image_opacity,
         overflow_text_color=overflow_text_color,
         stage_label_text_colour=stage_label_text_colour,
+        plot_bgcolor=plot_bgcolor,
+        paper_bgcolor=paper_bgcolor,
         backend=backend,
         hover_text_entity=hover_text_entity,
         custom_hover_data=custom_hover_data,

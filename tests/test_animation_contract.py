@@ -688,6 +688,52 @@ def test_background_image_added_to_layout(
 
 
 # --------------------------------------------------------------------------- #
+# Background colours
+# --------------------------------------------------------------------------- #
+
+
+def test_bgcolors_left_untouched_by_default(positioned, basic_event_position_df):
+    """With no override the active Plotly template keeps control of the colours."""
+    fig = generate_animation(positioned, basic_event_position_df)
+
+    assert fig.layout.plot_bgcolor is None
+    assert fig.layout.paper_bgcolor is None
+
+
+def test_plot_bgcolor_reaches_layout(positioned, basic_event_position_df):
+    fig = generate_animation(
+        positioned, basic_event_position_df, plot_bgcolor="white"
+    )
+
+    assert fig.layout.plot_bgcolor == "white"
+    assert fig.layout.paper_bgcolor is None
+
+
+def test_paper_bgcolor_reaches_layout(positioned, basic_event_position_df):
+    fig = generate_animation(
+        positioned, basic_event_position_df, paper_bgcolor="#f5f5f5"
+    )
+
+    assert fig.layout.paper_bgcolor == "#f5f5f5"
+    assert fig.layout.plot_bgcolor is None
+
+
+def test_animate_activity_log_forwards_bgcolors(
+    simple_queue_log, basic_event_position_df
+):
+    fig = animate_activity_log(
+        simple_queue_log,
+        basic_event_position_df,
+        limit_duration=50,
+        plot_bgcolor="white",
+        paper_bgcolor="rgba(0,0,0,0)",
+    )
+
+    assert fig.layout.plot_bgcolor == "white"
+    assert fig.layout.paper_bgcolor == "rgba(0,0,0,0)"
+
+
+# --------------------------------------------------------------------------- #
 # animate_activity_log end to end
 # --------------------------------------------------------------------------- #
 
