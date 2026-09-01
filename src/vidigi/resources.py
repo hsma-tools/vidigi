@@ -309,6 +309,36 @@ def _log_resource_use_end_now(store, item, entity_id, event, pathway, extra_fiel
     store.logger.log_resource_use_end(entity_id=entity_id, **kwargs)
 
 
+def _reject_invalid_returned_item(item, method_name):
+    """Raise `TypeError` if `item` is a SimPy event or `None`, not a resource.
+
+    Both stores are generic pools with no constraint that contents be
+    `VidigiResource`/`simpy.Resource`, so anything else is let through. But a
+    SimPy event - typically the get/request event passed back instead of the
+    item it yielded - or `None` is never a valid pool member: putting one back
+    leaves an unfulfilled request sitting in the pool to be handed to a later
+    entity, or pushes an event object into `vidigi.prep`/the animation layer,
+    and the failure then surfaces far from the mistake as an unrelated error.
+    Fail loudly here instead. Easy to hit in a reneging or conditional-request
+    branch.
+    """
+    if item is None:
+        raise TypeError(
+            f"{method_name} was given None, not a resource. If this is a "
+            "reneging / conditional-request branch, make sure you only return "
+            "an item the store actually handed you."
+        )
+    if isinstance(item, simpy.Event):
+        raise TypeError(
+            f"{method_name} was given a SimPy event ({type(item).__name__}), "
+            "not a resource. This usually means the get/request event was passed "
+            "back instead of the item it yielded - return the value the event "
+            "produced (e.g. `item = yield store.get_direct(...)`), not the event "
+            "object. Passing an unfulfilled request into the pool corrupts it "
+            "and surfaces as an unrelated error later."
+        )
+
+
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\#
 # VidigiStore and Associated Methods
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\#
@@ -527,7 +557,13 @@ class VidigiStore:
                 separate call from the paired `get_direct()`, its fields are independent of
                 the start event's and are evaluated now - the place to record a value only
                 known once the resource is released.
+
+        Raises:
+            TypeError: If `item` is a SimPy event object or `None` rather than a
+                resource - almost always a reneging / conditional-request branch
+                passing the get event back instead of the item it yielded.
         """
+        _reject_invalid_returned_item(item, "VidigiStore.put()")
         if _should_auto_log(self, entity_id, "put", auto_log=auto_log, stacklevel=3):
             _log_resource_use_end_now(self, item, entity_id, event, pathway, extra_fields)
         return self.store.put(item)
@@ -594,7 +630,8 @@ class VidigiStore:
 
         Note that if the request has already been fulfilled, the item has
         already left the store. Cancelling does not put it back, so the caller
-        should return it with `put()` in that case.
+        should return it with `put()` in that case - pass the item the get event
+        yielded, not the get event itself, or `put()` raises `TypeError`.
 
         Parameters
         ----------
@@ -1011,7 +1048,13 @@ class VidigiPriorityStore:
 
         Returns:
             A put event that can be yielded
+
+        Raises:
+            TypeError: If `item` is a SimPy event object or `None` rather than a
+                resource - almost always a reneging / conditional-request branch
+                passing the get event back instead of the item it yielded.
         """
+        _reject_invalid_returned_item(item, "VidigiPriorityStore.put()")
         if _should_auto_log(self, entity_id, "put", auto_log=auto_log, stacklevel=3):
             _log_resource_use_end_now(self, item, entity_id, event, pathway, extra_fields)
         return self._put_item(item)
@@ -1104,7 +1147,13 @@ class VidigiPriorityStore:
                 them to `EventLogger.log_resource_use_end` directly. Independent of the
                 paired `get_direct()` call's fields and evaluated now - the place to record
                 a value only known once the resource is released.
+
+        Raises:
+            TypeError: If `item` is a SimPy event object or `None` rather than a
+                resource - almost always a reneging / conditional-request branch
+                passing the get event back instead of the item it yielded.
         """
+        _reject_invalid_returned_item(item, "VidigiPriorityStore.return_item()")
         if _should_auto_log(self, entity_id, "return_item", auto_log=auto_log, stacklevel=3):
             _log_resource_use_end_now(self, item, entity_id, event, pathway, extra_fields)
         self._return_item_raw(item)
@@ -1190,6 +1239,11 @@ class VidigiPriorityStore:
     def cancel_get(self, get_event):
         """
         Cancels a pending get request by removing it from the queue.
+
+        Useful for modelling reneging. If the request was already fulfilled, the
+        item has left the store; return it with `return_item()` / `put()`, passing
+        the item the get event yielded (not the get event itself, which raises
+        `TypeError`).
         """
         try:
             # The get_event is the SimPy event object that was created
