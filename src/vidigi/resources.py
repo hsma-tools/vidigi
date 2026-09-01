@@ -71,17 +71,74 @@ class VidigiResource:
     """
     A simple resource class with an ID attribute for use in VidigiStore and VidigiPriorityStore.
 
-    This represents a resource that can be stored and retrieved from a store,
-    with an identifier for tracking purposes.
+    This represents a resource that can be stored and retrieved from a store, with an
+    identifier for tracking which specific unit of a pool an entity used.
 
-    Accepts additional attributes as kwargs.
+    Parameters
+    ----------
+    id_attribute : any, optional
+        Identifier for this resource, usually a small per-pool integer. Written to the
+        ``resource_id`` column when you log resource use. ``populate()`` /
+        ``populate_store()`` set it to ``1..capacity``.
+    **kwargs
+        Any further keyword arguments are set as attributes on the instance. Pools built
+        with ``label=`` additionally carry ``label`` and ``unique_id_attribute``
+        (``f"{label}_{id_attribute}"``), the latter unique across pools.
+
+    Notes
+    -----
+    ``id`` is a read-write alias of ``id_attribute``, and ``unique_id`` of
+    ``unique_id_attribute`` - reading or setting either name of a pair affects the same
+    value, at construction (``VidigiResource(id=3)``) or after. The ``_attribute`` names
+    keep working unchanged. ``unique_id`` is only present when the pool was built with
+    ``label=``, exactly like ``unique_id_attribute``. Passing both names of a pair with
+    different values raises ``ValueError``.
     """
 
     def __init__(self, id_attribute=None, **kwargs):
+        if "id" in kwargs and id_attribute is not None and kwargs["id"] != id_attribute:
+            raise ValueError(
+                f"VidigiResource got both id={kwargs['id']!r} and "
+                f"id_attribute={id_attribute!r} - pass one or the other, they are aliases "
+                "of the same value."
+            )
+        if (
+            "unique_id" in kwargs
+            and "unique_id_attribute" in kwargs
+            and kwargs["unique_id"] != kwargs["unique_id_attribute"]
+        ):
+            raise ValueError(
+                f"VidigiResource got both unique_id={kwargs['unique_id']!r} and "
+                f"unique_id_attribute={kwargs['unique_id_attribute']!r} - pass one or the "
+                "other, they are aliases of the same value."
+            )
+
         self.id_attribute = id_attribute
 
         for key, value in kwargs.items():
             setattr(self, key, value)
+
+    @property
+    def id(self):
+        """Alias of ``id_attribute`` - see the class docstring."""
+        return self.id_attribute
+
+    @id.setter
+    def id(self, value):
+        self.id_attribute = value
+
+    @property
+    def unique_id(self):
+        """Alias of ``unique_id_attribute`` - see the class docstring.
+
+        Only present when the pool was built with ``label=``; otherwise raises
+        ``AttributeError``, mirroring ``unique_id_attribute`` itself.
+        """
+        return self.unique_id_attribute
+
+    @unique_id.setter
+    def unique_id(self, value):
+        self.unique_id_attribute = value
 
     def __repr__(self):
         return f"VidigiResource(id={self.id_attribute})"

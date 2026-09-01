@@ -313,7 +313,7 @@ class EventLogger:
         **extra_fields
             Any further keyword arguments are recorded on the event as extra
             columns in the log, e.g. `acuity=3`, `arrival_mode="ambulance"`,
-            `unique_resource_id=resource.unique_id_attribute`. Useful for
+            `unique_resource_id=resource.unique_id`. Useful for
             attaching entity-level attributes for later analysis. When resource
             use is auto-logged via `VidigiStore(logger=...)`, the same passthrough
             is available on `VidigiStore.request()`/`get_direct()`.
@@ -362,7 +362,7 @@ class EventLogger:
         **extra_fields
             Any further keyword arguments are recorded on the event as extra
             columns in the log, e.g. an `outcome=...` known only once the
-            resource is released, or `unique_resource_id=resource.unique_id_attribute`.
+            resource is released, or `unique_resource_id=resource.unique_id`.
             When resource use is auto-logged via `VidigiStore(logger=...)`, the
             same passthrough is available on `VidigiStore.put()`/`return_item()`.
 
@@ -1012,7 +1012,7 @@ class TrialLogger:
         `"resource_id"`.
 
         This is what lets a model built the recommended way - `VidigiStore(...,
-        label=...)`, logging `unique_resource_id=resource.unique_id_attribute`
+        label=...)`, logging `unique_resource_id=resource.unique_id`
         alongside `resource_id` - get a collision-proof `by="resource"`
         breakdown from `TrialLogger` with no extra argument, while a model with
         no `unique_resource_id` column behaves exactly as before. Any explicit

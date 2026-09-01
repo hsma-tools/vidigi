@@ -174,7 +174,7 @@ Both functions take the same set of appearance arguments - background colour and
 
 ### Step 5. Replace your resources
 
-SimPy resources need to be replaced with SimPy stores containing a custom `.id_attribute`, so that vidigi can track which specific resource each entity uses. This can have wider benefits for monitoring individual resource utilisation within your model as well.
+SimPy resources need to be replaced with SimPy stores containing resources that carry a custom `.id` (also available under its older name `.id_attribute`), so that vidigi can track which specific resource each entity uses. This can have wider benefits for monitoring individual resource utilisation within your model as well.
 
 Vidigi provides two helper classes to support with this: `VidigiStore` and `VidigiPriorityStore`.
 
@@ -192,7 +192,7 @@ from vidigi.resources import VidigiStore
 nurses = VidigiStore(env, num_resources=5, label="nurse")
 ```
 
-Always pass a `label` that is unique to this pool of resources. Each `VidigiStore` numbers its own resources `1, 2, 3, ...`, so if your model has more than one pool (for example `nurses` and `treatment_cubicles`), two different physical resources can end up sharing the same `resource_id`. `label` gives each resource a `unique_id_attribute` (e.g. `"nurse_1"`) that stays distinct across pools, which matters if you want to analyse individual resource utilisation later with `vidigi.analysis.resource_utilisation(by="resource")`. Omitting `label` still works today but emits a `DeprecationWarning` - it is expected to become mandatory in a future major version.
+Always pass a `label` that is unique to this pool of resources. Each `VidigiStore` numbers its own resources `1, 2, 3, ...`, so if your model has more than one pool (for example `nurses` and `treatment_cubicles`), two different physical resources can end up sharing the same `resource_id`. `label` gives each resource a `.unique_id` (e.g. `"nurse_1"`; also available as `.unique_id_attribute`) that stays distinct across pools, which matters if you want to analyse individual resource utilisation later with `vidigi.analysis.resource_utilisation(by="resource")`. Omitting `label` still works today but emits a `DeprecationWarning` - it is expected to become mandatory in a future major version.
 
 This becomes slightly more complex with conditional requesting (for example, where a resource request is made but if it cannot be fulfilled in time, the requester will renege). This is covered to some extent in some of the provided examples, but further demonstrations of this are planned.
 

@@ -55,6 +55,11 @@
     - The typical cause is a reneging or conditional-request branch passing the get/request event back into the pool instead of the item it yielded; the unfulfilled request then sits in the pool and is later handed to another entity, surfacing as an unrelated error far from the mistake
     - Only these two unambiguous cases are rejected - the stores stay generic pools with no constraint that contents be `VidigiResource`/`simpy.Resource` (see the `logger=` note above)
     - The `request()`/`.get()` context manager is unaffected: it only ever returns the exact item it was granted
+- `VidigiResource` gains `id` and `unique_id` as read-write aliases of `id_attribute` and `unique_id_attribute`
+    - `resource.id` reads and writes the same value as `resource.id_attribute`; either name can be used at construction (`VidigiResource(id=3)`) or after. `id_attribute` / `unique_id_attribute` keep working exactly as before - no deprecation, and every example and doc that reads `.id_attribute` is unaffected
+    - `unique_id` is present only when the pool was built with `label=`, exactly like `unique_id_attribute` (accessing it otherwise raises `AttributeError`, and `hasattr` is `False`)
+    - Passing both names of a pair with different values (`VidigiResource(id_attribute=1, id=2)`) raises `ValueError`
+    - The tutorials and the `EventLogger`-based example notebooks now teach `.id` / `.unique_id`; `__repr__` already printed `VidigiResource(id=...)`, which the constructor now genuinely accepts. The pre-1.0 manual-`event_log.append` examples are left on `.id_attribute`
 - New `plot_bgcolor` and `paper_bgcolor` arguments on `generate_animation` and `animate_activity_log`, forwarded verbatim to `fig.update_layout()`
     - `plot_bgcolor` sets the colour inside the axes, `paper_bgcolor` the surround behind the title, play button and timeline; both accept any CSS colour string (`"white"`, `"#f5f5f5"`, `"rgba(0,0,0,0)"`)
     - Saves reaching for `fig.update_layout(plot_bgcolor=...)` on the returned figure, which was already possible and still works

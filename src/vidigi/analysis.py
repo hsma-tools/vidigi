@@ -1336,7 +1336,7 @@ def _check_no_overlapping_resource_bouts(
         f"two vidigi.resources.VidigiStore instances both starting from 1), so "
         f"resource_id does not identify one physical unit as by=\"resource\" "
         f"assumes. Pass a distinct label= to each pool (see "
-        f"vidigi.resources.VidigiStore) and use its unique_id_attribute instead.",
+        f"vidigi.resources.VidigiStore) and use its unique_id instead.",
         UserWarning,
         stacklevel=2,
     )
@@ -1558,7 +1558,7 @@ def resource_utilisation(
           unit, and `utilisation` can read above `1` with no error, only the
           generic over-capacity warning below. Give each pool a distinct
           `label=` (see `vidigi.resources.VidigiStore`) and use its
-          `unique_id_attribute` if you plan to use `by="resource"` - this mode
+          `unique_id` if you plan to use `by="resource"` - this mode
           also warns directly whenever it finds two bouts for the same
           `resource_id` genuinely overlapping in time, which is impossible for
           one physical unit and a sharper signal of this exact collision than
