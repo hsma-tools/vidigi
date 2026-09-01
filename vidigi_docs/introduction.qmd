@@ -164,6 +164,8 @@ There are two main ways to create the animation:
 * Use `reshape_for_animations()`, `generate_animation_df()` and `generate_animation()` separately, passing the output of each to the next step. This allows more customisation (for example different icons for different patient classes).
     See [this priority queueing example](../examples/example_3_simplest_case_priority_resource/ex_3_simplest_case_priority_resource.ipynb) for a demonstration of this.
 
+Both functions take the same set of appearance arguments - background colour and image, icon sizes, stage labels, spacing, playback speed and more. See [Customising the animation](/vidigi_docs/customising_animations.qmd) for the full list grouped by what each one changes.
+
 
 
 
