@@ -153,7 +153,7 @@ class Model:
             self.logger.log_resource_use_start(
                 entity_id=patient.id,
                 event="stay_begins",
-                resource_id=bed_resource.id_attribute
+                resource_id=bed_resource.id
                 )
 
             # sample treatment duration
@@ -162,7 +162,7 @@ class Model:
             self.logger.log_resource_use_end(
                 entity_id=patient.id,
                 event="stay_complete",
-                resource_id=bed_resource.id_attribute
+                resource_id=bed_resource.id
                 )
 
         self.logger.log_departure(

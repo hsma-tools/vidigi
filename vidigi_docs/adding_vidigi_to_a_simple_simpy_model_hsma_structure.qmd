@@ -663,7 +663,7 @@ def attend_clinic(self, patient):
         self.logger.log_resource_use_start(  #<<
                 entity_id=patient.identifier,  #<<
                 event="treatment_begins",  #<<
-                resource_id=treatment_cubicle.id_attribute  #<<
+                resource_id=treatment_cubicle.id  #<<
                 )  #<<
 
         # sample treatment duration
@@ -677,7 +677,7 @@ def attend_clinic(self, patient):
         self.logger.log_resource_use_end(  #<<
             entity_id=patient.identifier,  #<<
             event="treatment_complete",  #<<
-            resource_id=treatment_cubicle.id_attribute  #<<
+            resource_id=treatment_cubicle.id  #<<
             )  #<<
 
     # total time in system
@@ -1146,7 +1146,7 @@ class Model:
             self.logger.log_resource_use_start(  #<<
                     entity_id=patient.identifier,  #<<
                     event="treatment_begins",  #<<
-                    resource_id=treatment_cubicle.id_attribute  #<<
+                    resource_id=treatment_cubicle.id  #<<
                     )  #<<
 
             # sample treatment duration
@@ -1159,7 +1159,7 @@ class Model:
             self.logger.log_resource_use_end(  #<<
                 entity_id=patient.identifier,  #<<
                 event="treatment_complete",  #<<
-                resource_id=treatment_cubicle.id_attribute  #<<
+                resource_id=treatment_cubicle.id  #<<
                 )  #<<
 
         # total time in system

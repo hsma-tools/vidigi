@@ -147,14 +147,14 @@ def patient_process(env, patient_id, servers, logger):
         server = yield request  #<<
 
         # Log service start
-        logger.log_resource_use_start(entity_id=patient_id, event="service_begins", resource_id=server.id_attribute) #<<
+        logger.log_resource_use_start(entity_id=patient_id, event="service_begins", resource_id=server.id) #<<
 
         # Service time
         service_duration = random.expovariate(1.0/SERVICE_TIME)
         yield env.timeout(service_duration)
 
         # Log service start
-        logger.log_resource_use_end(entity_id=patient_id, event="service_complete", resource_id=server.id_attribute) #<<
+        logger.log_resource_use_end(entity_id=patient_id, event="service_complete", resource_id=server.id) #<<
 
     # Log departure #<<
     logger.log_departure(entity_id=patient_id)  #<<
@@ -323,16 +323,16 @@ servers.put(item, entity_id=patient_id, event="service_complete",
 with servers.request(auto_log=False) as request:   # keep auto-return, log manually
     server = yield request
     logger.log_resource_use_start(
-        entity_id=patient_id, resource_id=server.id_attribute,
-        unique_resource_id=server.unique_id_attribute,
+        entity_id=patient_id, resource_id=server.id,
+        unique_resource_id=server.unique_id,
         event="service_begins", triage_priority=priority_score)
 
     yield env.timeout(service_duration)
 
     outcome = "admitted" if ... else "discharged"   # only known now
     logger.log_resource_use_end(
-        entity_id=patient_id, resource_id=server.id_attribute,
-        unique_resource_id=server.unique_id_attribute,
+        entity_id=patient_id, resource_id=server.id,
+        unique_resource_id=server.unique_id,
         event="service_complete", outcome=outcome, tests_ordered=n_tests)
 ```
 
