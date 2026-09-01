@@ -261,8 +261,19 @@ def generate_animation(
     event_position_df : pd.DataFrame
         DataFrame specifying the positions of different events.
     scenario : object, optional
-        Object containing attributes for resource counts at different steps
-        (default is None).
+        Object whose attributes give the number of each resource available at a
+        step, e.g. ``scenario.n_nurses`` (default is None). Used for two
+        independent things:
+
+        - Drawing the resource-availability icons at each stage. This also needs
+          a ``resource`` column on ``event_position_df`` naming the attribute to
+          read for that step (e.g. ``resource="n_nurses"``).
+        - Adding the resource identifier (``resource_col_name``, "resource_id" by
+          default) to the entity hover text. This happens only when the event
+          log actually contains that column, i.e. the model logged resource use
+          via ``log_resource_use_start`` / ``log_resource_use_end``. A scenario
+          passed for a model with no resource-use logging is harmless - the
+          resource entry is simply left out of the hover text.
     time_col_name : str, optional
         Name of the column in `event_log` that contains the timestamp of each
         event (default is "time"). Timestamps should represent the number of
@@ -314,6 +325,9 @@ def generate_animation(
         column specified customdata[1] is the second etc. So e.g. if you pass
         in ["widgets_created_cumulative"] as your custom_hover_data, your
         hover_text_entity may be "Widgets created so far: %{customdata[0]}".
+        When ``scenario`` is set and the event log has a ``resource_col_name``
+        column, that column is appended to the list automatically, landing at
+        ``customdata[len(custom_hover_data)]``.
     resource_icon_size : int, optional
         Size of resource icons in the animation (default is 24).
     override_x_max : int, optional
@@ -1366,8 +1380,20 @@ def animate_activity_log(
     event_position_df : pd.DataFrame
         DataFrame specifying the positions of different events, with columns
         'event', 'x', and 'y'.
-    scenario : object
-        An object containing attributes for resource counts at different steps.
+    scenario : object, optional
+        Object whose attributes give the number of each resource available at a
+        step, e.g. ``scenario.n_nurses`` (default is None). Used for two
+        independent things:
+
+        - Drawing the resource-availability icons at each stage. This also needs
+          a ``resource`` column on ``event_position_df`` naming the attribute to
+          read for that step (e.g. ``resource="n_nurses"``).
+        - Adding the resource identifier (``resource_col_name``, "resource_id" by
+          default) to the entity hover text. This happens only when the event
+          log actually contains that column, i.e. the model logged resource use
+          via ``log_resource_use_start`` / ``log_resource_use_end``. A scenario
+          passed for a model with no resource-use logging is harmless - the
+          resource entry is simply left out of the hover text.
     time_col_name : str, default="time"
         Name of the column in `event_log` that contains the timestamp of each
         event. Timestamps should represent the number of time units since the
@@ -1442,6 +1468,9 @@ def animate_activity_log(
         column specified, customdata[1] is the second, etc. So e.g. if you pass
         in ["widgets_created_cumulative"] as your custom_hover_data, your
         hover_text_entity may be "Widgets created so far: %{customdata[0]}".
+        When ``scenario`` is set and the event log has a ``resource_col_name``
+        column, that column is appended to the list automatically, landing at
+        ``customdata[len(custom_hover_data)]``.
     gap_between_entities : int, optional
         Horizontal spacing between entities in pixels (default is 10).
     gap_between_queue_rows : int, optional
