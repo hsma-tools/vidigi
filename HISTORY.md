@@ -211,6 +211,10 @@
     - The underlying plotly express call does not accept the `hoverinfo` argument that was being passed, so this option raised `TypeError` rather than doing anything
 - Passing a `scenario` for a model where no event position declares a resource no longer fails
     - This produced `KeyError: 'x_final'`, which read like a problem with the caller's data rather than a missing guard
+- A minimal `animate_activity_log(event_log=..., event_position_df=...)` call no longer clips its auto-generated stage labels or edge-of-layout icons
+    - With no `override_x_max` / `override_y_max` the axis range was derived purely from event anchor points, leaving only `0.25 * x.max()` of space to the right of the last anchor — not enough for a label like `"Being Seen By Nurse"`, which was chopped at the axis. Queue and resource icons drawn left of a low-x anchor (including the `wrap_queues_at` offset) were clipped at `x = 0` the same way
+    - The figure margin now expands to fit the longest label and the furthest icon, and `cliponaxis` is disabled on the content traces so they render into it. The data ranges are untouched, so node spacing, `override_x_max` alignment and background images are unchanged; margins only ever grow, so an animation whose labels already fit is identical
+    - `override_x_max` / `override_y_max` remain the escape hatch for a layout the auto-sizing gets wrong
 - `custom_hover_data` is no longer modified in place
     - The list passed in was appended to directly, so it grew by an entry on every call and eventually referenced the same column twice
     - The resource column is now only offered when the event log actually contains one
@@ -258,13 +262,14 @@
 
 ### Testing
 
-Test coverage grew from 31 to 770 tests, concentrated on the parts of the pipeline where a
+Test coverage grew from 31 to 776 tests, concentrated on the parts of the pipeline where a
 mistake changes what the animation *shows*, or what the reported numbers *say*, rather
 than raising an error.
 
 - `reshape_for_animations` is now asserted by value rather than by shape: which entities are present at each snapshot, which event each is shown at, queue ordering, exit step timing, and the `step_snapshot_max` cap
 - `generate_animation_df` gained its first dedicated coverage: entity and resource positions, queue wrapping, icon assignment, and the overflow placeholder
 - `animation.py` gained its first dedicated coverage: frame count and ordering, animation timings, hover configuration, resource markers, every time display format, background image embedding, and the error paths
+- The auto-layout margin fix is covered by value: `cliponaxis=False` reaching every content trace and every frame trace, the right margin growing only when a stage label overflows the last anchor (and not at all when labels are hidden), the left margin engaging only when queue icons cross `x = 0`, and a plain animation leaving both margins and the data range untouched — the margin computations each mutation-proven
 - `EventLogger` gained its first dedicated coverage: the event shape each helper produces, time taken from both simpy-style and salabim-style environments, event validation and its warnings, timestamp parsing, retrieval, and export
 - `TrialLogger` gained its first dedicated coverage: construction, that statistics stay current as runs are added, and every duration statistic checked against hand-computed values including the served/unserved accounting
 - The single-replication guard is covered across all four animation entry points, including column-name detection, both independent checks, and — most importantly — that a valid single-run log carrying a run column is still accepted

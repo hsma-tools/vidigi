@@ -94,6 +94,117 @@ def process_background_image_path(source):
     return f"data:{mime};base64,{b64}"
 
 
+# Baseline figure margins (px). Auto-layout only ever grows a side past its
+# floor - it never shrinks one - so a plain animation keeps Plotly's defaults.
+_MARGIN_FLOORS = {"l": 80, "r": 80, "t": 100, "b": 80}
+# Ceilings, so a pathological label or a tiny responsive figure can't hand the
+# whole canvas over to the margin.
+_MARGIN_CAPS = {"l": 400, "r": 450, "t": 250, "b": 300}
+
+
+def _disable_axis_clipping(fig: go.Figure) -> None:
+    """Stop Plotly clipping scatter markers/text at the axis line.
+
+    Stage labels are drawn past the rightmost event anchor and queue/resource
+    icons are drawn left of their anchor, so with the default
+    ``cliponaxis=True`` any content outside the data range is chopped at the
+    plot edge. Turning it off lets that content render into the figure margin
+    (which :func:`_overflow_margin_updates` enlarges to fit it).
+    """
+    for trace in fig.data:
+        if trace.type == "scatter":
+            trace.cliponaxis = False
+    for frame in fig.frames or ():
+        for trace in frame.data:
+            if getattr(trace, "type", None) == "scatter":
+                try:
+                    trace.cliponaxis = False
+                except (ValueError, TypeError):
+                    # Frame data stored as a bare dict - the base trace it
+                    # merges onto already carries cliponaxis=False.
+                    pass
+
+
+def _series_min(df: Optional[pd.DataFrame], col: str) -> Optional[float]:
+    """Smallest finite value in ``df[col]``, or ``None`` if unavailable."""
+    if df is None or col not in getattr(df, "columns", []) or not len(df):
+        return None
+    value = pd.to_numeric(df[col], errors="coerce").min()
+    return float(value) if pd.notna(value) else None
+
+
+def _overflow_margin_updates(
+    *,
+    event_position_df: pd.DataFrame,
+    entity_df: Optional[pd.DataFrame],
+    resource_df: Optional[pd.DataFrame],
+    x_max: float,
+    y_max: float,
+    text_size: int,
+    plotly_width: Optional[int],
+    plotly_height: Optional[int],
+    display_stage_labels: bool,
+) -> dict:
+    """Figure-margin overrides that keep auto-positioned content on-canvas.
+
+    The data ranges are deliberately left untouched - widening them would
+    rescale every diagram built without ``override_x_max`` / ``override_y_max``
+    and shift alignment against background images. Instead the margin grows so
+    ``cliponaxis=False`` content has somewhere to go. Returns only the sides
+    that need to exceed :data:`_MARGIN_FLOORS`; an empty dict means "leave the
+    margins alone".
+    """
+    need = dict(_MARGIN_FLOORS)
+
+    # Right: the longest stage label, rendered rightwards from the rightmost
+    # anchor. ~0.55 em per character for a proportional font, plus the 10-unit
+    # offset the label trace adds and a little breathing room.
+    if display_stage_labels and "label" in getattr(event_position_df, "columns", []):
+        longest = max(
+            (len(str(s)) for s in event_position_df["label"].to_list()),
+            default=0,
+        )
+        need["r"] = longest * 0.55 * text_size + 20
+
+    # Top: a label vertically centred on the topmost anchor overhangs upwards
+    # by about half its height.
+    if display_stage_labels:
+        need["t"] = max(need["t"], text_size * 1.5)
+
+    # Left / bottom: how far, in pixels, the furthest queue or resource icon
+    # sits outside [0, .]. Converted from data units via the axis span and a
+    # reference figure size (the real width is often unknown at build time).
+    ref_w = plotly_width or 700
+    ref_h = plotly_height or 900
+
+    x_candidates = [0.0]
+    for value in (_series_min(entity_df, "x_final"), _series_min(resource_df, "x_final")):
+        if value is not None:
+            x_candidates.append(value)
+    x_min_data = min(x_candidates)
+
+    y_candidates = [0.0]
+    entity_y_min = _series_min(entity_df, "y_final")
+    if entity_y_min is not None:
+        y_candidates.append(entity_y_min)
+    resource_y_min = _series_min(resource_df, "y_final")
+    if resource_y_min is not None:
+        # resource icons are drawn 10 units below their y_final
+        y_candidates.append(resource_y_min - 10)
+    y_min_data = min(y_candidates)
+
+    if x_max and x_min_data < 0:
+        need["l"] = (-x_min_data) / (x_max - x_min_data) * ref_w + 20
+    if y_max and y_min_data < 0:
+        need["b"] = (-y_min_data) / (y_max - y_min_data) * ref_h + 20
+
+    return {
+        side: int(min(value, _MARGIN_CAPS[side]))
+        for side, value in need.items()
+        if value > _MARGIN_FLOORS[side]
+    }
+
+
 @_enforce_int_params(["plotly_height"])
 def generate_animation(
     full_entity_df_plus_pos: pd.DataFrame,
@@ -206,7 +317,9 @@ def generate_animation(
     resource_icon_size : int, optional
         Size of resource icons in the animation (default is 24).
     override_x_max : int, optional
-        Override the maximum x-coordinate (default is None).
+        Override the maximum x-coordinate (default is None). The figure margin
+        already auto-expands to fit auto-generated stage labels, so this is only
+        needed to reframe a layout the auto-sizing gets wrong.
     override_y_max : int, optional
         Override the maximum y-coordinate (default is None).
     time_display_units : str, optional
@@ -986,6 +1099,7 @@ def generate_animation(
     # than consuming the helper's mapping, so this only guarantees the two agree on
     # *whether* a resource exists, not on every detail of *which* rows count.
     resource_attr_map = _resource_map_from_event_position_df(event_position_df)
+    events_with_resources = None
     if scenario is not None and resource_attr_map:
         events_with_resources = event_position_df[
             event_position_df["resource"].notnull()
@@ -1134,6 +1248,27 @@ def generate_animation(
         # Increase the size of the play button and animation timeline
         sliders=[dict(currentvalue=dict(font=dict(size=35), prefix=""))],
     )
+
+    # Keep auto-positioned content on the canvas. With no override_x_max /
+    # override_y_max the axis range is derived purely from event anchor points,
+    # so long stage labels (drawn past the rightmost anchor) and queue/resource
+    # icons (drawn left of a low-x anchor) would otherwise be clipped at the
+    # axis. Let that content spill into an enlarged margin rather than rescaling
+    # the diagram.
+    _disable_axis_clipping(fig)
+    margin_updates = _overflow_margin_updates(
+        event_position_df=event_position_df,
+        entity_df=full_entity_df_plus_pos_copy,
+        resource_df=events_with_resources,
+        x_max=x_max,
+        y_max=y_max,
+        text_size=text_size,
+        plotly_width=plotly_width,
+        plotly_height=plotly_height,
+        display_stage_labels=display_stage_labels,
+    )
+    if margin_updates:
+        fig.update_layout(margin=margin_updates)
 
     # You can get rid of the play button if desired
     # Was more useful in older versions of the function
@@ -1320,7 +1455,9 @@ def animate_activity_log(
     custom_resource_icon : str, optional
         Custom icon to use for resources (default is None).
     override_x_max : int, optional
-        Override the maximum x-coordinate of the plot (default is None).
+        Override the maximum x-coordinate of the plot (default is None). The
+        figure margin already auto-expands to fit auto-generated stage labels,
+        so this is only needed to reframe a layout the auto-sizing gets wrong.
     override_y_max : int, optional
         Override the maximum y-coordinate of the plot (default is None).
     start_date : str, optional

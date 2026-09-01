@@ -201,6 +201,128 @@ def test_custom_resource_icon_is_used(
 
 
 # --------------------------------------------------------------------------- #
+# Auto-layout: keeping labels and edge icons on the canvas
+# --------------------------------------------------------------------------- #
+#
+# With no override_x_max / override_y_max the axis range is derived purely from
+# event anchor points. Long stage labels (drawn past the rightmost anchor) and
+# queue/resource icons (drawn left of a low-x anchor) then fall outside the data
+# range. The fix is cliponaxis=False on every content trace plus a figure margin
+# that grows to fit the overflow - never a change to the data range itself.
+
+
+@pytest.fixture
+def positioned_low_x(basic_event_position_df):
+    """A prep frame whose queue icons sit at negative x.
+
+    Twelve entities queue simultaneously at an event anchored near x=0, so the
+    wrapped queue extends left past the axis.
+    """
+    specs = []
+    for entity_id in range(1, 13):
+        specs.append((entity_id, entity_id, "arrival_departure", "arrival"))
+        specs.append((entity_id, entity_id, "queue", "waiting"))
+        specs.append((200 + entity_id, entity_id, "arrival_departure", "depart"))
+    log = pd.DataFrame(
+        [
+            {"time": t, "entity_id": e, "event_type": et, "event": ev}
+            for t, e, et, ev in specs
+        ]
+    )
+    low_x = basic_event_position_df.copy()
+    low_x.loc[low_x["event"] == "waiting", "x"] = 40
+    reshaped = reshape_for_animations(log, every_x_time_units=10, limit_duration=60)
+    return generate_animation_df(reshaped, low_x), low_x
+
+
+def test_content_traces_are_not_clipped_at_the_axis(
+    positioned_with_resources, basic_event_position_df, scenario_with_resources
+):
+    """Every scatter trace - entities, stage labels, resource icons - and every
+    frame trace must carry cliponaxis=False, or content outside the data range
+    is chopped at the plot edge."""
+    fig = generate_animation(
+        positioned_with_resources,
+        basic_event_position_df,
+        scenario=scenario_with_resources,
+    )
+
+    assert fig.data
+    assert all(trace.cliponaxis is False for trace in fig.data)
+    assert all(
+        trace.cliponaxis is False
+        for frame in fig.frames
+        for trace in frame.data
+        if getattr(trace, "type", None) == "scatter"
+    )
+
+
+def test_disable_axis_clipping_handles_graph_object_frame_dicts():
+    """The 'go' backend stores frame data as bare dicts. The helper must not
+    trip over that, and the base trace it merges onto must be unclipped."""
+    from vidigi.animation import _disable_axis_clipping
+
+    fig = go.Figure(
+        data=[go.Scatter(x=[1], y=[1], mode="text", text=["x"])],
+        frames=[go.Frame(data=[{"x": [2], "y": [2], "text": ["y"]}], name="1")],
+    )
+
+    _disable_axis_clipping(fig)
+
+    assert fig.data[0].cliponaxis is False
+
+
+def test_right_margin_grows_with_the_longest_stage_label(
+    positioned, basic_event_position_df
+):
+    """A longer label needs more room to its right; a short one needs none."""
+    short = basic_event_position_df.copy()
+    short["label"] = ["A", "B", "C", "D"]
+    long = basic_event_position_df.copy()
+    long["label"] = ["A", "B", "C", "D reaching well past the rightmost anchor"]
+
+    short_r = generate_animation(positioned, short).layout.margin.r
+    long_r = generate_animation(positioned, long).layout.margin.r
+
+    # Short labels fit inside the default margin, so it is left untouched.
+    assert short_r is None
+    assert long_r is not None and long_r > 80
+
+
+def test_hidden_stage_labels_do_not_reserve_right_margin(
+    positioned, basic_event_position_df
+):
+    long = basic_event_position_df.copy()
+    long["label"] = ["A", "B", "C", "D reaching well past the rightmost anchor"]
+
+    fig = generate_animation(positioned, long, display_stage_labels=False)
+
+    assert fig.layout.margin.r is None
+
+
+def test_left_margin_engages_when_icons_sit_left_of_the_axis(positioned_low_x):
+    positioned, low_x = positioned_low_x
+
+    assert positioned["x_final"].min() < 0  # fixture really does overflow left
+
+    fig = generate_animation(positioned, low_x)
+
+    assert fig.layout.margin.l is not None and fig.layout.margin.l > 80
+
+
+def test_plain_animation_keeps_default_left_and_right_margins(
+    positioned, basic_event_position_df
+):
+    """Nothing overflows here, so the data range and margins are left alone."""
+    fig = generate_animation(positioned, basic_event_position_df)
+
+    # basic_event_position_df's longest label ("Being Treated") does reserve a
+    # right margin; the left side has nothing past the axis.
+    assert fig.layout.margin.l is None
+    assert fig.layout.xaxis.range is None or list(fig.layout.xaxis.range)[0] == 0
+
+
+# --------------------------------------------------------------------------- #
 # Hover configuration
 # --------------------------------------------------------------------------- #
 
