@@ -192,6 +192,7 @@
 - **BREAKING:** `reshape_for_animations` now writes the exit step's event type to the column named by `event_type_col_name`
     - Previously it always assigned to a literal `"event_type"` column. A log using a custom event type column therefore came out with *two* type columns: the caller's, left empty on every exit row, and a spurious `event_type` containing nothing but `"exit"`
     - `generate_animation_df` filters on the caller's column, so exit steps were not being recognised as exits
+    - `animate_activity_log` now also forwards `event_type_col_name` to `generate_animation`, which builds the queue-position hover text by testing this column for `"queue"`. A custom event type column reached the reshape and positioning steps but not this one, so the call died with `KeyError: 'event_type'`
     - If you use the default column names, nothing changes
 - `backend` now matches case-insensitively for every spelling
     - The plotly express branch lowercased its input and the graph objects branch did not, so `backend="EXPRESS"` was accepted while `backend="GO"` was rejected as invalid
@@ -218,6 +219,9 @@
 - `custom_hover_data` is no longer modified in place
     - The list passed in was appended to directly, so it grew by an entry on every call and eventually referenced the same column twice
     - The resource column is now only offered when the event log actually contains one
+- `custom_hover_data` now requires a matching `hover_text_entity`
+    - The default hover template indexes `customdata[0..5]` by fixed position (entity id, time, snapshot time, label, time in event, queue position). Passing `custom_hover_data` replaces that list wholesale, so the default template then read the wrong columns — or ran off the end of a shorter list — and rendered broken hover with no error
+    - Supplying `custom_hover_data` while leaving `hover_text_entity` at its default now raises `ValueError` naming the fix; pass your own template string alongside it
 - Invalid `backend` and `time_display_units` values now raise `ValueError` carrying the intended guidance
     - Both were raised as bare strings, which Python rejects with `TypeError: exceptions must derive from BaseException`, so the message explaining the valid options never reached the user
 - An unrecognised `simulation_time_unit` now raises `ValueError` listing the valid units, instead of `UnboundLocalError`
@@ -262,7 +266,7 @@
 
 ### Testing
 
-Test coverage grew from 31 to 776 tests, concentrated on the parts of the pipeline where a
+Test coverage grew from 31 to 778 tests, concentrated on the parts of the pipeline where a
 mistake changes what the animation *shows*, or what the reported numbers *say*, rather
 than raising an error.
 

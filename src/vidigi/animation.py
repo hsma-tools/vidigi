@@ -328,6 +328,10 @@ def generate_animation(
         When ``scenario`` is set and the event log has a ``resource_col_name``
         column, that column is appended to the list automatically, landing at
         ``customdata[len(custom_hover_data)]``.
+        Because ``custom_hover_data`` replaces the fixed column list the default
+        ``hover_text_entity`` template indexes, you must also pass your own
+        ``hover_text_entity`` string - supplying ``custom_hover_data`` while
+        leaving ``hover_text_entity`` at its default raises ``ValueError``.
     resource_icon_size : int, optional
         Size of resource icons in the animation (default is 24).
     override_x_max : int, optional
@@ -684,6 +688,21 @@ def generate_animation(
     # difficulty of paths between individual positions - so we just have to
     # tell it where to put people at each defined step of the process, and the
     # scattergraph will move them
+
+    # The default hover template indexes customdata[0..5] by fixed meaning (entity
+    # id, time, snapshot time, label, time in event, queue position). A caller-
+    # supplied custom_hover_data replaces that list wholesale, so the default
+    # template would then point at the wrong - or missing - columns and render
+    # broken hover with no error. Make the mismatch legible instead.
+    if custom_hover_data and hover_text_entity == "default":
+        raise ValueError(
+            "`custom_hover_data` was provided but `hover_text_entity` is still the "
+            "default template, which expects a fixed set of six columns in a fixed "
+            "order. Pass your own `hover_text_entity` string that references your "
+            "columns by position - e.g. hover_text_entity=\"Widgets: "
+            "%{customdata[0]}\" for custom_hover_data=[\"widgets\"] - or drop "
+            "`custom_hover_data` to use the default hover text."
+        )
 
     # If we have been passed a custom hover data list, use this.
     # Copy it - appending to the caller's list would grow it on every call.
@@ -1471,6 +1490,10 @@ def animate_activity_log(
         When ``scenario`` is set and the event log has a ``resource_col_name``
         column, that column is appended to the list automatically, landing at
         ``customdata[len(custom_hover_data)]``.
+        Because ``custom_hover_data`` replaces the fixed column list the default
+        ``hover_text_entity`` template indexes, you must also pass your own
+        ``hover_text_entity`` string - supplying ``custom_hover_data`` while
+        leaving ``hover_text_entity`` at its default raises ``ValueError``.
     gap_between_entities : int, optional
         Horizontal spacing between entities in pixels (default is 10).
     gap_between_queue_rows : int, optional
@@ -1718,6 +1741,7 @@ def animate_activity_log(
         time_col_name=time_col_name,
         entity_col_name=entity_col_name,
         event_col_name=event_col_name,
+        event_type_col_name=event_type_col_name,
         resource_col_name=resource_col_name,
         background_image_opacity=background_image_opacity,
         overflow_text_color=overflow_text_color,

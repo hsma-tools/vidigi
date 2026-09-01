@@ -363,6 +363,23 @@ def test_hover_text_none_disables_hover(positioned, basic_event_position_df):
     assert isinstance(fig, go.Figure)
 
 
+def test_custom_hover_data_with_default_template_raises(
+    positioned, basic_event_position_df
+):
+    """custom_hover_data replaces the six-column list the default template indexes.
+
+    Leaving hover_text_entity="default" then points customdata[0..5] at the
+    wrong - or missing - columns and renders broken hover with no error, so the
+    combination is rejected up front.
+    """
+    with pytest.raises(ValueError, match="custom_hover_data.*hover_text_entity"):
+        generate_animation(
+            positioned,
+            basic_event_position_df,
+            custom_hover_data=["entity_id"],
+        )
+
+
 def test_custom_hover_template_is_applied_to_every_frame(
     positioned, basic_event_position_df
 ):
@@ -667,6 +684,64 @@ def test_animate_activity_log_honours_custom_time_column(basic_event_position_df
 
     assert isinstance(fig, go.Figure)
     assert len(fig.frames) > 0
+
+
+def test_animate_activity_log_forwards_event_type_col_name(basic_event_position_df):
+    """A custom event_type_col_name must reach generate_animation.
+
+    Regression test: it was passed to reshape_for_animations and
+    generate_animation_df but not generate_animation, whose queue_position hover
+    logic then looked up a literal "event_type" column and died with
+    KeyError: 'event_type'.
+    """
+    log = pd.DataFrame(
+        {
+            "time": [0, 0, 25, 5, 5, 35, 12, 12, 45],
+            "entity_id": [1, 1, 1, 2, 2, 2, 3, 3, 3],
+            "etype": [
+                "arrival_departure",
+                "queue",
+                "arrival_departure",
+                "arrival_departure",
+                "queue",
+                "arrival_departure",
+                "arrival_departure",
+                "queue",
+                "arrival_departure",
+            ],
+            "event": [
+                "arrival",
+                "waiting",
+                "depart",
+                "arrival",
+                "waiting",
+                "depart",
+                "arrival",
+                "waiting",
+                "depart",
+            ],
+        }
+    )
+
+    fig = animate_activity_log(
+        log,
+        basic_event_position_df,
+        event_type_col_name="etype",
+        limit_duration=50,
+    )
+
+    assert isinstance(fig, go.Figure)
+    # The queue-position hover text is only produced when the "queue" rows are
+    # recognised, which needs the custom column name to have been threaded through.
+    rendered = [
+        cell
+        for frame in fig.frames
+        for trace in frame.data
+        if trace.customdata is not None
+        for row in trace.customdata
+        for cell in row
+    ]
+    assert any("Queue Position" in str(cell) for cell in rendered)
 
 
 def test_animate_activity_log_matches_manual_pipeline(
