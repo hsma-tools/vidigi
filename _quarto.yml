@@ -32,6 +32,8 @@ website:
         href: vidigi_docs/index.qmd
       - text: "Getting Started"
         href: vidigi_docs/getting_started.qmd
+      - text: "Customising Animations"
+        href: vidigi_docs/customising_animations.qmd
       - text: "Examples"
         href: examples/examples.qmd
       - text: "Feature Breakdowns"

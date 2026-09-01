@@ -1,0 +1,182 @@
+---
+title: "Customising the animation"
+subtitle: "The appearance arguments to `animate_activity_log` and `generate_animation`"
+toc: true
+toc-expand: 2
+---
+
+Both animation entry points return an ordinary Plotly
+[`go.Figure`](https://plotly.com/python/figure-structure/), so *anything* is
+adjustable after the fact. Most of the common tweaks, though, are already
+exposed as keyword arguments so you don't have to reach into the figure by
+hand.
+
+This page groups those arguments by what they change. Every one is optional and
+every default is a no-op in the sense that omitting the argument reproduces the
+previous behaviour.
+
+::: {.callout-note}
+### Two functions, mostly the same arguments
+
+[`animate_activity_log`](/reference/animation.animate_activity_log.qmd) is the
+all-in-one function. [`generate_animation`](/reference/animation.generate_animation.qmd)
+is the last of the three step-by-step functions
+(`reshape_for_animations` → `generate_animation_df` → `generate_animation`).
+
+The appearance arguments below are accepted by **both**, except for a handful
+that act while the event log is being reshaped into per-frame snapshots
+(`wrap_queues_at`, `gap_between_entities`, `gap_between_queue_rows`,
+`step_snapshot_max`, `custom_entity_icon_list`, and the gauge arguments). Those
+live on `animate_activity_log` only — if you are using the step-by-step route,
+pass them to `reshape_for_animations` / `generate_animation_df` instead.
+:::
+
+## The figure is just Plotly
+
+If something you want to change isn't in the list below, capture the figure and
+edit it directly:
+
+```python
+fig = animate_activity_log(event_log, event_position_df, scenario=scenario)
+
+fig.update_layout(
+    title_text="Emergency Department — Monday",
+    font_family="Times New Roman",
+)
+
+fig.show()
+```
+
+`fig.update_layout`, `fig.update_traces`, `fig.update_xaxes` / `fig.update_yaxes`
+and `fig.add_annotation` all work as normal. The
+[frame-speed feature breakdown](/examples/feat_frame_speed_post_hoc/feat_frame_speed_post_hoc.qmd)
+is an example of post-hoc editing — it rewrites the playback timings on an
+already-generated figure.
+
+## Background colour
+
+Added in 2.0.0. These forward straight to `fig.update_layout(...)`, so they
+accept any CSS colour string (`"white"`, `"#f5f5f5"`, `"rgba(0,0,0,0)"`, …).
+
+| Argument | Default | Effect |
+|---|---|---|
+| `plot_bgcolor` | `None` | Colour of the plotting area, *inside* the axes. |
+| `paper_bgcolor` | `None` | Colour of the surround — behind the title, play button and timeline. |
+
+`None` leaves the active Plotly template in charge, which is why the default
+figure has the faint blue-grey plot area you may recognise from Plotly Express.
+
+```python
+# A plain white canvas
+fig = animate_activity_log(
+    event_log, event_position_df, scenario=scenario,
+    plot_bgcolor="white",
+    paper_bgcolor="white",
+)
+```
+
+```python
+# Dark mode
+fig = animate_activity_log(
+    event_log, event_position_df, scenario=scenario,
+    plot_bgcolor="#111111",
+    paper_bgcolor="#111111",
+    overflow_text_color="white",
+    stage_label_text_colour="white",
+)
+```
+
+::: {.callout-tip}
+### Transparent background for embedding
+
+Set both to `"rgba(0,0,0,0)"` when the animation will sit on a coloured page or
+inside a Streamlit app whose theme should show through.
+:::
+
+## Background image
+
+| Argument | Default | Effect |
+|---|---|---|
+| `add_background_image` | `None` | Path, URL or data-URI of an image drawn behind the animation (a floor plan, a process diagram, …). Local files are embedded into the figure so it stays portable. |
+| `background_image_opacity` | `0.5` | `0` fully transparent, `1` fully opaque. |
+
+A background image pairs naturally with `display_stage_labels=False` when the
+image already carries its own stage names. Several gallery examples use one —
+the [car wash](/examples/example_14_carwash/carwash.ipynb) and
+[gas station](/examples/example_15_gas_station_refuelling/gas_station.ipynb)
+among them.
+
+## Stage labels
+
+| Argument | Default | Effect |
+|---|---|---|
+| `display_stage_labels` | `True` | Draw the `label` text from `event_position_df` next to each stage. |
+| `text_size` | `24` | Font size of the stage labels, in points. |
+| `stage_label_text_colour` | `"black"` | Font colour of the stage labels. |
+
+The figure margin auto-expands to fit long stage labels, so you rarely need
+`override_x_max` just to stop them being clipped.
+
+## Icons and the text on them
+
+| Argument | Default | Effect |
+|---|---|---|
+| `entity_icon_size` | `24` | Size of the entity (patient / customer / …) icons. |
+| `resource_icon_size` | `24` | Size of the resource-availability icons. |
+| `overflow_text_color` | `"black"` | Colour of the text drawn *on top of* entity icons. |
+| `resource_opacity` | `0.8` | Opacity of the resource icons. |
+| `custom_resource_icon` | `None` | Emoji or short string used for every resource icon in place of the default. |
+| `custom_entity_icon_list` | `None` | List of emoji cycled through for entity icons (`animate_activity_log` only). |
+
+## Size, spacing and wrapping
+
+| Argument | Default | Effect |
+|---|---|---|
+| `plotly_height` | `900` | Figure height in pixels. |
+| `plotly_width` | `None` | Figure width in pixels; `None` lets the figure size itself. |
+| `gap_between_entities` | `10` | Horizontal gap between entities in a queue, in pixels (`animate_activity_log` only). |
+| `gap_between_queue_rows` | `30` | Vertical gap between wrapped queue rows (`animate_activity_log` only). |
+| `gap_between_resources` | `10` | Horizontal gap between resource icons. |
+| `gap_between_resource_rows` | `30` | Vertical gap between wrapped resource rows. |
+| `wrap_queues_at` | `20` | Entities per row before a queue wraps onto a new line (`animate_activity_log` only). |
+| `wrap_resources_at` | `20` | Resource icons per row before wrapping. Keep this equal to `wrap_queues_at` so the icons line up with the entities using them. |
+| `override_x_max` | `None` | Force the x-axis upper bound. Only needed when the auto-sizing gets a layout wrong. |
+| `override_y_max` | `None` | Force the y-axis upper bound. |
+
+## Playback
+
+| Argument | Default | Effect |
+|---|---|---|
+| `frame_duration` | `400` | Milliseconds each frame is held. |
+| `frame_transition_duration` | `600` | Milliseconds entities take to glide to their next position. |
+| `include_play_button` | `True` | Show the play/pause control and timeline slider. |
+
+These can also be changed *after* generating the figure — see the
+[frame-speed feature breakdown](/examples/feat_frame_speed_post_hoc/feat_frame_speed_post_hoc.qmd).
+
+## Crowded steps
+
+When more entities are at a step than will fit, vidigi shows a
+`+ n more` label. These arguments control that fallback.
+
+| Argument | Default | Effect |
+|---|---|---|
+| `step_snapshot_max` | `60` | Maximum entity icons drawn per step before the `+ n more` label appears (`animate_activity_log` only). |
+| `step_snapshot_limit_gauges` | `False` | Replace the `+ n more` text with a segmented gauge (`animate_activity_log` only). |
+| `gauge_segments` | `10` | Number of segments in that gauge — higher is finer-grained. |
+| `gauge_max_override` | `None` | Fix the gauge's upper bound instead of taking it from the busiest observed step. |
+
+See the [gauge-only animations example](/examples/feat_gauge_only_animations/feat_gauge_only_animations.ipynb).
+
+## Setup mode
+
+| Argument | Default | Effect |
+|---|---|---|
+| `setup_mode` | `False` | Show the axes, gridlines and tick marks. Useful while you are working out the `x` / `y` coordinates for `event_position_df`; turn it off for the finished animation. |
+
+## Time display
+
+How the timeline is *labelled* — clock times, dates, simulation-relative days —
+is controlled by `time_display_units`, `start_date` and `start_time`. That is
+covered separately in the
+[changing simulation time example](/examples/feat_changing_sim_time/feat_changing_sim_time.ipynb).
