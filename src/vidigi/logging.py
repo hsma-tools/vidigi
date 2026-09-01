@@ -310,6 +310,13 @@ class EventLogger:
             `vidigi.analysis.resource_use_intervals`/`resource_utilisation`
             report them separately rather than pooling every resource
             together under one name.
+        **extra_fields
+            Any further keyword arguments are recorded on the event as extra
+            columns in the log, e.g. `acuity=3`, `arrival_mode="ambulance"`,
+            `unique_resource_id=resource.unique_id_attribute`. Useful for
+            attaching entity-level attributes for later analysis. When resource
+            use is auto-logged via `VidigiStore(logger=...)`, the same passthrough
+            is available on `VidigiStore.request()`/`get_direct()`.
 
         Notes
         -----
@@ -352,6 +359,12 @@ class EventLogger:
             label by `vidigi.analysis.resource_use_intervals` - grouping uses
             the matching `log_resource_use_start` call's `event` instead - but
             still worth naming distinctly for readability.
+        **extra_fields
+            Any further keyword arguments are recorded on the event as extra
+            columns in the log, e.g. an `outcome=...` known only once the
+            resource is released, or `unique_resource_id=resource.unique_id_attribute`.
+            When resource use is auto-logged via `VidigiStore(logger=...)`, the
+            same passthrough is available on `VidigiStore.put()`/`return_item()`.
 
         Notes
         -----

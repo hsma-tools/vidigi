@@ -317,6 +317,119 @@ def test_missing_entity_id_skips_logging_and_warns_once_per_store(store_class):
     assert logger.get_log() == []
 
 
+# MARK: auto_log=False - deliberate per-call opt-out
+
+
+def test_auto_log_false_skips_logging_with_no_warning(store_class):
+    """`auto_log=False` opts a single call out of auto-logging on a logger-configured
+    store, and - unlike simply omitting entity_id - does not warn."""
+    env = simpy.Environment()
+    logger = EventLogger(env=env, run_number=1)
+    store = store_class(env, num_resources=1, label="bed", logger=logger)
+
+    def proc(env, store):
+        with store.request(auto_log=False) as req:
+            yield req
+            yield env.timeout(1)
+        item = yield store.get_direct(auto_log=False)
+        yield env.timeout(1)
+        store.put(item, auto_log=False)
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        env.process(proc(env, store))
+        env.run()
+
+    assert [w for w in caught if issubclass(w.category, UserWarning)] == []
+    assert logger.get_log() == []
+
+
+def test_auto_log_false_wins_over_entity_id(store_class):
+    """`auto_log=False` is honoured even when entity_id is also passed - the explicit
+    opt-out takes precedence over the presence of entity_id."""
+    env = simpy.Environment()
+    logger = EventLogger(env=env, run_number=1)
+    store = store_class(env, num_resources=1, label="bed", logger=logger)
+
+    def proc(env, store):
+        with store.request(entity_id="p1", auto_log=False) as req:
+            yield req
+            yield env.timeout(1)
+
+    env.process(proc(env, store))
+    env.run()
+
+    assert logger.get_log() == []
+
+
+def test_auto_log_false_keeps_auto_return_while_logging_manually(store_class):
+    """The documented pattern: keep the context manager's automatic item return, but
+    do resource-use logging by hand so per-side / release-time fields can be attached."""
+    env = simpy.Environment()
+    logger = EventLogger(env=env, run_number=1)
+    store = store_class(env, num_resources=1, label="bed", logger=logger)
+
+    def proc(env, store):
+        with store.request(auto_log=False) as req:
+            item = yield req
+            logger.log_resource_use_start(
+                entity_id="p1",
+                resource_id=item.id_attribute,
+                unique_resource_id=item.unique_id_attribute,
+                event="service_begins",
+                triage_priority=2,
+            )
+            yield env.timeout(3)
+            logger.log_resource_use_end(
+                entity_id="p1",
+                resource_id=item.id_attribute,
+                unique_resource_id=item.unique_id_attribute,
+                event="service_complete",
+                outcome="admitted",
+            )
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        env.process(proc(env, store))
+        env.run()
+
+    assert [w for w in caught if issubclass(w.category, UserWarning)] == []
+    assert _events(logger) == [
+        ("resource_use", "service_begins", "p1", 0.0),
+        ("resource_use_end", "service_complete", "p1", 3.0),
+    ]
+    start, end = logger.get_log()
+    assert start["triage_priority"] == 2 and "outcome" not in start
+    assert end["outcome"] == "admitted" and "triage_priority" not in end
+    # __exit__ still returned the item to the store despite auto_log=False
+    assert len(store.items) == 1
+
+
+def test_auto_log_false_does_not_arm_the_missing_entity_id_warning(store_class):
+    """An `auto_log=False` call must not consume the one-shot missing-entity_id warning,
+    so a genuinely forgetful call afterwards is still flagged."""
+    env = simpy.Environment()
+    logger = EventLogger(env=env, run_number=1)
+    store = store_class(env, num_resources=2, label="bed", logger=logger)
+
+    def proc(env, store):
+        with store.request(auto_log=False) as req:  # deliberate opt-out - no warning
+            yield req
+            yield env.timeout(1)
+        with store.request() as req:  # forgot entity_id - should still warn
+            yield req
+            yield env.timeout(1)
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        env.process(proc(env, store))
+        env.run()
+
+    user_warnings = [w for w in caught if issubclass(w.category, UserWarning)]
+    assert len(user_warnings) == 1
+    assert "entity_id was not passed" in str(user_warnings[0].message)
+
+
 # MARK: label / self.label staleness
 
 

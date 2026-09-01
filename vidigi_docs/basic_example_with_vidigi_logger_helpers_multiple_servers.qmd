@@ -243,6 +243,101 @@ auto_event_log_df.head()
 
 The two versions above are run with independent random draws, so their event *timings* won't match - but the logged event shape (`resource_use`/`resource_use_end` rows carrying `entity_id`, `resource_id`, `event` and `time`, one matched pair per patient) is identical either way. vidigi's own test suite pins this more rigorously: the same scenario run once with manual `log_resource_use_start`/`log_resource_use_end` calls and once with `logger=`/`entity_id=` auto-logging (and no manual calls at all) is asserted to produce byte-identical event logs.
 
+### Recording extra entity-level fields {#recording-extra-entity-level-fields}
+
+When you log resource use by hand, you can pass any number of extra keyword arguments to `log_resource_use_start`/`log_resource_use_end` (for example `acuity=3`, `arrival_mode="ambulance"`) and they become extra columns in the event log, ready for downstream analysis. Auto-logging keeps this: any keyword argument you pass to `request()`/`get()` that vidigi doesn't recognise is forwarded straight through to **both** the `resource_use` and the `resource_use_end` event.
+
+```{python}
+def patient_process_auto_extra_fields(env, patient_id, servers, logger):
+    """As patient_process_auto, but also recording two entity-level attributes
+    on the resource-use events via request()'s **extra_fields passthrough."""
+
+    logger.log_queue(entity_id=patient_id, event='queue_wait_begins')
+
+    # Attributes of this specific patient, known at the point of request
+    priority_score = random.randint(1, 5)
+    arrival_mode = random.choice(["walk-in", "ambulance"])
+
+    with servers.request(
+        entity_id=patient_id,
+        start_event="service_begins",
+        end_event="service_complete",
+        priority_score=priority_score,   # any extra keyword args are forwarded
+        arrival_mode=arrival_mode,       # to BOTH resource_use rows
+    ) as request:
+        yield request
+
+        service_duration = random.expovariate(1.0/SERVICE_TIME)
+        yield env.timeout(service_duration)
+
+    logger.log_departure(entity_id=patient_id)
+
+def run_simulation_auto_extra_fields():
+    params = Params()
+    env = simpy.Environment()
+    logger = EventLogger(env=env)
+    servers = VidigiStore(
+        env=env, num_resources=params.num_servers, label="server", logger=logger
+    )
+
+    def generator(env, servers, logger):
+        patient_id = 0
+        while True:
+            patient_id += 1
+            logger.log_arrival(entity_id=patient_id)
+            env.process(
+                patient_process_auto_extra_fields(env, patient_id, servers, logger)
+            )
+            yield env.timeout(random.expovariate(ARRIVAL_RATE))
+
+    env.process(generator(env, servers, logger))
+    env.run(until=SIM_DURATION)
+
+    return logger.to_dataframe()
+```
+
+```{python}
+extra_fields_log_df = run_simulation_auto_extra_fields()
+# priority_score and arrival_mode now appear on the resource_use / resource_use_end rows
+extra_fields_log_df[
+    extra_fields_log_df["event_type"].isin(["resource_use", "resource_use_end"])
+].head()
+```
+
+The same values land on both events. If you instead need *different* fields on the start and the end - or a value that isn't known until the resource is released, such as a service outcome - you have two options.
+
+**Option 1: the manual `get_direct()`/`put()` pattern.** Each call carries its own fields, evaluated at its own time. You give up the `with` block, so you're responsible for calling `put()`:
+
+```{.python}
+item = yield servers.get_direct(entity_id=patient_id, event="service_begins",
+                                triage_priority=priority_score)
+yield env.timeout(service_duration)
+outcome = "admitted" if ... else "discharged"   # only known now
+servers.put(item, entity_id=patient_id, event="service_complete",
+            outcome=outcome, tests_ordered=n_tests)
+```
+
+**Option 2: keep the `with` block, but pass `auto_log=False` and log by hand.** This keeps the context manager's automatic item return while letting you write the `log_resource_use_start`/`log_resource_use_end` calls yourself with whatever fields you like. `auto_log=False` also tells vidigi the missing `entity_id` is deliberate, so it does **not** emit the usual "entity_id was not passed" warning:
+
+```{.python}
+with servers.request(auto_log=False) as request:   # keep auto-return, log manually
+    server = yield request
+    logger.log_resource_use_start(
+        entity_id=patient_id, resource_id=server.id_attribute,
+        unique_resource_id=server.unique_id_attribute,
+        event="service_begins", triage_priority=priority_score)
+
+    yield env.timeout(service_duration)
+
+    outcome = "admitted" if ... else "discharged"   # only known now
+    logger.log_resource_use_end(
+        entity_id=patient_id, resource_id=server.id_attribute,
+        unique_resource_id=server.unique_id_attribute,
+        event="service_complete", outcome=outcome, tests_ordered=n_tests)
+```
+
+`auto_log=False` is per-call, so other `request()`/`get_direct()` calls on the same store keep auto-logging normally. (If a *whole* resource pool is always logged by hand, it's simpler not to pass `logger=` to that store at all - `entity_id`-less calls on a store with no logger never warn.)
+
 ## Step 4. Run simulation
 
 ```{python}
