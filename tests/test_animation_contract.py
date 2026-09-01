@@ -380,6 +380,51 @@ def test_custom_hover_data_with_default_template_raises(
         )
 
 
+def test_custom_hover_data_with_hover_disabled_does_not_raise(
+    positioned, basic_event_position_df
+):
+    """The guard keys on the "default" sentinel, not "not a custom string".
+
+    hover_text_entity=None disables hover entirely, so there is no template to
+    misindex and custom_hover_data alongside it must not raise.
+    """
+    fig = generate_animation(
+        positioned,
+        basic_event_position_df,
+        custom_hover_data=["entity_id"],
+        hover_text_entity=None,
+    )
+
+    assert isinstance(fig, go.Figure)
+
+
+def test_resource_col_name_is_appended_after_custom_hover_data(
+    positioned_with_resources, basic_event_position_df, scenario_with_resources
+):
+    """With a scenario and a resource_id column, resource_col_name lands at
+    customdata[len(custom_hover_data)] - the index the docstring promises.
+    """
+    fig = generate_animation(
+        positioned_with_resources,
+        basic_event_position_df,
+        scenario=scenario_with_resources,
+        custom_hover_data=["entity_id"],
+        hover_text_entity="entity %{customdata[0]} on resource %{customdata[1]}",
+    )
+
+    # resource_id is index 1 (right after the single custom column). The
+    # resource_log fixture assigns ids 1 and 2 to the two treated entities.
+    index_1_values = {
+        row[1]
+        for frame in fig.frames
+        for trace in frame.data
+        if trace.customdata is not None
+        for row in trace.customdata
+        if len(row) > 1
+    }
+    assert {1, 2} <= index_1_values
+
+
 def test_custom_hover_template_is_applied_to_every_frame(
     positioned, basic_event_position_df
 ):

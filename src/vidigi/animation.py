@@ -268,12 +268,14 @@ def generate_animation(
         - Drawing the resource-availability icons at each stage. This also needs
           a ``resource`` column on ``event_position_df`` naming the attribute to
           read for that step (e.g. ``resource="n_nurses"``).
-        - Adding the resource identifier (``resource_col_name``, "resource_id" by
-          default) to the entity hover text. This happens only when the event
-          log actually contains that column, i.e. the model logged resource use
-          via ``log_resource_use_start`` / ``log_resource_use_end``. A scenario
+        - Appending the resource identifier column (``resource_col_name``,
+          "resource_id" by default) to the hover ``customdata``, so a custom
+          ``hover_text_entity`` template can display it. This happens only when
+          the event log actually contains that column, i.e. the model logged
+          resource use via ``log_resource_use_start`` / ``log_resource_use_end``.
+          The built-in default template does not reference it, and a scenario
           passed for a model with no resource-use logging is harmless - the
-          resource entry is simply left out of the hover text.
+          column is simply not appended.
     time_col_name : str, optional
         Name of the column in `event_log` that contains the timestamp of each
         event (default is "time"). Timestamps should represent the number of
@@ -697,9 +699,10 @@ def generate_animation(
     if custom_hover_data and hover_text_entity == "default":
         raise ValueError(
             "`custom_hover_data` was provided but `hover_text_entity` is still the "
-            "default template, which expects a fixed set of six columns in a fixed "
-            "order. Pass your own `hover_text_entity` string that references your "
-            "columns by position - e.g. hover_text_entity=\"Widgets: "
+            "default template, which expects exactly these six columns in this "
+            "order: entity id, time, snapshot time, label, time in event, queue "
+            "position. Pass your own `hover_text_entity` string that references "
+            "your columns by position - e.g. hover_text_entity=\"Widgets: "
             "%{customdata[0]}\" for custom_hover_data=[\"widgets\"] - or drop "
             "`custom_hover_data` to use the default hover text."
         )
@@ -1407,12 +1410,14 @@ def animate_activity_log(
         - Drawing the resource-availability icons at each stage. This also needs
           a ``resource`` column on ``event_position_df`` naming the attribute to
           read for that step (e.g. ``resource="n_nurses"``).
-        - Adding the resource identifier (``resource_col_name``, "resource_id" by
-          default) to the entity hover text. This happens only when the event
-          log actually contains that column, i.e. the model logged resource use
-          via ``log_resource_use_start`` / ``log_resource_use_end``. A scenario
+        - Appending the resource identifier column (``resource_col_name``,
+          "resource_id" by default) to the hover ``customdata``, so a custom
+          ``hover_text_entity`` template can display it. This happens only when
+          the event log actually contains that column, i.e. the model logged
+          resource use via ``log_resource_use_start`` / ``log_resource_use_end``.
+          The built-in default template does not reference it, and a scenario
           passed for a model with no resource-use logging is harmless - the
-          resource entry is simply left out of the hover text.
+          column is simply not appended.
     time_col_name : str, default="time"
         Name of the column in `event_log` that contains the timestamp of each
         event. Timestamps should represent the number of time units since the

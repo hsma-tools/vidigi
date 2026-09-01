@@ -10,6 +10,7 @@
 - `TrialLogger.plot_queue_size` plotted queue lengths that were wrong in three ways: capped at 61, missing every snapshot where a queue was empty, and a mean taken over only the runs that had somebody waiting. Any queue length chart you have previously reported will change.
 - `TrialLogger.get_event_duration_stat(what="summary")` computed its per-run denominator only from runs where the event pair occurred at all. A run with neither event was silently excluded, so `served_count_mean_per_run` and `unserved_count_mean_per_run` were inflated whenever any run had zero of both events; both now divide by the true number of runs in the trial.
 - `TrialLogger.get_resource_utilisation()`, `.plot_resource_utilisation()` and `.plot_resource_utilisation_over_time()` now default `resource_col_name` to `None` (auto-detect) instead of the literal `"resource_id"`. If your trial has a `unique_resource_id` column on *some* resource-use rows but not others, a call that used to succeed under the old default now raises `ValueError` — pass `resource_col_name="resource_id"` explicitly to keep the old behaviour, or fix the partial logging.
+- `animate_activity_log` / `generate_animation` now raise `ValueError` if `custom_hover_data` is passed without a custom `hover_text_entity`. The built-in default template indexes six fixed columns, so combining it with `custom_hover_data` previously rendered garbled hover text; callers who never passed `custom_hover_data`, or who already paired it with their own template, are unaffected.
 
 ### New features
 
@@ -219,9 +220,9 @@
 - `custom_hover_data` is no longer modified in place
     - The list passed in was appended to directly, so it grew by an entry on every call and eventually referenced the same column twice
     - The resource column is now only offered when the event log actually contains one
-- `custom_hover_data` now requires a matching `hover_text_entity`
+- **BREAKING:** `custom_hover_data` now requires a matching `hover_text_entity`. Callers who never passed `custom_hover_data`, or who already paired it with their own `hover_text_entity` (as the docstrings recommend and every example does), see no change — only the broken combination now raises instead of returning a figure with garbled hover
     - The default hover template indexes `customdata[0..5]` by fixed position (entity id, time, snapshot time, label, time in event, queue position). Passing `custom_hover_data` replaces that list wholesale, so the default template then read the wrong columns — or ran off the end of a shorter list — and rendered broken hover with no error
-    - Supplying `custom_hover_data` while leaving `hover_text_entity` at its default now raises `ValueError` naming the fix; pass your own template string alongside it
+    - Supplying `custom_hover_data` while leaving `hover_text_entity` at its default now raises `ValueError`, which names the six default columns so a caller who wanted those plus extras can rebuild the template
 - Invalid `backend` and `time_display_units` values now raise `ValueError` carrying the intended guidance
     - Both were raised as bare strings, which Python rejects with `TypeError: exceptions must derive from BaseException`, so the message explaining the valid options never reached the user
 - An unrecognised `simulation_time_unit` now raises `ValueError` listing the valid units, instead of `UnboundLocalError`
@@ -266,7 +267,7 @@
 
 ### Testing
 
-Test coverage grew from 31 to 778 tests, concentrated on the parts of the pipeline where a
+Test coverage grew from 31 to 780 tests, concentrated on the parts of the pipeline where a
 mistake changes what the animation *shows*, or what the reported numbers *say*, rather
 than raising an error.
 
