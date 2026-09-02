@@ -323,6 +323,134 @@ def test_plain_animation_keeps_default_left_and_right_margins(
 
 
 # --------------------------------------------------------------------------- #
+# Queue build direction
+# --------------------------------------------------------------------------- #
+
+
+@pytest.fixture
+def positioned_high_x(basic_event_position_df):
+    """A right-building queue whose icons run past the right edge of the axis.
+
+    Twelve entities queue simultaneously at the rightmost anchor with a wide
+    gap and no wrapping, so ``x_final`` reaches well beyond ``x_max`` (which is
+    ``event_position_df["x"].max() * 1.25``). The mirror of ``positioned_low_x``.
+    """
+    specs = []
+    for entity_id in range(1, 13):
+        specs.append((entity_id, entity_id, "arrival_departure", "arrival"))
+        specs.append((entity_id, entity_id, "queue", "waiting"))
+        specs.append((200 + entity_id, entity_id, "arrival_departure", "depart"))
+    log = pd.DataFrame(
+        [
+            {"time": t, "entity_id": e, "event_type": et, "event": ev}
+            for t, e, et, ev in specs
+        ]
+    )
+    reshaped = reshape_for_animations(log, every_x_time_units=10, limit_duration=60)
+    positioned = generate_animation_df(
+        reshaped,
+        basic_event_position_df,
+        wrap_queues_at=None,
+        gap_between_entities=20,
+        queue_direction="right",
+    )
+    return positioned, basic_event_position_df
+
+
+def test_right_margin_engages_when_a_right_building_queue_overflows(positioned_high_x):
+    positioned, epd = positioned_high_x
+
+    x_max = epd["x"].max() * 1.25
+    assert positioned["x_final"].max() > x_max  # fixture really does overflow right
+
+    fig = generate_animation(positioned, epd, queue_direction="right")
+
+    assert fig.layout.margin.r is not None and fig.layout.margin.r > 80
+
+
+def test_stage_label_sits_left_of_a_right_building_queue(
+    positioned, basic_event_position_df
+):
+    """With the queue extending right, the label must move to the left of the
+    anchor or the queue runs straight over it."""
+    fig = generate_animation(positioned, basic_event_position_df, queue_direction="right")
+
+    label_trace = [t for t in fig.data if t.mode == "text"][-1]
+    anchors = basic_event_position_df["x"].to_list()
+
+    assert list(label_trace.x) == [a - 10 for a in anchors]
+    assert set(label_trace.textposition) == {"middle left"}
+    # And the left margin grows to hold those labels.
+    assert fig.layout.margin.l is not None and fig.layout.margin.l > 80
+
+
+def test_left_building_queue_keeps_label_on_the_right(
+    positioned, basic_event_position_df
+):
+    """The default direction is unchanged - label to the right of the anchor."""
+    fig = generate_animation(positioned, basic_event_position_df)
+
+    label_trace = [t for t in fig.data if t.mode == "text"][-1]
+    anchors = basic_event_position_df["x"].to_list()
+
+    assert list(label_trace.x) == [a + 10 for a in anchors]
+    assert set(label_trace.textposition) == {"middle right"}
+
+
+def test_resource_markers_follow_queue_direction(
+    positioned_with_resources, basic_event_position_df, scenario_with_resources
+):
+    """The resource-availability dots lay out rightwards from the anchor when
+    ``queue_direction="right"`` - the mirror of the default leftward layout."""
+    left = generate_animation(
+        positioned_with_resources,
+        basic_event_position_df,
+        scenario=scenario_with_resources,
+    )
+    right = generate_animation(
+        positioned_with_resources,
+        basic_event_position_df,
+        scenario=scenario_with_resources,
+        queue_direction="right",
+    )
+
+    def marker_xs(fig):
+        trace = [t for t in fig.data if t.mode == "markers"][-1]
+        return list(trace.x)
+
+    left_xs, right_xs = marker_xs(left), marker_xs(right)
+    # treatment_begins is anchored at x=400 with three cubicles, gap 10. The two
+    # directions are exact mirror images of each other about the anchor.
+    assert left_xs == [400.0, 390.0, 380.0]
+    assert right_xs == [400.0, 410.0, 420.0]
+
+
+def test_animate_activity_log_threads_queue_direction(
+    simple_queue_log, basic_event_position_df
+):
+    """End to end: the one-call wrapper passes queue_direction all the way
+    through, and it visibly moves the queued entities."""
+    common = dict(every_x_time_units=10, limit_duration=50, gap_between_entities=10)
+    left = animate_activity_log(
+        simple_queue_log, basic_event_position_df, queue_direction="left", **common
+    )
+    right = animate_activity_log(
+        simple_queue_log, basic_event_position_df, queue_direction="right", **common
+    )
+
+    def waiting_xs(fig):
+        xs = []
+        for frame in fig.frames:
+            for trace in frame.data:
+                if getattr(trace, "x", None) is not None:
+                    xs.extend(v for v in trace.x if v is not None)
+        return xs
+
+    # Right-building queue draws entities further right than the left one.
+    assert max(waiting_xs(right)) > max(waiting_xs(left))
+
+
+# --------------------------------------------------------------------------- #
 # Hover configuration
 # --------------------------------------------------------------------------- #
 

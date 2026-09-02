@@ -27,7 +27,7 @@ Vidigi has support for two key event types: queues, and resource use.
 ::: {.column width='50%'}
 ### Queues
 
-In a queue, entities will move from left to right across the screen as the people in front of them leave the event.
+In a queue, entities will move from left to right across the screen as the people in front of them leave the event. This is the default; passing `queue_direction="right"` (or setting it per event) mirrors the queue so it builds out to the *right* of its anchor instead, which reads better with entity emojis that face right — see [Step 3](#step-3-determining-event-positioning-in-the-animation).
 
 ![](assets/Photos_vyBrApu62l.gif)
 
@@ -105,9 +105,10 @@ The animation functions take a dataframe, not an EventLogger object, so as long 
 You need to tell vidigi where each queue and resource should appear in the animation. The easiest way is to create a DataFrame with one row per event position. The minimum required columns are:
 
 * `event`: Must match the event name used in the event log.
-* `x`: X co-ordinate of the event for the animation. This will correspond to the bottom-right hand corner of a queue, or the rightmost resource.
+* `x`: X co-ordinate of the event for the animation. This will correspond to the bottom-right hand corner of a queue, or the rightmost resource (or the bottom-*left* corner / leftmost resource when that event builds to the right — see `direction` below).
 * `y`: Y co-ordinate of the event for the animation. This will correspond to the lowest row of a queue, or the central point of the resources.
 * `label`: Text label for the stage. This can be hidden at a later step if you opt to use a background image with labels built-in. Use `<br>` for line breaks.
+* `direction` (optional): `"left"` (the default) builds the queue out to the left of `x`; `"right"` builds it out to the right, mirroring the layout so the anchor becomes the bottom-left corner. Leave it unset to follow the animation-wide `queue_direction`.
 
 Vidigi provides helper classes and functions for setting this up. For SimPy or manually created logs, we need to make sure the `event` name matches the event log:
 
@@ -123,6 +124,25 @@ event_position_df = create_event_position_df([
     EventPosition(event="depart", x=270, y=70, label="Exit"),
 ])
 ```
+
+By default every queue builds out to the left of its anchor. To flip the whole
+animation, pass `queue_direction="right"` to `animate_activity_log()` (or
+`generate_animation_df()` / `generate_animation()`). To flip just one stage,
+give that `EventPosition` its own `direction`:
+
+```{.python}
+event_position_df = create_event_position_df([
+    EventPosition(event="arrival", x=50, y=450, label="Arrival"),
+    EventPosition(event="treatment_wait_begins", x=205, y=275,
+                  label="Waiting for Treatment", direction="right"),
+    EventPosition(event="treatment_begins", x=205, y=175,
+                  label="Being Treated"),
+    EventPosition(event="depart", x=270, y=70, label="Exit"),
+])
+```
+
+A per-event `direction` always wins over the animation-wide `queue_direction`.
+Stage labels automatically move to the clear side of a right-building queue.
 
 :::{.callout-note collapse="true"}
 ### Click to see how we'd do this with a dictionary instead

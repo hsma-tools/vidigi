@@ -10,9 +10,11 @@ from vidigi.prep import (
     reshape_for_animations,
 )
 from vidigi.utils import (
+    QueueDirection,
     _check_one_arrival_per_entity,
     _check_single_run,
     _enforce_int_params,
+    _resolve_direction_sign,
     _resource_map_from_event_position_df,
 )
 import numpy as np
@@ -133,6 +135,14 @@ def _series_min(df: Optional[pd.DataFrame], col: str) -> Optional[float]:
     return float(value) if pd.notna(value) else None
 
 
+def _series_max(df: Optional[pd.DataFrame], col: str) -> Optional[float]:
+    """Largest finite value in ``df[col]``, or ``None`` if unavailable."""
+    if df is None or col not in getattr(df, "columns", []) or not len(df):
+        return None
+    value = pd.to_numeric(df[col], errors="coerce").max()
+    return float(value) if pd.notna(value) else None
+
+
 def _overflow_margin_updates(
     *,
     event_position_df: pd.DataFrame,
@@ -144,6 +154,7 @@ def _overflow_margin_updates(
     plotly_width: Optional[int],
     plotly_height: Optional[int],
     display_stage_labels: bool,
+    queue_direction: QueueDirection = "left",
 ) -> dict:
     """Figure-margin overrides that keep auto-positioned content on-canvas.
 
@@ -156,15 +167,30 @@ def _overflow_margin_updates(
     """
     need = dict(_MARGIN_FLOORS)
 
-    # Right: the longest stage label, rendered rightwards from the rightmost
-    # anchor. ~0.55 em per character for a proportional font, plus the 10-unit
-    # offset the label trace adds and a little breathing room.
+    ref_w = plotly_width or 700
+    ref_h = plotly_height or 900
+
+    # Stage labels are drawn just past the anchor - to the right of a
+    # left-building queue, to the left of a right-building one. Reserve room for
+    # the longest label on whichever side(s) it actually falls. ~0.55 em per
+    # character for a proportional font, plus the 10-unit trace offset and a
+    # little breathing room.
     if display_stage_labels and "label" in getattr(event_position_df, "columns", []):
-        longest = max(
-            (len(str(s)) for s in event_position_df["label"].to_list()),
-            default=0,
-        )
-        need["r"] = longest * 0.55 * text_size + 20
+        label_sign = _resolve_direction_sign(event_position_df, queue_direction)
+        left_lens = [
+            len(str(s))
+            for s, sign in zip(event_position_df["label"].to_list(), label_sign)
+            if sign > 0
+        ]
+        right_lens = [
+            len(str(s))
+            for s, sign in zip(event_position_df["label"].to_list(), label_sign)
+            if sign <= 0
+        ]
+        if right_lens:
+            need["r"] = max(right_lens) * 0.55 * text_size + 20
+        if left_lens:
+            need["l"] = max(need["l"], max(left_lens) * 0.55 * text_size + 20)
 
     # Top: a label vertically centred on the topmost anchor overhangs upwards
     # by about half its height.
@@ -174,9 +200,6 @@ def _overflow_margin_updates(
     # Left / bottom: how far, in pixels, the furthest queue or resource icon
     # sits outside [0, .]. Converted from data units via the axis span and a
     # reference figure size (the real width is often unknown at build time).
-    ref_w = plotly_width or 700
-    ref_h = plotly_height or 900
-
     x_candidates = [0.0]
     for value in (_series_min(entity_df, "x_final"), _series_min(resource_df, "x_final")):
         if value is not None:
@@ -193,10 +216,25 @@ def _overflow_margin_updates(
         y_candidates.append(resource_y_min - 10)
     y_min_data = min(y_candidates)
 
+    # Right: how far the furthest right-building queue or resource icon sits
+    # past x_max (the mirror of the left-margin logic below).
+    x_candidates_hi = [x_max]
+    for value in (_series_max(entity_df, "x_final"), _series_max(resource_df, "x_final")):
+        if value is not None:
+            x_candidates_hi.append(value)
+    x_max_data = max(x_candidates_hi)
+
     if x_max and x_min_data < 0:
-        need["l"] = (-x_min_data) / (x_max - x_min_data) * ref_w + 20
+        need["l"] = max(
+            need["l"], (-x_min_data) / (x_max - x_min_data) * ref_w + 20
+        )
     if y_max and y_min_data < 0:
         need["b"] = (-y_min_data) / (y_max - y_min_data) * ref_h + 20
+    if x_max and x_max_data > x_max:
+        need["r"] = max(
+            need["r"],
+            (x_max_data - x_max) / (x_max_data - x_min_data) * ref_w + 20,
+        )
 
     return {
         side: int(min(value, _MARGIN_CAPS[side]))
@@ -236,6 +274,7 @@ def generate_animation(
     wrap_resources_at: Optional[int] = 20,
     gap_between_resources: int = 10,
     gap_between_resource_rows: int = 30,
+    queue_direction: QueueDirection = "left",
     setup_mode: bool = False,
     frame_duration: int = 400,  # milliseconds
     frame_transition_duration: int = 600,  # milliseconds
@@ -389,6 +428,15 @@ def generate_animation(
         Spacing between resources in pixels (default is 10).
     gap_between_resource_rows : int, optional
         Vertical spacing between rows in pixels (default is 30).
+    queue_direction : {"left", "right"}, default="left"
+        Which way queues (and rows of resources) build out from their anchor.
+        "left" is the historic behaviour - the anchor is the front of the queue
+        and entities stack up to its left. "right" mirrors this, so the anchor
+        becomes the bottom-left corner and the queue extends rightwards, which
+        suits entity emojis that face right. Stage labels flip to the opposite
+        side of a right-building queue. If set here it must also be set on
+        `generate_animation_df`; overridden per event by a `direction` column
+        on `event_position_df`.
     setup_mode : bool, optional
         Whether to run in setup mode, showing grid and tick marks (default is
         False).
@@ -1112,14 +1160,26 @@ def generate_animation(
     # in conjunction with a background image or as a way to see stage names
     # without the need to create a background image)
     if display_stage_labels:
+        # A right-building queue would run straight over a label drawn to the
+        # right of the anchor, so for those events the label goes to the left
+        # instead. Resolved per event, so a mixed layout gets each label on its
+        # own clear side.
+        label_sign = _resolve_direction_sign(event_position_df, queue_direction)
+        label_x = [
+            pos - 10 if s > 0 else pos + 10
+            for pos, s in zip(event_position_df["x"].to_list(), label_sign)
+        ]
+        label_pos = [
+            "middle left" if s > 0 else "middle right" for s in label_sign
+        ]
         fig.add_trace(
             go.Scatter(
-                x=[pos + 10 for pos in event_position_df["x"].to_list()],
+                x=label_x,
                 y=event_position_df["y"].to_list(),
                 mode="text",
                 name="",
                 text=event_position_df["label"].to_list(),
-                textposition="middle right",
+                textposition=label_pos,
                 hoverinfo="none",
             )
         )
@@ -1156,12 +1216,19 @@ def generate_animation(
             "resource"
         ].apply(lambda x: getattr(scenario, x))
 
+        # -1 lays the resource dots out leftwards from the anchor (historic
+        # behaviour), +1 rightwards - matching the queue direction for that
+        # event so a resource emoji faces the same way as its queue.
+        events_with_resources["_dir_sign"] = _resolve_direction_sign(
+            events_with_resources, queue_direction
+        )
+
         events_with_resources = events_with_resources.join(
             events_with_resources.apply(
                 lambda r: pd.Series(
                     {
                         "x_final": [
-                            r["x"] - (gap_between_resources * (i + 1))
+                            r["x"] + r["_dir_sign"] * (gap_between_resources * (i + 1))
                             for i in range(r["resource_count"])
                         ]
                     }
@@ -1184,12 +1251,13 @@ def generate_animation(
 
             events_with_resources["x_final"] = (
                 events_with_resources["x_final"]
-                + (
+                - events_with_resources["_dir_sign"]
+                * (
                     wrap_resources_at
                     * events_with_resources["row"]
                     * gap_between_resources
                 )
-                + gap_between_resources
+                - events_with_resources["_dir_sign"] * gap_between_resources
             )
 
             events_with_resources["y_final"] = events_with_resources["y"] + (
@@ -1321,6 +1389,7 @@ def generate_animation(
         plotly_width=plotly_width,
         plotly_height=plotly_height,
         display_stage_labels=display_stage_labels,
+        queue_direction=queue_direction,
     )
     if margin_updates:
         fig.update_layout(margin=margin_updates)
@@ -1383,6 +1452,7 @@ def animate_activity_log(
     gap_between_queue_rows: int = 30,
     gap_between_resource_rows: int = 30,
     gap_between_resources: int = 10,
+    queue_direction: QueueDirection = "left",
     resource_opacity: float = 0.8,
     custom_resource_icon: Optional[str] = None,
     override_x_max: Optional[int] = None,
@@ -1422,7 +1492,8 @@ def animate_activity_log(
         The log of events to be animated, containing patient activities.
     event_position_df : pd.DataFrame
         DataFrame specifying the positions of different events, with columns
-        'event', 'x', and 'y'.
+        'event', 'x', and 'y' (plus optional 'label', 'resource' and
+        'direction' - see ``queue_direction``).
     scenario : object, optional
         Object whose attributes give the number of each resource available at a
         step, e.g. ``scenario.n_nurses`` (default is None). Used for two
@@ -1528,6 +1599,16 @@ def animate_activity_log(
         Vertical spacing between rows in pixels (default is 30).
     gap_between_resources : int, optional
         Horizontal spacing between resources in pixels (default is 10).
+    queue_direction : {"left", "right"}, default="left"
+        Which way queues (and rows of resources) build out from their anchor.
+        "left" (the default, and byte-identical to previous versions) makes the
+        anchor the front of the queue, with entities stacking up to its left.
+        "right" mirrors this - the anchor becomes the bottom-left corner and the
+        queue extends rightwards, which reads better with entity emojis that
+        face right. Stage labels move to the opposite side of a right-building
+        queue. Set this per event instead with a `direction` column on
+        `event_position_df` (or `EventPosition(..., direction=...)`), which
+        overrides the animation-wide value.
     resource_opacity : float, optional
         Opacity of resource icons (default is 0.8).
     custom_resource_icon : str, optional
@@ -1731,6 +1812,7 @@ def animate_activity_log(
         gap_between_resources=gap_between_resources,
         gap_between_resource_rows=gap_between_resource_rows,
         gap_between_queue_rows=gap_between_queue_rows,
+        queue_direction=queue_direction,
         debug_mode=debug_mode,
         custom_entity_icon_list=custom_entity_icon_list,
         time_col_name=time_col_name,
@@ -1770,6 +1852,7 @@ def animate_activity_log(
         resource_opacity=resource_opacity,
         wrap_resources_at=wrap_resources_at,
         gap_between_resources=gap_between_resources,
+        queue_direction=queue_direction,
         custom_resource_icon=custom_resource_icon,
         frame_duration=frame_duration,  # milliseconds
         frame_transition_duration=frame_transition_duration,  # milliseconds

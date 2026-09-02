@@ -6,9 +6,11 @@ import hashlib
 import warnings
 from typing import Literal, Optional, TypeAlias, Union
 from vidigi.utils import (
+    QueueDirection,
     _check_one_arrival_per_entity,
     _check_single_run,
     _enforce_int_params,
+    _resolve_direction_sign,
 )
 from packaging import version
 
@@ -563,6 +565,7 @@ def generate_animation_df(
     gap_between_resources: int = 10,
     gap_between_resource_rows: int = 30,
     gap_between_queue_rows: int = 30,
+    queue_direction: QueueDirection = "left",
     time_col_name: str = "time",
     entity_col_name: str = "entity_id",
     event_type_col_name: str = "event_type",
@@ -604,6 +607,14 @@ def generate_animation_df(
         Vertical spacing between rows in pixels (default is 30).
     gap_between_resource_rows : int, optional
         Vertical spacing between rows in pixels (default is 30).
+    queue_direction : {"left", "right"}, default="left"
+        Which way queues (and rows of resources) build out from their anchor.
+        "left" (the default, and byte-identical to previous versions) stacks
+        entities up to the left of the anchor `x`, so the anchor is the front
+        of the queue / bottom-right corner. "right" mirrors this - the anchor
+        becomes the bottom-left corner and the queue extends rightwards, which
+        suits entity emojis that face right. Overridden per event by a
+        `direction` column on `event_position_df` where one is present.
     time_col_name : str, default="time"
         Name of the column in `event_log` that contains the timestamp of each event.
         Timestamps should represent the number of time units since the simulation began.
@@ -738,8 +749,13 @@ def generate_animation_df(
 
     if len(resource_use) > 0:
         resource_use = resource_use.rename(columns={"y": "y_final"})
+        # -1 builds the row leftwards from the anchor (the historic behaviour),
+        # +1 builds it rightwards. Resolved per row from a `direction` column
+        # where present, otherwise from the animation-wide `queue_direction`.
+        sign_r = _resolve_direction_sign(resource_use, queue_direction)
         resource_use["x_final"] = (
-            resource_use["x"] - resource_use[resource_col_name] * gap_between_resources
+            resource_use["x"]
+            + sign_r * resource_use[resource_col_name] * gap_between_resources
         )
 
         # If we want resources to wrap at a certain queue length, do this here
@@ -752,8 +768,8 @@ def generate_animation_df(
 
             resource_use["x_final"] = (
                 resource_use["x_final"]
-                + (wrap_resources_at * resource_use["row"] * gap_between_resources)
-                + gap_between_resources
+                - sign_r * (wrap_resources_at * resource_use["row"] * gap_between_resources)
+                - sign_r * gap_between_resources
             )
 
             resource_use["y_final"] = resource_use["y_final"] + (
@@ -765,7 +781,12 @@ def generate_animation_df(
 
     # queues['y_final'] =  queues['y']
     queues = queues.rename(columns={"y": "y_final"})
-    queues["x_final"] = queues["x"] - queues["rank"] * gap_between_entities
+    # -1 builds the queue leftwards from the anchor (the historic behaviour, where
+    # the anchor is the front of the queue), +1 builds it rightwards (the anchor
+    # becomes the bottom-left corner). Resolved per row from a `direction` column
+    # where present, otherwise from the animation-wide `queue_direction`.
+    sign = _resolve_direction_sign(queues, queue_direction)
+    queues["x_final"] = queues["x"] + sign * queues["rank"] * gap_between_entities
 
     # If we want people to wrap at a certain queue length, do this here
     # They'll wrap at the defined point and then the queue will start expanding upwards
@@ -775,8 +796,8 @@ def generate_animation_df(
 
         queues["x_final"] = (
             queues["x_final"]
-            + (wrap_queues_at * queues["row"] * gap_between_entities)
-            + gap_between_entities
+            - sign * (wrap_queues_at * queues["row"] * gap_between_entities)
+            - sign * gap_between_entities
         )
 
         queues["y_final"] = queues["y_final"] + (queues["row"] * gap_between_queue_rows)
@@ -790,7 +811,8 @@ def generate_animation_df(
         queues["x_final"] = np.where(
             queues["rank"] != step_snapshot_max + 1,
             queues["x_final"],
-            queues["x_final"] - (gap_between_entities * (wrap_queues_at / 2)),
+            queues["x_final"]
+            + sign.to_numpy() * (gap_between_entities * (wrap_queues_at / 2)),
         )
 
     # Deal with the exit steps

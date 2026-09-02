@@ -1,6 +1,6 @@
 import pandas as pd
 from pydantic import BaseModel, ValidationError
-from typing import List, Optional
+from typing import List, Literal, Optional
 import webcolors
 import warnings
 import numbers
@@ -8,28 +8,76 @@ import inspect
 from functools import wraps
 
 
+# Which way a queue (or row of resources) builds out from its anchor point.
+# ``"left"`` is the historic behaviour - the anchor is the front of the queue and
+# entities stack up to its left. ``"right"`` mirrors it, so the anchor becomes the
+# bottom-left corner and the queue extends rightwards (which suits entity emojis
+# that face right). Shared between prep.py and animation.py so the signatures
+# cannot drift; the value is still validated at runtime, since annotations are not
+# enforced.
+QueueDirection = Literal["left", "right"]
+
+
+def _validate_queue_direction(value: str) -> str:
+    """Normalise and check a queue-direction string, raising on anything else."""
+    norm = str(value).strip().lower()
+    if norm not in ("left", "right"):
+        raise ValueError(
+            f"`queue_direction` must be 'left' or 'right', got {value!r}."
+        )
+    return norm
+
+
+def _resolve_direction_sign(df: pd.DataFrame, default: str) -> pd.Series:
+    """``-1`` for a 'left'-building queue, ``+1`` for 'right' - one value per row.
+
+    Uses the per-row ``direction`` column where present and non-null, falling back
+    to ``default`` (the animation-wide ``queue_direction``). A frame with no
+    ``direction`` column at all - the normal case for a CSV-built
+    ``event_position_df`` - takes ``default`` throughout.
+    """
+    default = _validate_queue_direction(default)
+    if "direction" in df.columns:
+        raw = df["direction"].where(df["direction"].notna(), default)
+    else:
+        raw = pd.Series(default, index=df.index)
+    raw = raw.map(_validate_queue_direction)
+    return raw.map({"left": -1, "right": 1}).astype(int)
+
+
 class EventPosition(BaseModel):
     """
     Pydantic model for a single event position.
 
     This model defines the position and label of an event within a visual layout.
-    Coordinates represent the bottom-right corner of a queue or resource, and an
-    optional label or resource can be associated with the event.
+    Coordinates represent one corner of a queue or resource - the bottom-right by
+    default, or the bottom-left when ``direction="right"`` - and an optional label,
+    resource, or build direction can be associated with the event.
 
     Attributes
     ----------
     event : str
         The name of the event. Must match the event names as they appear in your event log.
     x : int
-        The x-coordinate for the event. Represents the bottom-right corner of the queue or resource.
+        The x-coordinate for the event. With the default ``direction="left"`` this
+        is the bottom-right corner of the queue or resource (the front of the
+        queue); with ``direction="right"`` it is the bottom-left corner instead.
     y : int
-        The y-coordinate for the event. Represents the bottom-right corner of the queue or resource.
+        The y-coordinate for the event. Represents the lowest row of the queue or
+        the central point of the resources.
     label : str
         The display label for the event. Used if `display_stage_labels=True`.
         Allows for a more user-friendly version of the event name (e.g., 'Queuing for Till').
     resource : Optional[str]
         The optional resource associated with the event. Must match a resource name
         provided in your scenario object.
+    direction : Optional[str]
+        Which way this queue builds out from its anchor: ``"left"`` (entities stack
+        up to the left of ``x``; the anchor is the bottom-right corner) or
+        ``"right"`` (entities extend to the right; the anchor is the bottom-left
+        corner - useful when entity emojis face right). ``None`` (the default)
+        inherits the animation-wide ``queue_direction`` passed to
+        ``animate_activity_log`` / ``generate_animation``.
     """
 
     event: str
@@ -37,6 +85,7 @@ class EventPosition(BaseModel):
     y: int
     label: str
     resource: Optional[str] = None
+    direction: Optional[QueueDirection] = None
 
 
 def create_event_position_df(
@@ -62,7 +111,7 @@ def create_event_position_df(
         df = pd.DataFrame(validated_data)
 
         # Reorder columns to match the desired output
-        df = df[["event", "x", "y", "label", "resource"]]
+        df = df[["event", "x", "y", "label", "resource", "direction"]]
 
         return df
     except ValidationError as e:

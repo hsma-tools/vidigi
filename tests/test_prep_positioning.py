@@ -162,6 +162,131 @@ def test_queue_row_assignment_is_monotonic(overflow_positions):
 
 
 # --------------------------------------------------------------------------- #
+# Queue build direction
+# --------------------------------------------------------------------------- #
+
+
+def test_queue_direction_right_steps_forward_from_anchor(overflow_positions):
+    """``queue_direction="right"`` mirrors the default: rank 1 on the anchor,
+    each later rank one gap to the *right* instead of the left."""
+    result = overflow_positions(
+        queue_direction="right", wrap_queues_at=5, gap_between_entities=10
+    )
+    positions = positions_at(result, 20, "waiting")
+
+    assert positions[1.0] == (400.0, 275.0)
+    assert positions[2.0] == (410.0, 275.0)
+    assert positions[3.0] == (420.0, 275.0)
+    assert positions[4.0] == (430.0, 275.0)
+    assert positions[5.0] == (440.0, 275.0)
+
+
+def test_queue_direction_right_wraps_to_new_row(overflow_positions):
+    """A right-building queue wraps back to the anchor's x, one row lower -
+    the exact mirror of ``test_queue_wraps_to_new_row``."""
+    result = overflow_positions(
+        queue_direction="right",
+        wrap_queues_at=5,
+        gap_between_entities=10,
+        gap_between_queue_rows=30,
+    )
+    positions = positions_at(result, 20, "waiting")
+
+    assert positions == {
+        1.0: (400.0, 275.0),
+        2.0: (410.0, 275.0),
+        3.0: (420.0, 275.0),
+        4.0: (430.0, 275.0),
+        5.0: (440.0, 275.0),
+        6.0: (400.0, 305.0),
+        7.0: (410.0, 305.0),
+        8.0: (420.0, 305.0),
+        9.0: (430.0, 305.0),
+        10.0: (440.0, 305.0),
+        11.0: (400.0, 335.0),
+        12.0: (410.0, 335.0),
+    }
+
+
+def test_queue_direction_right_overflow_label_nudged_left(overflow_positions):
+    """The '+ x more' label is nudged towards the middle of its row - which for
+    a right-building queue means *left* of the anchor. Mirror of
+    ``test_overflow_row_is_offset_within_its_row`` (which asserts x=375)."""
+    result = overflow_positions(
+        queue_direction="right",
+        step_snapshot_max=5,
+        wrap_queues_at=5,
+        gap_between_entities=10,
+    )
+    positions = positions_at(result, 20, "waiting")
+
+    # Rank 6 would sit at x=400 on the wrapped row; the offset moves it forward
+    # (towards the middle of a right-running row) by 10 * 2.5 = 25.
+    assert positions[6.0] == (425.0, 305.0)
+
+
+def test_queue_direction_left_is_the_default(overflow_positions):
+    """Passing ``queue_direction="left"`` explicitly is byte-identical to
+    omitting it - the guarantee that this feature is not a breaking change."""
+    explicit = overflow_positions(queue_direction="left")
+    default = overflow_positions()
+
+    pd.testing.assert_frame_equal(explicit, default)
+
+
+def test_per_event_direction_column_overrides_global(
+    overflow_queue_log, basic_event_position_df
+):
+    """A ``direction`` value on one event wins over the animation-wide
+    ``queue_direction``; other events keep the global setting."""
+    epd = basic_event_position_df.copy()
+    epd.loc[epd["event"] == "waiting", "direction"] = "right"
+
+    reshaped = reshape_for_animations(
+        overflow_queue_log, every_x_time_units=10, limit_duration=30
+    )
+    result = generate_animation_df(
+        reshaped,
+        epd,
+        wrap_queues_at=5,
+        gap_between_entities=10,
+        queue_direction="left",  # global default; the column must override it
+    )
+    positions = positions_at(result, 20, "waiting")
+
+    # 'waiting' builds right despite the global "left".
+    assert positions[2.0] == (410.0, 275.0)
+    assert positions[5.0] == (440.0, 275.0)
+
+
+def test_direction_column_absent_falls_back_to_global(
+    overflow_queue_log, basic_event_position_df
+):
+    """An ``event_position_df`` with no ``direction`` column at all (the normal
+    CSV-built case) takes the animation-wide ``queue_direction`` throughout."""
+    epd = basic_event_position_df.drop(columns=["direction"])
+    assert "direction" not in epd.columns
+
+    reshaped = reshape_for_animations(
+        overflow_queue_log, every_x_time_units=10, limit_duration=30
+    )
+    result = generate_animation_df(
+        reshaped, epd, wrap_queues_at=5, gap_between_entities=10, queue_direction="right"
+    )
+    positions = positions_at(result, 20, "waiting")
+
+    assert positions[1.0] == (400.0, 275.0)
+    assert positions[2.0] == (410.0, 275.0)
+
+
+def test_invalid_queue_direction_raises(overflow_positions):
+    """Only 'left' / 'right' are accepted - annotations are not enforced, so a
+    typo must fail loudly at runtime."""
+    with pytest.raises(ValueError, match="queue_direction"):
+        overflow_positions(queue_direction="up")
+
+
+# --------------------------------------------------------------------------- #
 # Resource geometry
 # --------------------------------------------------------------------------- #
 
@@ -193,6 +318,31 @@ def test_resource_position_derives_from_resource_id(
     # Anchor for treatment_begins is x=400, y=175.
     assert by_resource[1.0] == (400.0, 175.0)
     assert by_resource[2.0] == (390.0, 175.0)
+
+
+def test_resource_use_follows_queue_direction(resource_log, basic_event_position_df):
+    """``queue_direction`` also mirrors resource-use placement, so an entity in
+    service lines up with the side it queued on. Mirror of
+    ``test_resource_position_derives_from_resource_id`` (which asserts x=390 for
+    resource 2)."""
+    reshaped = reshape_for_animations(
+        resource_log, every_x_time_units=10, limit_duration=50
+    )
+    result = generate_animation_df(
+        reshaped,
+        basic_event_position_df,
+        wrap_resources_at=20,
+        gap_between_resources=10,
+        queue_direction="right",
+    )
+    treated = result[result["event"] == "treatment_begins"]
+    by_resource = {
+        row["resource_id"]: (row["x_final"], row["y_final"])
+        for _, row in treated.iterrows()
+    }
+
+    assert by_resource[1.0] == (400.0, 175.0)
+    assert by_resource[2.0] == (410.0, 175.0)
 
 
 def test_entity_stays_at_same_resource_position_across_snapshots(

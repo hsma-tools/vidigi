@@ -14,6 +14,11 @@
 
 ### New features
 
+- New `queue_direction` argument on `animate_activity_log`, `generate_animation` and `generate_animation_df`, plus an optional per-event `direction` column on `EventPosition` / `event_position_df`, for building a queue left-to-right instead of the default right-to-left
+    - Many entity emojis face a direction that reads better with the front of the queue at the bottom-left rather than the bottom-right; `queue_direction="right"` puts it there, and the queue (and its wrapped rows) mirror accordingly
+    - Per-event `direction` (`EventPosition(..., direction="right")`, or a `direction` column on a hand-built / CSV `event_position_df`) overrides the animation-wide setting; an `event_position_df` with no `direction` column at all is unaffected
+    - The default `"left"` is a verified no-op - `generate_animation_df` output is byte-identical to omitting the argument
+    - Resource-use icon placement and the resource-availability dots follow the same setting, so an entity in service lines up with the side it queued on; stage labels move to the opposite side of a right-building queue, and the figure margin grows on whichever side now overflows
 - New `warm_up` argument on `reshape_for_animations` and `animate_activity_log`, for discarding a warm-up period without damaging the animation
     - Discarding warm-up is routine, and the obvious way to do it to an event log — `event_log[event_log["time"] >= warm_up]` — quietly breaks the result. Presence at each snapshot is worked out from arrival and departure rows, so truncating the log removes the `arrival` row of everyone who was already in the system, and those entities then appear in *no* frame at all. The entities lost are precisely the ones a steady-state animation exists to show: on a log with five entities queuing since before the boundary and two arriving after it, the queue was drawn holding two
     - `warm_up` trims the animation window instead of the log. Pass the whole event log and set `warm_up` to the end of your warm-up period; by default the snapshot grid is anchored on it, so the first frame lands exactly on the boundary — see `snapshot_alignment` below to keep the original grid instead
@@ -31,7 +36,7 @@
     - Two consequences worth knowing before relying on this for reporting: a case entirely within the warm-up is dropped completely, and a case that spans the cutoff loses the single edge connecting its last pre-cutoff event to its first post-cutoff event, since one side of that pair is no longer in the log. Both are intentional, so warm-up activity does not contribute to the transition statistics
     - The default of `None` keeps every row, matching current behaviour exactly, and is a drop-in replacement for filtering the event log by time before calling `add_sim_timestamp`, which is how this has been taught until now
 - Closed-set string arguments are now typed as literals, so editors offer the valid values and type checkers catch a typo before the call runs
-    - `backend` and `simulation_time_unit` on `generate_animation` and `animate_activity_log`, `what` on `TrialLogger.get_event_duration_stat` and `plot_metric_bar`, and the new `snapshot_alignment`
+    - `backend` and `simulation_time_unit` on `generate_animation` and `animate_activity_log`, `what` on `TrialLogger.get_event_duration_stat` and `plot_metric_bar`, and the new `snapshot_alignment` and `queue_direction`
     - The runtime checks are unchanged — annotations are not enforced, and a wrong value typed into a notebook still needs to raise
     - `time_display_units` is deliberately left untyped, since alongside its named options it accepts any custom strftime format
 - New warning when an event log contains entities with no `arrival` event

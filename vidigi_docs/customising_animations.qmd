@@ -140,6 +140,7 @@ The figure margin auto-expands to fit long stage labels, so you rarely need
 | `gap_between_resource_rows` | `30` | Vertical gap between wrapped resource rows. |
 | `wrap_queues_at` | `20` | Entities per row before a queue wraps onto a new line (`animate_activity_log` only). |
 | `wrap_resources_at` | `20` | Resource icons per row before wrapping. Keep this equal to `wrap_queues_at` so the icons line up with the entities using them. |
+| `queue_direction` | `"left"` | Which way queues (and rows of resources) build out from their anchor. `"right"` mirrors the layout so the anchor is the bottom-left corner — reads better with right-facing entity emojis. Set per event instead with a `direction` column on `event_position_df`. If using the step-by-step route, pass it to `generate_animation_df` **and** `generate_animation`. |
 | `override_x_max` | `None` | Force the x-axis upper bound. Only needed when the auto-sizing gets a layout wrong. |
 | `override_y_max` | `None` | Force the y-axis upper bound. |
 
