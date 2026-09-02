@@ -45,6 +45,32 @@ def _resolve_direction_sign(df: pd.DataFrame, default: str) -> pd.Series:
     return raw.map({"left": -1, "right": 1}).astype(int)
 
 
+def _validate_icon_flip(value) -> bool:
+    """Normalise and check a flip-icons value, raising on anything but a bool."""
+    if isinstance(value, bool):
+        return value
+    raise ValueError(
+        f"`flip_entity_icons` / `flip_icons` must be a bool, got {value!r}."
+    )
+
+
+def _resolve_icon_flip(df: pd.DataFrame, default: bool) -> pd.Series:
+    """``True``/``False`` per row - whether that row's entity icon is mirrored.
+
+    Uses the per-row ``flip_icons`` column where present and non-null, falling
+    back to ``default`` (the animation-wide ``flip_entity_icons``). A frame with
+    no ``flip_icons`` column at all - the normal case for a CSV-built
+    ``event_position_df``, or any event that never sets it - takes ``default``
+    throughout.
+    """
+    default = _validate_icon_flip(default)
+    if "flip_icons" in df.columns:
+        raw = df["flip_icons"].where(df["flip_icons"].notna(), default)
+    else:
+        raw = pd.Series(default, index=df.index)
+    return raw.map(_validate_icon_flip).astype(bool)
+
+
 class EventPosition(BaseModel):
     """
     Pydantic model for a single event position.
@@ -78,6 +104,13 @@ class EventPosition(BaseModel):
         corner - useful when entity emojis face right). ``None`` (the default)
         inherits the animation-wide ``queue_direction`` passed to
         ``animate_activity_log`` / ``generate_animation``.
+    flip_icons : Optional[bool]
+        Whether entity icons (and a ``custom_resource_icon``) at this event are
+        mirrored horizontally - useful when an emoji faces the wrong way for this
+        stage's layout. ``None`` (the default) inherits the animation-wide
+        ``flip_entity_icons`` passed to ``animate_activity_log`` / ``generate_animation``.
+        Requires the CSS from ``vidigi.utils.inject_icon_flip_css`` /
+        ``entity_icon_flip_css`` to reach the page - see their docstrings.
     """
 
     event: str
@@ -86,6 +119,7 @@ class EventPosition(BaseModel):
     label: str
     resource: Optional[str] = None
     direction: Optional[QueueDirection] = None
+    flip_icons: Optional[bool] = None
 
 
 def create_event_position_df(
@@ -111,7 +145,7 @@ def create_event_position_df(
         df = pd.DataFrame(validated_data)
 
         # Reorder columns to match the desired output
-        df = df[["event", "x", "y", "label", "resource", "direction"]]
+        df = df[["event", "x", "y", "label", "resource", "direction", "flip_icons"]]
 
         return df
     except ValidationError as e:
@@ -122,6 +156,93 @@ def create_event_position_df(
 #'''''''''''''''''''''''''''''''''''''#
 # Webdev + visualisation helpers
 #'''''''''''''''''''''''''''''''''''''#
+
+# Zero-width space, prefixed onto an icon's text to mark it for mirroring. Plotly
+# writes each trace's raw text onto its <text> element as a `data-unformatted`
+# attribute (untouched by markup handling, so it is safe to match on) - this
+# marker gives `ENTITY_ICON_FLIP_CSS` an attribute-prefix selector to hook onto,
+# with no visible or layout effect of its own (it has no glyph and no advance
+# width, so `text-anchor: middle` centring is unaffected).
+#
+# Built from the actual character rather than a "​"-style escape sequence
+# in a CSS string, deliberately - CSS unicode escapes and Python string escapes
+# both use a leading backslash, and it is easy to end up with the wrong one
+# (`\200b` alone is a Python *octal* escape, not this character) without
+# actually catching the mistake anywhere until a browser is involved.
+ICON_FLIP_MARKER = "​"
+
+ENTITY_ICON_FLIP_CSS = (
+    "<style>\n"
+    ".js-plotly-plot text[data-unformatted^=\"" + ICON_FLIP_MARKER + "\"] {\n"
+    "  transform-box: fill-box;\n"
+    "  transform-origin: center;\n"
+    "  transform: scaleX(-1);\n"
+    "}\n"
+    "</style>"
+)
+
+
+def entity_icon_flip_css() -> str:
+    """
+    Return the ``<style>`` block that mirrors any entity icon marked with
+    `ICON_FLIP_MARKER` - i.e. any icon vidigi has prefixed because
+    `flip_entity_icons=True` or a per-event ``flip_icons=True`` resolved for it.
+
+    A ``go.Figure`` cannot carry CSS itself, so this has to reach the page some
+    other way. `inject_icon_flip_css` does that automatically for a notebook or
+    Streamlit app; call this directly instead when embedding a figure some other
+    way; for example, prepended to the output of ``fig.write_html()``, or via
+    ``st.markdown(entity_icon_flip_css(), unsafe_allow_html=True)``.
+
+    Note this only affects the interactive HTML/JS rendering - a static export
+    via ``fig.write_image()`` renders in its own page and will not show the flip.
+
+    Returns
+    -------
+    str
+        A ``<style>...</style>`` block, safe to concatenate directly into HTML.
+    """
+    return ENTITY_ICON_FLIP_CSS
+
+
+def inject_icon_flip_css() -> None:
+    """
+    Display the CSS that mirrors flipped entity icons, in whichever environment
+    this is called from.
+
+    Tries, in order: displaying it as HTML via IPython (notebooks, JupyterLab,
+    Quarto/nbconvert execution), then `streamlit.markdown` (a Streamlit app). If
+    neither is actually active, this is a silent no-op - use
+    `entity_icon_flip_css` directly instead (see its docstring for where to put
+    the result) in a plain script, or when writing a figure out with
+    ``fig.write_html()``.
+
+    Called automatically by `generate_animation` / `animate_activity_log`
+    whenever any entity icon actually resolves to flipped, so this normally
+    does not need to be called directly.
+    """
+    try:
+        from IPython import get_ipython
+        from IPython.display import display, HTML
+
+        # IPython is a transitive dependency (via ipywidgets) even in a plain
+        # script, where there is no rich frontend to display anything - checking
+        # for an active shell avoids a stray "<IPython.core.display.HTML object>"
+        # landing in that script's stdout.
+        if get_ipython() is not None:
+            display(HTML(ENTITY_ICON_FLIP_CSS))
+            return
+    except ImportError:
+        pass
+
+    try:
+        import streamlit as st
+
+        st.markdown(ENTITY_ICON_FLIP_CSS, unsafe_allow_html=True)
+    except ImportError:
+        pass
+
+
 def streamlit_play_all():
     """
     Programmatically triggers all 'Play' buttons in Plotly animations embedded in Streamlit using JavaScript.

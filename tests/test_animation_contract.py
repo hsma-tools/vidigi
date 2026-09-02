@@ -26,6 +26,7 @@ from vidigi.animation import (
     process_background_image_path,
 )
 from vidigi.prep import generate_animation_df, reshape_for_animations
+from vidigi.utils import EventPosition, ICON_FLIP_MARKER, create_event_position_df
 
 
 @pytest.fixture
@@ -197,7 +198,8 @@ def test_custom_resource_icon_is_used(
         custom_resource_icon="🛏️",
     )
 
-    assert fig.data[-1].text == "🛏️"
+    # One entry per resource unit - unflipped, so every one is the bare icon.
+    assert list(fig.data[-1].text) == ["🛏️"] * len(fig.data[-1].x)
 
 
 # --------------------------------------------------------------------------- #
@@ -448,6 +450,140 @@ def test_animate_activity_log_threads_queue_direction(
 
     # Right-building queue draws entities further right than the left one.
     assert max(waiting_xs(right)) > max(waiting_xs(left))
+
+
+# --------------------------------------------------------------------------- #
+# Icon flipping
+# --------------------------------------------------------------------------- #
+
+
+def _all_entity_texts(fig):
+    """Every text value actually drawn by every entity trace, across every frame.
+
+    Covers both backends: the express backend's per-frame trace is a plotly
+    graph object, the go backend's is a plain dict - both expose the same
+    parallel x/y/text arrays. An empty snapshot (nobody present for a given
+    event at that moment) is filled with a single all-NaN-position placeholder
+    row so the frame isn't literally empty - it carries a leftover icon value
+    but Plotly never draws it at a NaN coordinate, so it is excluded here too.
+    """
+    texts = []
+    for frame in fig.frames:
+        for trace in frame.data:
+            trace_x = trace["x"] if isinstance(trace, dict) else trace.x
+            trace_text = trace["text"] if isinstance(trace, dict) else trace.text
+            if trace_x is None or trace_text is None:
+                continue
+            for x, text in zip(trace_x, trace_text):
+                if pd.notna(x) and text is not None:
+                    texts.append(text)
+    return texts
+
+
+@pytest.fixture
+def positioned_overflow(overflow_queue_log, basic_event_position_df):
+    """Twelve entities queued at once with only 5 slots shown - the rest
+    collapse into a single '+ N more' overflow row per snapshot."""
+    reshaped = reshape_for_animations(
+        overflow_queue_log, every_x_time_units=10, limit_duration=30, step_snapshot_max=5
+    )
+    return generate_animation_df(
+        reshaped, basic_event_position_df, step_snapshot_max=5, wrap_queues_at=5
+    )
+
+
+@pytest.mark.parametrize("backend", ["express", "go"])
+def test_no_icon_is_flipped_by_default(positioned, basic_event_position_df, backend):
+    fig = generate_animation(positioned, basic_event_position_df, backend=backend)
+    texts = [t for t in _all_entity_texts(fig) if t]
+    assert texts  # sanity: the fixture actually draws something
+    assert all(not str(t).startswith(ICON_FLIP_MARKER) for t in texts)
+
+
+@pytest.mark.parametrize("backend", ["express", "go"])
+def test_flip_entity_icons_marks_every_entity_icon(
+    positioned, basic_event_position_df, backend
+):
+    fig = generate_animation(
+        positioned, basic_event_position_df, flip_entity_icons=True, backend=backend
+    )
+    texts = [t for t in _all_entity_texts(fig) if t]
+    assert texts
+    assert all(str(t).startswith(ICON_FLIP_MARKER) for t in texts)
+
+
+def test_per_event_flip_icons_overrides_global(
+    simple_queue_log, basic_event_position_df
+):
+    """Only the 'waiting' event is marked ``flip_icons=True``; the animation-wide
+    default stays False, so every other event's icon must stay unflipped."""
+    mixed_epd = basic_event_position_df.copy()
+    mixed_epd.loc[mixed_epd["event"] == "waiting", "flip_icons"] = True
+
+    reshaped = reshape_for_animations(
+        simple_queue_log, every_x_time_units=10, limit_duration=50
+    )
+    positioned_mixed = generate_animation_df(reshaped, mixed_epd)
+
+    fig = generate_animation(positioned_mixed, mixed_epd)
+
+    waiting_texts, other_texts = [], []
+    for frame in fig.frames:
+        for trace in frame.data:
+            trace_x = trace["x"] if isinstance(trace, dict) else trace.x
+            trace_text = trace["text"] if isinstance(trace, dict) else trace.text
+            if trace_x is None or trace_text is None:
+                continue
+            for x, text in zip(trace_x, trace_text):
+                if text is None or x is None:
+                    continue
+                # 'waiting' queues out from x=400 (400, 390, 380 for up to three
+                # simultaneously-ranked entities); 'arrival' (x=50) and 'depart'
+                # (x=270) never land anywhere near that range.
+                if 370 <= x <= 410:
+                    waiting_texts.append(text)
+                else:
+                    other_texts.append(text)
+
+    assert waiting_texts
+    assert other_texts
+    assert all(str(t).startswith(ICON_FLIP_MARKER) for t in waiting_texts)
+    assert all(not str(t).startswith(ICON_FLIP_MARKER) for t in other_texts)
+
+
+def test_overflow_icons_are_never_flipped(positioned_overflow, basic_event_position_df):
+    """Mirrored text is unreadable, and the gauge/count string embeds the
+    entity icon mid-string - overflow rows must be exempt from flipping even
+    when the whole animation is flipped."""
+    fig = generate_animation(
+        positioned_overflow, basic_event_position_df, flip_entity_icons=True
+    )
+    overflow_texts = [t for t in _all_entity_texts(fig) if t and "more" in str(t)]
+    assert overflow_texts  # sanity: overflow really is present
+    assert all(not str(t).startswith(ICON_FLIP_MARKER) for t in overflow_texts)
+
+
+def test_custom_resource_icon_follows_per_event_flip(
+    positioned_with_resources, basic_event_position_df, scenario_with_resources
+):
+    unflipped = generate_animation(
+        positioned_with_resources,
+        basic_event_position_df,
+        scenario=scenario_with_resources,
+        custom_resource_icon="🛏️",
+    )
+    flipped = generate_animation(
+        positioned_with_resources,
+        basic_event_position_df,
+        scenario=scenario_with_resources,
+        custom_resource_icon="🛏️",
+        flip_entity_icons=True,
+    )
+
+    assert list(unflipped.data[-1].text) == ["🛏️"] * len(unflipped.data[-1].x)
+    assert list(flipped.data[-1].text) == [ICON_FLIP_MARKER + "🛏️"] * len(
+        flipped.data[-1].x
+    )
 
 
 # --------------------------------------------------------------------------- #

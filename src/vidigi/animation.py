@@ -10,12 +10,15 @@ from vidigi.prep import (
     reshape_for_animations,
 )
 from vidigi.utils import (
+    ICON_FLIP_MARKER,
     QueueDirection,
     _check_one_arrival_per_entity,
     _check_single_run,
     _enforce_int_params,
     _resolve_direction_sign,
+    _resolve_icon_flip,
     _resource_map_from_event_position_df,
+    inject_icon_flip_css,
 )
 import numpy as np
 from typing import Literal, Optional, TypeAlias
@@ -275,6 +278,7 @@ def generate_animation(
     gap_between_resources: int = 10,
     gap_between_resource_rows: int = 30,
     queue_direction: QueueDirection = "left",
+    flip_entity_icons: bool = False,
     setup_mode: bool = False,
     frame_duration: int = 400,  # milliseconds
     frame_transition_duration: int = 600,  # milliseconds
@@ -437,6 +441,16 @@ def generate_animation(
         side of a right-building queue. If set here it must also be set on
         `generate_animation_df`; overridden per event by a `direction` column
         on `event_position_df`.
+    flip_entity_icons : bool, default=False
+        Mirror entity icons (and a `custom_resource_icon`) horizontally - useful
+        when an emoji faces the wrong way for a particular layout, independently
+        of `queue_direction`. Overridden per event by a `flip_icons` column on
+        `event_position_df` (or `EventPosition(..., flip_icons=...)`). Requires
+        CSS to reach the page - this is injected automatically (see
+        `vidigi.utils.inject_icon_flip_css`) whenever any icon actually resolves
+        to flipped; embedding the figure a different way may need
+        `vidigi.utils.entity_icon_flip_css()` added explicitly. Does not affect
+        a static export via `fig.write_image()`.
     setup_mode : bool, optional
         Whether to run in setup mode, showing grid and tick marks (default is
         False).
@@ -876,6 +890,41 @@ def generate_animation(
     if "opacity" not in full_entity_df_plus_pos_copy:
         full_entity_df_plus_pos_copy["opacity"] = 1
 
+    # Resolve which events have their entity icon mirrored, from `event_position_df`
+    # directly rather than any column that survived onto the entity frame - this is
+    # the same source `_resolve_direction_sign` reads for stage labels below, so a
+    # row's icon flip and its layout direction can never disagree about where an
+    # event's settings come from.
+    _event_flip_map = dict(
+        zip(
+            event_position_df[event_col_name],
+            _resolve_icon_flip(event_position_df, flip_entity_icons),
+        )
+    )
+    # `.map(dict.get, ...)` rather than `.map(_event_flip_map).fillna(False)` -
+    # an event absent from the map (or NaN, for the all-NaN-position filler row
+    # that keeps an otherwise-empty snapshot from vanishing entirely) resolves
+    # straight to False, with no NaN-then-downcast step to trigger pandas'
+    # object-dtype fillna deprecation warning.
+    _entity_flip = full_entity_df_plus_pos_copy[event_col_name].map(
+        lambda event: _event_flip_map.get(event, False)
+    )
+    any_icons_flipped = bool(_entity_flip.any())
+
+    # Overflow rows ('+ N more', the ASCII gauge bars) are never flipped - mirrored
+    # text is unreadable, and the gauge embeds the entity icon mid-string, so a
+    # leading marker would not even land next to it.
+    if "additional" in full_entity_df_plus_pos_copy.columns:
+        _entity_flip = _entity_flip & full_entity_df_plus_pos_copy["additional"].isna()
+
+    full_entity_df_plus_pos_copy["icon_display"] = full_entity_df_plus_pos_copy["icon"]
+    full_entity_df_plus_pos_copy.loc[_entity_flip, "icon_display"] = (
+        ICON_FLIP_MARKER + full_entity_df_plus_pos_copy.loc[_entity_flip, "icon"]
+    )
+
+    if any_icons_flipped:
+        inject_icon_flip_css()
+
     # The animation frame is the *formatted* time, so a display format coarser than the
     # snapshot interval silently merges snapshots into a single frame - e.g. 10 minute
     # snapshots displayed as 'd' collapse a whole day into one. Plotly then drops the
@@ -905,7 +954,7 @@ def generate_animation(
                 animation_frame="snapshot_time_display",
                 # Important to group by patient here
                 animation_group=entity_col_name,
-                text="icon",
+                text="icon_display",
                 range_x=[0, x_max],
                 range_y=[0, y_max],
                 height=plotly_height,
@@ -931,7 +980,7 @@ def generate_animation(
                 animation_frame="snapshot_time_display",
                 # Important to group by patient here
                 animation_group=entity_col_name,
-                text="icon",
+                text="icon_display",
                 hover_name=event_col_name,
                 custom_data=hovers,
                 range_x=[0, x_max],
@@ -992,7 +1041,7 @@ def generate_animation(
                         x=entity_df["x_final"],
                         y=entity_df["y_final"],
                         name=entity,
-                        text=entity_df["icon"],
+                        text=entity_df["icon_display"],
                         mode="text",
                         textfont=dict(size=16, color=f"rgba(0, 0, 0, {text_opacity})"),
                         hovertemplate=(
@@ -1045,7 +1094,7 @@ def generate_animation(
                         {
                             "x": entity_df["x_final"].tolist(),
                             "y": entity_df["y_final"].tolist(),
-                            "text": entity_df["icon"].tolist(),
+                            "text": entity_df["icon_display"].tolist(),
                             "customdata": entity_df[hovers].values.tolist(),
                             "textfont.color": f"rgba(0, 0, 0, {text_opacity})",
                         }
@@ -1272,6 +1321,16 @@ def generate_animation(
         # can then be used to provide custom icons per resource instead of a single custom
         # icon for all resources
         if custom_resource_icon is not None:
+            # Follows the same per-event flip resolution as the entity icons above,
+            # so a resource icon faces the same way as the entities queuing for it.
+            resource_flip = _resolve_icon_flip(events_with_resources, flip_entity_icons)
+            resource_icon_text = [
+                (ICON_FLIP_MARKER + custom_resource_icon) if flipped else custom_resource_icon
+                for flipped in resource_flip
+            ]
+            if resource_flip.any():
+                inject_icon_flip_css()
+
             fig.add_trace(
                 go.Scatter(
                     x=events_with_resources["x_final"].to_list(),
@@ -1279,7 +1338,7 @@ def generate_animation(
                     # that will be using the resource
                     y=[i - 10 for i in events_with_resources["y_final"].to_list()],
                     mode="markers+text",
-                    text=custom_resource_icon,
+                    text=resource_icon_text,
                     # Make the actual marker invisible
                     marker=dict(opacity=0),
                     # Set opacity of the icon
@@ -1453,6 +1512,7 @@ def animate_activity_log(
     gap_between_resource_rows: int = 30,
     gap_between_resources: int = 10,
     queue_direction: QueueDirection = "left",
+    flip_entity_icons: bool = False,
     resource_opacity: float = 0.8,
     custom_resource_icon: Optional[str] = None,
     override_x_max: Optional[int] = None,
@@ -1492,8 +1552,8 @@ def animate_activity_log(
         The log of events to be animated, containing patient activities.
     event_position_df : pd.DataFrame
         DataFrame specifying the positions of different events, with columns
-        'event', 'x', and 'y' (plus optional 'label', 'resource' and
-        'direction' - see ``queue_direction``).
+        'event', 'x', and 'y' (plus optional 'label', 'resource', 'direction' -
+        see ``queue_direction`` - and 'flip_icons' - see ``flip_entity_icons``).
     scenario : object, optional
         Object whose attributes give the number of each resource available at a
         step, e.g. ``scenario.n_nurses`` (default is None). Used for two
@@ -1609,6 +1669,16 @@ def animate_activity_log(
         queue. Set this per event instead with a `direction` column on
         `event_position_df` (or `EventPosition(..., direction=...)`), which
         overrides the animation-wide value.
+    flip_entity_icons : bool, default=False
+        Mirror entity icons (and a `custom_resource_icon`) horizontally - useful
+        when an emoji faces the wrong way for a particular layout, independently
+        of `queue_direction`. Set this per event instead with a `flip_icons`
+        column on `event_position_df` (or `EventPosition(..., flip_icons=...)`),
+        which overrides the animation-wide value. Requires CSS to reach the page
+        - this is injected automatically (see `vidigi.utils.inject_icon_flip_css`)
+        whenever any icon actually resolves to flipped; embedding the figure a
+        different way may need `vidigi.utils.entity_icon_flip_css()` added
+        explicitly. Does not affect a static export via `fig.write_image()`.
     resource_opacity : float, optional
         Opacity of resource icons (default is 0.8).
     custom_resource_icon : str, optional
@@ -1853,6 +1923,7 @@ def animate_activity_log(
         wrap_resources_at=wrap_resources_at,
         gap_between_resources=gap_between_resources,
         queue_direction=queue_direction,
+        flip_entity_icons=flip_entity_icons,
         custom_resource_icon=custom_resource_icon,
         frame_duration=frame_duration,  # milliseconds
         frame_transition_duration=frame_transition_duration,  # milliseconds

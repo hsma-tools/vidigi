@@ -127,6 +127,34 @@ The figure margin auto-expands to fit long stage labels, so you rarely need
 | `resource_opacity` | `0.8` | Opacity of the resource icons. |
 | `custom_resource_icon` | `None` | Emoji or short string used for every resource icon in place of the default. |
 | `custom_entity_icon_list` | `None` | List of emoji cycled through for entity icons (`animate_activity_log` only). |
+| `flip_entity_icons` | `False` | Mirror entity icons (and a `custom_resource_icon`) horizontally — useful when an emoji faces the wrong way for a layout, independently of `queue_direction`. Set per event instead with a `flip_icons` column on `event_position_df`. |
+
+Flipping is a CSS mirror, not a different icon, so it needs a small `<style>`
+block to reach the page — `vidigi` injects it automatically in a notebook or
+Streamlit app whenever any icon actually resolves to flipped. Embedding the
+figure another way (`fig.write_html()`, a hand-built page) needs it added
+explicitly:
+
+```python
+from vidigi.utils import entity_icon_flip_css
+
+with open("animation.html", "w") as f:
+    f.write(entity_icon_flip_css())
+    f.write(fig.to_html(full_html=False, include_plotlyjs="cdn"))
+```
+
+or, in Streamlit:
+
+```python
+import streamlit as st
+from vidigi.utils import entity_icon_flip_css
+
+st.markdown(entity_icon_flip_css(), unsafe_allow_html=True)
+st.plotly_chart(fig)
+```
+
+This does not affect a static export via `fig.write_image()`, which renders in
+its own page rather than the browser tab the CSS would otherwise reach.
 
 ## Size, spacing and wrapping
 
