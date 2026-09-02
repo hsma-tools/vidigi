@@ -128,6 +128,12 @@ The figure margin auto-expands to fit long stage labels, so you rarely need
 | `custom_resource_icon` | `None` | Emoji or short string used for every resource icon in place of the default. |
 | `custom_entity_icon_list` | `None` | List of emoji cycled through for entity icons (`animate_activity_log` only). |
 | `flip_entity_icons` | `False` | Mirror entity icons (and a `custom_resource_icon`) horizontally — useful when an emoji faces the wrong way for a layout, independently of `queue_direction`. Set per event instead with a `flip_icons` column on `event_position_df`. |
+| `entity_icon_font` | `None` | Render entity icons (and a `custom_resource_icon`) in an icon font instead of emoji — a preset name (`"font-awesome"`, `"bootstrap-icons"`, `"material-symbols"`) or any CSS font-family already on the page. `custom_entity_icon_list` then supplies that font's codepoints instead of emoji. |
+| `entity_icon_font_weight` | `None` | Overrides a preset's default weight (Font Awesome ships Solid at 900, Regular at 400). |
+| `entity_colour_by` | `None` | Name of an event-log column to colour entity icons by (priority, pathway, …). Only visible together with `entity_icon_font` — emoji ignore colour entirely. |
+| `entity_colour_map` | `None` | Maps `entity_colour_by` values to specific colours, e.g. `{"high": "crimson", "low": "steelblue"}`. An uncovered value falls back to Plotly's default palette. |
+| `show_entity_legend` | `True` | Show a legend for `entity_colour_by`. Ignored when it is not set. |
+| `resource_image_size` | `None` | Size, in data units, of an image `resource_icon` (see below). Defaults to `resource_icon_size`, kept independent of `gap_between_resources` so widening the spacing between resources doesn't also inflate the image. |
 
 Flipping is a CSS mirror, not a different icon, so it needs a small `<style>`
 block to reach the page — `vidigi` injects it automatically in a notebook or
@@ -155,6 +161,54 @@ st.plotly_chart(fig)
 
 This does not affect a static export via `fig.write_image()`, which renders in
 its own page rather than the browser tab the CSS would otherwise reach.
+
+### Beyond emoji: icon fonts, per-entity colour, and resource images
+
+Emoji cap what an icon can look like, and — being colour fonts — ignore
+`textfont.color` entirely, so an entity can never be coloured by, say,
+priority. `entity_icon_font` switches to an icon font instead: thousands of
+monochrome glyphs, which `entity_colour_by` can then colour meaningfully.
+
+```python
+animate_activity_log(
+    event_log, event_position_df,
+    entity_icon_font="font-awesome",
+    custom_entity_icon_list=["", ""],  # fa-person / fa-person-dress
+    entity_colour_by="priority",
+    entity_colour_map={"high": "crimson", "low": "steelblue"},
+)
+```
+
+Presets load their CSS from a CDN — nothing is bundled with vidigi, so this
+needs network access at view time, and does not affect `fig.write_image()`, for
+the same reason flipping doesn't. The CSS is injected automatically, the same
+way as `flip_entity_icons`'s; see `vidigi.utils.entity_icon_font_css()` /
+`inject_icon_font_css()` for embedding a figure another way.
+
+`"material-symbols"` is a ligature font, so `custom_entity_icon_list` can use
+names instead of codepoints (`"directions_walk"` renders as the walking-person
+glyph directly). The `+ N more` / ASCII-gauge overflow icon always stays on the
+default font — a substituted glyph in place of the ASCII art would be worse
+than plain text.
+
+A `resource_icon` column on `event_position_df` (or `EventPosition(...,
+resource_icon=...)`) overrides `custom_resource_icon` per event, and can name
+an image — a URL, local path, or `data:` URI — instead of a text glyph, drawn
+at the resource's position via Plotly's `layout.images` rather than as text:
+
+```python
+EventPosition(
+    event="treatment_begins", x=250, y=175, resource="n_cubicles",
+    label="Being Treated", resource_icon="assets/bed.png",
+)
+```
+
+Unlike a text resource icon, an image one cannot be mirrored by
+`flip_entity_icons` — Plotly has no per-image transform — so supply it
+pre-mirrored if the layout needs it facing the other way.
+
+[feat_custom_icons.ipynb](/examples/feat_custom_icons/feat_custom_icons.ipynb)
+walks through all three together.
 
 ## Size, spacing and wrapping
 

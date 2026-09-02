@@ -587,6 +587,293 @@ def test_custom_resource_icon_follows_per_event_flip(
 
 
 # --------------------------------------------------------------------------- #
+# Custom icons: icon fonts, per-entity colour, resource images
+# --------------------------------------------------------------------------- #
+
+
+@pytest.fixture
+def positioned_with_priority(simple_queue_log, basic_event_position_df):
+    """The `positioned` fixture's log, with a `priority` column carried through -
+    exactly how a real event-log column (e.g. triage priority) would reach
+    `entity_colour_by`. Entities 1 and 3 are 'high', 2 is 'low'."""
+    log = simple_queue_log.copy()
+    log["priority"] = log["entity_id"].map({1: "high", 2: "low", 3: "high"})
+    reshaped = reshape_for_animations(log, every_x_time_units=10, limit_duration=50)
+    return generate_animation_df(reshaped, basic_event_position_df)
+
+
+def _entity_traces(fig):
+    """Every entity trace - `mode="markers+text"`, as distinct from the
+    stage-label trace (`mode="text"`) appended after them."""
+    return [t for t in fig.data if t.mode == "markers+text"]
+
+
+def test_no_font_or_colour_is_set_by_default(positioned, basic_event_position_df):
+    fig = generate_animation(positioned, basic_event_position_df)
+    assert fig.data[0].textfont.family is None
+    # The historic behaviour - one entity trace, uniformly coloured.
+    assert len(_entity_traces(fig)) == 1
+
+
+def test_entity_icon_font_applies_to_non_overflow_icons(
+    positioned, basic_event_position_df
+):
+    fig = generate_animation(
+        positioned, basic_event_position_df, entity_icon_font="font-awesome"
+    )
+    assert fig.data[0].textfont.family == "VidigiFontAwesomeSolid"
+    assert fig.data[0].textfont.weight == 900
+
+
+def test_entity_icon_font_weight_override(positioned, basic_event_position_df):
+    fig = generate_animation(
+        positioned,
+        basic_event_position_df,
+        entity_icon_font="font-awesome",
+        entity_icon_font_weight=400,
+    )
+    assert fig.data[0].textfont.weight == 400
+
+
+def test_overflow_icons_never_get_the_icon_font(
+    positioned_overflow, basic_event_position_df
+):
+    """Checks by the overflow row's actual *content* ('+ N more'), not by which
+    trace name it happens to land in - a trace-name-only check would pass even
+    if overflow rows and real entities were routed to the wrong buckets, as
+    long as *a* trace called "_overflow" still exists with no font set."""
+    fig = generate_animation(
+        positioned_overflow, basic_event_position_df, entity_icon_font="font-awesome"
+    )
+    overflow_family = plain_family = None
+    for frame in fig.frames:
+        for trace in frame.data:
+            if trace.text is None or trace.x is None:
+                continue
+            # Pair with x: the all-NaN "empty snapshot" placeholder row carries a
+            # leftover real icon string in its `icon` column despite never being
+            # drawn (NaN x/y - see prep.py) - skip anything not actually rendered,
+            # or it can be mistaken for a real, visible entity icon.
+            for x, text in zip(trace.x, trace.text):
+                if pd.notna(x) and text and "more" in str(text):
+                    overflow_family = trace.textfont.family
+                elif pd.notna(x) and text:
+                    plain_family = trace.textfont.family
+
+    assert overflow_family in (None, "")  # sanity: overflow really is present
+    assert plain_family == "VidigiFontAwesomeSolid"
+
+
+def test_reconciled_placeholder_traces_never_carry_a_trace_level_opacity(
+    positioned_overflow, basic_event_position_df
+):
+    """Regression test for a real Plotly animation bug: a category (here,
+    "_overflow" - nobody has queued long enough to overflow yet at frame 0)
+    that is empty in the frame where its placeholder trace is first created
+    must not have that placeholder's `opacity` "stick" once the category
+    starts having real content in later frames.
+
+    Plotly's frame animation only patches attributes a frame's trace data
+    explicitly sets; a real (non-placeholder) entity trace only ever sets
+    `marker.opacity` (uniformly, for every category), never a trace-level
+    `opacity`. So a placeholder that sets a trace-level `opacity=0` - even
+    though nulled-out x/y already draw nothing on its own frame - poisons
+    every later frame that reuses the same trace slot: the category renders
+    invisible for the rest of the animation, confirmed by inspecting the live
+    DOM in a real browser (a `<g class="trace">` stuck at `opacity: 0`), not
+    just by reading the frame data back in Python.
+    """
+    fig = generate_animation(
+        positioned_overflow, basic_event_position_df, entity_icon_font="font-awesome"
+    )
+    for trace in _entity_traces(fig):
+        assert trace.opacity in (None, 1)
+    for frame in fig.frames:
+        for trace in frame.data:
+            if trace.mode == "markers+text":
+                assert trace.opacity in (None, 1)
+
+
+def test_custom_icon_font_with_a_standalone_digit_raises(
+    positioned, basic_event_position_df
+):
+    # "Font Awesome 6 Free" is the vendor's own name for the exact preset this
+    # rejects it in favour of - see ICON_FONT_PRESETS in vidigi/utils.py.
+    with pytest.raises(ValueError, match="standalone number"):
+        generate_animation(
+            positioned, basic_event_position_df, entity_icon_font="Font Awesome 6 Free"
+        )
+
+
+def test_entity_colour_by_gives_a_stable_trace_structure_across_frames(
+    positioned_with_priority, basic_event_position_df
+):
+    """The whole feature depends on this: Plotly Express only creates a `color=`
+    trace for a category with at least one point in a given frame, so without
+    reconciliation a category missing from an early frame is missing from every
+    frame - confirmed via mutation testing below."""
+    fig = generate_animation(
+        positioned_with_priority, basic_event_position_df, entity_colour_by="priority"
+    )
+    base_names = sorted(t.name for t in _entity_traces(fig))
+    assert "high" in base_names and "low" in base_names
+    for frame in fig.frames:
+        assert sorted(t.name for t in frame.data) == base_names
+
+
+def test_entity_colour_by_sets_textfont_color_from_marker_color(
+    positioned_with_priority, basic_event_position_df
+):
+    fig = generate_animation(
+        positioned_with_priority,
+        basic_event_position_df,
+        entity_colour_by="priority",
+        entity_colour_map={"high": "crimson", "low": "steelblue"},
+    )
+    by_name = {t.name: t for t in fig.data}
+    assert by_name["high"].textfont.color == "crimson"
+    assert by_name["low"].textfont.color == "steelblue"
+    # Colouring entities must not repurpose overflow_text_color for real
+    # categories - only the reserved buckets keep it.
+    assert by_name["_overflow"].textfont.color == "black"
+
+
+def test_entity_colour_map_uncovered_value_gets_a_default_colour(
+    positioned_with_priority, basic_event_position_df
+):
+    fig = generate_animation(
+        positioned_with_priority,
+        basic_event_position_df,
+        entity_colour_by="priority",
+        entity_colour_map={"high": "crimson"},  # 'low' left uncovered
+    )
+    by_name = {t.name: t for t in fig.data}
+    assert by_name["low"].textfont.color not in (None, "", "crimson")
+
+
+def test_entity_colour_by_shows_a_legend_by_default(
+    positioned_with_priority, basic_event_position_df
+):
+    fig = generate_animation(
+        positioned_with_priority, basic_event_position_df, entity_colour_by="priority"
+    )
+    by_name = {t.name: t for t in fig.data}
+    assert by_name["high"].showlegend is not False
+    assert by_name["low"].showlegend is not False
+    # Never real categories, whatever show_entity_legend says.
+    assert by_name["_overflow"].showlegend is False
+
+
+def test_show_entity_legend_false_hides_it(
+    positioned_with_priority, basic_event_position_df
+):
+    fig = generate_animation(
+        positioned_with_priority,
+        basic_event_position_df,
+        entity_colour_by="priority",
+        show_entity_legend=False,
+    )
+    assert all(t.showlegend is False for t in _entity_traces(fig))
+
+
+def test_entity_colour_by_unknown_column_raises(positioned, basic_event_position_df):
+    with pytest.raises(ValueError, match="entity_colour_by"):
+        generate_animation(
+            positioned, basic_event_position_df, entity_colour_by="not_a_real_column"
+        )
+
+
+def test_resource_icon_image_becomes_a_layout_image(
+    positioned_with_resources, basic_event_position_df, scenario_with_resources
+):
+    epd_with_image = basic_event_position_df.copy()
+    epd_with_image.loc[
+        epd_with_image["event"] == "treatment_begins", "resource_icon"
+    ] = "https://example.com/bed.png"
+
+    fig = generate_animation(
+        positioned_with_resources, epd_with_image, scenario=scenario_with_resources
+    )
+
+    assert len(fig.layout.images) == scenario_with_resources.n_cubicles
+    assert all(img.source == "https://example.com/bed.png" for img in fig.layout.images)
+    # An image resource icon draws nothing on the text/marker trace it would
+    # otherwise have used.
+    assert not any(
+        t.mode == "markers+text" for t in fig.data if t.name not in ("", None)
+    )
+
+
+def test_resource_icon_image_size_defaults_independently_of_gap(
+    positioned_with_resources, basic_event_position_df, scenario_with_resources
+):
+    # Regression test: resource_image_size used to default to
+    # gap_between_resources, so widening the spacing between resources also
+    # inflated the image - unlike a text resource icon, whose size
+    # (resource_icon_size) is independent of the spacing between icons.
+    epd_with_image = basic_event_position_df.copy()
+    epd_with_image.loc[
+        epd_with_image["event"] == "treatment_begins", "resource_icon"
+    ] = "https://example.com/bed.png"
+
+    fig_narrow = generate_animation(
+        positioned_with_resources,
+        epd_with_image,
+        scenario=scenario_with_resources,
+        gap_between_resources=10,
+        resource_icon_size=24,
+    )
+    fig_wide = generate_animation(
+        positioned_with_resources,
+        epd_with_image,
+        scenario=scenario_with_resources,
+        gap_between_resources=80,
+        resource_icon_size=24,
+    )
+
+    assert all(img.sizex == 24 and img.sizey == 24 for img in fig_narrow.layout.images)
+    assert all(img.sizex == 24 and img.sizey == 24 for img in fig_wide.layout.images)
+
+
+def test_resource_image_size_overrides_the_default(
+    positioned_with_resources, basic_event_position_df, scenario_with_resources
+):
+    epd_with_image = basic_event_position_df.copy()
+    epd_with_image.loc[
+        epd_with_image["event"] == "treatment_begins", "resource_icon"
+    ] = "https://example.com/bed.png"
+
+    fig = generate_animation(
+        positioned_with_resources,
+        epd_with_image,
+        scenario=scenario_with_resources,
+        resource_icon_size=24,
+        resource_image_size=60,
+    )
+
+    assert all(img.sizex == 60 and img.sizey == 60 for img in fig.layout.images)
+
+
+def test_resource_icon_glyph_overrides_custom_resource_icon(
+    positioned_with_resources, basic_event_position_df, scenario_with_resources
+):
+    epd_with_glyph = basic_event_position_df.copy()
+    epd_with_glyph.loc[
+        epd_with_glyph["event"] == "treatment_begins", "resource_icon"
+    ] = "🛌"
+
+    fig = generate_animation(
+        positioned_with_resources,
+        epd_with_glyph,
+        scenario=scenario_with_resources,
+        custom_resource_icon="🛏️",  # overridden by resource_icon for this event
+    )
+
+    resource_trace = [t for t in fig.data if t.mode == "markers+text"][-1]
+    assert list(resource_trace.text) == ["🛌"] * len(resource_trace.x)
+
+
+# --------------------------------------------------------------------------- #
 # Hover configuration
 # --------------------------------------------------------------------------- #
 

@@ -15,10 +15,13 @@ from vidigi.utils import (
     _check_one_arrival_per_entity,
     _check_single_run,
     _enforce_int_params,
+    _is_image_source,
     _resolve_direction_sign,
     _resolve_icon_flip,
+    _resolve_icon_font,
     _resource_map_from_event_position_df,
     inject_icon_flip_css,
+    inject_icon_font_css,
 )
 import numpy as np
 from typing import Literal, Optional, TypeAlias
@@ -105,6 +108,78 @@ _MARGIN_FLOORS = {"l": 80, "r": 80, "t": 100, "b": 80}
 # Ceilings, so a pathological label or a tiny responsive figure can't hand the
 # whole canvas over to the margin.
 _MARGIN_CAPS = {"l": 400, "r": 450, "t": 250, "b": 300}
+
+
+def _reconcile_grouped_traces(fig: go.Figure, categories) -> None:
+    """Guarantee exactly one trace per `color=` category, in a fixed order, in
+    `fig.data` and every frame.
+
+    Plotly Express only creates a trace for a category in the frames where it
+    actually has at least one point (confirmed on plotly.js 6.7 and 5.12) - a
+    category absent from a given frame (no `entity_colour_by` value of that kind
+    present at that moment - including the very first frame, "frame 0" being what
+    `fig.data` itself represents) is silently dropped from that frame's trace list
+    entirely, rather than getting an empty placeholder the way an individual
+    entity does. A category that never appears in the first frame would be
+    missing from the animation outright; one only some entities have would wink
+    in and out as they arrive and depart. This finds one real occurrence of each
+    category (wherever it happens to exist) to carry its colour and legend
+    grouping over, and fills in an empty placeholder trace - the same idiom the
+    `go` backend already uses per entity - everywhere else.
+    """
+
+    def _find_template(category):
+        for trace in fig.data:
+            if trace.name == category:
+                return trace
+        for frame in fig.frames or ():
+            for trace in frame.data:
+                if trace.name == category:
+                    return trace
+        return None
+
+    templates = {category: _find_template(category) for category in categories}
+
+    def _placeholder(category):
+        template = templates[category]
+        marker_color = template.marker.color if template is not None else None
+        return go.Scatter(
+            x=[None],
+            y=[None],
+            text=[None],
+            mode="markers+text",
+            name=category,
+            # Null x/y already draw nothing, so a trace-level `opacity=0` isn't
+            # needed for *this* frame - and setting one anyway is actively
+            # harmful: Plotly's frame animation only patches attributes a frame
+            # explicitly sets, and a real (non-placeholder) trace from px never
+            # sets a trace-level `opacity` (only `marker.opacity`, applied
+            # uniformly - see the `opacity=0` passed to `px.scatter` above). So a
+            # trace-level 0 here would never get reset back to 1, leaving a
+            # category invisible for the rest of the animation once it does have
+            # entities, if it happened to be empty in the frame that first
+            # created this placeholder.
+            marker=dict(opacity=0, color=marker_color),
+            legendgroup=category,
+            showlegend=getattr(template, "showlegend", None) if template is not None else None,
+        )
+
+    # `fig.data = (...)` only accepts a permutation of fig's *own* existing traces -
+    # new ones have to be added first, then the whole set reordered into place.
+    _base_names = {trace.name for trace in fig.data}
+    missing = [category for category in categories if category not in _base_names]
+    if missing:
+        fig.add_traces([_placeholder(category) for category in missing])
+    by_name = {trace.name: trace for trace in fig.data}
+    fig.data = tuple(by_name[category] for category in categories)
+
+    # `go.Frame.data` carries no such restriction - a frame is not a `BaseFigure`.
+    for frame in fig.frames or ():
+        existing = {trace.name: trace for trace in frame.data}
+        frame.data = tuple(
+            existing[category] if category in existing else _placeholder(category)
+            for category in categories
+        )
 
 
 def _disable_axis_clipping(fig: go.Figure) -> None:
@@ -279,6 +354,12 @@ def generate_animation(
     gap_between_resource_rows: int = 30,
     queue_direction: QueueDirection = "left",
     flip_entity_icons: bool = False,
+    entity_icon_font: Optional[str] = None,
+    entity_icon_font_weight: Optional[int] = None,
+    entity_colour_by: Optional[str] = None,
+    entity_colour_map: Optional[dict] = None,
+    show_entity_legend: bool = True,
+    resource_image_size: Optional[float] = None,
     setup_mode: bool = False,
     frame_duration: int = 400,  # milliseconds
     frame_transition_duration: int = 600,  # milliseconds
@@ -451,6 +532,46 @@ def generate_animation(
         to flipped; embedding the figure a different way may need
         `vidigi.utils.entity_icon_flip_css()` added explicitly. Does not affect
         a static export via `fig.write_image()`.
+    entity_icon_font : str, optional
+        Render entity icons (and a `custom_resource_icon`) in an icon font
+        instead of emoji - lets an icon be any glyph the font provides, and,
+        because icon fonts are monochrome rather than colour fonts, is what
+        makes `entity_colour_by` visible on the icon itself. One of
+        `vidigi.utils.ICON_FONT_PRESETS` (currently `"font-awesome"`,
+        `"bootstrap-icons"`, `"material-symbols"`), or any CSS font-family name
+        already available on the page. `custom_entity_icon_list` then supplies
+        that font's codepoints (or, for `"material-symbols"`, ligature names
+        like `"directions_walk"`) instead of emoji. The overflow `+ N more` /
+        ASCII-gauge icon is always left on the default font, whatever this is
+        set to - seeing tofu or a substituted glyph in place of ASCII art would
+        be worse than the plain text. See `vidigi.utils.entity_icon_font_css`
+        for what reaching the page involves and two Plotly quirks it works
+        around; like `flip_entity_icons`, the CSS is injected automatically.
+    entity_icon_font_weight : int, optional
+        Overrides a preset's default weight (Font Awesome ships Solid at 900
+        and Regular at 400, say). Ignored for a raw custom family in
+        `entity_icon_font` - most fonts have only one.
+    entity_colour_by : str, optional
+        Name of a column - typically one already on your event log, such as
+        `priority` or `pathway` - to colour entity icons by by. Unlike emoji,
+        which are colour fonts and ignore `textfont.color` entirely, this only
+        has a visible effect together with `entity_icon_font`. Overflow rows
+        keep `overflow_text_color` and are never coloured or added to the
+        legend, whatever category they would otherwise fall into.
+    entity_colour_map : dict, optional
+        Maps values of `entity_colour_by` to specific colours, e.g.
+        `{"high": "crimson", "low": "steelblue"}`. A value with no entry falls
+        back to Plotly's default qualitative palette.
+    show_entity_legend : bool, default=True
+        Show a legend for `entity_colour_by`. Ignored when `entity_colour_by`
+        is not set - there is nothing to key.
+    resource_image_size : float, optional
+        Size, in data units (the same units as `event_position_df`'s `x`/`y`),
+        of an image `resource_icon` (see `EventPosition.resource_icon`).
+        Defaults to `resource_icon_size`, kept independent of
+        `gap_between_resources` so changing the spacing between resources
+        doesn't also change their size. Has no effect on a text glyph
+        resource icon, which is sized by `resource_icon_size` as before.
     setup_mode : bool, optional
         Whether to run in setup mode, showing grid and tick marks (default is
         False).
@@ -911,9 +1032,10 @@ def generate_animation(
     )
     any_icons_flipped = bool(_entity_flip.any())
 
-    # Overflow rows ('+ N more', the ASCII gauge bars) are never flipped - mirrored
-    # text is unreadable, and the gauge embeds the entity icon mid-string, so a
-    # leading marker would not even land next to it.
+    # Overflow rows ('+ N more', the ASCII gauge bars) are never flipped - the
+    # ASCII bar / count string is unreadable mirrored, whatever entity icon it
+    # happens to be attached to (`ascii_queue_icon` takes an `icon` argument but
+    # never actually uses it in its output).
     if "additional" in full_entity_df_plus_pos_copy.columns:
         _entity_flip = _entity_flip & full_entity_df_plus_pos_copy["additional"].isna()
 
@@ -924,6 +1046,67 @@ def generate_animation(
 
     if any_icons_flipped:
         inject_icon_flip_css()
+
+    # Icon font: a single choice for the whole animation (not per-event, unlike
+    # queue_direction/flip_icons - this is a font, not a layout concern), applied
+    # per point only so overflow rows can be exempted from it, the same way they
+    # are exempted from flipping - a substituted glyph in place of the ASCII gauge
+    # would be worse than plain text, and font metrics for a wide bar-and-count
+    # string were never designed against an icon font in mind.
+    #
+    # A row with no entity at all - the all-NaN placeholder that keeps an
+    # otherwise-empty snapshot from vanishing - is exempted the same way: it
+    # never renders (NaN x/y), and without this it would surface as its own
+    # spurious "nan" colour-group category below (`entity_colour_by`/`icon`
+    # cast to plain strings), one entry no real entity ever belongs to.
+    _not_overflow = full_entity_df_plus_pos_copy[entity_col_name].notna()
+    if "additional" in full_entity_df_plus_pos_copy.columns:
+        _not_overflow &= full_entity_df_plus_pos_copy["additional"].isna()
+
+    _resolved_family = _resolved_weight = None
+    if entity_icon_font is not None:
+        _resolved_family, _resolved_weight = _resolve_icon_font(
+            entity_icon_font, entity_icon_font_weight
+        )
+        inject_icon_font_css(entity_icon_font, entity_icon_font_weight)
+
+    # Per-entity colour needs its own trace per category, since Plotly Express has
+    # no per-point channel for `textfont.color` on an animated figure (the same gap
+    # `flip_entity_icons` works around for text, by folding the marker into the
+    # string itself - not an option here, since colour is a real Plotly attribute
+    # rather than something that can be smuggled into `text`). `color=` is reused
+    # for the font exemption too: overflow rows are routed into their own reserved
+    # category, `_entity_icon_group="_overflow"`, so the two concerns share one
+    # mechanism instead of needing separate mid-animation restyling passes.
+    _icon_group_column = None
+    if entity_colour_by is not None or entity_icon_font is not None:
+        if entity_colour_by is not None:
+            if entity_colour_by not in full_entity_df_plus_pos_copy.columns:
+                raise ValueError(
+                    f"`entity_colour_by='{entity_colour_by}'` is not a column on the "
+                    f"positioned entity frame. Available columns: "
+                    f"{sorted(str(c) for c in full_entity_df_plus_pos_copy.columns)}. "
+                    f"This is usually a column carried straight through from your "
+                    f"event log (e.g. 'priority', 'pathway')."
+                )
+            _base_group = full_entity_df_plus_pos_copy[entity_colour_by].astype(str)
+        else:
+            # No real category - one synthetic bucket, so every non-overflow entity
+            # still lands in its own trace, separate from the overflow row's.
+            _base_group = pd.Series("_entity", index=full_entity_df_plus_pos_copy.index)
+
+        _icon_group_column = "_entity_icon_group"
+        _icon_group_values = _base_group.where(_not_overflow, "_overflow")
+        full_entity_df_plus_pos_copy[_icon_group_column] = _icon_group_values
+
+        # Every category that will ever occur, across the whole animation - not
+        # just whichever ones px.scatter's own first frame happens to draw. Fed to
+        # `_reconcile_grouped_traces` below, which is what actually makes a
+        # category missing from a given frame (nobody of that `entity_colour_by`
+        # value has arrived yet, say) show up there anyway, as an empty
+        # placeholder - see its docstring for the Plotly Express behaviour this
+        # works around.
+        _all_icon_categories = sorted(_icon_group_values.unique())
 
     # The animation frame is the *formatted* time, so a display format coarser than the
     # snapshot interval silently merges snapshots into a single frame - e.g. 10 minute
@@ -943,6 +1126,16 @@ def generate_animation(
             stacklevel=3,
         )
 
+    # Reused by both express calls below - a group with no explicit colour still
+    # gets one, from px's own default qualitative palette, by leaving it out of
+    # the map entirely rather than trying to pre-assign a default ourselves.
+    _px_color_kwargs = {}
+    if _icon_group_column is not None:
+        _color_map = dict(entity_colour_map) if entity_colour_map else {}
+        _color_map.setdefault("_overflow", overflow_text_color)
+        _color_map.setdefault("_entity", overflow_text_color)
+        _px_color_kwargs = dict(color=_icon_group_column, color_discrete_map=_color_map)
+
     if str.lower(backend) in ["express", "px", "plotly express"]:
         if hover_text_entity is None:
             fig = px.scatter(
@@ -961,7 +1154,11 @@ def generate_animation(
                 width=plotly_width,
                 # This sets the opacity of the points that sit behind
                 opacity=0,
+                **_px_color_kwargs,
             )
+
+            if _icon_group_column is not None:
+                _reconcile_grouped_traces(fig, _all_icon_categories)
 
             # plotly express does not accept `hoverinfo`, so hover has to be
             # switched off on the resulting traces instead.
@@ -989,7 +1186,11 @@ def generate_animation(
                 width=plotly_width,
                 # This sets the opacity of the points that sit behind
                 opacity=0,
+                **_px_color_kwargs,
             )
+
+            if _icon_group_column is not None:
+                _reconcile_grouped_traces(fig, _all_icon_categories)
 
             # update hover text in initial frame
             fig.update_traces(hovertemplate=hover_text)
@@ -1008,6 +1209,15 @@ def generate_animation(
         "plotly graph objects",
         "plotly go",
     ]:
+        # No per-row overflow exemption in this backend (unlike express) - out of
+        # scope for the experimental path. `entity_colour_by` and the legend are
+        # not supported here at all.
+        _go_backend_font_kwargs = {}
+        if _resolved_family is not None:
+            _go_backend_font_kwargs["family"] = _resolved_family
+            if _resolved_weight is not None:
+                _go_backend_font_kwargs["weight"] = _resolved_weight
+
         # Get sorted lists of unique entities and animation frames
         unique_entities = sorted(full_entity_df_plus_pos_copy[entity_col_name].unique())
         unique_frames = sorted(
@@ -1043,7 +1253,11 @@ def generate_animation(
                         name=entity,
                         text=entity_df["icon_display"],
                         mode="text",
-                        textfont=dict(size=16, color=f"rgba(0, 0, 0, {text_opacity})"),
+                        textfont=dict(
+                            size=16,
+                            color=f"rgba(0, 0, 0, {text_opacity})",
+                            **_go_backend_font_kwargs,
+                        ),
                         hovertemplate=(
                             f"<b>{entity_df[event_col_name].iloc[0]}</b><br><br>"
                             "x: %{x}<br>"
@@ -1063,7 +1277,11 @@ def generate_animation(
                         name=entity,
                         text=[""],
                         mode="text",
-                        textfont=dict(size=16, color=f"rgba(0, 0, 0, {text_opacity})"),
+                        textfont=dict(
+                            size=16,
+                            color=f"rgba(0, 0, 0, {text_opacity})",
+                            **_go_backend_font_kwargs,
+                        ),
                         hovertemplate="<extra></extra>",
                         customdata=[[""]],
                     )
@@ -1195,6 +1413,35 @@ def generate_animation(
             f"backend. Matching is case-insensitive."
         )
 
+    # `color=` grouping is express-only (see `_px_color_kwargs` above) - the `go`
+    # backend sets its own font at trace-construction time instead, and never
+    # supports colour/legend at all (see its params' docstrings).
+    _is_express_backend = str.lower(backend) in ["express", "px", "plotly express"]
+
+    def _style_entity_trace(trace):
+        """Apply size, and colour/font-by-category if grouping is active, to one
+        entity trace - shared between the base traces and every frame's, since a
+        colour-grouped frame trace carries its own (initially empty) `textfont`
+        that otherwise blocks it inheriting `family`/`color` from the base trace -
+        confirmed via mutation testing, and the reason this exists as its own
+        per-frame pass rather than a single pass over `fig.data`.
+        """
+        trace.textfont.size = entity_icon_size
+        if _icon_group_column is not None and _is_express_backend:
+            # One trace per `_entity_icon_group` category (see its construction
+            # above) - each already carries its own colour via `trace.marker.color`
+            # (from `color_discrete_map`, or px's own default palette for a
+            # category the map doesn't cover), so copy that across rather than
+            # overwriting every trace with the same `overflow_text_color`, which
+            # would defeat the point of colouring entities in the first place.
+            trace.textfont.color = trace.marker.color
+            if trace.name != "_overflow" and _resolved_family is not None:
+                trace.textfont.family = _resolved_family
+                if _resolved_weight is not None:
+                    trace.textfont.weight = _resolved_weight
+        else:
+            trace.textfont.color = overflow_text_color
+
     # Update the size of the icons and labels
     # This is what determines the size of the individual emojis that
     # represent our people!
@@ -1202,8 +1449,20 @@ def generate_animation(
     # Apply entity_icon_size to all traces that represent entities
     for trace in fig.data:
         if "marker" in trace:
-            trace.textfont.size = entity_icon_size
-            trace.textfont.color = overflow_text_color
+            _style_entity_trace(trace)
+
+    if _icon_group_column is not None and _is_express_backend:
+        for trace in fig.data:
+            # "_entity" (no real `entity_colour_by`, just the font exemption's own
+            # grouping) and "_overflow" are never real categories - never worth a
+            # legend entry, whatever `show_entity_legend` says.
+            if trace.name in ("_entity", "_overflow") or not show_entity_legend:
+                trace.showlegend = False
+
+        for frame in fig.frames or ():
+            for trace in frame.data:
+                if "marker" in trace:
+                    _style_entity_trace(trace)
 
     # Now add labels identifying each stage (optional - can either be used
     # in conjunction with a background image or as a way to see stage names
@@ -1315,18 +1574,61 @@ def generate_animation(
         else:
             events_with_resources["y_final"] = events_with_resources["y"]
 
+        # `EventPosition.resource_icon` overrides `custom_resource_icon` per event, and
+        # - when it names an image (a URL, local path, or `data:` URI with an image
+        # extension; anything else is a text glyph, exactly like `custom_resource_icon`)
+        # - is drawn as a static `layout.images` entry instead of scatter text. Closes
+        # the TODO this replaced: custom icons per resource, for glyphs and images alike.
+        if "resource_icon" in events_with_resources.columns:
+            _resource_icon_override = events_with_resources["resource_icon"]
+            _is_image_icon = _resource_icon_override.apply(
+                lambda v: _is_image_source(v) if pd.notna(v) else False
+            )
+        else:
+            _resource_icon_override = pd.Series(None, index=events_with_resources.index)
+            _is_image_icon = pd.Series(False, index=events_with_resources.index)
+
+        image_resources = events_with_resources[_is_image_icon]
+        events_with_resources = events_with_resources[~_is_image_icon]
+        _resource_icon_override = _resource_icon_override[~_is_image_icon]
+
+        for _, row in image_resources.iterrows():
+            image_source = process_background_image_path(row["resource_icon"])
+            image_size = (
+                resource_image_size
+                if resource_image_size is not None
+                else resource_icon_size
+            )
+            fig.add_layout_image(
+                dict(
+                    source=image_source,
+                    x=row["x_final"],
+                    y=row["y_final"] - 10,
+                    xref="x",
+                    yref="y",
+                    sizex=image_size,
+                    sizey=image_size,
+                    xanchor="center",
+                    yanchor="middle",
+                    sizing="contain",
+                    layer="above",
+                )
+            )
+
         # This just adds an additional scatter trace that creates large dots
-        # that represent the individual resources
-        # TODO: Add ability to pass in 'icon' column as part of the event_position_df that
-        # can then be used to provide custom icons per resource instead of a single custom
-        # icon for all resources
-        if custom_resource_icon is not None:
+        # that represent the individual resources. A row's own `resource_icon`
+        # (when a text glyph, not an image - handled above) takes precedence over
+        # `custom_resource_icon`, falling back to it where unset.
+        _resource_glyph = _resource_icon_override.where(
+            _resource_icon_override.notna(), custom_resource_icon
+        )
+        if custom_resource_icon is not None or _resource_icon_override.notna().any():
             # Follows the same per-event flip resolution as the entity icons above,
             # so a resource icon faces the same way as the entities queuing for it.
             resource_flip = _resolve_icon_flip(events_with_resources, flip_entity_icons)
             resource_icon_text = [
-                (ICON_FLIP_MARKER + custom_resource_icon) if flipped else custom_resource_icon
-                for flipped in resource_flip
+                (ICON_FLIP_MARKER + icon) if flipped else icon
+                for icon, flipped in zip(_resource_glyph, resource_flip)
             ]
             if resource_flip.any():
                 inject_icon_flip_css()
@@ -1513,6 +1815,12 @@ def animate_activity_log(
     gap_between_resources: int = 10,
     queue_direction: QueueDirection = "left",
     flip_entity_icons: bool = False,
+    entity_icon_font: Optional[str] = None,
+    entity_icon_font_weight: Optional[int] = None,
+    entity_colour_by: Optional[str] = None,
+    entity_colour_map: Optional[dict] = None,
+    show_entity_legend: bool = True,
+    resource_image_size: Optional[float] = None,
     resource_opacity: float = 0.8,
     custom_resource_icon: Optional[str] = None,
     override_x_max: Optional[int] = None,
@@ -1553,7 +1861,9 @@ def animate_activity_log(
     event_position_df : pd.DataFrame
         DataFrame specifying the positions of different events, with columns
         'event', 'x', and 'y' (plus optional 'label', 'resource', 'direction' -
-        see ``queue_direction`` - and 'flip_icons' - see ``flip_entity_icons``).
+        see ``queue_direction`` - 'flip_icons' - see ``flip_entity_icons`` -
+        and 'resource_icon', which overrides ``custom_resource_icon`` per event
+        and can name an image instead of a text glyph - see ``EventPosition``).
     scenario : object, optional
         Object whose attributes give the number of each resource available at a
         step, e.g. ``scenario.n_nurses`` (default is None). Used for two
@@ -1679,6 +1989,33 @@ def animate_activity_log(
         whenever any icon actually resolves to flipped; embedding the figure a
         different way may need `vidigi.utils.entity_icon_flip_css()` added
         explicitly. Does not affect a static export via `fig.write_image()`.
+    entity_icon_font : str, optional
+        Render entity icons (and a `custom_resource_icon`) in an icon font
+        instead of emoji, so an icon can be any glyph the font provides - one
+        of `vidigi.utils.ICON_FONT_PRESETS` (`"font-awesome"`,
+        `"bootstrap-icons"`, `"material-symbols"`), or any CSS font-family
+        name already available on the page. `custom_entity_icon_list` then
+        supplies that font's codepoints instead of emoji. See
+        `generate_animation`'s docstring for the overflow-icon exemption and
+        `vidigi.utils.entity_icon_font_css` for what reaching the page
+        involves; the CSS is injected automatically, as for
+        `flip_entity_icons`.
+    entity_icon_font_weight : int, optional
+        Overrides a preset's default weight. Ignored for a raw custom family.
+    entity_colour_by : str, optional
+        Name of a column - typically one already on your event log - to
+        colour entity icons by. Only visible together with `entity_icon_font`,
+        since emoji are colour fonts and ignore `textfont.color` entirely.
+    entity_colour_map : dict, optional
+        Maps values of `entity_colour_by` to specific colours; an uncovered
+        value falls back to Plotly's default qualitative palette.
+    show_entity_legend : bool, default=True
+        Show a legend for `entity_colour_by`. Ignored when it is not set.
+    resource_image_size : float, optional
+        Size, in data units, of an image `resource_icon` (see
+        `EventPosition.resource_icon`). Defaults to `resource_icon_size`,
+        kept independent of `gap_between_resources` so changing the spacing
+        between resources doesn't also change their size.
     resource_opacity : float, optional
         Opacity of resource icons (default is 0.8).
     custom_resource_icon : str, optional
@@ -1924,6 +2261,12 @@ def animate_activity_log(
         gap_between_resources=gap_between_resources,
         queue_direction=queue_direction,
         flip_entity_icons=flip_entity_icons,
+        entity_icon_font=entity_icon_font,
+        entity_icon_font_weight=entity_icon_font_weight,
+        entity_colour_by=entity_colour_by,
+        entity_colour_map=entity_colour_map,
+        show_entity_legend=show_entity_legend,
+        resource_image_size=resource_image_size,
         custom_resource_icon=custom_resource_icon,
         frame_duration=frame_duration,  # milliseconds
         frame_transition_duration=frame_transition_duration,  # milliseconds

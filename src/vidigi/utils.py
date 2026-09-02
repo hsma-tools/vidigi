@@ -5,6 +5,7 @@ import webcolors
 import warnings
 import numbers
 import inspect
+import re
 from functools import wraps
 
 
@@ -111,6 +112,13 @@ class EventPosition(BaseModel):
         ``flip_entity_icons`` passed to ``animate_activity_log`` / ``generate_animation``.
         Requires the CSS from ``vidigi.utils.inject_icon_flip_css`` /
         ``entity_icon_flip_css`` to reach the page - see their docstrings.
+    resource_icon : Optional[str]
+        Overrides ``custom_resource_icon`` for this event's resources. A URL, a
+        local file path, or a ``data:`` URI (judged by an image file extension
+        or URL scheme - anything else is treated as a text glyph, exactly like
+        ``custom_resource_icon``) is drawn as a static image instead of text.
+        Unlike the entity icon flip, an image resource icon cannot be mirrored
+        by ``flip_entity_icons`` - supply it pre-mirrored if needed.
     """
 
     event: str
@@ -120,6 +128,7 @@ class EventPosition(BaseModel):
     resource: Optional[str] = None
     direction: Optional[QueueDirection] = None
     flip_icons: Optional[bool] = None
+    resource_icon: Optional[str] = None
 
 
 def create_event_position_df(
@@ -145,7 +154,9 @@ def create_event_position_df(
         df = pd.DataFrame(validated_data)
 
         # Reorder columns to match the desired output
-        df = df[["event", "x", "y", "label", "resource", "direction", "flip_icons"]]
+        df = df[
+            ["event", "x", "y", "label", "resource", "direction", "flip_icons", "resource_icon"]
+        ]
 
         return df
     except ValidationError as e:
@@ -205,21 +216,17 @@ def entity_icon_flip_css() -> str:
     return ENTITY_ICON_FLIP_CSS
 
 
-def inject_icon_flip_css() -> None:
-    """
-    Display the CSS that mirrors flipped entity icons, in whichever environment
-    this is called from.
+def _display_html(html: str) -> None:
+    """Show an HTML string in whichever rich environment is actually active.
 
-    Tries, in order: displaying it as HTML via IPython (notebooks, JupyterLab,
+    Tries, in order: displaying it via IPython (notebooks, JupyterLab,
     Quarto/nbconvert execution), then `streamlit.markdown` (a Streamlit app). If
-    neither is actually active, this is a silent no-op - use
-    `entity_icon_flip_css` directly instead (see its docstring for where to put
-    the result) in a plain script, or when writing a figure out with
-    ``fig.write_html()``.
+    neither is actually active, this is a silent no-op - the caller's own
+    `*_css()` function returns the same HTML directly for that case (a plain
+    script, or writing a figure out with ``fig.write_html()``).
 
-    Called automatically by `generate_animation` / `animate_activity_log`
-    whenever any entity icon actually resolves to flipped, so this normally
-    does not need to be called directly.
+    Shared by `inject_icon_flip_css` and `inject_icon_font_css`, so the two
+    features reach the page the same way and cannot drift apart.
     """
     try:
         from IPython import get_ipython
@@ -230,7 +237,7 @@ def inject_icon_flip_css() -> None:
         # for an active shell avoids a stray "<IPython.core.display.HTML object>"
         # landing in that script's stdout.
         if get_ipython() is not None:
-            display(HTML(ENTITY_ICON_FLIP_CSS))
+            display(HTML(html))
             return
     except ImportError:
         pass
@@ -238,9 +245,203 @@ def inject_icon_flip_css() -> None:
     try:
         import streamlit as st
 
-        st.markdown(ENTITY_ICON_FLIP_CSS, unsafe_allow_html=True)
+        st.markdown(html, unsafe_allow_html=True)
     except ImportError:
         pass
+
+
+def inject_icon_flip_css() -> None:
+    """
+    Display the CSS that mirrors flipped entity icons, in whichever environment
+    this is called from - see `_display_html`. If neither is actually active,
+    this is a silent no-op - use `entity_icon_flip_css` directly instead (see
+    its docstring for where to put the result) in a plain script, or when
+    writing a figure out with ``fig.write_html()``.
+
+    Called automatically by `generate_animation` / `animate_activity_log`
+    whenever any entity icon actually resolves to flipped, so this normally
+    does not need to be called directly.
+    """
+    _display_html(ENTITY_ICON_FLIP_CSS)
+
+
+# Icon-font presets: a name -> the CSS needed to load it, all pre-aliased under a
+# vidigi-chosen family name.
+#
+# This aliasing is not cosmetic - it works around a confirmed Plotly bug (plotly.js
+# 6.7 and 5.12 both reproduce it): a `textfont.family` value containing a standalone
+# number - exactly the shape of "Font Awesome 6 Free", the vendor's own official
+# family name - is silently dropped with no error and no visible effect, verified by
+# inspecting the written SVG `style` attribute directly (no `font-family` at all is
+# present; every other property i.e. `font-weight` still is). "Font Awesome 6",
+# "Font Awesome 5 Free", and made-up strings like "Test 6 Test" all reproduce it;
+# "FontAwesome6Free" (no standalone digit token) does not, which is why the aliases
+# below strip spaces around the model number, or drop it, rather than quoting it.
+#
+# Every preset also carries its own `@font-face` (or, for Material Symbols' Google
+# Fonts hosting, a `<link>`) rather than trusting the vendor's stylesheet wholesale -
+# both existing CDN stylesheets ship `font-display: block`, which combines badly with
+# the second issue `entity_icon_font_css` works around (SVG text not triggering an
+# automatic font fetch): once a browser commits to the fallback font for a `block`
+# request, confirmed (Chromium) NOT to swap back for that already-painted text even
+# after the real font finishes loading. Re-declaring under `font-display: swap` avoids
+# relying on that swap ever happening in the first place.
+ICON_FONT_PRESETS = {
+    "font-awesome": {
+        "family": "VidigiFontAwesomeSolid",
+        "weight": 900,
+        "src": "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/webfonts/fa-solid-900.woff2",
+    },
+    "bootstrap-icons": {
+        "family": "VidigiBootstrapIcons",
+        "weight": 400,
+        "src": "https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/fonts/bootstrap-icons.woff2",
+    },
+    "material-symbols": {
+        # Google's own family name - no standalone digit, so no alias is needed here.
+        # A ligature font: the *text* "home" renders as the house glyph directly, so
+        # unlike the other two presets this needs no codepoint lookup at all.
+        "family": "Material Symbols Outlined",
+        "weight": 400,
+        "css_import": "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined",
+    },
+}
+
+# Matches a number that is its own token (surrounded by whitespace, or the string
+# boundary once padded - see `_resolve_icon_font`), not a digit embedded in a word.
+_STANDALONE_DIGIT_RE = re.compile(r"(?:^|\s)\d+(?:\s|$)")
+
+
+def _resolve_icon_font(font: str, weight: Optional[int] = None):
+    """Resolve a preset name or a raw CSS family string to ``(family, weight)``.
+
+    A preset name (one of `ICON_FONT_PRESETS`) resolves to its pre-aliased family,
+    with `weight` overriding the preset's default when given. Anything else is
+    treated as a family string for a webfont already loaded some other way (a
+    system font, or the caller's own `<link>`/`@font-face`) - checked for the
+    same standalone-digit shape Plotly silently drops (see `ICON_FONT_PRESETS`),
+    and raised on rather than left to fail invisibly.
+    """
+    if font in ICON_FONT_PRESETS:
+        preset = ICON_FONT_PRESETS[font]
+        return preset["family"], (weight if weight is not None else preset["weight"])
+
+    if _STANDALONE_DIGIT_RE.search(f" {font} "):
+        raise ValueError(
+            f"`entity_icon_font={font!r}` contains a standalone number. Plotly silently "
+            f"drops a `textfont.family` value shaped like that (confirmed on plotly.js "
+            f"6.7 and 5.12) - which is exactly why the vendor's own family name, "
+            f"'Font Awesome 6 Free', does not work directly, and why the built-in "
+            f"presets ({', '.join(sorted(ICON_FONT_PRESETS))}) exist: they alias around "
+            f"it. If you need a font whose real name has a number in it, declare your "
+            f"own `@font-face` under a digit-free alias and pass that alias name here."
+        )
+    return font, weight
+
+
+def entity_icon_font_css(font: str, weight: Optional[int] = None) -> str:
+    """
+    Return the HTML needed to render entity icons in `font`.
+
+    This is more than a stylesheet link. Plotly draws icon text inside an SVG
+    `<text>` element, and a browser's "does the page actually need this webfont"
+    detection does not reliably notice SVG text - confirmed in Chromium, where a
+    font can sit undownloaded indefinitely even though text asking for it never
+    stops being on the page. The returned HTML therefore also includes a small
+    hidden element set in the target font, which reliably forces the fetch
+    regardless of that limitation.
+
+    Also works around a second, unrelated Plotly bug where a `textfont.family`
+    value shaped like the vendor's own name for several popular icon fonts is
+    silently dropped - see the module-level comment on `ICON_FONT_PRESETS` for
+    the detail, and `_resolve_icon_font` for what happens with a raw custom
+    family string.
+
+    Parameters
+    ----------
+    font : str
+        One of `ICON_FONT_PRESETS` (currently `"font-awesome"`,
+        `"bootstrap-icons"`, `"material-symbols"`), or any CSS font-family name
+        already available on the page - a system font, or one loaded by your
+        own `<link>` / `@font-face`.
+    weight : int, optional
+        Overrides a preset's default weight (Font Awesome ships Solid at 900
+        and Regular at 400, say). Ignored for a raw custom family - pass the
+        weight to `entity_icon_font_weight` instead, which is applied directly
+        as `textfont.weight`.
+
+    Returns
+    -------
+    str
+        HTML - a `<link>` or `<style>` block, plus a hidden trigger element -
+        safe to concatenate directly into a page, or pass to
+        `inject_icon_font_css` to display it automatically. Requires network
+        access to the relevant CDN at view time; nothing is bundled with vidigi.
+
+    Notes
+    -----
+    Icon fonts are static glyphs, not colour fonts, so - unlike emoji -
+    `textfont.color` (and so `entity_colour_by`) works on them.
+    """
+    family, resolved_weight = _resolve_icon_font(font, weight)
+    preset = ICON_FONT_PRESETS.get(font)
+
+    if preset is None:
+        head = ""  # raw custom family - caller supplies their own @font-face/<link>
+    elif "css_import" in preset:
+        head = f'<link rel="stylesheet" href="{preset["css_import"]}">'
+    else:
+        head = (
+            "<style>\n"
+            "@font-face {\n"
+            f'  font-family: "{family}";\n'
+            "  font-style: normal;\n"
+            f"  font-weight: {preset['weight']};\n"
+            "  font-display: swap;\n"
+            f'  src: url("{preset["src"]}") format("woff2");\n'
+            "}\n"
+            "</style>"
+        )
+
+    trigger_weight = resolved_weight if resolved_weight is not None else "normal"
+    trigger = (
+        f"<span style=\"font-family: '{family}'; font-weight: {trigger_weight}; "
+        'position: absolute; visibility: hidden;">x</span>'
+    )
+    return head + "\n" + trigger
+
+
+def inject_icon_font_css(font: str, weight: Optional[int] = None) -> None:
+    """
+    Display the HTML from `entity_icon_font_css` in whichever environment this
+    is called from - see `_display_html` for the dispatch, and
+    `entity_icon_font_css` for what it contains and why. If neither is
+    actually active, this is a silent no-op - use `entity_icon_font_css`
+    directly instead in a plain script, or when writing a figure out with
+    ``fig.write_html()``.
+
+    Called automatically by `generate_animation` / `animate_activity_log`
+    whenever `entity_icon_font` is set, so this normally does not need to be
+    called directly.
+    """
+    _display_html(entity_icon_font_css(font, weight))
+
+
+# Recognised image sources for `resource_icon` / `EventPosition.resource_icon` - a
+# value with one of these extensions or schemes is drawn as a static `layout.images`
+# entry instead of scatter text. Kept narrow and explicit rather than "anything that
+# isn't obviously an emoji", so a plain glyph is never misread as a broken file path.
+_IMAGE_URL_SCHEMES = ("http://", "https://", "data:")
+_IMAGE_FILE_SUFFIXES = (".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".bmp")
+
+
+def _is_image_source(value: str) -> bool:
+    """Whether `value` (a `resource_icon`) names an image rather than a text glyph."""
+    if not isinstance(value, str):
+        return False
+    if value.startswith(_IMAGE_URL_SCHEMES):
+        return True
+    return value.lower().endswith(_IMAGE_FILE_SUFFIXES)
 
 
 def streamlit_play_all():

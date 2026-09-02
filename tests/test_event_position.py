@@ -13,9 +13,12 @@ import pytest
 from pydantic import ValidationError
 
 from vidigi.utils import (
+    ICON_FONT_PRESETS,
     EventPosition,
+    _is_image_source,
     _resolve_direction_sign,
     _resolve_icon_flip,
+    _resolve_icon_font,
     create_event_position_df,
 )
 
@@ -53,6 +56,7 @@ def test_create_event_position_df_always_has_a_direction_column():
         "resource",
         "direction",
         "flip_icons",
+        "resource_icon",
     ]
     assert df.loc[df["event"] == "arrival", "direction"].isna().all()
     assert df.loc[df["event"] == "waiting", "direction"].iloc[0] == "right"
@@ -146,3 +150,96 @@ def test_resolve_icon_flip_rejects_a_bad_default():
 def test_resolve_icon_flip_rejects_a_bad_column_value():
     with pytest.raises(ValueError, match="flip_entity_icons"):
         _resolve_icon_flip(pd.DataFrame({"flip_icons": ["yes"]}), False)
+
+
+# --------------------------------------------------------------------------- #
+# resource_icon
+# --------------------------------------------------------------------------- #
+
+
+def test_resource_icon_defaults_to_none():
+    pos = EventPosition(event="treatment", x=1, y=2, label="T", resource="beds")
+    assert pos.resource_icon is None
+
+
+def test_create_event_position_df_always_has_a_resource_icon_column():
+    df = create_event_position_df(
+        [
+            EventPosition(event="arrival", x=50, y=300, label="Arrival"),
+            EventPosition(
+                event="treatment", x=1, y=2, label="T", resource="beds",
+                resource_icon="https://example.com/bed.png",
+            ),
+        ]
+    )
+    assert df.loc[df["event"] == "arrival", "resource_icon"].isna().all()
+    assert (
+        df.loc[df["event"] == "treatment", "resource_icon"].iloc[0]
+        == "https://example.com/bed.png"
+    )
+
+
+# --------------------------------------------------------------------------- #
+# _is_image_source
+# --------------------------------------------------------------------------- #
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        "https://example.com/bed.png",
+        "http://example.com/bed.jpg",
+        "data:image/png;base64,aGVsbG8=",
+        "C:/icons/bed.svg",
+        "bed.webp",
+        "BED.PNG",  # case-insensitive suffix match
+    ],
+)
+def test_is_image_source_recognises_images(value):
+    assert _is_image_source(value) is True
+
+
+@pytest.mark.parametrize("value", ["🛏️", "🛌", "bed", "[bed_icon]"])
+def test_is_image_source_rejects_plain_glyphs(value):
+    assert _is_image_source(value) is False
+
+
+def test_is_image_source_rejects_non_strings():
+    assert _is_image_source(None) is False
+    assert _is_image_source(42) is False
+
+
+# --------------------------------------------------------------------------- #
+# _resolve_icon_font
+# --------------------------------------------------------------------------- #
+
+
+@pytest.mark.parametrize("preset", sorted(ICON_FONT_PRESETS))
+def test_resolve_icon_font_preset_uses_its_own_default_weight(preset):
+    family, weight = _resolve_icon_font(preset)
+    assert family == ICON_FONT_PRESETS[preset]["family"]
+    assert weight == ICON_FONT_PRESETS[preset]["weight"]
+
+
+def test_resolve_icon_font_preset_weight_override():
+    family, weight = _resolve_icon_font("font-awesome", weight=400)
+    assert family == "VidigiFontAwesomeSolid"
+    assert weight == 400
+
+
+def test_resolve_icon_font_raw_family_passes_through():
+    assert _resolve_icon_font("Courier New", weight=700) == ("Courier New", 700)
+
+
+def test_resolve_icon_font_rejects_a_standalone_digit():
+    # The exact shape that breaks silently in Plotly - see ICON_FONT_PRESETS.
+    with pytest.raises(ValueError, match="standalone number"):
+        _resolve_icon_font("Font Awesome 6 Free")
+
+
+@pytest.mark.parametrize(
+    "family", ["FontAwesome6Free", "Font Awesome", "Material Symbols Outlined"]
+)
+def test_resolve_icon_font_accepts_families_without_a_standalone_digit(family):
+    # No raise - a digit embedded in a word (no surrounding whitespace) is fine.
+    assert _resolve_icon_font(family) == (family, None)
