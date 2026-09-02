@@ -60,6 +60,11 @@
     - `unique_id` is present only when the pool was built with `label=`, exactly like `unique_id_attribute` (accessing it otherwise raises `AttributeError`, and `hasattr` is `False`)
     - Passing both names of a pair with different values (`VidigiResource(id_attribute=1, id=2)`) raises `ValueError`
     - The tutorials and the `EventLogger`-based example notebooks now teach `.id` / `.unique_id`; `__repr__` already printed `VidigiResource(id=...)`, which the constructor now genuinely accepts. The pre-1.0 manual-`event_log.append` examples are left on `.id_attribute`
+- New `extra_attributes=` argument on `populate_store`, `VidigiStore` / `VidigiPriorityStore` (constructor and `.populate()`), for giving a whole pool of resources custom attributes without building it by hand
+    - `VidigiStore(env, num_resources=5, label="nurse", extra_attributes={"staff_type": "nurse"})` sets `resource.staff_type == "nurse"` on every resource in the pool; your model code can then read it (break scheduling, skill mix, ...) and it is otherwise inert
+    - `VidigiResource` has always accepted arbitrary keyword attributes directly (`VidigiResource(id_attribute=1, staff_type="nurse")`); this only threads them through the bulk populate helpers, replacing the documented workaround of monkeypatching `VidigiResource.__init__`
+    - Keys the pool manages itself - `id_attribute`, `id`, `label`, `unique_id_attribute`, `unique_id` - are rejected with a `ValueError` naming why
+    - Defaults to `None`, a verified no-op; existing calls are unchanged
 - New `plot_bgcolor` and `paper_bgcolor` arguments on `generate_animation` and `animate_activity_log`, forwarded verbatim to `fig.update_layout()`
     - `plot_bgcolor` sets the colour inside the axes, `paper_bgcolor` the surround behind the title, play button and timeline; both accept any CSS colour string (`"white"`, `"#f5f5f5"`, `"rgba(0,0,0,0)"`)
     - Saves reaching for `fig.update_layout(plot_bgcolor=...)` on the returned figure, which was already possible and still works

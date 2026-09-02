@@ -194,6 +194,16 @@ nurses = VidigiStore(env, num_resources=5, label="nurse")
 
 Always pass a `label` that is unique to this pool of resources. Each `VidigiStore` numbers its own resources `1, 2, 3, ...`, so if your model has more than one pool (for example `nurses` and `treatment_cubicles`), two different physical resources can end up sharing the same `resource_id`. `label` gives each resource a `.unique_id` (e.g. `"nurse_1"`; also available as `.unique_id_attribute`) that stays distinct across pools, which matters if you want to analyse individual resource utilisation later with `vidigi.analysis.resource_utilisation(by="resource")`. Omitting `label` still works today but emits a `DeprecationWarning` - it is expected to become mandatory in a future major version.
 
+If your model needs each resource to carry extra information - a staff type for break scheduling, a skill grade, a home location - pass `extra_attributes`:
+
+```{.python}
+nurses = VidigiStore(env, num_resources=5, label="nurse",
+                     extra_attributes={"staff_type": "nurse"})
+# every resource in the pool now has `.staff_type == "nurse"`
+```
+
+Your model code reads these back off the resource it is handed (`resource.staff_type`); vidigi itself ignores them. The same applies to `populate_store()` and `VidigiPriorityStore`.
+
 This becomes slightly more complex with conditional requesting (for example, where a resource request is made but if it cannot be fulfilled in time, the requester will renege). This is covered to some extent in some of the provided examples, but further demonstrations of this are planned.
 
 

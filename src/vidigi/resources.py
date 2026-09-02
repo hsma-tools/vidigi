@@ -81,7 +81,11 @@ class VidigiResource:
         ``resource_id`` column when you log resource use. ``populate()`` /
         ``populate_store()`` set it to ``1..capacity``.
     **kwargs
-        Any further keyword arguments are set as attributes on the instance. Pools built
+        Any further keyword arguments are set as attributes on the instance
+        (``VidigiResource(id_attribute=1, staff_type="nurse")`` →
+        ``resource.staff_type``). To do this for a whole pool built by
+        ``populate_store`` / ``VidigiStore`` / ``VidigiPriorityStore``, pass their
+        ``extra_attributes=`` instead of building the pool by hand. Pools built
         with ``label=`` additionally carry ``label`` and ``unique_id_attribute``
         (``f"{label}_{id_attribute}"``), the latter unique across pools.
 
@@ -144,7 +148,31 @@ class VidigiResource:
         return f"VidigiResource(id={self.id_attribute})"
 
 
-def _new_pool_resource(env, index, label=None, *, stacklevel=3):
+_RESERVED_POOL_ATTRS = ("id_attribute", "id", "label", "unique_id_attribute", "unique_id")
+
+
+def _check_extra_attributes(extra_attributes):
+    """Reject `extra_attributes` keys the pool manages itself.
+
+    `id_attribute`/`id` come from the `1..num_resources` index and
+    `label`/`unique_id_attribute`/`unique_id` from `label=`; letting
+    `extra_attributes` set any of them would either be silently overridden or
+    collide as a duplicate keyword in `_new_pool_resource`. Fail loudly instead,
+    naming the replacement mechanism.
+    """
+    if not extra_attributes:
+        return
+    reserved = [k for k in _RESERVED_POOL_ATTRS if k in extra_attributes]
+    if reserved:
+        raise ValueError(
+            f"extra_attributes cannot set {reserved} - the pool manages these: "
+            "id_attribute/id come from the 1..num_resources index, and "
+            "label/unique_id_attribute/unique_id from label=. Use different "
+            "attribute names for your own data."
+        )
+
+
+def _new_pool_resource(env, index, label=None, *, extra_attributes=None, stacklevel=3):
     """Build one `VidigiResource` for a `populate()`-style loop.
 
     `id_attribute` is always `index + 1`, unchanged from every prior release -
@@ -157,6 +185,10 @@ def _new_pool_resource(env, index, label=None, *, stacklevel=3):
     apart. Omitting `label` adds neither attribute at all (a true no-op), but
     warns once that `label` will become mandatory at vidigi 3.0 - see
     `pending_fixes.md`.
+
+    `extra_attributes`, if given, is a dict of further attributes set on every
+    resource in the pool (`{"staff_type": "nurse"}`) - the caller is expected to
+    have run it past `_check_extra_attributes` first.
 
     `stacklevel` must count frames from here up to the *caller's* call site -
     `populate_store()` and a direct `.populate()` call are both one frame
@@ -184,10 +216,12 @@ def _new_pool_resource(env, index, label=None, *, stacklevel=3):
         extra = {}
     else:
         extra = {"label": label, "unique_id_attribute": f"{label}_{index + 1}"}
+    if extra_attributes:
+        extra.update(extra_attributes)
     return VidigiResource(env=env, capacity=1, id_attribute=index + 1, **extra)
 
 
-def populate_store(num_resources, simpy_store, sim_env, label=None):
+def populate_store(num_resources, simpy_store, sim_env, label=None, extra_attributes=None):
     """
     Populate a SimPy Store (or VidigiPriorityStore) with VidigiResource objects.
 
@@ -217,6 +251,15 @@ def populate_store(num_resources, simpy_store, sim_env, label=None):
         (the default) changes nothing about the resources produced, but warns
         that `label` will become mandatory at vidigi 3.0 - see
         `vidigi.analysis.resource_utilisation`'s `by="resource"` docs for why.
+    extra_attributes : dict, optional
+        Further attributes to set on every resource in this pool, e.g.
+        `{"staff_type": "nurse"}` - each becomes `resource.staff_type` etc.,
+        readable by your model code (for break scheduling, skill mix, ...) and
+        otherwise inert. `VidigiResource` has always accepted arbitrary keyword
+        attributes directly; this just threads them through the bulk populate
+        path so you do not have to build the pool by hand. Cannot be used to set
+        `id_attribute`/`id`/`label`/`unique_id_attribute`/`unique_id` (managed by
+        the pool) - that raises `ValueError`.
 
     Returns
     -------
@@ -238,9 +281,10 @@ def populate_store(num_resources, simpy_store, sim_env, label=None):
     >>> len(resource_store.items)  # The store now contains 5 VidigiResource objects
     5
     """
+    _check_extra_attributes(extra_attributes)
     _check_label_not_reused(sim_env, label, stacklevel=3)
     for i in range(num_resources):
-        simpy_store.put(_new_pool_resource(sim_env, i, label))
+        simpy_store.put(_new_pool_resource(sim_env, i, label, extra_attributes=extra_attributes))
 
 
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\#
@@ -426,6 +470,7 @@ class VidigiStore:
         capacity=float("inf"),
         label=None,
         logger: Optional[EventLogger] = None,
+        extra_attributes=None,
         #  , init_items=None
     ):
         """
@@ -442,6 +487,9 @@ class VidigiStore:
                 release whenever also passed `entity_id=` - see `request()`'s docstring for
                 the full behaviour. `None` (the default) leaves logging entirely manual,
                 exactly as before this parameter existed.
+            extra_attributes: Optional dict of further attributes to set on every
+                resource created for this pool, e.g. `{"staff_type": "nurse"}` -
+                see `populate()`.
         """
         self.env = env
         self.store = simpy.Store(env, capacity)
@@ -450,14 +498,16 @@ class VidigiStore:
         self._warned_missing_entity_id = False
 
         if num_resources is not None:
-            self.populate(num_resources, label=label, _stacklevel=4)
+            self.populate(
+                num_resources, label=label, extra_attributes=extra_attributes, _stacklevel=4
+            )
 
         # # Initialize with items if provided
         # if init_items:
         #     for item in init_items:
         #         self.store.put(item)
 
-    def populate(self, num_resources, label=None, *, _stacklevel=3):
+    def populate(self, num_resources, label=None, extra_attributes=None, *, _stacklevel=3):
         """
         Populate this VidigiStore with VidigiResource objects.
 
@@ -482,6 +532,15 @@ class VidigiStore:
             given - a no-arg top-up call (`store.populate(5)`, adding resources
             to an already-running pool) leaves `self.label` and therefore every
             default event name for the whole store untouched.
+        extra_attributes : dict, optional
+            Further attributes to set on every resource in this pool, e.g.
+            `{"staff_type": "nurse"}` - each becomes `resource.staff_type` etc.,
+            readable by your model code (break scheduling, skill mix, ...) and
+            otherwise inert. `VidigiResource` has always accepted arbitrary
+            keyword attributes directly; this just threads them through the bulk
+            populate path so you do not have to build the pool by hand. Cannot
+            set `id_attribute`/`id`/`label`/`unique_id_attribute`/`unique_id`
+            (managed by the pool) - that raises `ValueError`.
         _stacklevel : int, default=3
             Internal - how many frames up from `_new_pool_resource` the
             missing-`label` warning should attribute to. `__init__` calling
@@ -492,6 +551,7 @@ class VidigiStore:
         -------
         None
         """
+        _check_extra_attributes(extra_attributes)
         if label is not None:
             self.label = label
         _check_label_not_reused(self.env, label, stacklevel=_stacklevel)
@@ -499,7 +559,11 @@ class VidigiStore:
             # self.store.put(...) directly, not self.put(...) - populating the pool is not
             # a resource being released by an entity, so it must never trigger auto-logging
             # or the "missing entity_id" warning.
-            self.store.put(_new_pool_resource(self.env, i, label, stacklevel=_stacklevel))
+            self.store.put(
+                _new_pool_resource(
+                    self.env, i, label, extra_attributes=extra_attributes, stacklevel=_stacklevel
+                )
+            )
 
     def request(self, entity_id=None, start_event=None, end_event=None, pathway=None, auto_log=True, **extra_fields):
         """
@@ -890,6 +954,7 @@ class VidigiPriorityStore:
         capacity=float("inf"),
         label=None,
         logger: Optional[EventLogger] = None,
+        extra_attributes=None,
         #  , init_items=None
     ):
         """
@@ -906,6 +971,9 @@ class VidigiPriorityStore:
                 release whenever also passed `entity_id=` - see `request()`'s docstring for
                 the full behaviour. `None` (the default) leaves logging entirely manual,
                 exactly as before this parameter existed.
+            extra_attributes: Optional dict of further attributes to set on every
+                resource created for this pool, e.g. `{"staff_type": "nurse"}` -
+                see `populate()`.
 
         """
         self.env = env
@@ -921,9 +989,11 @@ class VidigiPriorityStore:
         self.put_queue = []
 
         if num_resources is not None:
-            self.populate(num_resources, label=label, _stacklevel=4)
+            self.populate(
+                num_resources, label=label, extra_attributes=extra_attributes, _stacklevel=4
+            )
 
-    def populate(self, num_resources, label=None, *, _stacklevel=3):
+    def populate(self, num_resources, label=None, extra_attributes=None, *, _stacklevel=3):
         """
         Populate this VidigiPriorityStore with VidigiResource objects.
 
@@ -948,6 +1018,15 @@ class VidigiPriorityStore:
             given - a no-arg top-up call (`store.populate(5)`, adding resources
             to an already-running pool) leaves `self.label` and therefore every
             default event name for the whole store untouched.
+        extra_attributes : dict, optional
+            Further attributes to set on every resource in this pool, e.g.
+            `{"staff_type": "nurse"}` - each becomes `resource.staff_type` etc.,
+            readable by your model code (break scheduling, skill mix, ...) and
+            otherwise inert. `VidigiResource` has always accepted arbitrary
+            keyword attributes directly; this just threads them through the bulk
+            populate path so you do not have to build the pool by hand. Cannot
+            set `id_attribute`/`id`/`label`/`unique_id_attribute`/`unique_id`
+            (managed by the pool) - that raises `ValueError`.
         _stacklevel : int, default=3
             Internal - how many frames up from `_new_pool_resource` the
             missing-`label` warning should attribute to. `__init__` calling
@@ -958,6 +1037,7 @@ class VidigiPriorityStore:
         -------
         None
         """
+        _check_extra_attributes(extra_attributes)
         if label is not None:
             self.label = label
         _check_label_not_reused(self.env, label, stacklevel=_stacklevel)
@@ -965,7 +1045,11 @@ class VidigiPriorityStore:
             # self._put_item(...) directly, not self.put(...) - populating the pool is not
             # a resource being released by an entity, so it must never trigger auto-logging
             # or the "missing entity_id" warning.
-            self._put_item(_new_pool_resource(self.env, i, label, stacklevel=_stacklevel))
+            self._put_item(
+                _new_pool_resource(
+                    self.env, i, label, extra_attributes=extra_attributes, stacklevel=_stacklevel
+                )
+            )
 
     def request(
         self,
