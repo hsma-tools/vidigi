@@ -72,6 +72,11 @@
 - New warning when `time_display_units` is coarser than the snapshot interval
     - The animation frame is the formatted time, so e.g. ten-minute snapshots displayed as `'d'` all carry the same label. Snapshots are merged, entities from different moments are drawn on top of one another, and plotly may produce no frames at all
     - This previously happened silently and returned a plausible-looking static figure
+- New warning when an `event_position_df` maps an event to more than one position, or places two different events at identical `x`/`y`
+    - `create_event_position_df` checks the positions it is handed; `generate_animation_df` checks whatever reaches it, whether a hand-built DataFrame, a list of dicts or a dict of columns
+    - A duplicated event was the worse of the two: entity snapshots are joined to their position on the event name, so every entity at that step is drawn in *all* of its positions at once and appears to jump between them at random
+    - Identical coordinates for different events is not corrupting but is almost always a copy-paste slip, invisible in the finished animation except as two stages drawn on top of each other
+    - Warnings only — a malformed `event_position_df` still produces an animation, and a well-formed one is unaffected
 - `log_resource_use_start`/`log_resource_use_end` gain an explicit `event=` parameter, naming the specific step (e.g. `"treatment_begins"`) rather than the generic `"start"`/`"end"` default — needed to tell different resource-use steps apart in `resource_use_intervals`. This was already possible by passing `event=` as an undocumented extra keyword argument, so behaviour for every existing caller is unchanged
 - New `logger=` parameter on `VidigiStore`/`VidigiPriorityStore`, for automatic `resource_use`/`resource_use_end` logging around resource acquisition and release, removing the need to bracket every `request()`/`get_direct()` call with `EventLogger.log_resource_use_start`/`log_resource_use_end` by hand
     - Purely opt-in: omitting `logger=` (the default) leaves every existing caller's behaviour unchanged, and passing `entity_id=` to any of these methods on a store with no `logger` does nothing

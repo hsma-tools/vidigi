@@ -104,7 +104,7 @@ The animation functions take a dataframe, not an EventLogger object, so as long 
 
 You need to tell vidigi where each queue and resource should appear in the animation. The easiest way is to create a DataFrame with one row per event position. The minimum required columns are:
 
-* `event`: Must match the event name used in the event log.
+* `event`: Must match the event name used in the event log. Each event must appear on exactly one row — a repeated event name places every entity at that step in several positions at once, so they appear to jump between them at random. `create_event_position_df` and `generate_animation_df` warn if they spot this (or two different events sharing the same `x`/`y`).
 * `x`: X co-ordinate of the event for the animation. This will correspond to the bottom-right hand corner of a queue, or the rightmost resource (or the bottom-*left* corner / leftmost resource when that event builds to the right — see `direction` below).
 * `y`: Y co-ordinate of the event for the animation. This will correspond to the lowest row of a queue, or the central point of the resources.
 * `label`: Text label for the stage. This can be hidden at a later step if you opt to use a background image with labels built-in. Use `<br>` for line breaks.

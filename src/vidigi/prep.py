@@ -11,6 +11,7 @@ from vidigi.utils import (
     _check_single_run,
     _enforce_int_params,
     _resolve_direction_sign,
+    _warn_on_duplicate_event_positions,
 )
 from packaging import version
 
@@ -685,6 +686,14 @@ def generate_animation_df(
     # still caught here rather than being positioned into a blended animation.
     _check_single_run(
         full_entity_df, run_col_name=run_col_name, frame_arg="full_entity_df"
+    )
+
+    # A duplicated event in `event_position_df` fans every snapshot of that event
+    # out to multiple positions on the merge below; identical coordinates for
+    # different events collapse two steps onto one spot. Neither is ever intended,
+    # so warn - handling a hand-built frame, a list of dicts or a dict of columns.
+    _warn_on_duplicate_event_positions(
+        event_position_df, event_col_name=event_col_name, stacklevel=3
     )
 
     if save_intermediate_outputs is not False:

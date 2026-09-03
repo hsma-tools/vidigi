@@ -158,6 +158,10 @@ def create_event_position_df(
             ["event", "x", "y", "label", "resource", "direction", "flip_icons", "resource_icon"]
         ]
 
+        _warn_on_duplicate_event_positions(
+            df, source="create_event_position_df", stacklevel=2
+        )
+
         return df
     except ValidationError as e:
         print(f"Error validating event position data: {e}")
@@ -768,6 +772,100 @@ def _resource_map_from_event_position_df(
         return {}
     with_resource = event_position_df[event_position_df["resource"].notnull()]
     return dict(zip(with_resource[event_col_name], with_resource["resource"]))
+
+
+def _warn_on_duplicate_event_positions(
+    event_position_df,
+    event_col_name: str = "event",
+    *,
+    source: str = "event_position_df",
+    stacklevel: int = 3,
+) -> None:
+    """Warn about an event-position frame that makes entities appear to teleport.
+
+    Two distinct problems share the same on-screen symptom - an entity flickering
+    between positions from one frame to the next:
+
+    - **The same event name on more than one row.**
+      `generate_animation_df` does ``full_entity_df.merge(event_position_df,
+      on=event, how="left")``, so every snapshot of a duplicated event fans out to
+      *all* of its positions and the entity is drawn in several places at once.
+    - **Two different events sharing an identical x/y.** Not corrupting, but almost
+      always a copy-paste slip, and invisible in the finished animation except as
+      two stages drawn on top of one another.
+
+    Both are warnings, never errors: a duplicate does not stop an animation being
+    produced, just makes it wrong, and this is the kind of thing worth flagging
+    loudly rather than refusing outright.
+
+    Parameters
+    ----------
+    event_position_df : pandas.DataFrame or anything ``pd.DataFrame`` accepts
+        Usually the output of `create_event_position_df`, or a hand-built frame /
+        list of dicts / dict of columns passed straight to `generate_animation_df`.
+        Anything that cannot be coerced to a DataFrame is left alone - the real
+        error will surface downstream.
+    event_col_name : str, default "event"
+        Column holding the event name.
+    source : str
+        Named in the warning so the reader knows which call produced it.
+    stacklevel : int
+        Passed through to `warnings.warn` so the warning points at the caller's
+        code rather than into vidigi.
+    """
+    if not isinstance(event_position_df, pd.DataFrame):
+        try:
+            event_position_df = pd.DataFrame(event_position_df)
+        except Exception:
+            return
+
+    if event_col_name not in event_position_df.columns:
+        return
+
+    events = event_position_df[event_col_name]
+
+    duplicated = events[events.duplicated(keep=False)]
+    if not duplicated.empty:
+        counts = duplicated.value_counts()
+        listed = ", ".join(
+            f"{name!r} (x{int(count)})" for name, count in counts.items()
+        )
+        warnings.warn(
+            f"`{source}` has the same event on more than one row: {listed}.\n"
+            "\n"
+            "Each event must map to exactly one position. vidigi joins entity "
+            "snapshots to their position on the event name, so a duplicated event "
+            "places every entity at that step in all of its positions at once - in "
+            "the animation they appear to jump between the positions at random.\n"
+            "\n"
+            "Remove the extra rows so each event appears once.",
+            UserWarning,
+            stacklevel=stacklevel,
+        )
+
+    if "x" in event_position_df.columns and "y" in event_position_df.columns:
+        distinct_events_here = event_position_df.groupby(
+            ["x", "y"], dropna=False
+        )[event_col_name].agg(lambda names: sorted(pd.unique(names).tolist()))
+        collisions = distinct_events_here[
+            distinct_events_here.map(len) > 1
+        ]
+        if not collisions.empty:
+            listed = "; ".join(
+                f"({x}, {y}): {', '.join(repr(n) for n in names)}"
+                for (x, y), names in collisions.items()
+            )
+            warnings.warn(
+                f"`{source}` places different events at identical coordinates: "
+                f"{listed}.\n"
+                "\n"
+                "This is usually a copy-paste slip - the events will be drawn "
+                "directly on top of each other, so entities at those steps look "
+                "like they share a position. Give each event its own x/y if that "
+                "was not intended.",
+                UserWarning,
+                stacklevel=stacklevel,
+            )
 
 
 def _ensure_int(value, name: str) -> int:
