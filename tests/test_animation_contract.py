@@ -1126,6 +1126,126 @@ def test_resource_icon_glyph_overrides_custom_resource_icon(
     assert list(resource_trace.text) == ["🛌"] * len(resource_trace.x)
 
 
+def test_resource_icon_font_applies_to_the_resource_glyph_trace(
+    positioned_with_resources, basic_event_position_df, scenario_with_resources
+):
+    fig = generate_animation(
+        positioned_with_resources,
+        basic_event_position_df,
+        scenario=scenario_with_resources,
+        custom_resource_icon="\uf236",  # fa-bed
+        resource_icon_font="font-awesome",
+    )
+    resource_trace = fig.data[-1]
+    assert resource_trace.textfont.family == "VidigiFontAwesomeSolid"
+    assert resource_trace.textfont.weight == 900
+
+
+def test_resource_icon_font_applies_to_a_per_event_glyph_override(
+    positioned_with_resources, basic_event_position_df, scenario_with_resources
+):
+    epd = basic_event_position_df.copy()
+    epd.loc[epd["event"] == "treatment_begins", "resource_icon"] = "\uf236"
+
+    fig = generate_animation(
+        positioned_with_resources,
+        epd,
+        scenario=scenario_with_resources,
+        resource_icon_font="font-awesome",
+    )
+    resource_trace = [t for t in fig.data if t.mode == "markers+text"][-1]
+    assert resource_trace.textfont.family == "VidigiFontAwesomeSolid"
+    assert list(resource_trace.text) == ["\uf236"] * len(resource_trace.x)
+
+
+def test_resource_icon_font_weight_override(
+    positioned_with_resources, basic_event_position_df, scenario_with_resources
+):
+    fig = generate_animation(
+        positioned_with_resources,
+        basic_event_position_df,
+        scenario=scenario_with_resources,
+        custom_resource_icon="\uf236",
+        resource_icon_font="font-awesome",
+        resource_icon_font_weight=400,
+    )
+    assert fig.data[-1].textfont.weight == 400
+
+
+def test_resource_icon_font_defaults_to_unset(
+    positioned_with_resources, basic_event_position_df, scenario_with_resources
+):
+    """The no-op guard: with no resource_icon_font, the resource glyph trace's
+    font family is never touched (an emoji custom_resource_icon still works)."""
+    fig = generate_animation(
+        positioned_with_resources,
+        basic_event_position_df,
+        scenario=scenario_with_resources,
+        custom_resource_icon="🛏️",
+    )
+    assert fig.data[-1].textfont.family is None
+
+
+def test_entity_icon_font_does_not_reach_resource_glyphs(
+    positioned_with_resources, basic_event_position_df, scenario_with_resources
+):
+    """`entity_icon_font` styles entity icons only. A glyph `custom_resource_icon`
+    stays on the default font unless `resource_icon_font` is set - this pins the
+    boundary the two separate arguments draw, and encodes that `entity_icon_font`
+    has never re-fonted a resource glyph despite older docs implying it."""
+    fig = generate_animation(
+        positioned_with_resources,
+        basic_event_position_df,
+        scenario=scenario_with_resources,
+        custom_resource_icon="\uf236",
+        entity_icon_font="font-awesome",
+    )
+    assert fig.data[0].textfont.family == "VidigiFontAwesomeSolid"
+    assert fig.data[-1].textfont.family is None
+
+
+def test_resource_icon_font_does_not_reach_entity_icons(
+    positioned_with_resources, basic_event_position_df, scenario_with_resources
+):
+    fig = generate_animation(
+        positioned_with_resources,
+        basic_event_position_df,
+        scenario=scenario_with_resources,
+        custom_resource_icon="\uf236",
+        resource_icon_font="font-awesome",
+    )
+    assert fig.data[0].textfont.family is None
+    assert fig.data[-1].textfont.family == "VidigiFontAwesomeSolid"
+
+
+def test_entity_and_resource_icon_fonts_are_chosen_independently(
+    positioned_with_resources, basic_event_position_df, scenario_with_resources
+):
+    fig = generate_animation(
+        positioned_with_resources,
+        basic_event_position_df,
+        scenario=scenario_with_resources,
+        custom_resource_icon="\uf236",
+        entity_icon_font="font-awesome",
+        resource_icon_font="bootstrap-icons",
+    )
+    assert fig.data[0].textfont.family == "VidigiFontAwesomeSolid"
+    assert fig.data[-1].textfont.family == "VidigiBootstrapIcons"
+
+
+def test_resource_icon_font_rejects_a_family_with_a_standalone_digit(
+    positioned_with_resources, basic_event_position_df, scenario_with_resources
+):
+    with pytest.raises(ValueError, match="standalone number"):
+        generate_animation(
+            positioned_with_resources,
+            basic_event_position_df,
+            scenario=scenario_with_resources,
+            custom_resource_icon="x",
+            resource_icon_font="My Icons 6",
+        )
+
+
 # --------------------------------------------------------------------------- #
 # Hover configuration
 # --------------------------------------------------------------------------- #

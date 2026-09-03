@@ -359,6 +359,8 @@ def generate_animation(
     flip_entity_icons: bool = False,
     entity_icon_font: Optional[str] = None,
     entity_icon_font_weight: Optional[int] = None,
+    resource_icon_font: Optional[str] = None,
+    resource_icon_font_weight: Optional[int] = None,
     entity_colour_by: Optional[str] = None,
     entity_colour_map: Optional[dict] = None,
     show_entity_legend: bool = True,
@@ -544,24 +546,41 @@ def generate_animation(
         `vidigi.utils.entity_icon_flip_css()` added explicitly. Does not affect
         a static export via `fig.write_image()`.
     entity_icon_font : str, optional
-        Render entity icons (and a `custom_resource_icon`) in an icon font
-        instead of emoji - lets an icon be any glyph the font provides, and,
-        because icon fonts are monochrome rather than colour fonts, is what
-        makes `entity_colour_by` visible on the icon itself. One of
-        `vidigi.utils.ICON_FONT_PRESETS` (currently `"font-awesome"`,
-        `"bootstrap-icons"`, `"material-symbols"`), or any CSS font-family name
-        already available on the page. `custom_entity_icon_list` then supplies
-        that font's codepoints (or, for `"material-symbols"`, ligature names
-        like `"directions_walk"`) instead of emoji. The overflow `+ N more` /
-        ASCII-gauge icon is always left on the default font, whatever this is
-        set to - seeing tofu or a substituted glyph in place of ASCII art would
-        be worse than the plain text. See `vidigi.utils.entity_icon_font_css`
-        for what reaching the page involves and two Plotly quirks it works
-        around; like `flip_entity_icons`, the CSS is injected automatically.
+        Render entity icons in an icon font instead of emoji - lets an icon be
+        any glyph the font provides, and, because icon fonts are monochrome
+        rather than colour fonts, is what makes `entity_colour_by` visible on
+        the icon itself. One of `vidigi.utils.ICON_FONT_PRESETS` (currently
+        `"font-awesome"`, `"bootstrap-icons"`, `"material-symbols"`), or any CSS
+        font-family name already available on the page. `custom_entity_icon_list`
+        then supplies that font's codepoints (or, for `"material-symbols"`,
+        ligature names like `"directions_walk"`) instead of emoji. The overflow
+        `+ N more` / ASCII-gauge icon is always left on the default font,
+        whatever this is set to - seeing tofu or a substituted glyph in place of
+        ASCII art would be worse than the plain text. See
+        `vidigi.utils.entity_icon_font_css` for what reaching the page involves
+        and two Plotly quirks it works around; like `flip_entity_icons`, the CSS
+        is injected automatically. Applies to entity icons only - resource
+        glyphs have their own `resource_icon_font`.
     entity_icon_font_weight : int, optional
         Overrides a preset's default weight (Font Awesome ships Solid at 900
         and Regular at 400, say). Ignored for a raw custom family in
         `entity_icon_font` - most fonts have only one.
+    resource_icon_font : str, optional
+        Render glyph resource icons - a `custom_resource_icon`, and any per-event
+        `resource_icon` that is a text glyph rather than an image - in an icon
+        font instead of emoji. Independent of `entity_icon_font`: entities and
+        resources can each be in their own font, or one in an icon font and the
+        other left on emoji. Same accepted values (a
+        `vidigi.utils.ICON_FONT_PRESETS` name or a raw CSS family), same
+        automatic CSS injection. The codepoint or ligature goes straight into
+        `custom_resource_icon` / `resource_icon` - there is no list argument like
+        `custom_entity_icon_list`. Animation-wide, like `entity_icon_font`: every
+        glyph resource stage shares it (the resource glyphs are a single trace),
+        so there is no per-stage font. An image `resource_icon` is unaffected.
+        Default `None` leaves glyph resource icons on the page default font.
+    resource_icon_font_weight : int, optional
+        Overrides a preset's default weight for `resource_icon_font`, as
+        `entity_icon_font_weight` does for `entity_icon_font`.
     entity_colour_by : str, optional
         Name of a column - typically one already on your event log, such as
         `priority` or `pathway` - to colour entity icons by by. Unlike emoji,
@@ -1119,6 +1138,21 @@ def generate_animation(
             entity_icon_font, entity_icon_font_weight
         )
         inject_icon_font_css(entity_icon_font, entity_icon_font_weight)
+
+    # Resource glyphs get their own font, chosen independently of the entity one -
+    # `entity_icon_font` has never re-fonted a `custom_resource_icon` (its trace is
+    # built further down, after the per-point entity styling pass has run), so the
+    # two are genuinely separate controls, not one leaking into the other.
+    _resource_resolved_family = _resource_resolved_weight = None
+    if resource_icon_font is not None:
+        _resource_resolved_family, _resource_resolved_weight = _resolve_icon_font(
+            resource_icon_font, resource_icon_font_weight
+        )
+        if (resource_icon_font, resource_icon_font_weight) != (
+            entity_icon_font,
+            entity_icon_font_weight,
+        ):
+            inject_icon_font_css(resource_icon_font, resource_icon_font_weight)
 
     # Per-entity colour needs its own trace per category, since Plotly Express has
     # no per-point channel for `textfont.color` on an animated figure (the same gap
@@ -1806,6 +1840,16 @@ def generate_animation(
         fig.data[-1].textfont.size = resource_icon_size
         # fig.data[-1].opacity = resource_opacity # Set opacity for the resource icon text
 
+        # A glyph resource icon (a `custom_resource_icon`, or a text-glyph
+        # `resource_icon`) in `resource_icon_font`. One family for the whole trace,
+        # matching how `entity_icon_font` styles the entity trace - the resource
+        # glyphs are a single trace, so there is no per-stage font. An image
+        # `resource_icon` was split off above and is untouched.
+        if _resource_resolved_family is not None:
+            fig.data[-1].textfont.family = _resource_resolved_family
+            if _resource_resolved_weight is not None:
+                fig.data[-1].textfont.weight = _resource_resolved_weight
+
     #############################################
     # Optional step to add a background image
     #############################################
@@ -1954,6 +1998,8 @@ def animate_activity_log(
     flip_entity_icons: bool = False,
     entity_icon_font: Optional[str] = None,
     entity_icon_font_weight: Optional[int] = None,
+    resource_icon_font: Optional[str] = None,
+    resource_icon_font_weight: Optional[int] = None,
     entity_colour_by: Optional[str] = None,
     entity_colour_map: Optional[dict] = None,
     show_entity_legend: bool = True,
@@ -2131,18 +2177,27 @@ def animate_activity_log(
         different way may need `vidigi.utils.entity_icon_flip_css()` added
         explicitly. Does not affect a static export via `fig.write_image()`.
     entity_icon_font : str, optional
-        Render entity icons (and a `custom_resource_icon`) in an icon font
-        instead of emoji, so an icon can be any glyph the font provides - one
-        of `vidigi.utils.ICON_FONT_PRESETS` (`"font-awesome"`,
-        `"bootstrap-icons"`, `"material-symbols"`), or any CSS font-family
-        name already available on the page. `custom_entity_icon_list` then
-        supplies that font's codepoints instead of emoji. See
+        Render entity icons in an icon font instead of emoji, so an icon can be
+        any glyph the font provides - one of `vidigi.utils.ICON_FONT_PRESETS`
+        (`"font-awesome"`, `"bootstrap-icons"`, `"material-symbols"`), or any
+        CSS font-family name already available on the page.
+        `custom_entity_icon_list` then supplies that font's codepoints instead
+        of emoji. Resource glyphs have their own `resource_icon_font`. See
         `generate_animation`'s docstring for the overflow-icon exemption and
         `vidigi.utils.entity_icon_font_css` for what reaching the page
         involves; the CSS is injected automatically, as for
         `flip_entity_icons`.
     entity_icon_font_weight : int, optional
         Overrides a preset's default weight. Ignored for a raw custom family.
+    resource_icon_font : str, optional
+        Render glyph resource icons (`custom_resource_icon`, and any text-glyph
+        `resource_icon`) in an icon font, independently of `entity_icon_font` -
+        each side can be in its own font, or one left on emoji. Same accepted
+        values and automatic CSS injection; the codepoint goes straight into
+        `custom_resource_icon` / `resource_icon`. Animation-wide. See
+        `generate_animation`'s docstring for detail.
+    resource_icon_font_weight : int, optional
+        Overrides a preset's default weight for `resource_icon_font`.
     entity_colour_by : str, optional
         Name of a column - typically one already on your event log - to
         colour entity icons by. Only visible together with `entity_icon_font`,
@@ -2422,6 +2477,8 @@ def animate_activity_log(
         flip_entity_icons=flip_entity_icons,
         entity_icon_font=entity_icon_font,
         entity_icon_font_weight=entity_icon_font_weight,
+        resource_icon_font=resource_icon_font,
+        resource_icon_font_weight=resource_icon_font_weight,
         entity_colour_by=entity_colour_by,
         entity_colour_map=entity_colour_map,
         show_entity_legend=show_entity_legend,

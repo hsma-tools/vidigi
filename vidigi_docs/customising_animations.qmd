@@ -129,8 +129,10 @@ The figure margin auto-expands to fit long stage labels, so you rarely need
 | `resource_icon` (per event) | `None` | Field on `EventPosition` (or a column on `event_position_df`) overriding `custom_resource_icon` for one event, so resource stages can each have their own icon — a glyph, or an image (a URL, local path, or `data:` URI). See below. |
 | `custom_entity_icon_list` | `None` | List of emoji cycled through for entity icons (`animate_activity_log` only). |
 | `flip_entity_icons` | `False` | Mirror entity icons (and a `custom_resource_icon`) horizontally — useful when an emoji faces the wrong way for a layout, independently of `queue_direction`. Set per event instead with a `flip_icons` column on `event_position_df`. |
-| `entity_icon_font` | `None` | Render entity icons (and a `custom_resource_icon`) in an icon font instead of emoji — a preset name (`"font-awesome"`, `"bootstrap-icons"`, `"material-symbols"`) or any CSS font-family already on the page. `custom_entity_icon_list` then supplies that font's codepoints instead of emoji. |
+| `entity_icon_font` | `None` | Render entity icons in an icon font instead of emoji — a preset name (`"font-awesome"`, `"bootstrap-icons"`, `"material-symbols"`) or any CSS font-family already on the page. `custom_entity_icon_list` then supplies that font's codepoints instead of emoji. Resource glyphs have their own `resource_icon_font`. |
 | `entity_icon_font_weight` | `None` | Overrides a preset's default weight (Font Awesome ships Solid at 900, Regular at 400). |
+| `resource_icon_font` | `None` | Render glyph resource icons (`custom_resource_icon`, and text-glyph `resource_icon`) in an icon font — same accepted values as `entity_icon_font`, chosen independently of it, so entities and resources can be in different fonts (or one on emoji). Animation-wide. See below. |
+| `resource_icon_font_weight` | `None` | Overrides a preset's default weight for `resource_icon_font`. |
 | `entity_colour_by` | `None` | Name of an event-log column to colour entity icons by (priority, pathway, …). Only visible together with `entity_icon_font` — emoji ignore colour entirely. |
 | `entity_colour_map` | `None` | Maps `entity_colour_by` values to specific colours, e.g. `{"high": "crimson", "low": "steelblue"}`. An uncovered value falls back to Plotly's default palette. |
 | `show_entity_legend` | `True` | Show a legend for `entity_colour_by`. Ignored when it is not set. |
@@ -217,6 +219,15 @@ resource's position via Plotly's `layout.images` rather than as text, sized by
 `resource_image_size`; it is static across frames, but cannot be mirrored
 (Plotly has no per-image transform), so supply it pre-flipped if the layout
 needs it.
+
+A glyph `resource_icon` (and `custom_resource_icon`) renders in the page default
+font unless you set **`resource_icon_font`** — the resource-side counterpart to
+`entity_icon_font`, taking the same preset names or CSS families and chosen
+independently, so entities and resources can be in different icon fonts, or one
+in a font while the other stays on emoji. Put the codepoint or ligature straight
+into `custom_resource_icon` / `resource_icon`; there is no list argument like
+`custom_entity_icon_list`. It is animation-wide — every glyph resource stage
+shares it — and does nothing to an image `resource_icon`.
 
 [feat_custom_icons.ipynb](/examples/feat_custom_icons/feat_custom_icons.ipynb)
 walks through all three together.
