@@ -359,6 +359,10 @@ def generate_animation(
     entity_colour_by: Optional[str] = None,
     entity_colour_map: Optional[dict] = None,
     show_entity_legend: bool = True,
+    entity_annotation_by: Optional[str] = None,
+    entity_annotation_size: int = 14,
+    entity_annotation_color: str = "black",
+    entity_annotation_offset_y: float = -15,
     resource_image_size: Optional[float] = None,
     setup_mode: bool = False,
     frame_duration: int = 400,  # milliseconds
@@ -565,6 +569,35 @@ def generate_animation(
     show_entity_legend : bool, default=True
         Show a legend for `entity_colour_by`. Ignored when `entity_colour_by`
         is not set - there is nothing to key.
+    entity_annotation_by : str, optional
+        Name of a column to draw as a second line of text offset below each
+        entity's icon - e.g. a running length-of-stay figure or a delay flag.
+        Express backend only (see `backend`). Appending extra text directly
+        onto `icon`/`icon_display` is cheaper and is what vidigi has always
+        drawn - prefer it whenever `flip_entity_icons`/`entity_icon_font`
+        aren't in play for this animation. It stops working once either of
+        those is combined with baked-in text, though: Plotly gives a single
+        SVG `<text>` node one `font-family` and one transform, so flipping or
+        re-fonting the icon does the same to any text appended into the same
+        string. `entity_annotation_by` draws the annotation as a genuinely
+        separate scatter trace instead, so it is structurally untouched by
+        either - at the cost of roughly doubling the per-frame point/text
+        payload for every entity, for the whole animation. `None` (default)
+        draws no second trace at all. Raises `ValueError` if the column isn't
+        found, matching `entity_colour_by`.
+    entity_annotation_size : int, default=14
+        Font size (in points) of the `entity_annotation_by` text. Independent
+        of `entity_icon_size`.
+    entity_annotation_color : str, default="black"
+        Colour of the `entity_annotation_by` text. Independent of
+        `entity_colour_by`/`overflow_text_color`.
+    entity_annotation_offset_y : float, default=-15
+        Vertical offset, in data units (the same units as
+        `event_position_df`'s `x`/`y`), of `entity_annotation_by` text below
+        (negative) or above (positive) each entity's icon. Given its own
+        literal default rather than derived from an unrelated spacing
+        argument - check it against your `entity_icon_size` if icons and
+        annotations start to overlap.
     resource_image_size : float, optional
         Size, in data units (the same units as `event_position_df`'s `x`/`y`),
         of an image `resource_icon` (see `EventPosition.resource_icon`).
@@ -1108,6 +1141,19 @@ def generate_animation(
         # works around.
         _all_icon_categories = sorted(_icon_group_values.unique())
 
+    # Validated unconditionally (like `entity_colour_by` above) so a typo'd column
+    # name is caught even on the `go` backend, which doesn't otherwise look at
+    # `entity_annotation_by` at all - see the express-only trace build below.
+    if entity_annotation_by is not None:
+        if entity_annotation_by not in full_entity_df_plus_pos_copy.columns:
+            raise ValueError(
+                f"`entity_annotation_by='{entity_annotation_by}'` is not a column on "
+                f"the positioned entity frame. Available columns: "
+                f"{sorted(str(c) for c in full_entity_df_plus_pos_copy.columns)}. "
+                f"This is usually a column carried straight through from your event "
+                f"log (e.g. 'los', 'priority')."
+            )
+
     # The animation frame is the *formatted* time, so a display format coarser than the
     # snapshot interval silently merges snapshots into a single frame - e.g. 10 minute
     # snapshots displayed as 'd' collapse a whole day into one. Plotly then drops the
@@ -1463,6 +1509,80 @@ def generate_animation(
             for trace in frame.data:
                 if "marker" in trace:
                     _style_entity_trace(trace)
+
+    #############################################
+    # Optional second trace: entity_annotation_by
+    #############################################
+
+    # A separate scatter trace, offset below each entity's icon, built from its
+    # own independent `px.scatter` call over the exact same rows (just a
+    # different text/y column) - not a per-point style tweaked onto the icon
+    # trace above. That's a deliberate response to a genuine Plotly/SVG ceiling:
+    # a single `<text>` node gets one `font-family` and one transform, so any
+    # text appended into `icon`/`icon_display` itself inherits whatever
+    # `flip_entity_icons`/`entity_icon_font` did to the icon glyph it shares a
+    # text node with. Only a structurally separate trace is immune to both -
+    # this one is never touched by `_style_entity_trace` or the flip-marker
+    # logic above, so it can't inherit either. Express backend only, matching
+    # `entity_colour_by`/`entity_icon_font` - the `go` backend gets neither.
+    if entity_annotation_by is not None and _is_express_backend:
+        _annotation_df = full_entity_df_plus_pos_copy.copy()
+        # NaN on the synthetic "+ N more" / gauge overflow row - it isn't a real
+        # entity, so it gets no annotation, the same exemption the icon trace
+        # already gives it from flipping and icon fonts.
+        _annotation_df["_entity_annotation_text"] = _annotation_df[
+            entity_annotation_by
+        ].where(_not_overflow)
+        _annotation_df["_entity_annotation_y"] = (
+            _annotation_df["y_final"] + entity_annotation_offset_y
+        )
+
+        fig_annotation = px.scatter(
+            _annotation_df.sort_values("snapshot_time_base"),
+            x="x_final",
+            y="_entity_annotation_y",
+            animation_frame="snapshot_time_display",
+            animation_group=entity_col_name,
+            text="_entity_annotation_text",
+            range_x=[0, x_max],
+            range_y=[0, y_max],
+            height=plotly_height,
+            width=plotly_width,
+            opacity=0,
+        )
+
+        def _style_annotation_trace(trace):
+            trace.name = "_annotation"
+            trace.showlegend = False
+            trace.hoverinfo = "skip"
+            trace.hovertemplate = None
+            trace.textfont = dict(
+                size=entity_annotation_size, color=entity_annotation_color
+            )
+            return trace
+
+        fig.add_trace(_style_annotation_trace(fig_annotation.data[0]))
+
+        # Matched by frame name, not position - `fig_annotation` is built from
+        # the same underlying rows as the entity trace(s) above (same
+        # `snapshot_time_display`/`animation_group` values), so its frames carry
+        # the same names, but not necessarily rebuilt in the same order.
+        _annotation_frames_by_name = {
+            frame.name: frame for frame in (fig_annotation.frames or ())
+        }
+        for frame in fig.frames or ():
+            _matching_frame = _annotation_frames_by_name.get(frame.name)
+            if _matching_frame is not None and _matching_frame.data:
+                _annotation_trace = _matching_frame.data[0]
+            else:
+                # Defensive only - every frame is expected to have a match,
+                # since both figures are built from the same source rows.
+                _annotation_trace = go.Scatter(
+                    x=[None], y=[None], text=[None], mode="markers+text"
+                )
+            frame.data = tuple(frame.data) + (
+                _style_annotation_trace(_annotation_trace),
+            )
 
     # Now add labels identifying each stage (optional - can either be used
     # in conjunction with a background image or as a way to see stage names
@@ -1820,6 +1940,10 @@ def animate_activity_log(
     entity_colour_by: Optional[str] = None,
     entity_colour_map: Optional[dict] = None,
     show_entity_legend: bool = True,
+    entity_annotation_by: Optional[str] = None,
+    entity_annotation_size: int = 14,
+    entity_annotation_color: str = "black",
+    entity_annotation_offset_y: float = -15,
     resource_image_size: Optional[float] = None,
     resource_opacity: float = 0.8,
     custom_resource_icon: Optional[str] = None,
@@ -2011,6 +2135,20 @@ def animate_activity_log(
         value falls back to Plotly's default qualitative palette.
     show_entity_legend : bool, default=True
         Show a legend for `entity_colour_by`. Ignored when it is not set.
+    entity_annotation_by : str, optional
+        Name of a column to draw as offset text below each entity's icon -
+        e.g. a running length-of-stay figure. Express backend only. See
+        `generate_animation`'s docstring for the full trade-off against
+        appending text directly onto `icon` yourself: prefer appending when
+        `flip_entity_icons`/`entity_icon_font` aren't in play, and reach for
+        this only once they are.
+    entity_annotation_size : int, default=14
+        Font size (in points) of the `entity_annotation_by` text.
+    entity_annotation_color : str, default="black"
+        Colour of the `entity_annotation_by` text.
+    entity_annotation_offset_y : float, default=-15
+        Vertical offset, in data units, of `entity_annotation_by` text below
+        (negative) or above (positive) each entity's icon.
     resource_image_size : float, optional
         Size, in data units, of an image `resource_icon` (see
         `EventPosition.resource_icon`). Defaults to `resource_icon_size`,
@@ -2266,6 +2404,10 @@ def animate_activity_log(
         entity_colour_by=entity_colour_by,
         entity_colour_map=entity_colour_map,
         show_entity_legend=show_entity_legend,
+        entity_annotation_by=entity_annotation_by,
+        entity_annotation_size=entity_annotation_size,
+        entity_annotation_color=entity_annotation_color,
+        entity_annotation_offset_y=entity_annotation_offset_y,
         resource_image_size=resource_image_size,
         custom_resource_icon=custom_resource_icon,
         frame_duration=frame_duration,  # milliseconds

@@ -133,6 +133,10 @@ The figure margin auto-expands to fit long stage labels, so you rarely need
 | `entity_colour_by` | `None` | Name of an event-log column to colour entity icons by (priority, pathway, …). Only visible together with `entity_icon_font` — emoji ignore colour entirely. |
 | `entity_colour_map` | `None` | Maps `entity_colour_by` values to specific colours, e.g. `{"high": "crimson", "low": "steelblue"}`. An uncovered value falls back to Plotly's default palette. |
 | `show_entity_legend` | `True` | Show a legend for `entity_colour_by`. Ignored when it is not set. |
+| `entity_annotation_by` | `None` | Name of a column to draw as a second, independently-styled text trace offset below each entity's icon (a running length-of-stay figure, a delay flag, …). Express backend only. `None` draws no second trace at all — see below for when to reach for this instead of just appending onto `icon`. |
+| `entity_annotation_size` | `14` | Font size of the `entity_annotation_by` text. Independent of `entity_icon_size`. |
+| `entity_annotation_color` | `"black"` | Colour of the `entity_annotation_by` text. Independent of `entity_colour_by`/`overflow_text_color`. |
+| `entity_annotation_offset_y` | `-15` | Vertical offset, in data units, of `entity_annotation_by` text below (negative) or above (positive) each entity's icon. |
 | `resource_image_size` | `None` | Size, in data units, of an image `resource_icon` (see below). Defaults to `resource_icon_size`, kept independent of `gap_between_resources` so widening the spacing between resources doesn't also inflate the image. |
 
 Flipping is a CSS mirror, not a different icon, so it needs a small `<style>`
@@ -209,6 +213,63 @@ pre-mirrored if the layout needs it facing the other way.
 
 [feat_custom_icons.ipynb](/examples/feat_custom_icons/feat_custom_icons.ipynb)
 walks through all three together.
+
+### Annotating an icon with extra text
+
+Sooner or later you'll want to show something *about* an entity next to its
+icon — a running length-of-stay figure, a delay flag, a surgery type. There
+are two ways to do it, and they aren't interchangeable.
+
+**The default: append it onto the icon.** vidigi has always drawn one point of
+text per entity, so the cheapest way to add more is to bake it into that same
+string — typically by post-processing the `icon` column of the dataframe
+produced by `reshape_for_animations()`/`generate_animation_df()` before
+passing it to `generate_animation()`:
+
+```python
+full_entity_df["icon"] = full_entity_df["icon"] + "<br>" + full_entity_df["los"].astype(str)
+```
+
+This is exactly what
+[example_13's synchronised-traces walkthrough](/examples/example_13_additional_synchronised_traces_method_1/synchronised_traces.ipynb)
+does to show a running length-of-stay and delayed-discharge flag next to each
+patient. Prefer this whenever you can — it's one point of text per entity,
+same as vidigi has always drawn, so it costs nothing extra.
+
+**Where it breaks: `flip_entity_icons` and `entity_icon_font`.** Both act on
+the icon's rendered SVG `<text>` node — flipping mirrors the whole node,
+re-fonting sets one `font-family` for the whole node — and Plotly gives a
+single `<text>` node exactly one transform and one font, with no equivalent of
+HTML's independently-stylable `<tspan>`. Text appended into the same string as
+the icon shares that node, so it gets mirrored or re-fonted right along with
+the icon: mirrored digits and reversed multi-digit order for a length-of-stay
+number, tofu or a broken ligature for text sharing a node with a
+`"material-symbols"` glyph. This is a genuine Plotly/SVG ceiling, not
+something vidigi can parse around from the Python side.
+
+**`entity_annotation_by` when you need both.** Combining annotated icons with
+`flip_entity_icons` or `entity_icon_font` needs the annotation drawn as a
+*separate* scatter trace — offset below the icon, moving in lockstep with it,
+but never touched by flip or font logic because it never shares a text node
+with the icon at all:
+
+```python
+generate_animation(
+    full_entity_df_plus_pos, event_position_df,
+    entity_icon_font="font-awesome",
+    flip_entity_icons=True,
+    entity_annotation_by="los",       # a column on full_entity_df_plus_pos
+    entity_annotation_offset_y=-15,
+)
+```
+
+The trade-off is real, not cosmetic: this is a second, fully-animated trace
+with its own point per entity per frame, roughly doubling the per-frame
+text/point payload for the whole animation, against the appending method's
+one point per entity. Reach for it specifically when flip/icon-font are in
+play for this animation; keep appending onto `icon` otherwise.
+[feat_custom_icons.ipynb](/examples/feat_custom_icons/feat_custom_icons.ipynb)
+has a worked example combining all three.
 
 ## Size, spacing and wrapping
 

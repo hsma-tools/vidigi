@@ -783,6 +783,197 @@ def test_entity_colour_by_unknown_column_raises(positioned, basic_event_position
         )
 
 
+# --------------------------------------------------------------------------- #
+# entity_annotation_by: a second, independently-styled text trace
+# --------------------------------------------------------------------------- #
+
+
+@pytest.fixture
+def positioned_overflow_with_los(overflow_queue_log, basic_event_position_df):
+    """`positioned_overflow`, with a `los` column carried through - annotation
+    text for `entity_annotation_by`, keyed so it's trivially checkable."""
+    log = overflow_queue_log.copy()
+    log["los"] = log["entity_id"].astype(str)
+    reshaped = reshape_for_animations(
+        log, every_x_time_units=10, limit_duration=30, step_snapshot_max=5
+    )
+    return generate_animation_df(
+        reshaped, basic_event_position_df, step_snapshot_max=5, wrap_queues_at=5
+    )
+
+
+def _annotation_trace(fig):
+    """The `entity_annotation_by` trace, if present - always named
+    "_annotation", the last trace appended before stage labels/resources."""
+    matches = [t for t in fig.data if t.name == "_annotation"]
+    return matches[0] if matches else None
+
+
+def test_entity_annotation_by_defaults_to_a_no_op(positioned, basic_event_position_df):
+    fig = generate_animation(positioned, basic_event_position_df)
+    assert _annotation_trace(fig) is None
+    for frame in fig.frames:
+        assert all(t.name != "_annotation" for t in frame.data)
+
+
+def test_entity_annotation_by_draws_the_column_text(
+    positioned_with_priority, basic_event_position_df
+):
+    fig = generate_animation(
+        positioned_with_priority,
+        basic_event_position_df,
+        entity_annotation_by="priority",
+    )
+    assert _annotation_trace(fig) is not None
+    seen = set()
+    for frame in fig.frames:
+        annotation = next(t for t in frame.data if t.name == "_annotation")
+        for x, text in zip(annotation.x, annotation.text):
+            if pd.notna(x) and text is not None:
+                seen.add(text)
+    assert seen == {"high", "low"}
+
+
+def test_entity_annotation_by_matches_entity_trace_point_for_point_per_frame(
+    positioned_with_priority, basic_event_position_df
+):
+    """The annotation trace has to move in lockstep with the entity trace it
+    labels - the same x positions, for the same count of real (non-placeholder)
+    points, in every frame - not just somewhere in the same neighbourhood."""
+    fig = generate_animation(
+        positioned_with_priority,
+        basic_event_position_df,
+        entity_annotation_by="priority",
+    )
+    assert fig.frames  # sanity: there is something to check
+    for frame in fig.frames:
+        entity_xs = sorted(
+            x
+            for trace in frame.data
+            if trace.name != "_annotation"
+            for x in (trace.x if trace.x is not None else ())
+            if pd.notna(x)
+        )
+        annotation = next(t for t in frame.data if t.name == "_annotation")
+        annotation_xs = sorted(x for x in annotation.x if pd.notna(x))
+        assert annotation_xs == entity_xs
+
+
+def test_entity_annotation_by_offset_y(positioned_with_priority, basic_event_position_df):
+    fig = generate_animation(
+        positioned_with_priority,
+        basic_event_position_df,
+        entity_annotation_by="priority",
+        entity_annotation_offset_y=-25,
+    )
+    icon_trace = next(
+        t for t in fig.data if t.name != "_annotation" and t.mode == "markers+text"
+    )
+    annotation = _annotation_trace(fig)
+    assert list(annotation.y) == [y - 25 for y in icon_trace.y]
+
+
+def test_entity_annotation_size_and_color(positioned_with_priority, basic_event_position_df):
+    fig = generate_animation(
+        positioned_with_priority,
+        basic_event_position_df,
+        entity_annotation_by="priority",
+        entity_annotation_size=20,
+        entity_annotation_color="crimson",
+    )
+    annotation = _annotation_trace(fig)
+    assert annotation.textfont.size == 20
+    assert annotation.textfont.color == "crimson"
+    for frame in fig.frames:
+        frame_annotation = next(t for t in frame.data if t.name == "_annotation")
+        assert frame_annotation.textfont.size == 20
+        assert frame_annotation.textfont.color == "crimson"
+
+
+def test_entity_annotation_by_is_never_flipped(
+    positioned_with_priority, basic_event_position_df
+):
+    """Regression guard for the Plotly ceiling this feature exists to route
+    around: a single SVG `<text>` node gets one transform, so text appended
+    onto the icon's own string flips along with it. The annotation trace must
+    never carry the flip marker, while the icon trace still must - proven by
+    mutation testing below."""
+    fig = generate_animation(
+        positioned_with_priority,
+        basic_event_position_df,
+        entity_annotation_by="priority",
+        flip_entity_icons=True,
+    )
+    icon_texts, annotation_texts = [], []
+    for frame in fig.frames:
+        for trace in frame.data:
+            if trace.text is None or trace.x is None:
+                continue
+            for x, text in zip(trace.x, trace.text):
+                if pd.isna(x) or text is None:
+                    continue
+                if isinstance(text, float) and pd.isna(text):
+                    continue
+                bucket = annotation_texts if trace.name == "_annotation" else icon_texts
+                bucket.append(text)
+    assert icon_texts and annotation_texts  # sanity: both traces really draw something
+    assert all(str(t).startswith(ICON_FLIP_MARKER) for t in icon_texts)
+    assert all(not str(t).startswith(ICON_FLIP_MARKER) for t in annotation_texts)
+
+
+def test_entity_annotation_by_never_gets_the_icon_font(
+    positioned_with_priority, basic_event_position_df
+):
+    fig = generate_animation(
+        positioned_with_priority,
+        basic_event_position_df,
+        entity_annotation_by="priority",
+        entity_icon_font="font-awesome",
+    )
+    annotation = _annotation_trace(fig)
+    assert annotation.textfont.family != "VidigiFontAwesomeSolid"
+    for frame in fig.frames:
+        frame_annotation = next(t for t in frame.data if t.name == "_annotation")
+        assert frame_annotation.textfont.family != "VidigiFontAwesomeSolid"
+
+
+def test_entity_annotation_by_suppresses_the_overflow_row(
+    positioned_overflow_with_los, basic_event_position_df
+):
+    """The synthetic '+ N more' row isn't a real entity, so it gets no
+    annotation text - the same exemption the icon trace already gives it from
+    flipping and icon fonts."""
+    fig = generate_animation(
+        positioned_overflow_with_los, basic_event_position_df, entity_annotation_by="los"
+    )
+    saw_overflow = False
+    for frame in fig.frames:
+        annotation = next(t for t in frame.data if t.name == "_annotation")
+        overflow_xs = {
+            x
+            for trace in frame.data
+            if trace.name != "_annotation"
+            for x, text in zip(
+                trace.x if trace.x is not None else (),
+                trace.text if trace.text is not None else (),
+            )
+            if text and "more" in str(text)
+        }
+        if overflow_xs:
+            saw_overflow = True
+        for x, text in zip(annotation.x, annotation.text):
+            if x in overflow_xs:
+                assert text is None or (isinstance(text, float) and pd.isna(text))
+    assert saw_overflow  # sanity: overflow really is present
+
+
+def test_entity_annotation_by_unknown_column_raises(positioned, basic_event_position_df):
+    with pytest.raises(ValueError, match="entity_annotation_by"):
+        generate_animation(
+            positioned, basic_event_position_df, entity_annotation_by="not_a_real_column"
+        )
+
+
 def test_resource_icon_image_becomes_a_layout_image(
     positioned_with_resources, basic_event_position_df, scenario_with_resources
 ):
