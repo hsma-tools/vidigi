@@ -384,6 +384,9 @@ def _register_start_log_callback(store, get_event, entity_id, event, pathway, ex
     request time). If the request is later cancelled via `cancel_get()`, the event is removed
     from its queue and `.succeed()` is never called on it, so this callback never fires - no
     phantom "start" is logged for a request that was given up on.
+
+    Returns the callback so a caller can detach it (`get_event.callbacks.remove(...)`) if it
+    later decides the request was abandoned - see `_StoreRequest.__exit__`.
     """
 
     def _on_grant(triggered_event):
@@ -400,6 +403,7 @@ def _register_start_log_callback(store, get_event, entity_id, event, pathway, ex
         store.logger.log_resource_use_start(entity_id=entity_id, **kwargs)
 
     get_event.callbacks.append(_on_grant)
+    return _on_grant
 
 
 def _log_resource_use_end_now(store, item, entity_id, event, pathway, extra_fields):
@@ -438,6 +442,55 @@ def _reject_invalid_returned_item(item, method_name):
             "object. Passing an unfulfilled request into the pool corrupts it "
             "and surfaces as an unrelated error later."
         )
+
+
+def _handle_unawaited_request(request, exc_type, *, method_name, store_name,
+                              return_item, cancel_get):
+    """Common `__exit__` path for a `request()` context manager left without `yield req`.
+
+    Reached only when the get event was never *processed*. That cannot happen under correct
+    use - `with store.request(...) as req: resource = yield req` - because a process cannot
+    get past `yield req` until the event is processed. So it means the `with` block was
+    entered but the request never awaited: the entity never actually waited for or held the
+    resource, its `env.timeout(...)` ran immediately, and the still-pending request would
+    otherwise be granted to it later (after it has already moved on and logged its departure),
+    logging a phantom `resource_use` with no matching end and leaking the unit.
+
+    So: warn (unless an exception is already propagating out of the block - that is the real
+    failure, surfacing on its own), detach the start-of-use log callback so no phantom
+    `resource_use` is logged when the abandoned request is later touched, and release the
+    request - return the item if one was already handed over, otherwise drop the queued get.
+
+    An entity whose (spurious) `env.timeout` outlasts the eventual grant still slips through
+    silently, because by the time its `__exit__` runs the event *is* processed; that case
+    does not produce the visible "entity skips straight to the exit" symptom.
+    """
+    if exc_type is None:
+        warnings.warn(
+            f"{store_name}.{method_name}() was used as a context manager but the request "
+            f"was never awaited. Write "
+            f"`with store.{method_name}(...) as req: resource = yield req` before using the "
+            f"resource - otherwise the entity never waits for or holds it, and the pending "
+            f"request is granted to it later, after it has already moved on.",
+            UserWarning,
+            stacklevel=4,
+        )
+
+    callback = getattr(request, "_start_log_callback", None)
+    if callback is not None:
+        try:
+            request.get_event.callbacks.remove(callback)
+        except (ValueError, AttributeError, TypeError):
+            pass
+
+    get_event = request.get_event
+    if get_event.triggered and hasattr(get_event, "value"):
+        # An item was already handed over (immediate-availability path) - put it straight
+        # back so the unit is not leaked.
+        return_item(get_event.value)
+    else:
+        # Still queued - drop it so it is never granted to the departed entity.
+        cancel_get(get_event)
 
 
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\#
@@ -576,6 +629,12 @@ class VidigiStore:
                 # Now we have the item from the store
                 yield env.timeout(10)
                 # Item is automatically returned when exiting the context
+
+        The `as req: yield req` is not optional. Exiting the `with` block without ever
+        yielding the request means the entity never actually waits for or holds the
+        resource; the pending request is then granted to it later, after it has moved on.
+        This is now flagged with a `UserWarning` and the abandoned request is released
+        rather than silently corrupting the event log.
 
         Automatic resource-use logging
         -------------------------------
@@ -814,8 +873,9 @@ class _StoreRequest:
         self._should_log = _should_auto_log(
             store, entity_id, "request", auto_log=auto_log, stacklevel=4
         )
+        self._start_log_callback = None
         if self._should_log:
-            _register_start_log_callback(
+            self._start_log_callback = _register_start_log_callback(
                 store, self.get_event, entity_id, start_event, pathway, self.extra_fields
             )
 
@@ -845,6 +905,17 @@ class _StoreRequest:
             # event twice, or (since it wouldn't have this request's entity_id) spuriously
             # warn about a missing entity_id.
             self.store.store.put(self.item)
+        else:
+            # The `with` block is being left without the request ever being awaited
+            # (`as req: yield req` omitted) - warn and release the abandoned request.
+            _handle_unawaited_request(
+                self,
+                exc_type,
+                method_name="request",
+                store_name="VidigiStore",
+                return_item=self.store.store.put,
+                cancel_get=self.store.cancel_get,
+            )
         return False  # Don't suppress exceptions
 
 
@@ -1064,6 +1135,17 @@ class VidigiPriorityStore:
         """
         Request context manager for getting an item from the store.
         The item is automatically returned when exiting the context.
+
+        Usage:
+            with store.request() as req:
+                resource = yield req
+                yield env.timeout(10)
+
+        The `as req: yield req` is not optional. Exiting the `with` block without ever
+        yielding the request means the entity never actually waits for or holds the
+        resource; the pending request is then granted to it later, after it has moved on.
+        This is now flagged with a `UserWarning` and the abandoned request is released
+        rather than silently corrupting the event log.
 
         Automatic resource-use logging
         -------------------------------
@@ -1437,8 +1519,9 @@ class _OptimizedStoreRequest:
         self._should_log = _should_auto_log(
             store, entity_id, "request", auto_log=auto_log, stacklevel=4
         )
+        self._start_log_callback = None
         if self._should_log:
-            _register_start_log_callback(
+            self._start_log_callback = _register_start_log_callback(
                 store, self.get_event, entity_id, start_event, pathway, self.extra_fields
             )
 
@@ -1466,6 +1549,17 @@ class _OptimizedStoreRequest:
             # method, not return_item(), since the logging above already covers this - going
             # through return_item() would log the end event twice.
             self.store._return_item_raw(self.item)
+        else:
+            # The `with` block is being left without the request ever being awaited
+            # (`as req: yield req` omitted) - warn and release the abandoned request.
+            _handle_unawaited_request(
+                self,
+                exc_type,
+                method_name="request",
+                store_name="VidigiPriorityStore",
+                return_item=self.store._return_item_raw,
+                cancel_get=self.store.cancel_get,
+            )
         return False  # Don't suppress exceptions
 
 
