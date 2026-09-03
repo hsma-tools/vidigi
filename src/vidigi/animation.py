@@ -236,6 +236,7 @@ def _overflow_margin_updates(
     plotly_height: Optional[int],
     display_stage_labels: bool,
     queue_direction: QueueDirection = "left",
+    entity_resource_offset_y: float = -10,
 ) -> dict:
     """Figure-margin overrides that keep auto-positioned content on-canvas.
 
@@ -293,8 +294,9 @@ def _overflow_margin_updates(
         y_candidates.append(entity_y_min)
     resource_y_min = _series_min(resource_df, "y_final")
     if resource_y_min is not None:
-        # resource icons are drawn 10 units below their y_final
-        y_candidates.append(resource_y_min - 10)
+        # resource icons are drawn `entity_resource_offset_y` (default -10) from
+        # their y_final
+        y_candidates.append(resource_y_min + entity_resource_offset_y)
     y_min_data = min(y_candidates)
 
     # Right: how far the furthest right-building queue or resource icon sits
@@ -369,6 +371,7 @@ def generate_animation(
     entity_annotation_color: str = "black",
     entity_annotation_offset_y: float = -15,
     resource_image_size: Optional[float] = None,
+    entity_resource_offset_y: float = -10,
     setup_mode: bool = False,
     frame_duration: int = 400,  # milliseconds
     frame_transition_duration: int = 600,  # milliseconds
@@ -631,6 +634,14 @@ def generate_animation(
         `gap_between_resources` so changing the spacing between resources
         doesn't also change their size. Has no effect on a text glyph
         resource icon, which is sized by `resource_icon_size` as before.
+    entity_resource_offset_y : float, default=-10
+        Vertical offset, in data units (the same units as
+        `event_position_df`'s `x`/`y`), of each resource icon relative to the
+        entity using it - negative sits the icon below the entity (the
+        historic default), positive above. Applies to all three resource-icon
+        forms (the default dot, a glyph `custom_resource_icon` / `resource_icon`,
+        and an image `resource_icon`). Use it to lift an entity clear of a large
+        `resource_image_size`, or to sit it down onto the icon.
     setup_mode : bool, optional
         Whether to run in setup mode, showing grid and tick marks (default is
         False).
@@ -1774,7 +1785,7 @@ def generate_animation(
                 dict(
                     source=image_source,
                     x=row["x_final"],
-                    y=row["y_final"] - 10,
+                    y=row["y_final"] + entity_resource_offset_y,
                     xref="x",
                     yref="y",
                     sizex=image_size,
@@ -1807,9 +1818,12 @@ def generate_animation(
             fig.add_trace(
                 go.Scatter(
                     x=events_with_resources["x_final"].to_list(),
-                    # Place these slightly below the y position for each entity
-                    # that will be using the resource
-                    y=[i - 10 for i in events_with_resources["y_final"].to_list()],
+                    # Offset from the y position of each entity using the
+                    # resource - `entity_resource_offset_y`, below by default.
+                    y=[
+                        i + entity_resource_offset_y
+                        for i in events_with_resources["y_final"].to_list()
+                    ],
                     mode="markers+text",
                     text=resource_icon_text,
                     # Make the actual marker invisible
@@ -1823,9 +1837,12 @@ def generate_animation(
             fig.add_trace(
                 go.Scatter(
                     x=events_with_resources["x_final"].to_list(),
-                    # Place these slightly below the y position for each entity
-                    # that will be using the resource
-                    y=[i - 10 for i in events_with_resources["y_final"].to_list()],
+                    # Offset from the y position of each entity using the
+                    # resource - `entity_resource_offset_y`, below by default.
+                    y=[
+                        i + entity_resource_offset_y
+                        for i in events_with_resources["y_final"].to_list()
+                    ],
                     mode="markers",
                     # Define what the marker will look like
                     marker=dict(color="LightSkyBlue", size=15),
@@ -1932,6 +1949,7 @@ def generate_animation(
         plotly_height=plotly_height,
         display_stage_labels=display_stage_labels,
         queue_direction=queue_direction,
+        entity_resource_offset_y=entity_resource_offset_y,
     )
     if margin_updates:
         fig.update_layout(margin=margin_updates)
@@ -2008,6 +2026,7 @@ def animate_activity_log(
     entity_annotation_color: str = "black",
     entity_annotation_offset_y: float = -15,
     resource_image_size: Optional[float] = None,
+    entity_resource_offset_y: float = -10,
     resource_opacity: float = 0.8,
     custom_resource_icon: Optional[str] = None,
     override_x_max: Optional[int] = None,
@@ -2226,6 +2245,11 @@ def animate_activity_log(
         `EventPosition.resource_icon`). Defaults to `resource_icon_size`,
         kept independent of `gap_between_resources` so changing the spacing
         between resources doesn't also change their size.
+    entity_resource_offset_y : float, default=-10
+        Vertical offset, in data units, of each resource icon relative to the
+        entity using it - negative below (the historic default), positive
+        above. Applies to the default dot, a glyph `custom_resource_icon` /
+        `resource_icon`, and an image `resource_icon` alike.
     resource_opacity : float, optional
         Opacity of resource icons (default is 0.8).
     custom_resource_icon : str, optional
@@ -2487,6 +2511,7 @@ def animate_activity_log(
         entity_annotation_color=entity_annotation_color,
         entity_annotation_offset_y=entity_annotation_offset_y,
         resource_image_size=resource_image_size,
+        entity_resource_offset_y=entity_resource_offset_y,
         custom_resource_icon=custom_resource_icon,
         frame_duration=frame_duration,  # milliseconds
         frame_transition_duration=frame_transition_duration,  # milliseconds

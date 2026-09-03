@@ -45,6 +45,10 @@
     - Same accepted values as `entity_icon_font` (a `vidigi.utils.ICON_FONT_PRESETS` name or a raw CSS family), the same `_resolve_icon_font` digit-in-name guard, and the same automatic CSS injection. The codepoint or ligature goes straight into `custom_resource_icon` / `resource_icon` - there is no list argument like `custom_entity_icon_list`
     - Animation-wide, like `entity_icon_font` - every glyph resource stage shares it (the resource glyphs are a single trace), so there is no per-stage font; an image `resource_icon` is unaffected
     - The default `None` is a verified no-op - glyph resource icons stay on the page default font
+- New `entity_resource_offset_y` argument on `animate_activity_log` and `generate_animation`, for the vertical gap between a resource icon and the entity using it
+    - The resource icon has always been drawn a fixed 10 data units below the entity; this exposes that offset so an entity can be lifted clear of a large `resource_image_size`, or sat down onto its icon
+    - Applies to all three resource-icon forms alike - the default dot, a glyph `custom_resource_icon` / `resource_icon`, and an image `resource_icon` - and the auto-layout bottom margin follows it
+    - The default `-10` reproduces the historic position exactly
 - New `entity_annotation_by` / `entity_annotation_size` / `entity_annotation_color` / `entity_annotation_offset_y` arguments on `animate_activity_log` and `generate_animation`, drawing a column's value as a second line of text offset below each entity's icon (a running length-of-stay figure, a delayed-discharge flag, ...)
     - Routes around a genuine Plotly/SVG ceiling rather than a vidigi gap: a single SVG `<text>` node gets exactly one `font-family` and one transform, so text appended directly onto `icon`/`icon_display` (the existing, cheaper way to annotate an icon, and still the recommended default) inherits whatever `flip_entity_icons`/`entity_icon_font` did to the icon glyph sharing its text node - mirrored digits, a broken ligature. `entity_annotation_by` draws the annotation as a structurally separate scatter trace instead, built from its own `px.scatter` call over the same underlying rows so it inherits the existing per-frame/placeholder guarantees, and is never touched by either mechanism
     - The default `None` is a verified no-op - no second trace is built at all. Express backend only, matching `entity_colour_by`/`entity_icon_font`
@@ -348,7 +352,7 @@
 
 ### Testing
 
-Test coverage grew from 31 to 981 tests, concentrated on the parts of the pipeline where a
+Test coverage grew from 31 to 985 tests, concentrated on the parts of the pipeline where a
 mistake changes what the animation *shows*, or what the reported numbers *say*, rather
 than raising an error.
 
@@ -405,6 +409,7 @@ than raising an error.
 - The new synchronised-trace helpers gain their own test file: `add_subplot_panels` wiring the private `_grid_ref` so a `row=2` trace resolves, `add_synchronised_trace` appending to every frame with the *exact* trace map asserted and the ragged-count `ValueError` raised before the figure is touched, the redraw auto-detect on/off/override for bar and secondary-axis traces (mutation-proven), and — the regression the older `example_13` method exhibits — that the existing stage-label and resource-icon traces are byte-identical after the call and never fall into a frame's trace map (mutation-proven against the naive `list(range(len))` mapping). `add_synchronised_trace_from_dataframe`'s `accumulate` snapshot-vs-cumulative row slices and `match="index"` count-mismatch error (the silent failure behind `example_15`) are asserted as full per-frame sequences
 - `vidigi.ciw` gains its first dedicated test file: that the generator refactor left `event_log_from_ciw_recs`'s DataFrame byte-identical (mutation-proven against a dropped `depart` row and a wrong time field), that `event_logger_from_ciw_recs` reproduces the same rows in an `EventLogger` with no validation warnings, that `run_number` is absent by default and stamped on every event when given, a whole-sequence assertion of one entity's ordered events across both outputs, and that `trial_logger_from_ciw_recs` numbers runs `1..N` (or per `run_numbers=`), sums to the right row count, and raises for an empty run list, a length mismatch, or a run that recorded nothing
 - `resource_icon_font` is covered for the resolved family and weight landing on the resource glyph trace (both from `custom_resource_icon` and from a per-event `resource_icon` column, the latter with the full `text` list asserted), the weight override, the default leaving the trace's font untouched, and the digit-in-name `ValueError` surfacing through the new argument. Its independence from `entity_icon_font` is pinned in both directions - each font reaches only its own trace, and the two can be set to different fonts at once - each mutation-proven against applying the entity family to the resource trace and against writing to the wrong trace index; the `entity_icon_font`-does-not-reach-resource-glyphs test carries a comment marking it as the boundary the two arguments deliberately draw
+- `entity_resource_offset_y` is covered on all three resource-icon code paths (glyph trace, plain dot trace, image `layout.images` entry) as the full list of y positions against the event's own anchor, with the historic `-10` default pinned by its own test and a shifted value on each path mutation-proven against a flipped sign
 
 # 1.3.1
 

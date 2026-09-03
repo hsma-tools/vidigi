@@ -1246,6 +1246,68 @@ def test_resource_icon_font_rejects_a_family_with_a_standalone_digit(
         )
 
 
+# `treatment_begins` is anchored at y=175 in `basic_event_position_df`, with no
+# resource-row wrapping (3 cubicles), so every resource icon shares one y.
+_TREATMENT_Y = 175
+
+
+def test_entity_resource_offset_y_default_drops_the_glyph_icons_by_10(
+    positioned_with_resources, basic_event_position_df, scenario_with_resources
+):
+    fig = generate_animation(
+        positioned_with_resources,
+        basic_event_position_df,
+        scenario=scenario_with_resources,
+        custom_resource_icon="🛏️",
+    )
+    assert list(fig.data[-1].y) == [_TREATMENT_Y - 10] * len(fig.data[-1].y)
+
+
+def test_entity_resource_offset_y_shifts_the_glyph_icons(
+    positioned_with_resources, basic_event_position_df, scenario_with_resources
+):
+    fig = generate_animation(
+        positioned_with_resources,
+        basic_event_position_df,
+        scenario=scenario_with_resources,
+        custom_resource_icon="🛏️",
+        entity_resource_offset_y=-30,
+    )
+    assert list(fig.data[-1].y) == [_TREATMENT_Y - 30] * len(fig.data[-1].y)
+
+
+def test_entity_resource_offset_y_shifts_the_default_dot(
+    positioned_with_resources, basic_event_position_df, scenario_with_resources
+):
+    fig = generate_animation(
+        positioned_with_resources,
+        basic_event_position_df,
+        scenario=scenario_with_resources,
+        entity_resource_offset_y=20,
+    )
+    # no custom_resource_icon - the plain LightSkyBlue dot trace
+    assert fig.data[-1].mode == "markers"
+    assert list(fig.data[-1].y) == [_TREATMENT_Y + 20] * len(fig.data[-1].y)
+
+
+def test_entity_resource_offset_y_shifts_an_image_resource_icon(
+    positioned_with_resources, basic_event_position_df, scenario_with_resources
+):
+    epd_with_image = basic_event_position_df.copy()
+    epd_with_image.loc[
+        epd_with_image["event"] == "treatment_begins", "resource_icon"
+    ] = "https://example.com/bed.png"
+
+    fig = generate_animation(
+        positioned_with_resources,
+        epd_with_image,
+        scenario=scenario_with_resources,
+        entity_resource_offset_y=-40,
+    )
+    assert fig.layout.images
+    assert all(img.y == _TREATMENT_Y - 40 for img in fig.layout.images)
+
+
 # --------------------------------------------------------------------------- #
 # Hover configuration
 # --------------------------------------------------------------------------- #

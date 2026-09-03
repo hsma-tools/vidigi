@@ -141,6 +141,7 @@ The figure margin auto-expands to fit long stage labels, so you rarely need
 | `entity_annotation_color` | `"black"` | Colour of the `entity_annotation_by` text. Independent of `entity_colour_by`/`overflow_text_color`. |
 | `entity_annotation_offset_y` | `-15` | Vertical offset, in data units, of `entity_annotation_by` text below (negative) or above (positive) each entity's icon. |
 | `resource_image_size` | `None` | Size, in data units, of an image `resource_icon` (see below). Defaults to `resource_icon_size`, kept independent of `gap_between_resources` so widening the spacing between resources doesn't also inflate the image. |
+| `entity_resource_offset_y` | `-10` | Vertical offset, in data units, of each resource icon relative to the entity using it — negative below (the default), positive above. Applies to the dot, a glyph `custom_resource_icon`/`resource_icon`, and an image `resource_icon` alike. Handy for lifting an entity clear of a large `resource_image_size`. |
 
 Flipping is a CSS mirror, not a different icon, so it needs a small `<style>`
 block to reach the page — `vidigi` injects it automatically in a notebook or
