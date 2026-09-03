@@ -74,7 +74,7 @@ dev = [
     "ciw>=3.2.5,<4.0.0",
     "flake8",
     "greenlet>=3.3.2",
-    "griffe>=0.49.0",
+    "griffe>=0.49.0,<2.0.0",
     "hatch",
     "jupyterlab>=4.2.4",
     "jupyterlab-spellchecker>=0.8.4",
