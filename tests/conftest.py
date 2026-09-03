@@ -9,6 +9,7 @@ import pandas as pd
 import pytest
 
 from vidigi.logging import EventLogger
+from vidigi.prep import generate_animation_df, reshape_for_animations
 from vidigi.utils import EventPosition, create_event_position_df
 
 
@@ -192,6 +193,23 @@ def scenario_with_resources():
         n_cubicles = 3
 
     return _Scenario()
+
+
+@pytest.fixture
+def positioned(simple_queue_log, basic_event_position_df):
+    """Output of the full prep pipeline, ready for generate_animation."""
+    reshaped = reshape_for_animations(
+        simple_queue_log, every_x_time_units=10, limit_duration=50
+    )
+    return generate_animation_df(reshaped, basic_event_position_df)
+
+
+@pytest.fixture
+def positioned_with_resources(resource_log, basic_event_position_df):
+    reshaped = reshape_for_animations(
+        resource_log, every_x_time_units=10, limit_duration=50
+    )
+    return generate_animation_df(reshaped, basic_event_position_df)
 
 
 def _build_logger(run_number, unserved_entity=False):

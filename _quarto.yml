@@ -97,6 +97,9 @@ quartodoc:
       desc: ""
       contents:
         - animation.add_repeating_overlay
+        - animation.add_subplot_panels
+        - animation.add_synchronised_trace
+        - animation.add_synchronised_trace_from_dataframe
     - title: Simpy Resource Classes
       desc: ""
       contents:

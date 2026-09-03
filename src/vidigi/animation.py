@@ -24,7 +24,9 @@ from vidigi.utils import (
     inject_icon_font_css,
 )
 import numpy as np
-from typing import Literal, Optional, TypeAlias
+from plotly.basedatatypes import BaseTraceType
+from plotly.subplots import make_subplots
+from typing import Callable, Literal, Optional, Sequence, TypeAlias, Union
 import base64
 import mimetypes
 from pathlib import Path
@@ -2663,21 +2665,394 @@ def add_repeating_overlay(
         frame.data = frame_data
 
     if rect_opacity > 0:
-        for updatemenu in fig.layout.updatemenus:
-            if "buttons" in updatemenu and updatemenu["type"] == "buttons":
-                for button in updatemenu["buttons"]:
-                    if "args" in button and len(button["args"]) > 1:
-                        # args is [None, {frame: {...}, ...}]
-                        # Set redraw=True in the frame dict
-                        if "frame" in button["args"][1]:
-                            button["args"][1]["frame"]["redraw"] = True
-
-        for slider in fig.layout.sliders:
-            for step in slider["steps"]:
-                if "args" in step and len(step["args"]) > 1:
-                    # args is [ [frame_name], {frame: {...}, ...} ]
-                    # Set redraw=True in the frame dict
-                    if "frame" in step["args"][1]:
-                        step["args"][1]["frame"]["redraw"] = True
+        _enable_frame_redraw(fig)
 
     return fig
+
+
+def _enable_frame_redraw(fig: go.Figure) -> None:
+    """Force ``redraw=True`` on the play button and every slider step.
+
+    Plotly's default animation only re-styles existing traces
+    (``redraw=False``); a trace whose *type* changes between frames, or one on a
+    secondary axis, needs a full redraw or it renders once and then freezes.
+    Shared by :func:`add_repeating_overlay` and :func:`add_synchronised_trace`.
+    """
+    for updatemenu in fig.layout.updatemenus:
+        if "buttons" in updatemenu and updatemenu["type"] == "buttons":
+            for button in updatemenu["buttons"]:
+                if "args" in button and len(button["args"]) > 1:
+                    # args is [None, {frame: {...}, ...}]
+                    if "frame" in button["args"][1]:
+                        button["args"][1]["frame"]["redraw"] = True
+
+    for slider in fig.layout.sliders:
+        for step in slider["steps"]:
+            if "args" in step and len(step["args"]) > 1:
+                # args is [ [frame_name], {frame: {...}, ...} ]
+                if "frame" in step["args"][1]:
+                    step["args"][1]["frame"]["redraw"] = True
+
+
+# A single trace, or several, or nothing - accepted anywhere the synchronised
+# trace helpers take trace input. Frame data can also be a bare dict (the `go`
+# animation backend stores it that way), so those are tolerated too.
+_TraceInput: TypeAlias = Union[
+    BaseTraceType, dict, Sequence[Union[BaseTraceType, dict]], None
+]
+
+
+def _as_trace_list(traces: _TraceInput) -> list:
+    """Normalise ``None`` / a single trace / a sequence of traces to a list."""
+    if traces is None:
+        return []
+    if isinstance(traces, (list, tuple)):
+        return list(traces)
+    return [traces]
+
+
+def _traces_need_redraw(traces: Sequence) -> bool:
+    """True if any trace can't be animated by a plain restyle.
+
+    A trace whose *type* is not scatter (a bar, say), or one drawn on a
+    secondary axis, needs ``redraw=True`` or it renders on the first frame and
+    then freezes.
+    """
+    for trace in traces:
+        if isinstance(trace, dict):
+            ttype = trace.get("type")
+            xaxis = trace.get("xaxis")
+            yaxis = trace.get("yaxis")
+        else:
+            ttype = getattr(trace, "type", None)
+            xaxis = getattr(trace, "xaxis", None)
+            yaxis = getattr(trace, "yaxis", None)
+        if ttype not in (None, "scatter", "scattergl"):
+            return True
+        if xaxis not in (None, "x") or yaxis not in (None, "y"):
+            return True
+    return False
+
+
+def add_subplot_panels(
+    fig: go.Figure,
+    *,
+    row_heights: Sequence[float],
+    vertical_spacing: float = 0.05,
+    subplot_titles: Optional[Sequence[str]] = None,
+    hide_new_panel_axes: bool = True,
+) -> go.Figure:
+    """Re-home a vidigi animation into the top row of a stacked subplot grid.
+
+    A vidigi animation is a plain single-axis Plotly figure. To show an extra
+    chart beneath it (a running total, a per-frame bar panel, a growing line)
+    the figure first needs a subplot grid it can share. This does the
+    ``plotly.subplots.make_subplots`` scaffolding - including copying the private
+    ``_grid_ref`` attribute, without which later ``fig.add_trace(..., row=2,
+    col=1)`` calls cannot resolve the panel - so callers don't have to.
+
+    Call this **before** :func:`add_synchronised_trace` /
+    :func:`add_synchronised_trace_from_dataframe`: the target axes must exist
+    before traces are placed on them.
+
+    Parameters
+    ----------
+    fig : plotly.graph_objects.Figure
+        The figure from :func:`generate_animation` or
+        :func:`animate_activity_log`. Modified in place.
+    row_heights : sequence of float
+        One entry per row, top to bottom. ``row_heights[0]`` is the animation
+        panel; there must be at least one row beneath it. Passed straight to
+        ``make_subplots``.
+    vertical_spacing : float, default 0.05
+        Gap between rows, as a fraction of figure height.
+    subplot_titles : sequence of str, optional
+        One title per row (use ``""`` for rows with no title).
+    hide_new_panel_axes : bool, default True
+        Blank the grid lines, zero line, axis line and tick labels on the new
+        panels (rows 2 onward). They are usually annotation strips rather than
+        full charts; set ``False`` and restyle by hand if you want axes.
+
+    Returns
+    -------
+    plotly.graph_objects.Figure
+        The same figure, now backed by a subplot grid, with the animation in
+        row 1 and empty panels below it.
+    """
+    n_rows = len(row_heights)
+    if n_rows < 2:
+        raise ValueError(
+            "`row_heights` needs at least two entries: the vidigi animation "
+            "panel plus at least one panel beneath it."
+        )
+
+    sp = make_subplots(
+        rows=n_rows,
+        cols=1,
+        row_heights=list(row_heights),
+        vertical_spacing=vertical_spacing,
+        subplot_titles=subplot_titles,
+    )
+
+    # Shrink the existing animation into the first row's vertical band.
+    fig.layout["xaxis"]["domain"] = sp.layout["xaxis"]["domain"]
+    fig.layout["yaxis"]["domain"] = sp.layout["yaxis"]["domain"]
+
+    # Bring across the axis for every new row.
+    for i in range(2, n_rows + 1):
+        fig.layout[f"xaxis{i}"] = sp.layout[f"xaxis{i}"]
+        fig.layout[f"yaxis{i}"] = sp.layout[f"yaxis{i}"]
+
+    # `_grid_ref` is what lets Plotly translate `row=`/`col=` on a later
+    # `add_trace` into the right axis pair. It is private, but there is no
+    # public way to graft a grid onto a figure that did not come from
+    # `make_subplots`.
+    fig._grid_ref = sp._grid_ref
+
+    if hide_new_panel_axes:
+        blank = dict(
+            showgrid=False, zeroline=False, showline=False, showticklabels=False
+        )
+        updates = {}
+        for i in range(2, n_rows + 1):
+            updates[f"xaxis{i}"] = dict(blank)
+            updates[f"yaxis{i}"] = dict(blank)
+        fig.update_layout(**updates)
+
+    return fig
+
+
+def add_synchronised_trace(
+    fig: go.Figure,
+    frame_traces: Callable[[str, int], _TraceInput],
+    *,
+    static_traces: _TraceInput = None,
+    initial_traces: _TraceInput = None,
+    redraw: Optional[bool] = None,
+) -> go.Figure:
+    """Add extra traces to an animation, kept in step with its frames.
+
+    A vidigi animation figure holds more traces in ``fig.data`` than in each
+    ``fig.frames[i].data`` - the per-entity traces are animated, while the
+    stage-label and resource-icon traces are static and simply left untouched as
+    the animation plays. Adding your own animated trace by hand means
+    reproducing that arrangement exactly, and getting it slightly wrong makes
+    traces flicker, vanish after the first frame, or blank out the stage labels.
+
+    This helper does it for you:
+
+    - ``static_traces`` are added once and never re-sent per frame, so - like
+      vidigi's own label/resource traces - they stay put for the whole
+      animation.
+    - ``frame_traces`` is called once per frame to build the animated trace(s)
+      for that frame. It **must return the same number of traces every time**
+      (return an empty trace such as ``go.Scatter(x=[], y=[])`` for frames with
+      nothing to show); a mismatch raises ``ValueError`` naming the frame.
+    - The existing frames' trace mapping is preserved, so the stage labels and
+      resource icons keep rendering throughout.
+
+    Parameters
+    ----------
+    fig : plotly.graph_objects.Figure
+        An animated figure from :func:`generate_animation` /
+        :func:`animate_activity_log`. Modified in place. If it has no frames a
+        ``UserWarning`` is issued and it is returned unchanged.
+    frame_traces : callable
+        ``frame_traces(frame_name, frame_index) -> trace | list[trace]``. Called
+        for every frame, in order. ``frame_name`` is ``fig.frames[i].name`` (the
+        formatted time shown on the slider); ``frame_index`` is ``i``. Prefer
+        ``frame_index`` for lookups - ``frame_name`` is reformatted by
+        ``time_display_units`` and may not match your data.
+    static_traces : trace or list of traces, optional
+        Trace(s) shown identically on every frame - a target line, a fixed
+        annotation, a reference band. Added to ``fig.data`` only.
+    initial_traces : trace or list of traces, optional
+        What to seed ``fig.data`` with for the animated slots (the state shown
+        before Play is pressed). Defaults to ``frame_traces(frames[0].name, 0)``.
+        Must have the same length as ``frame_traces`` returns.
+    redraw : bool, optional
+        Whether to force ``redraw=True`` on the play button and slider. ``None``
+        (default) decides automatically: needed for non-scatter traces (bars) or
+        traces on a secondary axis, not otherwise. Pass a bool to override.
+
+    Returns
+    -------
+    plotly.graph_objects.Figure
+        The same figure, with the extra traces added and every frame updated.
+
+    See Also
+    --------
+    add_synchronised_trace_from_dataframe : convenience wrapper for the common
+        case of a long-form DataFrame with one row per entity per time step.
+    add_subplot_panels : make room for an extra chart panel first.
+    """
+    if not fig.frames:
+        warnings.warn(
+            "The figure has no animation frames, so there is nothing to keep a "
+            "synchronised trace in step with. Returning the figure unchanged.",
+            UserWarning,
+            stacklevel=2,
+        )
+        return fig
+
+    static_list = _as_trace_list(static_traces)
+
+    # Build every frame's traces up front, so a ragged return aborts before the
+    # figure has been touched.
+    per_frame = [
+        _as_trace_list(frame_traces(frame.name, i))
+        for i, frame in enumerate(fig.frames)
+    ]
+
+    n_animated = len(per_frame[0])
+    if n_animated == 0:
+        raise ValueError(
+            "`frame_traces` returned nothing for the first frame. It must "
+            "return at least one trace per frame - use an empty trace such as "
+            "go.Scatter(x=[], y=[]) for a frame with nothing to show."
+        )
+    for i, new in enumerate(per_frame):
+        if len(new) != n_animated:
+            raise ValueError(
+                f"`frame_traces` returned {len(new)} trace(s) for frame {i} "
+                f"({fig.frames[i].name!r}) but {n_animated} for the first "
+                f"frame. It must return the same number of traces for every "
+                f"frame."
+            )
+
+    seed = (
+        _as_trace_list(initial_traces) if initial_traces is not None else per_frame[0]
+    )
+    if len(seed) != n_animated:
+        raise ValueError(
+            f"`initial_traces` has {len(seed)} trace(s) but `frame_traces` "
+            f"returns {n_animated} per frame; they must match."
+        )
+
+    # Static traces first, then the animated ones, so the animated traces take
+    # the final contiguous block of indices in `fig.data`.
+    for trace in static_list:
+        fig.add_trace(trace)
+    for trace in seed:
+        fig.add_trace(trace)
+
+    animated_indices = list(range(len(fig.data) - n_animated, len(fig.data)))
+
+    redraw_needed = _traces_need_redraw(static_list)
+
+    for i, frame in enumerate(fig.frames):
+        new = per_frame[i]
+        base_data = list(frame.data)
+        if frame.traces is not None:
+            base_indices = list(frame.traces)
+        else:
+            # Plotly's default: frame trace k maps to fig.data[k]. vidigi's
+            # frames carry only the per-entity traces, so this is [0 .. E-1] and
+            # the trailing static traces are never disturbed.
+            base_indices = list(range(len(base_data)))
+
+        frame.data = tuple(base_data) + tuple(new)
+        frame.traces = base_indices + animated_indices
+
+        if _traces_need_redraw(new):
+            redraw_needed = True
+
+    if redraw is True or (redraw is None and redraw_needed):
+        _enable_frame_redraw(fig)
+
+    return fig
+
+
+def add_synchronised_trace_from_dataframe(
+    fig: go.Figure,
+    data: pd.DataFrame,
+    make_trace: Callable[[pd.DataFrame], _TraceInput],
+    *,
+    frame_time_col: str,
+    match: Literal["index", "value"] = "index",
+    accumulate: bool = False,
+    static_traces: _TraceInput = None,
+    redraw: Optional[bool] = None,
+) -> go.Figure:
+    """Add a synchronised trace built from a long-form DataFrame.
+
+    A convenience wrapper over :func:`add_synchronised_trace` for the usual
+    shape: a DataFrame with a time column, from which one (or more) trace is
+    built per animation frame.
+
+    Parameters
+    ----------
+    fig : plotly.graph_objects.Figure
+        An animated figure from :func:`generate_animation` /
+        :func:`animate_activity_log`. Modified in place.
+    data : pandas.DataFrame
+        Long-form data. The distinct values of ``frame_time_col``, sorted
+        ascending, are the time steps.
+    make_trace : callable
+        ``make_trace(rows) -> trace | list[trace]``, where ``rows`` is the slice
+        of ``data`` for the current frame (see ``accumulate``). Must return the
+        same number of traces every call - return an empty trace (e.g.
+        ``go.Bar(x=[], y=[])``) for a frame with no rows.
+    frame_time_col : str
+        Column of ``data`` identifying the time step of each row.
+    match : {"index", "value"}, default "index"
+        How data times line up with animation frames. ``"index"`` pairs the
+        i-th distinct time with ``fig.frames[i]`` regardless of how the frame is
+        labelled - robust to ``time_display_units`` - and raises ``ValueError``
+        if the counts differ. ``"value"`` matches ``str(time) == str(frame.name)``
+        instead, for when only some frames have data.
+    accumulate : bool, default False
+        ``False`` passes ``make_trace`` only the current time step's rows (a
+        snapshot - e.g. a bar chart of the current state). ``True`` passes every
+        row up to and including the current time (a cumulative view - e.g. a
+        line that grows as the animation plays).
+    static_traces, redraw
+        Passed through to :func:`add_synchronised_trace`.
+
+    Returns
+    -------
+    plotly.graph_objects.Figure
+        The same figure, with the extra trace(s) added and every frame updated.
+    """
+    if frame_time_col not in data.columns:
+        raise ValueError(
+            f"`frame_time_col='{frame_time_col}'` is not a column of `data`. "
+            f"Available columns: {sorted(str(c) for c in data.columns)}."
+        )
+    if match not in ("index", "value"):
+        raise ValueError(f"`match` must be 'index' or 'value', not {match!r}.")
+
+    ordered_times = sorted(data[frame_time_col].dropna().unique())
+
+    if match == "index" and len(ordered_times) != len(fig.frames):
+        raise ValueError(
+            f"`match='index'` needs one distinct value of '{frame_time_col}' "
+            f"per animation frame, but `data` has {len(ordered_times)} and the "
+            f"figure has {len(fig.frames)}. Filter `data` down to the "
+            f"animation's snapshot times, or pass `match='value'` to align on "
+            f"frame name instead."
+        )
+
+    def _frame_traces(frame_name: str, frame_index: int) -> _TraceInput:
+        if match == "index":
+            current = ordered_times[frame_index]
+        else:
+            current = next(
+                (t for t in ordered_times if str(t) == str(frame_name)), None
+            )
+
+        if current is None:
+            rows = data.iloc[0:0]
+        elif accumulate:
+            rows = data[data[frame_time_col] <= current]
+        else:
+            rows = data[data[frame_time_col] == current]
+
+        return make_trace(rows)
+
+    return add_synchronised_trace(
+        fig,
+        _frame_traces,
+        static_traces=static_traces,
+        redraw=redraw,
+    )

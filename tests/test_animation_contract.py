@@ -29,23 +29,6 @@ from vidigi.prep import generate_animation_df, reshape_for_animations
 from vidigi.utils import EventPosition, ICON_FLIP_MARKER, create_event_position_df
 
 
-@pytest.fixture
-def positioned(simple_queue_log, basic_event_position_df):
-    """Output of the full prep pipeline, ready for generate_animation."""
-    reshaped = reshape_for_animations(
-        simple_queue_log, every_x_time_units=10, limit_duration=50
-    )
-    return generate_animation_df(reshaped, basic_event_position_df)
-
-
-@pytest.fixture
-def positioned_with_resources(resource_log, basic_event_position_df):
-    reshaped = reshape_for_animations(
-        resource_log, every_x_time_units=10, limit_duration=50
-    )
-    return generate_animation_df(reshaped, basic_event_position_df)
-
-
 def frame_names(fig):
     return [frame.name for frame in fig.frames]
 
