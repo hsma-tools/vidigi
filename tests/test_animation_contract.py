@@ -12,6 +12,7 @@ figure.
 
 import datetime as dt
 import typing
+import warnings
 
 import pandas as pd
 import plotly.graph_objects as go
@@ -255,6 +256,84 @@ def test_disable_axis_clipping_handles_graph_object_frame_dicts():
     _disable_axis_clipping(fig)
 
     assert fig.data[0].cliponaxis is False
+
+
+# --------------------------------------------------------------------------- #
+# override_x_max / override_y_max range check
+#
+# A caller-supplied override becomes the axis bound directly (the axis runs
+# [0, override]), so an event anchor outside it is drawn off-canvas and that
+# step's whole queue / resource block vanishes with no other sign. Warn - only
+# when the override is actually set, since an auto-derived bound cannot be
+# exceeded by construction.
+# --------------------------------------------------------------------------- #
+
+
+def test_override_x_max_warns_when_an_anchor_exceeds_it(
+    positioned, basic_event_position_df
+):
+    # waiting/treatment_begins are anchored at x=400, depart at x=270.
+    with pytest.warns(UserWarning, match=r"outside the `override_x_max` range \[0, 100\]"):
+        generate_animation(positioned, basic_event_position_df, override_x_max=100)
+
+
+def test_override_y_max_warns_when_an_anchor_exceeds_it(
+    positioned, basic_event_position_df
+):
+    with pytest.warns(UserWarning, match=r"outside the `override_y_max` range \[0, 50\]"):
+        generate_animation(positioned, basic_event_position_df, override_y_max=50)
+
+
+def test_override_range_warning_names_every_offending_event(
+    positioned, basic_event_position_df
+):
+    with pytest.warns(UserWarning) as record:
+        generate_animation(positioned, basic_event_position_df, override_x_max=100)
+    message = next(
+        str(w.message) for w in record if "override_x_max" in str(w.message)
+    )
+    # Anchors: arrival x=50 (in range), waiting/treatment_begins x=400, depart x=270.
+    assert "'waiting' (x=400)" in message
+    assert "'treatment_begins' (x=400)" in message
+    assert "'depart' (x=270)" in message
+    assert "'arrival'" not in message
+
+
+def test_override_within_range_does_not_warn(positioned, basic_event_position_df):
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        generate_animation(
+            positioned, basic_event_position_df,
+            override_x_max=1000, override_y_max=1000,
+        )
+    assert [
+        str(w.message) for w in record if "override_" in str(w.message)
+    ] == []
+
+
+def test_no_override_never_triggers_the_range_warning(
+    positioned, basic_event_position_df
+):
+    # Auto-derived bound is max(anchor) * 1.25 / * 1.1, so nothing is outside it.
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        generate_animation(positioned, basic_event_position_df)
+    assert [
+        str(w.message) for w in record if "outside the `override" in str(w.message)
+    ] == []
+
+
+def test_animate_activity_log_threads_the_override_range_check(
+    simple_queue_log, basic_event_position_df
+):
+    with pytest.warns(UserWarning, match=r"outside the `override_x_max`"):
+        animate_activity_log(
+            simple_queue_log,
+            basic_event_position_df,
+            override_x_max=100,
+            every_x_time_units=10,
+            limit_duration=50,
+        )
 
 
 def test_right_margin_grows_with_the_longest_stage_label(

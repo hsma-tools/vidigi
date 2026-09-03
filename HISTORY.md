@@ -77,6 +77,10 @@
     - A duplicated event was the worse of the two: entity snapshots are joined to their position on the event name, so every entity at that step is drawn in *all* of its positions at once and appears to jump between them at random
     - Identical coordinates for different events is not corrupting but is almost always a copy-paste slip, invisible in the finished animation except as two stages drawn on top of each other
     - Warnings only — a malformed `event_position_df` still produces an animation, and a well-formed one is unaffected
+- New warning when an event anchor falls outside an explicit `override_x_max` / `override_y_max` in `generate_animation` / `animate_activity_log`
+    - Those overrides become the axis bounds directly (the axis runs `[0, override]`), so an anchor past them — or below 0 — is drawn off-canvas and that step's whole queue / resource block silently disappears
+    - Only checked when the override is actually passed; an auto-derived bound is `max(anchor) * 1.25` / `* 1.1` and cannot be exceeded by construction
+    - The warning names each offending event and its coordinate, and points at raising the override or moving the anchor
 - `log_resource_use_start`/`log_resource_use_end` gain an explicit `event=` parameter, naming the specific step (e.g. `"treatment_begins"`) rather than the generic `"start"`/`"end"` default — needed to tell different resource-use steps apart in `resource_use_intervals`. This was already possible by passing `event=` as an undocumented extra keyword argument, so behaviour for every existing caller is unchanged
 - New `logger=` parameter on `VidigiStore`/`VidigiPriorityStore`, for automatic `resource_use`/`resource_use_end` logging around resource acquisition and release, removing the need to bracket every `request()`/`get_direct()` call with `EventLogger.log_resource_use_start`/`log_resource_use_end` by hand
     - Purely opt-in: omitting `logger=` (the default) leaves every existing caller's behaviour unchanged, and passing `entity_id=` to any of these methods on a store with no `logger` does nothing

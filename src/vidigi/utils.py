@@ -868,6 +868,72 @@ def _warn_on_duplicate_event_positions(
             )
 
 
+def _warn_on_event_positions_outside_range(
+    event_position_df,
+    override_x_max: Optional[float] = None,
+    override_y_max: Optional[float] = None,
+    event_col_name: str = "event",
+    *,
+    stacklevel: int = 3,
+) -> None:
+    """Warn when an event anchor sits outside an explicitly overridden axis range.
+
+    The animation's x axis runs ``[0, x_max]`` and its y axis ``[0, y_max]``. When
+    a caller passes `override_x_max` / `override_y_max` to `animate_activity_log`
+    / `generate_animation` those become the bounds directly, and any event whose
+    anchor falls outside them is drawn off-canvas - that step's whole queue or
+    resource block silently vanishes from the animation.
+
+    Only checked when the relevant override is set. With no override the bound is
+    derived from the anchors themselves (``max(...) * 1.25`` / ``* 1.1``), so no
+    anchor can exceed it by construction.
+
+    Parameters
+    ----------
+    event_position_df : pandas.DataFrame or anything ``pd.DataFrame`` accepts
+        The event-position frame reaching the animation.
+    override_x_max, override_y_max : float, optional
+        The caller-supplied axis maxima. ``None`` (the default) skips that axis.
+    event_col_name : str, default "event"
+        Column holding the event name, used to name offenders in the warning.
+    stacklevel : int
+        Passed through to `warnings.warn`.
+    """
+    if not isinstance(event_position_df, pd.DataFrame):
+        try:
+            event_position_df = pd.DataFrame(event_position_df)
+        except Exception:
+            return
+
+    if event_col_name not in event_position_df.columns:
+        return
+
+    for axis, override in (("x", override_x_max), ("y", override_y_max)):
+        if override is None or axis not in event_position_df.columns:
+            continue
+
+        coord = pd.to_numeric(event_position_df[axis], errors="coerce")
+        outside = event_position_df[(coord < 0) | (coord > override)]
+        if outside.empty:
+            continue
+
+        listed = ", ".join(
+            f"{name!r} ({axis}={value})"
+            for name, value in zip(outside[event_col_name], outside[axis])
+        )
+        warnings.warn(
+            f"`event_position_df` has events whose {axis} anchor is outside the "
+            f"`override_{axis}_max` range [0, {override}]: {listed}.\n"
+            "\n"
+            f"The animation's {axis} axis is fixed to that range, so these steps "
+            f"are drawn off-canvas and their queues / resources will not be "
+            f"visible. Raise `override_{axis}_max` (or drop it and let the range "
+            f"auto-size), or move the anchor inside the range.",
+            UserWarning,
+            stacklevel=stacklevel,
+        )
+
+
 def _ensure_int(value, name: str) -> int:
     if isinstance(value, numbers.Real):
         if not isinstance(value, int):

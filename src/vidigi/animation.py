@@ -20,6 +20,7 @@ from vidigi.utils import (
     _resolve_icon_flip,
     _resolve_icon_font,
     _resource_map_from_event_position_df,
+    _warn_on_event_positions_outside_range,
     inject_icon_flip_css,
     inject_icon_font_css,
 )
@@ -471,9 +472,13 @@ def generate_animation(
     override_x_max : int, optional
         Override the maximum x-coordinate (default is None). The figure margin
         already auto-expands to fit auto-generated stage labels, so this is only
-        needed to reframe a layout the auto-sizing gets wrong.
+        needed to reframe a layout the auto-sizing gets wrong. The axis then runs
+        exactly ``[0, override_x_max]``; a `UserWarning` is raised if any event
+        anchor falls outside that, as its queue / resources would be drawn
+        off-canvas.
     override_y_max : int, optional
-        Override the maximum y-coordinate (default is None).
+        Override the maximum y-coordinate (default is None). Same off-canvas
+        `UserWarning` as `override_x_max`.
     time_display_units : str, optional
         Format for displaying time on the animation timeline. This affects how
         simulation time is converted into human-readable dates or clock
@@ -689,6 +694,16 @@ def generate_animation(
         y_max = override_y_max
     else:
         y_max = event_position_df["y"].max() * 1.1
+
+    # A caller-supplied override becomes the axis bound directly, so an event
+    # anchor outside it is drawn off-canvas and that step disappears silently.
+    _warn_on_event_positions_outside_range(
+        event_position_df,
+        override_x_max=override_x_max,
+        override_y_max=override_y_max,
+        event_col_name=event_col_name,
+        stacklevel=3,
+    )
 
     # If we're displaying time as a clock instead of as units of whatever time
     # our model is working in, create a snapshot_time_display column that will
@@ -2164,8 +2179,12 @@ def animate_activity_log(
         Override the maximum x-coordinate of the plot (default is None). The
         figure margin already auto-expands to fit auto-generated stage labels,
         so this is only needed to reframe a layout the auto-sizing gets wrong.
+        The axis then runs exactly ``[0, override_x_max]``; a `UserWarning` is
+        raised if any event anchor falls outside that, as its queue / resources
+        would be drawn off-canvas.
     override_y_max : int, optional
-        Override the maximum y-coordinate of the plot (default is None).
+        Override the maximum y-coordinate of the plot (default is None). Same
+        off-canvas `UserWarning` as `override_x_max`.
     start_date : str, optional
         Start date for the animation in 'YYYY-MM-DD' format. Only used when
         time_display_units is 'd' or 'dhm' (default is None).
