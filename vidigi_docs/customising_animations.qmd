@@ -126,6 +126,7 @@ The figure margin auto-expands to fit long stage labels, so you rarely need
 | `overflow_text_color` | `"black"` | Colour of the text drawn *on top of* entity icons. |
 | `resource_opacity` | `0.8` | Opacity of the resource icons. |
 | `custom_resource_icon` | `None` | Emoji or short string used for every resource icon in place of the default. |
+| `resource_icon` (per event) | `None` | Field on `EventPosition` (or a column on `event_position_df`) overriding `custom_resource_icon` for one event, so resource stages can each have their own icon — a glyph, or an image (a URL, local path, or `data:` URI). See below. |
 | `custom_entity_icon_list` | `None` | List of emoji cycled through for entity icons (`animate_activity_log` only). |
 | `flip_entity_icons` | `False` | Mirror entity icons (and a `custom_resource_icon`) horizontally — useful when an emoji faces the wrong way for a layout, independently of `queue_direction`. Set per event instead with a `flip_icons` column on `event_position_df`. |
 | `entity_icon_font` | `None` | Render entity icons (and a `custom_resource_icon`) in an icon font instead of emoji — a preset name (`"font-awesome"`, `"bootstrap-icons"`, `"material-symbols"`) or any CSS font-family already on the page. `custom_entity_icon_list` then supplies that font's codepoints instead of emoji. |
@@ -166,7 +167,7 @@ st.plotly_chart(fig)
 This does not affect a static export via `fig.write_image()`, which renders in
 its own page rather than the browser tab the CSS would otherwise reach.
 
-### Beyond emoji: icon fonts, per-entity colour, and resource images
+### Beyond emoji: icon fonts, per-entity colour, and per-resource icons
 
 Emoji cap what an icon can look like, and — being colour fonts — ignore
 `textfont.color` entirely, so an entity can never be coloured by, say,
@@ -195,21 +196,27 @@ glyph directly). The `+ N more` / ASCII-gauge overflow icon always stays on the
 default font — a substituted glyph in place of the ASCII art would be worse
 than plain text.
 
-A `resource_icon` column on `event_position_df` (or `EventPosition(...,
-resource_icon=...)`) overrides `custom_resource_icon` per event, and can name
-an image — a URL, local path, or `data:` URI — instead of a text glyph, drawn
-at the resource's position via Plotly's `layout.images` rather than as text:
+`custom_resource_icon` sets one icon for *every* resource. `resource_icon` — a
+field on `EventPosition`, or a column on a hand-built / CSV `event_position_df`
+— overrides it for a single event, so each resource stage can have its own:
 
 ```python
-EventPosition(
-    event="treatment_begins", x=250, y=175, resource="n_cubicles",
-    label="Being Treated", resource_icon="assets/bed.png",
-)
+create_event_position_df([
+    EventPosition(event="registration", x=120, y=175, resource="n_clerks",
+                  label="Registration", resource_icon="🖥️"),
+    EventPosition(event="treatment_begins", x=250, y=175, resource="n_cubicles",
+                  label="Being Treated", resource_icon="assets/bed.png"),
+])
 ```
 
-Unlike a text resource icon, an image one cannot be mirrored by
-`flip_entity_icons` — Plotly has no per-image transform — so supply it
-pre-mirrored if the layout needs it facing the other way.
+The value is a **text glyph** (an emoji or short string, drawn as scatter text
+and mirrored by `flip_entity_icons` / a per-event `flip_icons`, exactly like
+`custom_resource_icon`), or an **image** — a URL, local path, or `data:` URI,
+recognised by an image file extension or URL scheme. An image is drawn at the
+resource's position via Plotly's `layout.images` rather than as text, sized by
+`resource_image_size`; it is static across frames, but cannot be mirrored
+(Plotly has no per-image transform), so supply it pre-flipped if the layout
+needs it.
 
 [feat_custom_icons.ipynb](/examples/feat_custom_icons/feat_custom_icons.ipynb)
 walks through all three together.
