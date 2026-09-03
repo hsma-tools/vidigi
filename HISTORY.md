@@ -107,6 +107,11 @@
     - `add_synchronised_trace_from_dataframe(fig, data, make_trace, frame_time_col=...)` is the convenience form for a long-form DataFrame: `accumulate=False` feeds `make_trace` one time step at a time (a snapshot), `accumulate=True` feeds everything up to the current frame (a cumulative line). `match="index"` (the default) pairs the i-th distinct data time with frame `i` regardless of how `time_display_units` has relabelled it, and errors if the counts disagree — the silent failure mode behind `example_15`
     - `redraw=True` on the play button and slider is enabled automatically when it is needed (a non-scatter trace, or one on a secondary axis) and left alone otherwise; pass `redraw=` explicitly to override
     - Internally, `add_repeating_overlay`'s redraw-enabling block is now the shared `_enable_frame_redraw` helper — no behaviour change
+- New `vidigi.ciw.event_logger_from_ciw_recs` and `vidigi.ciw.trial_logger_from_ciw_recs`, converting ciw simulation records straight into a vidigi `EventLogger` / `TrialLogger` rather than a bare DataFrame
+    - `event_logger_from_ciw_recs(recs, node_name_list=...)` takes one run's `Simulation.get_all_records()` and returns a populated `EventLogger`, so a ciw model gets the same post-run surface a SimPy-plus-`EventLogger` model already has — event querying, JSON/CSV export, `plot_entity_timeline`, `generate_dfg`. Optional `run_number=` stamps every event
+    - `trial_logger_from_ciw_recs(list_of_recs, node_name_list=...)` takes several runs' records (the shape a `multiple_replications`-style helper produces) and returns a `TrialLogger` — one `EventLogger` per run, numbered `1..N` by default or via `run_numbers=` — for cross-run duration, resource-utilisation, queue-size, replication and warm-up analysis. Raises `ValueError` for an empty run list, a `run_numbers` length mismatch, or a run that recorded nothing
+    - `event_log_from_ciw_recs` is unchanged: its per-record event building was factored into a shared private generator the three functions now share, and its DataFrame output is byte-identical (pinned by a new test)
+    - Both loggers feed the animation functions via `.to_dataframe()` exactly as `event_log_from_ciw_recs` does
 
 ### New metrics
 
@@ -329,7 +334,7 @@
 
 ### Testing
 
-Test coverage grew from 31 to 942 tests, concentrated on the parts of the pipeline where a
+Test coverage grew from 31 to 954 tests, concentrated on the parts of the pipeline where a
 mistake changes what the animation *shows*, or what the reported numbers *say*, rather
 than raising an error.
 
@@ -384,6 +389,7 @@ than raising an error.
 - `plot_entity_timeline`'s new `return_fig=` is covered as a mutation-proven pair: the default (`False`) calls `fig.show()` and returns `None`, `return_fig=True` returns the `go.Figure` without calling `fig.show()` at all - each proven to fail if the branch were inverted - plus a value check that the returned figure genuinely carries the requested entity's own events
 - The new "`request()` context manager exited without `yield req`" guard is covered for both store types: that the misuse warns (mutation-proven — the warning collapses to silent if the detection is narrowed to only the already-granted case), that the buggy entity ends up with *no* `resource_use` row and the unit is not leaked (both mutation-proven against skipping the cleanup), that correct `as req: yield req` usage stays silent and logs exactly one start/end, that an exception raised before `yield req` does not add a spurious warning, and — pinned explicitly — the one case the guard cannot catch (a lone entity with a free unit whose timeout outlasts the grant). Separately, `generate_animation_df` gains a value-level test that one resource unit released and re-acquired by three successive entities places every holder at the same slot (full `{entity: (id, x, y)}` mapping, not sampled), with the downstream "depart logged before resource_use hides the treatment snapshots" symptom pinned as current behaviour
 - The new synchronised-trace helpers gain their own test file: `add_subplot_panels` wiring the private `_grid_ref` so a `row=2` trace resolves, `add_synchronised_trace` appending to every frame with the *exact* trace map asserted and the ragged-count `ValueError` raised before the figure is touched, the redraw auto-detect on/off/override for bar and secondary-axis traces (mutation-proven), and — the regression the older `example_13` method exhibits — that the existing stage-label and resource-icon traces are byte-identical after the call and never fall into a frame's trace map (mutation-proven against the naive `list(range(len))` mapping). `add_synchronised_trace_from_dataframe`'s `accumulate` snapshot-vs-cumulative row slices and `match="index"` count-mismatch error (the silent failure behind `example_15`) are asserted as full per-frame sequences
+- `vidigi.ciw` gains its first dedicated test file: that the generator refactor left `event_log_from_ciw_recs`'s DataFrame byte-identical (mutation-proven against a dropped `depart` row and a wrong time field), that `event_logger_from_ciw_recs` reproduces the same rows in an `EventLogger` with no validation warnings, that `run_number` is absent by default and stamped on every event when given, a whole-sequence assertion of one entity's ordered events across both outputs, and that `trial_logger_from_ciw_recs` numbers runs `1..N` (or per `run_numbers=`), sums to the right row count, and raises for an empty run list, a length mismatch, or a run that recorded nothing
 
 # 1.3.1
 

@@ -158,6 +158,8 @@ quartodoc:
       desc: ""
       contents:
         - ciw.event_log_from_ciw_recs
+        - ciw.event_logger_from_ciw_recs
+        - ciw.trial_logger_from_ciw_recs
     - title: legacy Functions
       desc: ""
       contents:

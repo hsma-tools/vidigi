@@ -307,10 +307,10 @@ event_position_df = create_event_position_df([
 
 ### Event logging with Ciw
 
-With Ciw, you do not need to manually add log statements. Instead, use the `event_log_from_ciw_recs` helper function from `vidigi.utils` to reshape Ciw's logs into the format vidigi requires.
+With Ciw, you do not need to manually add log statements. Instead, use the `event_log_from_ciw_recs` helper function from `vidigi.ciw` to reshape Ciw's logs into the format vidigi requires.
 
 ```{.python}
-from vidigi.utils import event_log_from_ciw_recs
+from vidigi.ciw import event_log_from_ciw_recs
 
 event_log_test = event_log_from_ciw_recs(
     logs_run_1,
@@ -319,6 +319,13 @@ event_log_test = event_log_from_ciw_recs(
 ```
 
 For each node, we provide a name (e.g., `operator`, `nurse`). Vidigi uses these to generate event names (adding `_begins` and `_ends`), to infer arrivals and departures, and to create resource IDs so it can show utilisation correctly.
+
+`event_log_from_ciw_recs` returns a plain `pandas` DataFrame. If you also want vidigi's post-run analysis tools, two sibling helpers in `vidigi.ciw` do the same conversion but return logging objects instead:
+
+- `event_logger_from_ciw_recs(recs, node_name_list=...)` returns an [`EventLogger`](/reference/logging.EventLogger.qmd) for one run - adding event querying, JSON/CSV export, `plot_entity_timeline` and `generate_dfg`.
+- `trial_logger_from_ciw_recs(list_of_recs, node_name_list=...)` returns a [`TrialLogger`](/reference/logging.TrialLogger.qmd) built from several runs' records, for multi-run duration, resource-utilisation, queue-size and replication analysis.
+
+Both feed the animation functions the same way via `.to_dataframe()`.
 
 We then just need to create a suitable class to pass in the resource counts to the animation function.
 

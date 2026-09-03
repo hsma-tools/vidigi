@@ -46,7 +46,7 @@ Therefore, it's highly advisable to check the key output metrics from your model
 :::{.callout-note}
 ciw is quite different - we will not be able to add logging steps in the way we do in this simpy model.
 
-However, in the utils module, the `event_log_from_ciw_recs` function provides a simple way to get the required logs out of your ciw model without any additional logging being added in manually.
+However, the `vidigi.ciw` module's `event_log_from_ciw_recs` function provides a simple way to get the required logs out of your ciw model without any additional logging being added in manually. Its siblings `event_logger_from_ciw_recs` and `trial_logger_from_ciw_recs` return an `EventLogger` / `TrialLogger` instead, if you want vidigi's post-run analysis tools as well.
 
 You can view examples with ciw [here](../examples/example_4_ciw/ex_4_ciw.ipynb) and [here](../examples/example_10_advanced_ciw/ex_10_ciw.ipynb)
 
