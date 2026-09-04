@@ -125,6 +125,21 @@ event_position_df = create_event_position_df([
 ])
 ```
 
+::: {.callout-warning}
+Every event name your log can produce needs a row here, or entities using it vanish from
+the animation rather than moving to it. `generate_animation_df` looks up each snapshot's
+coordinates by merging on `event`; an event with no match gets no coordinates, and Plotly
+drops it from that frame instead of drawing it somewhere sensible — the entity just
+disappears, then flies in from the top-left corner once a positioned event takes over
+again.
+
+It's easy to miss because some events are safe to leave out in practice: if a step is
+always logged at the exact same instant as the very next one (a common pattern for
+`resource_use_end`), it's never actually selected as an entity's current state, so it's
+never rendered. That's a coincidence of how your model logs events, though, not something
+vidigi guarantees — when in doubt, give every event a position.
+:::
+
 By default every queue builds out to the left of its anchor. To flip the whole
 animation, pass `queue_direction="right"` to `animate_activity_log()` (or
 `generate_animation_df()` / `generate_animation()`). To flip just one stage,
