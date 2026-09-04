@@ -202,6 +202,12 @@ def reshape_for_animations(
       assumption does not hold may display unexpected behaviour.
     - An 'exit' event is added for each entity at the end of their journey.
     - The function uses memory management techniques (del and gc.collect()) to handle large datasets.
+    - Includes a `hidden_run_before` column: for each row, the number of consecutive
+      snapshots immediately before it where the entity was present but hidden by
+      `step_snapshot_max`. `0` for a genuine new arrival and for ordinary continuous
+      movement; positive only where an entity re-emerges as an individually-drawn icon
+      after being capped out. Consumed by `generate_animation_df`'s
+      `step_snapshot_reveal_pop_in`.
     - **To skip a warm-up period, use `warm_up` rather than filtering the event log.**
       Presence at each snapshot is derived from arrival and departure rows, so a log
       truncated with something like `event_log[event_log["time"] >= warm_up]` has lost
@@ -488,6 +494,62 @@ def reshape_for_animations(
     # one large dataframe
     full_entity_df = (pd.concat(entity_dfs, ignore_index=True)).reset_index(drop=True)
 
+    # For each surviving row, how many *consecutive* snapshots immediately before it
+    # was this entity present (per `arrival`/`depart`) but dropped by the
+    # `step_snapshot_max` cap above - i.e. genuinely hidden, not just absent. Used by
+    # `generate_animation_df`'s `step_snapshot_reveal_pop_in` to stop a long-hidden
+    # entity animating in from the top-left of the plot the moment it becomes
+    # individually visible again, the same way it already would for a genuine new
+    # arrival - which is `0` here, and left alone.
+    #
+    # A gap in an entity's own *surviving, individually-rendered* rows only ever
+    # means "capped out": the snapshot loop above places a row for every entity
+    # that is both present and within the cap, and appends an all-NaN placeholder
+    # row for an otherwise-empty snapshot, so every grid snapshot has *some* row -
+    # a real entity's absence from `full_entity_df` at a snapshot it was present
+    # for is only ever the cap's doing.
+    #
+    # "Individually-rendered" excludes the boundary row (`rank == step_snapshot_max
+    # + 1`, marked by a non-null `additional` here already) - `generate_animation_df`
+    # relabels that row's entity id to a stable synthetic overflow id before
+    # drawing it, so an entity playing that role never has *its own* id rendered,
+    # even though its row survives in this dataframe. Left in the continuity chain,
+    # a boundary-role entity that later becomes individually visible would wrongly
+    # look continuous (no gap) and so miss out on a phantom, despite its own icon
+    # appearing on screen for the first time exactly like any other reveal.
+    grid = np.sort(full_entity_df["snapshot_time"].dropna().unique())
+    grid_idx = pd.Series(np.arange(len(grid)), index=grid)
+
+    arrival_grid_idx = pivoted_log.set_index(entity_col_name)["arrival"].apply(
+        lambda a: np.searchsorted(grid, a, side="left")
+    )
+
+    real_rows = full_entity_df[full_entity_df[entity_col_name].notna()]
+    if "additional" in full_entity_df.columns:
+        chain_rows = real_rows[real_rows["additional"].isna()]
+    else:
+        chain_rows = real_rows
+    chain_rows = chain_rows.sort_values([entity_col_name, "snapshot_time"])
+
+    cur_grid_idx = chain_rows["snapshot_time"].map(grid_idx)
+    prev_grid_idx = cur_grid_idx.groupby(chain_rows[entity_col_name]).shift(1)
+
+    is_first_surviving_row = prev_grid_idx.isna()
+    baseline_grid_idx = chain_rows[entity_col_name].map(arrival_grid_idx)
+    hidden_run_before = np.where(
+        is_first_surviving_row,
+        cur_grid_idx - baseline_grid_idx,
+        cur_grid_idx - prev_grid_idx - 1,
+    )
+
+    # Boundary rows are left at `0` - moot regardless, since
+    # `step_snapshot_reveal_pop_in` excludes them from phantom eligibility anyway
+    # (they already have their own stable-id fix for this same problem).
+    full_entity_df["hidden_run_before"] = 0
+    full_entity_df.loc[chain_rows.index, "hidden_run_before"] = np.clip(
+        hidden_run_before, 0, None
+    ).astype(int)
+
     if debug_mode:
         print(
             f"Snapshot df concatenation complete at {time.strftime('%H:%M:%S', time.localtime())}"
@@ -524,6 +586,14 @@ def reshape_for_animations(
     # Propose their 'exit' time
     final_step["snapshot_time"] = final_step["snapshot_time"] + every_x_time_units
     final_step[event_col_name] = "depart"
+
+    # This is a straight copy of each entity's last surviving row, so it would
+    # otherwise carry that row's `hidden_run_before` forward unchanged. If that row
+    # was itself a reveal (hidden_run_before > 0), the copy would spuriously look
+    # like a *second* reveal right before this synthetic exit snapshot, even though
+    # the entity was already individually visible the snapshot before - there is no
+    # real gap here to pop in from.
+    final_step["hidden_run_before"] = 0
 
     # Only keep rows for people whose exit step will happen *before* the simulation end
     final_step = final_step[final_step["snapshot_time"] <= (limit_duration)]
@@ -581,6 +651,7 @@ def generate_animation_df(
     step_snapshot_limit_gauges=False,
     gauge_segments: int = 10,
     gauge_max_override: Optional[Union[int, float]] = None,
+    step_snapshot_reveal_pop_in: bool = False,
 ):
     """
     Generate a DataFrame for animation purposes by adding position information to entity data.
@@ -659,6 +730,41 @@ def generate_animation_df(
     step_snapshot_limit_gauges: bool, optional
         If True, replaces the text '+ x more' with a gauge. The upper limit of the gauge is set
         by the maximum queue length observed across the simulation.
+    step_snapshot_reveal_pop_in : bool, default=False
+        If True, an entity that re-appears as an individually-drawn icon after being
+        hidden by `step_snapshot_max` "pops in" at its queue position instead of
+        visibly flying in from the top-left of the plot - the same top-left fly-in a
+        brand new point always gets from Plotly when it first enters a frame's
+        `text` trace. Works by inserting one invisible phantom row (a zero-width
+        space) for that entity at the snapshot immediately before the reveal, so the
+        point already exists - just invisibly - by the time the real icon appears; it
+        then only needs a content swap, not a position transition, so there is
+        nothing left for Plotly to animate as movement.
+
+        A genuine new arrival is never affected - only entities that were already
+        present but suppressed by the cap (see `hidden_run_before` on
+        `reshape_for_animations`'s output) get a phantom, so arrivals still fly in,
+        which is usually the clearer visual cue for "joining the system". The
+        `+ N more` overflow row is also unaffected - it already has its own
+        stable-identity fix for this same problem.
+
+        Costs exactly one extra row per reveal (not per entity hidden, and not per
+        snapshot an entity spends hidden). Requires `reshape_for_animations`'s
+        `hidden_run_before` column; a `full_entity_df` built by hand without it
+        makes this a silent no-op rather than an error, the same way a missing
+        `opacity` column is handled elsewhere in the pipeline.
+
+        Hover text is **not** blanked on phantom rows - since they are invisible and
+        zero-width, hovering one precisely is unlikely, and doing so would only show
+        accurate (if one-snapshot-early) data for the entity about to appear. An
+        `entity_annotation_by` label, which unlike hover is always visibly rendered,
+        *is* blanked on phantom rows by `generate_animation`.
+
+        The default `False` is a verified no-op - output is byte-identical to
+        omitting the argument. **This default is planned to change to `True` at the
+        next major version (3.0)**, since "pop in" is closer to correct than
+        "fly in" for a reveal; pass it explicitly either way to pin your animation's
+        behaviour across that release.
 
     Returns
     -------
@@ -1039,6 +1145,70 @@ def generate_animation_df(
             ],
             ignore_index=True,
         )
+
+    # `step_snapshot_reveal_pop_in`: give a reveal (an entity that was hidden by
+    # `step_snapshot_max` and has just re-emerged as an individually-drawn icon) a
+    # phantom row one snapshot earlier, at the same position, carrying an invisible
+    # zero-width-space icon. The point then already exists - just invisibly - when
+    # the real icon appears, so Plotly only has a content swap to do, not a position
+    # transition, and the entity pops in rather than flying in from the plot's
+    # top-left the way any point new to a frame's `text` trace otherwise would (see
+    # the `step_snapshot_reveal_pop_in` docstring for the full mechanism). Mirrors
+    # the overflow-row handling just above, which solves the exact same problem for
+    # the '+ N more' label via a different mechanism (a stable synthetic id, since
+    # unlike a reveal that label exists in every frame, just under different names).
+    if step_snapshot_reveal_pop_in:
+        # Always added when the flag is on, whether or not any reveal actually
+        # occurs in this particular animation, so downstream code can rely on the
+        # column's presence rather than on there having been a reveal.
+        full_entity_df_plus_pos["_phantom"] = False
+
+        if "hidden_run_before" in full_entity_df_plus_pos.columns:
+            if "additional" in full_entity_df_plus_pos.columns:
+                # The overflow row already has its own stable-id fix for this same
+                # problem (see above) - excluded here so it doesn't also get a
+                # phantom, which would be redundant at best.
+                _not_overflow = full_entity_df_plus_pos["additional"].isna()
+            else:
+                _not_overflow = pd.Series(
+                    True, index=full_entity_df_plus_pos.index
+                )
+
+            _reveal_mask = (
+                (full_entity_df_plus_pos["hidden_run_before"] >= 1)
+                & _not_overflow
+                & full_entity_df_plus_pos[entity_col_name].notna()
+            )
+
+            if _reveal_mask.any():
+                _grid = np.sort(
+                    full_entity_df_plus_pos["snapshot_time"].dropna().unique()
+                )
+                _grid_pos = pd.Series(np.arange(len(_grid)), index=_grid)
+
+                _reveal_rows = full_entity_df_plus_pos.loc[_reveal_mask].copy()
+                _reveal_grid_idx = _reveal_rows["snapshot_time"].map(_grid_pos)
+
+                # A reveal at the very first grid slot has no preceding slot to pop
+                # in from - nothing to do for it. This can only happen for an
+                # entity whose very first drawn row is already a "reveal", e.g. it
+                # was already mid-queue, beyond the cap, right as the animation
+                # window opens.
+                _has_lead = (_reveal_grid_idx > 0).to_numpy()
+                _reveal_rows = _reveal_rows[_has_lead]
+                _reveal_grid_idx = _reveal_grid_idx[_has_lead]
+
+                if len(_reveal_rows):
+                    _phantom_rows = _reveal_rows.copy()
+                    _phantom_rows["snapshot_time"] = _grid[
+                        (_reveal_grid_idx - 1).to_numpy()
+                    ]
+                    _phantom_rows["icon"] = "​"
+                    _phantom_rows["_phantom"] = True
+
+                    full_entity_df_plus_pos = pd.concat(
+                        [full_entity_df_plus_pos, _phantom_rows], ignore_index=True
+                    )
 
     full_entity_df_plus_pos["opacity"] = 1.0
 

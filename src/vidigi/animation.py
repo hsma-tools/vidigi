@@ -1592,9 +1592,24 @@ def generate_animation(
         # NaN on the synthetic "+ N more" / gauge overflow row - it isn't a real
         # entity, so it gets no annotation, the same exemption the icon trace
         # already gives it from flipping and icon fonts.
-        _annotation_df["_entity_annotation_text"] = _annotation_df[
-            entity_annotation_by
-        ].where(_not_overflow)
+        _entity_annotation_text = _annotation_df[entity_annotation_by].where(
+            _not_overflow
+        )
+        # A `step_snapshot_reveal_pop_in` phantom row (see `generate_animation_df`)
+        # is a real entity, not overflow, so the `.where` above leaves its real
+        # annotation text in place - unlike the icon trace, which is deliberately
+        # given an invisible zero-width-space `icon` on these rows. Blanked here to
+        # match: this is a second, independent `<text>` node with its own d3 join,
+        # so an unblanked real label would itself fly in at the reveal frame, one
+        # trace after the icon trace's own fly-in was just fixed. NaN would not
+        # do - a falsy `text` value gets its node removed by Plotly, which is
+        # exactly the failure mode this whole feature exists to avoid (see that
+        # docstring) - so this uses the same zero-width space the icon trace does.
+        if "_phantom" in _annotation_df.columns:
+            _entity_annotation_text = _entity_annotation_text.mask(
+                _annotation_df["_phantom"].fillna(False), "​"
+            )
+        _annotation_df["_entity_annotation_text"] = _entity_annotation_text
         _annotation_df["_entity_annotation_y"] = (
             _annotation_df["y_final"] + entity_annotation_offset_y
         )
@@ -2049,6 +2064,7 @@ def animate_activity_log(
     step_snapshot_limit_gauges: bool = False,
     gauge_segments: int = 10,
     gauge_max_override: Optional[int | float] = None,
+    step_snapshot_reveal_pop_in: bool = False,
     run_col_name: Optional[str] = "auto",
     warm_up: int = 0,
     snapshot_alignment: SnapshotAlignment = "warm_up",
@@ -2347,6 +2363,13 @@ def animate_activity_log(
         Manually specified maximum value for queue length gauges. If `None`,
         the upper limit is determined from the maximum queue length observed in
         the simulation when `step_snapshot_limit_gauges` is `True`.
+    step_snapshot_reveal_pop_in : bool, default=False
+        If True, an entity that re-appears as an individually-drawn icon after
+        being hidden by `step_snapshot_max` "pops in" at its queue position
+        instead of visibly flying in from the top-left of the plot. See
+        `generate_animation_df`'s docstring for the full mechanism and cost.
+        The default `False` is a verified no-op; **planned to change to `True`
+        at the next major version (3.0)**.
     run_col_name : str or None, optional
         Name of the column identifying which simulation run (replication) each
         row belongs to, used to reject event logs containing more than one
@@ -2468,6 +2491,7 @@ def animate_activity_log(
         step_snapshot_limit_gauges=step_snapshot_limit_gauges,
         gauge_max_override=gauge_max_override,
         gauge_segments=gauge_segments,
+        step_snapshot_reveal_pop_in=step_snapshot_reveal_pop_in,
         run_col_name=run_col_name,
     )
 
