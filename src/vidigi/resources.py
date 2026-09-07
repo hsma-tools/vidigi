@@ -82,7 +82,7 @@ class VidigiResource:
         ``populate_store()`` set it to ``1..capacity``.
     **kwargs
         Any further keyword arguments are set as attributes on the instance
-        (``VidigiResource(id_attribute=1, staff_type="nurse")`` →
+        (``VidigiResource(id_attribute=1, staff_type="nurse")`` ->
         ``resource.staff_type``). To do this for a whole pool built by
         ``populate_store`` / ``VidigiStore`` / ``VidigiPriorityStore``, pass their
         ``extra_attributes=`` instead of building the pool by hand. Pools built
