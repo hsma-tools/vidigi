@@ -278,35 +278,42 @@ If you're using `VidigiStore` or `VidigiPriorityStore`, you don't have to call `
 :::
 
 
-### Step 7. Ensure you have a class with resource counts
+### Step 7. Ensure you have somewhere to hold your resource counts
 
-When you later define event positions for `resource_use` steps, you will also need to provide an identifier for the resource (for example a parameter such as `n_treatment_cubicles`) so vidigi knows how many resources to draw at that step. This, in turn, requires a small class or object to hold your resource counts that you can pass into the animation function.
+When you later define event positions for `resource_use` steps, you will also need to provide an identifier for the resource (for example a name such as `n_cubicles`) so vidigi knows how many resources to draw at that step. This means you need something to hold your resource counts to pass into the animation function as `scenario`. A plain dictionary is enough:
+
+```{.python}
+scenario = {"n_cubicles": 5}
+```
+
+A small class or object works just as well, so an existing parameters object can be reused directly:
 
 ```{.python}
 class ModelParams:
     def __init__(self):
-        self.n_triage_resources = 3
-        self.n_treatment_cubicles = 5
+        self.n_cubicles = 5
 
 
-params = ModelParams()
+scenario = ModelParams()
 ```
+
+Whichever you use, the names (`n_cubicles` here) must match the `resource` values you give your `EventPosition`s in the next step.
 
 
 ::: {.callout-tip}
-If you are following the [HSMA SimPy structure](https://des.hsma.co.uk/), this object will usually be your `g` class.
+If you are following the [HSMA SimPy structure](https://des.hsma.co.uk/), this will usually be your `g` class.
 
-If you are following the [DES RAP Book structure](https://pythonhealthdatascience.github.io/des_rap_book/), this object will usually be your `Params` class.
+If you are following the [DES RAP Book structure](https://pythonhealthdatascience.github.io/des_rap_book/), this will usually be your `Params` class.
 
-Otherwise, you can create a simple parameters class to hold your resource counts and pass it to the animation function:
+Otherwise, a dictionary or a small parameters class like the one above is all you need.
 :::
 
 
 
-### Step 8. Update your
+### Step 8. Update your event position dataframe
 
 
-* `resource` (optional): Only needed if the step is a `resource_use` step. This should match an attribute name on the `scenario` object passed to `animate_activity_log()` and give the number of resources at that step.
+* `resource` (optional): Only needed if the step is a `resource_use` step. This should match an attribute name (or dictionary key) on the `scenario` passed to `animate_activity_log()` and give the number of resources at that step.
 
 Here, we've added the 'resource' parameter to our `EventPosition` for `treatment_begins`.
 
