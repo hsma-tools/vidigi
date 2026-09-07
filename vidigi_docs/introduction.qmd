@@ -96,7 +96,9 @@ This will create an event log in the required format for vidigi's animation func
 ::: {.callout-tip}
 If you are adding vidigi to an existing model, you may have already created some form of logging for your animation.
 
-The animation functions take a dataframe, not an EventLogger object, so as long as your
+`animate_activity_log()` and `reshape_for_animations()` accept a vidigi `EventLogger` or `TrialLogger` directly, or a plain `pandas` DataFrame. If you keep your own logging, you don't have to switch to `EventLogger` - reshape your records into a DataFrame with the columns shown above (`entity_id`, `event_type`, `event`, `time`, plus `resource_id` for resource-use steps) and pass that instead.
+
+Passing a `TrialLogger`? Add `run_number=` to pick the replication to animate - vidigi animates one run at a time.
 :::
 
 
@@ -202,6 +204,8 @@ There are two main ways to create the animation:
     See [this priority queueing example](../examples/example_3_simplest_case_priority_resource/ex_3_simplest_case_priority_resource.ipynb) for a demonstration of this.
 
 Both functions take the same set of appearance arguments - background colour and image, icon sizes, stage labels, spacing, playback speed and more. See [Customising the animation](/vidigi_docs/customising_animations.qmd) for the full list grouped by what each one changes.
+
+`animate_activity_log()` and `reshape_for_animations()` accept your event log as a `pandas` DataFrame, a vidigi [`EventLogger`](/reference/logging.EventLogger.qmd), or a [`TrialLogger`](/reference/logging.TrialLogger.qmd) - a logger is converted with `.to_dataframe()` for you. With a `TrialLogger`, pass `run_number=` to choose which replication to animate; passing one with more than one run and no `run_number` raises an error that lists the runs available.
 
 
 

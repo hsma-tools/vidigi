@@ -36,6 +36,14 @@ vidigi creates animations from **event logs** - records of what happens in your 
 
 The rest of this page walks you through each step.
 
+::: {.callout-note}
+## Event logs, `EventLogger`, or `TrialLogger`?
+
+If you use vidigi's [`EventLogger`](/reference/logging.EventLogger.qmd) (or [`TrialLogger`](/reference/logging.TrialLogger.qmd)) to record events, you can hand it straight to `animate_activity_log()` and `reshape_for_animations()` - there is no need to call `.to_dataframe()` first. With a `TrialLogger`, add `run_number=` to choose which replication to animate.
+
+Prefer to work with DataFrames, or already have your own logging? That still works exactly as before - pass a `pandas` DataFrame with the required columns, filtered to a single run, and nothing changes.
+:::
+
 ## Learn by example
 
 The fastest way to understand vidigi is through worked examples. We recommend starting with these:
