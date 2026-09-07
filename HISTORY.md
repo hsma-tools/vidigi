@@ -140,6 +140,10 @@
     - `trial_logger_from_ciw_recs(list_of_recs, node_name_list=...)` takes several runs' records (the shape a `multiple_replications`-style helper produces) and returns a `TrialLogger` — one `EventLogger` per run, numbered `1..N` by default or via `run_numbers=` — for cross-run duration, resource-utilisation, queue-size, replication and warm-up analysis. Raises `ValueError` for an empty run list, a `run_numbers` length mismatch, or a run that recorded nothing
     - `event_log_from_ciw_recs` is unchanged: its per-record event building was factored into a shared private generator the three functions now share, and its DataFrame output is byte-identical (pinned by a new test)
     - Both loggers feed the animation functions via `.to_dataframe()` exactly as `event_log_from_ciw_recs` does
+- `reshape_for_animations` and `animate_activity_log` now accept an `EventLogger` or `TrialLogger` for `event_log`, not only a DataFrame — `.to_dataframe()` is called for you, so the helper call is no longer needed
+    - New `run_number` argument picks one replication out of a `TrialLogger`; passing a multi-run `TrialLogger` without it raises a `ValueError` listing the available runs
+    - `run_number` given alongside a DataFrame or an `EventLogger` is a `ValueError` — it only means something for a `TrialLogger`
+    - Passing a DataFrame is unchanged
 
 ### New metrics
 

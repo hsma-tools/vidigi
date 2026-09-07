@@ -738,6 +738,68 @@ def _check_one_arrival_per_entity(
         )
 
 
+def _coerce_event_log(event_log, run_number=None, *, frame_arg: str = "event_log"):
+    """Accept a DataFrame, an `EventLogger`, or a `TrialLogger` and return a DataFrame.
+
+    The logger classes live in `vidigi.logging`, which cannot be imported here
+    without a cycle (`logging` -> `analysis` -> `prep` -> `utils`), so the two are
+    recognised by duck typing rather than `isinstance` - a `TrialLogger` by its
+    `get_log_by_run`, an `EventLogger` by `to_dataframe`.
+
+    Parameters
+    ----------
+    event_log : pandas.DataFrame, EventLogger, or TrialLogger
+        A DataFrame is returned unchanged; a logger has `.to_dataframe()` called.
+    run_number : int or str, optional
+        Selects one replication from a `TrialLogger`. Only valid there - passing it
+        with a DataFrame or an `EventLogger` is a `ValueError`.
+    frame_arg : str
+        Name of the calling function's parameter, so messages name the caller's argument.
+
+    Returns
+    -------
+    pandas.DataFrame
+    """
+    if isinstance(event_log, pd.DataFrame):
+        if run_number is not None:
+            raise ValueError(
+                f"`run_number` only applies when `{frame_arg}` is a TrialLogger; got a "
+                f"DataFrame. Filter it to one replication yourself before calling."
+            )
+        return event_log
+
+    # TrialLogger - the only one of the two with per-run retrieval.
+    if hasattr(event_log, "get_log_by_run"):
+        if run_number is not None:
+            return event_log.get_log_by_run(run_number, as_df=True)
+        df = event_log.to_dataframe()
+        runs = (
+            sorted(df["run_number"].dropna().unique().tolist())
+            if "run_number" in df.columns
+            else []
+        )
+        if len(runs) > 1:
+            raise ValueError(
+                f"`{frame_arg}` is a TrialLogger containing multiple runs ({runs}). "
+                f"Pass `run_number=<run>` to animate a single replication."
+            )
+        return df
+
+    # EventLogger - has to_dataframe() but no per-run retrieval.
+    if hasattr(event_log, "to_dataframe"):
+        if run_number is not None:
+            raise ValueError(
+                f"`run_number` only applies when `{frame_arg}` is a TrialLogger; got an "
+                f"EventLogger."
+            )
+        return event_log.to_dataframe()
+
+    raise TypeError(
+        f"`{frame_arg}` must be a pandas DataFrame, an EventLogger, or a TrialLogger; "
+        f"got {type(event_log).__name__}."
+    )
+
+
 def _resource_map_from_event_position_df(
     event_position_df: pd.DataFrame, event_col_name: str = "event"
 ) -> dict:

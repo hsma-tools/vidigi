@@ -9,6 +9,7 @@ from vidigi.utils import (
     QueueDirection,
     _check_one_arrival_per_entity,
     _check_single_run,
+    _coerce_event_log,
     _enforce_int_params,
     _resolve_direction_sign,
     _warn_on_duplicate_event_positions,
@@ -151,6 +152,7 @@ def reshape_for_animations(
     pathway_col_name: Optional[str] = None,
     debug_mode: bool = False,
     save_intermediate_outputs: Optional[Union[bool, str]] = False,
+    run_number: Optional[int] = None,
     run_col_name: Optional[str] = "auto",
     warm_up: int = 0,
     snapshot_alignment: SnapshotAlignment = "warm_up",
@@ -163,9 +165,11 @@ def reshape_for_animations(
 
     Parameters
     ----------
-    event_log : pd.DataFrame
+    event_log : pd.DataFrame, EventLogger, or TrialLogger
         The input event log containing entity events and timestamps in the form of a number of time
-        units since the simulation began.
+        units since the simulation began. A `vidigi.logging.EventLogger` or
+        `TrialLogger` may be passed directly, in which case its `.to_dataframe()`
+        is called for you.
     every_x_time_units : int, optional
         The time interval between snapshots in preferred time units (default is 10).
     limit_duration : int, optional
@@ -197,6 +201,11 @@ def reshape_for_animations(
         If True or a string, output a series of csvs with intermediate transformed dataframes.
         If a string is passed, this will be interpreted as the path to prefix the dataframes with.
         Default is False.
+    run_number : int, optional
+        Selects a single replication from a `TrialLogger` passed as `event_log`.
+        Only valid with a `TrialLogger`: passing it alongside a DataFrame or an
+        `EventLogger` raises `ValueError`, as does passing a multi-run `TrialLogger`
+        without it.
     run_col_name : str or None, optional
         Name of the column identifying which simulation run (replication) each row
         belongs to, used to reject event logs containing more than one replication.
@@ -273,6 +282,10 @@ def reshape_for_animations(
     - Implement pathway order and precedence columns.
     - Fix the automatic exit at the end of the simulation run for all entities.
     """
+    # Accept an EventLogger / TrialLogger in place of a DataFrame; `run_number`
+    # picks one replication out of a TrialLogger.
+    event_log = _coerce_event_log(event_log, run_number=run_number)
+
     # Reject multi-replication logs before doing any work. Both checks run: the run
     # column catches a log whose entity IDs happen to be unique across runs, and the
     # duplicate-arrival check catches a log whose run column is named something we do

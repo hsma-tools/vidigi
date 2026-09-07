@@ -14,6 +14,7 @@ from vidigi.utils import (
     QueueDirection,
     _check_one_arrival_per_entity,
     _check_single_run,
+    _coerce_event_log,
     _enforce_int_params,
     _is_image_source,
     _resolve_direction_sign,
@@ -2065,6 +2066,7 @@ def animate_activity_log(
     gauge_segments: int = 10,
     gauge_max_override: Optional[int | float] = None,
     step_snapshot_reveal_pop_in: bool = False,
+    run_number: Optional[int] = None,
     run_col_name: Optional[str] = "auto",
     warm_up: int = 0,
     snapshot_alignment: SnapshotAlignment = "warm_up",
@@ -2078,8 +2080,10 @@ def animate_activity_log(
 
     Parameters
     ----------
-    event_log : pd.DataFrame
-        The log of events to be animated, containing patient activities.
+    event_log : pd.DataFrame, EventLogger, or TrialLogger
+        The log of events to be animated, containing patient activities. A
+        `vidigi.logging.EventLogger` or `TrialLogger` may be passed directly, in
+        which case its `.to_dataframe()` is called for you.
     event_position_df : pd.DataFrame
         DataFrame specifying the positions of different events, with columns
         'event', 'x', and 'y' (plus optional 'label', 'resource', 'direction' -
@@ -2370,6 +2374,11 @@ def animate_activity_log(
         `generate_animation_df`'s docstring for the full mechanism and cost.
         The default `False` is a verified no-op; **planned to change to `True`
         at the next major version (3.0)**.
+    run_number : int, optional
+        Selects a single replication from a `TrialLogger` passed as `event_log`.
+        Only valid with a `TrialLogger`: passing it alongside a DataFrame or an
+        `EventLogger` raises `ValueError`, as does passing a multi-run
+        `TrialLogger` without it.
     run_col_name : str or None, optional
         Name of the column identifying which simulation run (replication) each
         row belongs to, used to reject event logs containing more than one
@@ -2424,6 +2433,11 @@ def animate_activity_log(
     - A background image can be added to provide context for the patient flow.
     - The function handles both queuing and resource use events.
     """
+    # Accept an EventLogger / TrialLogger in place of a DataFrame; `run_number`
+    # picks one replication out of a TrialLogger. Passed on to reshape_for_animations
+    # as a plain DataFrame, so it does not re-run this coercion.
+    event_log = _coerce_event_log(event_log, run_number=run_number)
+
     # Check here as well as in reshape_for_animations, deliberately. This is the entry
     # point most users call, so the error should name this function's own arguments
     # rather than an internal one's, and should fire before any work is done.
