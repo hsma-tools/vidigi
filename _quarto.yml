@@ -29,7 +29,7 @@ website:
     search: true
     left:
       - text: "Home"
-        href: vidigi_docs/index.qmd
+        href: index.qmd
       - text: "Getting Started"
         href: vidigi_docs/getting_started.qmd
       - text: "Customising Animations"
