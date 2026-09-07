@@ -30,6 +30,7 @@ from vidigi.analysis import (
     activity_occupancy_stats,
     entity_metric_by_arrival,
     event_durations,
+    mean_confidence_interval,
     replication_means,
     replication_precision,
     resource_utilisation,
@@ -1130,6 +1131,7 @@ class TrialLogger:
         label=None,
         match: MatchMode = "first",
         warm_up: float = 0,
+        across: Across = "entities",
         **kwargs,
     ):
         """
@@ -1166,6 +1168,17 @@ class TrialLogger:
             `vidigi.analysis.event_durations`'s same parameter. `n_runs`
             (used by `"unserved_rate"`/`"served_rate"`/`"summary"`) is
             unaffected - it always counts every run in the trial.
+        across : {"entities", "runs"}, default="entities"
+            Whether the statistic is pooled over every entity's duration with
+            run boundaries ignored (the default, matching every prior release),
+            or computed separately within each run and then averaged across
+            runs - the mean of `vidigi.analysis.replication_means`'s per-run
+            values. `across="runs"` weights every replication equally rather
+            than by its entity count, and is the figure a confidence interval
+            (`get_event_duration_ci`) is about; it accepts only a genuine
+            per-replication `what` (`"mean"`, `"median"`, `"max"`, `"min"`,
+            `"quantile"`, `"std"`, `"var"`, `"sum"`), and requires
+            `exclude_incomplete=True`.
         **kwargs : dict
             Additional arguments passed to the pandas Series method
             corresponding to `what` (e.g., `quantile(q=0.9)`).
@@ -1180,29 +1193,137 @@ class TrialLogger:
         Raises
         ------
         ValueError
-            If `what` is not a supported aggregation function.
+            If `what` is not a supported aggregation function; if `across` is
+            not `"entities"` or `"runs"`; if `across="runs"` is combined with
+            `exclude_incomplete=False`, an entity-counting `what`, or a trial
+            with no complete pairs in any run.
 
         See Also
         --------
         get_event_durations : The per-entity durations this method summarises.
+        get_event_duration_ci : A confidence interval around the `across="runs"` mean.
+        get_replication_precision : How that interval tightens as replications accumulate.
         """
+        if across not in ("entities", "runs"):
+            raise ValueError(
+                f"`across` must be 'entities' or 'runs'; got {across!r}."
+            )
+        if across == "runs" and not exclude_incomplete:
+            raise ValueError(
+                '`exclude_incomplete=False` is not supported with `across="runs"`: '
+                "a per-replication statistic cannot include an incomplete (NaN) "
+                'duration. Use `across="entities"` for `exclude_incomplete=False` '
+                "semantics."
+            )
+
         # Every run in the trial, not just those where one of the two events
         # occurred - otherwise a run with neither event is silently uncounted,
         # inflating served/unserved rates that are meant to be per-run averages.
         n_runs = len(self._event_logs)
 
-        series = self.get_event_durations(
+        durations = self.get_event_durations(
             first_event, second_event, match=match, warm_up=warm_up
-        )["duration"]
-
-        result = _summarise_durations(
-            series, what, exclude_incomplete, n_runs, dp=dp, **kwargs
         )
+
+        if across == "runs":
+            run_values = replication_means(durations, what=what, **kwargs)["value"]
+            if run_values.empty:
+                raise ValueError(
+                    f"No complete '{first_event}' -> '{second_event}' pairs were "
+                    f"found in any run to compute a per-replication statistic from."
+                )
+            result = run_values.mean()
+            result = result if dp is None else round(result, dp)
+        else:
+            result = _summarise_durations(
+                durations["duration"], what, exclude_incomplete, n_runs, dp=dp, **kwargs
+            )
 
         if label:
             return {"stat": label, "value": result}
         else:
             return result
+
+    def get_event_duration_ci(
+        self,
+        first_event,
+        second_event,
+        *,
+        what: DurationStat = "mean",
+        ci_level: float = 0.95,
+        match: MatchMode = "first",
+        warm_up: float = 0,
+        **kwargs,
+    ):
+        """
+        Confidence interval for a duration statistic, computed across replications.
+
+        The headline "what is this number, and how sure are we" summary for a
+        trial: the chosen statistic is computed separately within each run
+        (`vidigi.analysis.replication_means`), then a Student's t confidence
+        interval is taken over those per-replication values
+        (`vidigi.analysis.mean_confidence_interval`). Replications are the
+        independent unit - see that function's *Notes* for why an interval must
+        never be computed over pooled per-entity durations.
+
+        Unlike `get_replication_precision`, which reports how the interval
+        tightens as replications accumulate, this returns the single interval
+        from every replication in the trial.
+
+        Parameters
+        ----------
+        first_event, second_event : str
+            The two events to pair. See `vidigi.analysis.event_durations`.
+        what : str, default="mean"
+            The per-replication statistic the interval is about: one of
+            `"mean"`, `"median"`, `"max"`, `"min"`, `"quantile"`, `"std"`,
+            `"var"`, `"sum"`. Entity-counting aggregations (`"count"`,
+            `"summary"`, ...) are rejected - see
+            `vidigi.analysis.replication_means`.
+        ci_level : float, default=0.95
+            Confidence level, e.g. `0.95` for a 95% interval.
+        match : {"first", "last", "occurrence"}, default="first"
+            How repeated occurrences of the two events are paired.
+        warm_up : float, default=0
+            Pairings whose `first_time` is before `warm_up` are excluded before
+            the per-replication statistic is computed. See
+            `vidigi.analysis.event_durations`'s same parameter.
+        **kwargs : dict
+            Additional keyword arguments passed to the chosen statistic, e.g.
+            `q=0.9` for `what="quantile"`.
+
+        Returns
+        -------
+        vidigi.analysis.ConfidenceInterval
+            Named tuple `(mean, half_width, lower, upper, n, method)`. With
+            fewer than two replications that have a complete pairing,
+            `half_width`/`lower`/`upper` are `NaN` and a warning is raised.
+
+        Raises
+        ------
+        ValueError
+            If no complete pairs are found in any run, or `what` is not a
+            per-replication statistic.
+        ImportError
+            If `scipy` is not installed - see
+            `vidigi.analysis.mean_confidence_interval`.
+
+        See Also
+        --------
+        get_event_duration_stat : The point estimate, with `across="runs"` for the same per-replication mean.
+        get_replication_precision : How this interval tightens as replications accumulate.
+        vidigi.analysis.mean_confidence_interval : The underlying implementation.
+        """
+        durations = self.get_event_durations(
+            first_event, second_event, match=match, warm_up=warm_up
+        )
+        run_values = replication_means(durations, what=what, **kwargs)["value"]
+        if run_values.empty:
+            raise ValueError(
+                f"No complete '{first_event}' -> '{second_event}' pairs were "
+                f"found in any run to compute a per-replication statistic from."
+            )
+        return mean_confidence_interval(run_values, ci_level=ci_level)
 
     def _resolve_resource_col_name(
         self, resource_col_name: Optional[str], trial_dataframe: pd.DataFrame

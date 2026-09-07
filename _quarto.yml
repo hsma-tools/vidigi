@@ -40,6 +40,10 @@ website:
         href: examples/feature_breakdowns.qmd
       - text: "API Reference"
         href: reference/index.qmd
+      - text: "Additional Documentation"
+        menu:
+          - text: "Choosing how to calculate averages"
+          - href: vidigi_docs/choosing_how_to_average.qmd
       - href: vidigi_docs/changelog.qmd
         text: "Changelog"
       - text: "Package Details"

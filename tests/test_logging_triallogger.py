@@ -352,6 +352,164 @@ def test_unsupported_aggregation_lists_the_valid_ones(two_run_loggers):
 
 
 # --------------------------------------------------------------------------- #
+# get_event_duration_stat: across="entities" vs across="runs"
+# --------------------------------------------------------------------------- #
+
+
+def test_get_event_duration_stat_across_entities_is_unchanged_at_defaults(
+    unequal_run_loggers,
+):
+    """The default `across="entities"` must give exactly what every prior
+    release gave: the pooled mean over every entity, ignoring run boundaries.
+    `unequal_run_loggers` has run means [4, 5, 9] but 8 entities totalling 46,
+    so the pooled mean is 46/8 = 5.75, distinct from the mean of run means."""
+    trial = TrialLogger(unequal_run_loggers)
+
+    assert trial.get_event_duration_stat("arrival", "depart") == 5.75
+
+
+def test_get_event_duration_stat_across_runs_is_mean_of_run_means(unequal_run_loggers):
+    """`across="runs"` computes the statistic within each run, then averages
+    those - mean of [4, 5, 9] = 6.0 - weighting each replication equally
+    rather than by its entity count. Fails (5.75) if it pools instead."""
+    trial = TrialLogger(unequal_run_loggers)
+
+    assert trial.get_event_duration_stat("arrival", "depart", across="runs") == 6.0
+
+
+def test_get_event_duration_stat_across_runs_passes_what_through(unequal_run_loggers):
+    """A per-run `max` of the constant-per-run fixture is that run's duration,
+    so the mean of per-run maxima is again mean([4, 5, 9]) = 6.0 - but this
+    proves `what` reaches `replication_means`, not just `"mean"`."""
+    trial = TrialLogger(unequal_run_loggers)
+
+    assert (
+        trial.get_event_duration_stat("arrival", "depart", what="max", across="runs")
+        == 6.0
+    )
+
+
+def test_get_event_duration_stat_across_runs_rejects_entity_counting_what(
+    two_run_loggers,
+):
+    """`"count"` answers "how many", not "what value", and is not meaningful
+    re-averaged across runs - `replication_means` rejects it."""
+    trial = TrialLogger(two_run_loggers)
+
+    with pytest.raises(ValueError, match="per-replication"):
+        trial.get_event_duration_stat(
+            "arrival", "depart", what="count", across="runs"
+        )
+
+
+def test_get_event_duration_stat_across_runs_requires_exclude_incomplete(
+    two_run_loggers,
+):
+    trial = TrialLogger(two_run_loggers)
+
+    with pytest.raises(ValueError, match="exclude_incomplete=False"):
+        trial.get_event_duration_stat(
+            "arrival", "depart", across="runs", exclude_incomplete=False
+        )
+
+
+def test_get_event_duration_stat_invalid_across_raises(two_run_loggers):
+    trial = TrialLogger(two_run_loggers)
+
+    with pytest.raises(ValueError, match="`across` must be"):
+        trial.get_event_duration_stat("arrival", "depart", across="both")
+
+
+def test_get_event_duration_stat_across_runs_no_complete_pairs_raises():
+    run1 = EventLogger(run_number=1)
+    run1.log_arrival(entity_id=1, time=0.0)  # never departs
+    run2 = EventLogger(run_number=2)
+    run2.log_departure(entity_id=1, time=5.0)  # never arrived
+    trial = TrialLogger([run1, run2])
+
+    with pytest.raises(ValueError, match="No complete"):
+        trial.get_event_duration_stat("arrival", "depart", across="runs")
+
+
+# --------------------------------------------------------------------------- #
+# get_event_duration_ci
+# --------------------------------------------------------------------------- #
+
+
+def test_get_event_duration_ci_matches_hand_computed_unequal_run_example(
+    unequal_run_loggers,
+):
+    """Reaches `replication_means` then `mean_confidence_interval`, reproducing
+    `unequal_run_loggers`'s own hand-computed values: mean of run means 6.0,
+    sample std sqrt(7), t_0.975,2 = 4.302653, half-width ~= 6.5724. A half-width
+    of ~1.716 would mean it had pooled the 8 per-entity durations instead - the
+    interval that function's Notes call ~30x too narrow."""
+    trial = TrialLogger(unequal_run_loggers)
+
+    ci = trial.get_event_duration_ci("arrival", "depart")
+
+    assert ci.n == 3
+    assert ci.mean == pytest.approx(6.0)
+    assert ci.half_width == pytest.approx(6.5724, abs=1e-3)
+    assert ci.lower == pytest.approx(6.0 - 6.5724, abs=1e-3)
+    assert ci.upper == pytest.approx(6.0 + 6.5724, abs=1e-3)
+
+
+def test_get_event_duration_ci_ci_level_is_passed_through(unequal_run_loggers):
+    trial = TrialLogger(unequal_run_loggers)
+
+    wide = trial.get_event_duration_ci("arrival", "depart")
+    narrow = trial.get_event_duration_ci("arrival", "depart", ci_level=0.90)
+
+    # t_0.95,2 = 2.919986 vs t_0.975,2 = 4.302653.
+    assert narrow.half_width < wide.half_width
+
+
+def test_get_event_duration_ci_what_is_passed_through():
+    """Run 1 has durations 2 and 8 (mean 5, max 8), run 2 a single duration 10.
+    The mean-of-means is (5 + 10) / 2 = 7.5; the mean of per-run maxima is
+    (8 + 10) / 2 = 9.0."""
+    run1 = EventLogger(run_number=1)
+    run1.log_arrival(entity_id=1, time=0.0)
+    run1.log_departure(entity_id=1, time=2.0)
+    run1.log_arrival(entity_id=2, time=0.0)
+    run1.log_departure(entity_id=2, time=8.0)
+    run2 = EventLogger(run_number=2)
+    run2.log_arrival(entity_id=1, time=0.0)
+    run2.log_departure(entity_id=1, time=10.0)
+    trial = TrialLogger([run1, run2])
+
+    assert trial.get_event_duration_ci("arrival", "depart").mean == pytest.approx(7.5)
+    assert trial.get_event_duration_ci(
+        "arrival", "depart", what="max"
+    ).mean == pytest.approx(9.0)
+
+
+def test_get_event_duration_ci_no_complete_pairs_raises():
+    run1 = EventLogger(run_number=1)
+    run1.log_arrival(entity_id=1, time=0.0)  # never departs
+    run2 = EventLogger(run_number=2)
+    run2.log_departure(entity_id=1, time=5.0)  # never arrived
+    trial = TrialLogger([run1, run2])
+
+    with pytest.raises(ValueError, match="No complete"):
+        trial.get_event_duration_ci("arrival", "depart")
+
+
+def test_get_event_duration_ci_single_replication_warns_and_nans(two_run_loggers):
+    """One replication cannot yield a spread - `mean_confidence_interval`
+    returns a NaN half-width and warns rather than raising."""
+    trial = TrialLogger([two_run_loggers[0]])
+
+    with pytest.warns(UserWarning, match="at least 2"):
+        ci = trial.get_event_duration_ci("arrival", "depart")
+
+    assert ci.n == 1
+    assert ci.mean == pytest.approx(5.0)
+    assert pd.isna(ci.half_width)
+
+
+# --------------------------------------------------------------------------- #
 # Served / unserved accounting
 # --------------------------------------------------------------------------- #
 
