@@ -329,6 +329,41 @@ def test_route_b_takes_precedence_over_route_c(resource_use_loggers):
     assert caps == {"treatment_begins": 7}
 
 
+def test_route_b_and_c_accept_a_dict_scenario(resource_use_loggers):
+    """`scenario` may be a plain dict keyed by resource name - routes B and C
+    resolve it to the same capacities as an equivalent object."""
+    intervals = _intervals(resource_use_loggers)
+    epdf = create_event_position_df(
+        [EventPosition(event="treatment_begins", x=0, y=0, label="x", resource="n_cubicles")]
+    )
+
+    from_map = _resolve_resource_capacities(
+        intervals,
+        scenario={"n_cubicles": 3},
+        resource_map={"treatment_begins": "n_cubicles"},
+    )
+    from_epdf = _resolve_resource_capacities(
+        intervals, scenario={"n_cubicles": 3}, event_position_df=epdf
+    )
+
+    assert from_map == {"treatment_begins": 3}
+    assert from_epdf == {"treatment_begins": 3}
+
+
+def test_dict_scenario_naming_a_missing_key_raises(resource_use_loggers):
+    intervals = _intervals(resource_use_loggers)
+    with pytest.raises(AttributeError) as excinfo:
+        _resolve_resource_capacities(
+            intervals,
+            scenario={"n_cubicles": 3},
+            resource_map={"treatment_begins": "n_beds"},
+        )
+    message = str(excinfo.value)
+    assert "n_beds" in message
+    assert "treatment_begins" in message
+    assert "n_cubicles" in message  # listed among available keys
+
+
 def test_scenario_without_a_mapping_source_raises(resource_use_loggers):
     intervals = _intervals(resource_use_loggers)
     with pytest.raises(ValueError, match="resource_map"):

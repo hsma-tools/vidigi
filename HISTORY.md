@@ -144,6 +144,9 @@
     - New `run_number` argument picks one replication out of a `TrialLogger`; passing a multi-run `TrialLogger` without it raises a `ValueError` listing the available runs
     - `run_number` given alongside a DataFrame or an `EventLogger` is a `ValueError` — it only means something for a `TrialLogger`
     - Passing a DataFrame is unchanged
+- `scenario` on `animate_activity_log` / `generate_animation` (and the `vidigi.analysis` / `vidigi.plots` / `TrialLogger` resource-utilisation helpers) now accepts a plain dict — `scenario={"n_cubicles": 3}` — as well as an object with attributes. The names in `event_position_df`'s `resource` column (or a `resource_map`) are resolved as dict keys or object attributes interchangeably
+    - `generate_animation` now emits a `UserWarning` when an event declares a `resource` but no `scenario` is passed, instead of silently drawing no resource-availability icons for that stage
+    - Passing an object is unchanged; a dict is purely an additional accepted form
 
 ### New metrics
 

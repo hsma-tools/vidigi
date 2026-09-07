@@ -1,6 +1,7 @@
 import pandas as pd
 from pydantic import BaseModel, ValidationError
 from typing import List, Literal, Optional
+from collections.abc import Mapping
 import webcolors
 import warnings
 import numbers
@@ -97,7 +98,7 @@ class EventPosition(BaseModel):
         Allows for a more user-friendly version of the event name (e.g., 'Queuing for Till').
     resource : Optional[str]
         The optional resource associated with the event. Must match a resource name
-        provided in your scenario object.
+        provided in your scenario object or dict.
     direction : Optional[str]
         Which way this queue builds out from its anchor: ``"left"`` (entities stack
         up to the left of ``x``; the anchor is the bottom-right corner) or
@@ -834,6 +835,43 @@ def _resource_map_from_event_position_df(
         return {}
     with_resource = event_position_df[event_position_df["resource"].notnull()]
     return dict(zip(with_resource[event_col_name], with_resource["resource"]))
+
+
+def _scenario_names(scenario) -> list:
+    """The non-private names a scenario exposes - keys for a Mapping, otherwise
+    non-underscore attributes. Used only to build friendly warning/error text."""
+    if isinstance(scenario, Mapping):
+        return sorted(str(k) for k in scenario)
+    return [a for a in dir(scenario) if not a.startswith("_")]
+
+
+def _resolve_scenario_value(scenario, name):
+    """Look ``name`` up on a scenario supplied either as a Mapping (by key) or
+    as an object (by attribute).
+
+    ``EventPosition.resource`` / ``resource_map`` values name a resource count,
+    and callers historically resolved them with ``getattr(scenario, name)``.
+    Accepting a plain dict (``scenario={"n_cubicles": 3}``) is friendlier for
+    the small amount of data involved - this helper resolves either form.
+
+    Raises
+    ------
+    AttributeError
+        If ``name`` is not present, naming every available key/attribute. An
+        ``AttributeError`` (not ``KeyError``) whichever form ``scenario`` takes,
+        so callers catch one thing.
+    """
+    if isinstance(scenario, Mapping):
+        if name in scenario:
+            return scenario[name]
+    else:
+        try:
+            return getattr(scenario, name)
+        except AttributeError:
+            pass
+    raise AttributeError(
+        f"`scenario` has no '{name}'. Available: {_scenario_names(scenario)}."
+    )
 
 
 def _warn_on_duplicate_event_positions(

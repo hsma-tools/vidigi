@@ -17,7 +17,12 @@ import numpy as np
 import pandas as pd
 
 from vidigi.prep import reshape_for_animations
-from vidigi.utils import _resolve_run_column, _resource_map_from_event_position_df
+from vidigi.utils import (
+    _resolve_run_column,
+    _resolve_scenario_value,
+    _resource_map_from_event_position_df,
+    _scenario_names,
+)
 
 MatchMode: TypeAlias = Literal["first", "last", "occurrence"]
 
@@ -1362,12 +1367,14 @@ def _resolve_resource_capacities(
         The output of `resource_use_intervals`. Only used for route D
         (`capacity="infer"`) and for the "unknown step"/"unused capacity"
         warnings; routes A-C need nothing from it beyond that.
-    scenario : object, optional
-        A scenario/parameters object exposing resource counts as attributes.
-        Required by routes B and C, unused by A and D.
+    scenario : object or dict, optional
+        A scenario/parameters object exposing resource counts as attributes, or
+        a dict keyed by resource name. Required by routes B and C, unused by A
+        and D.
     resource_map : dict, optional
-        **Route B.** `{step: attribute_name}` - the name of the attribute on
-        `scenario` holding that step's capacity. Requires `scenario`.
+        **Route B.** `{step: attribute_name}` - the name of the attribute (or
+        dict key) on `scenario` holding that step's capacity. Requires
+        `scenario`.
     event_position_df : pandas.DataFrame, optional
         **Route C.** Reuses the `resource` column already used by the
         animation functions - see `vidigi.utils.EventPosition`. Requires
@@ -1396,9 +1403,9 @@ def _resolve_resource_capacities(
         If `scenario` is given but none of `resource_map`, `event_position_df`
         or `resource_capacities` accompanies it - naming all three routes.
     AttributeError
-        If `resource_map`/`event_position_df` names an attribute `scenario`
-        does not have - naming the attribute, the step, and every non-private
-        attribute `scenario` does have.
+        If `resource_map`/`event_position_df` names an attribute or key
+        `scenario` does not have - naming it, the step, and every non-private
+        attribute or key `scenario` does have.
 
     Notes
     -----
@@ -1413,13 +1420,12 @@ def _resolve_resource_capacities(
         result = {}
         for step, attr in mapping.items():
             try:
-                result[step] = getattr(scenario, attr)
+                result[step] = _resolve_scenario_value(scenario, attr)
             except AttributeError:
-                available = [a for a in dir(scenario) if not a.startswith("_")]
                 raise AttributeError(
-                    f"{source} names '{attr}' as the capacity attribute for step "
-                    f"'{step}', but `scenario` has no such attribute. Available "
-                    f"attributes: {available}."
+                    f"{source} names '{attr}' as the capacity attribute/key for "
+                    f"step '{step}', but `scenario` has no such attribute or key. "
+                    f"Available: {_scenario_names(scenario)}."
                 )
         return result
 

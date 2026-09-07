@@ -196,6 +196,12 @@ def scenario_with_resources():
 
 
 @pytest.fixture
+def scenario_with_resources_dict():
+    """The same resource counts as ``scenario_with_resources``, as a plain dict."""
+    return {"n_cubicles": 3}
+
+
+@pytest.fixture
 def positioned(simple_queue_log, basic_event_position_df):
     """Output of the full prep pipeline, ready for generate_animation."""
     reshaped = reshape_for_animations(

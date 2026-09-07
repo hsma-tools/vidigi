@@ -20,6 +20,7 @@ from vidigi.utils import (
     _resolve_direction_sign,
     _resolve_icon_flip,
     _resolve_icon_font,
+    _resolve_scenario_value,
     _resource_map_from_event_position_df,
     _warn_on_event_positions_outside_range,
     inject_icon_flip_css,
@@ -327,6 +328,29 @@ def _overflow_margin_updates(
     }
 
 
+def _warn_on_missing_scenario_resources(resource_attr_map: dict) -> None:
+    """Warn when events declare a resource but no ``scenario`` was passed.
+
+    Without a ``scenario`` the resource-availability icons cannot be drawn, and
+    the animation is otherwise silent about it - the stage simply shows no
+    resources. Called only when ``resource_attr_map`` is non-empty and
+    ``scenario is None``.
+    """
+    declared = ", ".join(
+        f"'{event}' -> '{attr}'" for event, attr in resource_attr_map.items()
+    )
+    warnings.warn(
+        f"{len(resource_attr_map)} event(s) declare a resource ({declared}) but "
+        "no `scenario` was passed, so no resource-availability icons will be "
+        "drawn for them.\n\n"
+        "Pass `scenario={'n_cubicles': 3, ...}` (a dict) or a scenario object "
+        "exposing those names, or remove the `resource` entries from "
+        "`event_position_df` if the icons are not wanted.",
+        UserWarning,
+        stacklevel=3,
+    )
+
+
 @_enforce_int_params(["plotly_height"])
 def generate_animation(
     full_entity_df_plus_pos: pd.DataFrame,
@@ -399,14 +423,17 @@ def generate_animation(
         reshape_for_animations() and generate_animation_df() functions.
     event_position_df : pd.DataFrame
         DataFrame specifying the positions of different events.
-    scenario : object, optional
-        Object whose attributes give the number of each resource available at a
-        step, e.g. ``scenario.n_nurses`` (default is None). Used for two
+    scenario : object or dict, optional
+        Object whose attributes - or dict whose keys - give the number of each
+        resource available at a step, e.g. ``scenario.n_nurses`` or
+        ``scenario={"n_nurses": 2}`` (default is None). Used for two
         independent things:
 
         - Drawing the resource-availability icons at each stage. This also needs
-          a ``resource`` column on ``event_position_df`` naming the attribute to
-          read for that step (e.g. ``resource="n_nurses"``).
+          a ``resource`` column on ``event_position_df`` naming the attribute or
+          key to read for that step (e.g. ``resource="n_nurses"``). If an event
+          declares a ``resource`` but no ``scenario`` is passed, a warning is
+          raised and those icons are skipped.
         - Appending the resource identifier column (``resource_col_name``,
           "resource_id" by default) to the hover ``customdata``, so a custom
           ``hover_text_entity`` template can display it. This happens only when
@@ -1714,13 +1741,15 @@ def generate_animation(
     # *whether* a resource exists, not on every detail of *which* rows count.
     resource_attr_map = _resource_map_from_event_position_df(event_position_df)
     events_with_resources = None
+    if resource_attr_map and scenario is None:
+        _warn_on_missing_scenario_resources(resource_attr_map)
     if scenario is not None and resource_attr_map:
         events_with_resources = event_position_df[
             event_position_df["resource"].notnull()
         ].copy()
         events_with_resources["resource_count"] = events_with_resources[
             "resource"
-        ].apply(lambda x: getattr(scenario, x))
+        ].apply(lambda x: _resolve_scenario_value(scenario, x))
 
         # -1 lays the resource dots out leftwards from the anchor (historic
         # behaviour), +1 rightwards - matching the queue direction for that
@@ -2090,14 +2119,17 @@ def animate_activity_log(
         see ``queue_direction`` - 'flip_icons' - see ``flip_entity_icons`` -
         and 'resource_icon', which overrides ``custom_resource_icon`` per event
         and can name an image instead of a text glyph - see ``EventPosition``).
-    scenario : object, optional
-        Object whose attributes give the number of each resource available at a
-        step, e.g. ``scenario.n_nurses`` (default is None). Used for two
+    scenario : object or dict, optional
+        Object whose attributes - or dict whose keys - give the number of each
+        resource available at a step, e.g. ``scenario.n_nurses`` or
+        ``scenario={"n_nurses": 2}`` (default is None). Used for two
         independent things:
 
         - Drawing the resource-availability icons at each stage. This also needs
-          a ``resource`` column on ``event_position_df`` naming the attribute to
-          read for that step (e.g. ``resource="n_nurses"``).
+          a ``resource`` column on ``event_position_df`` naming the attribute or
+          key to read for that step (e.g. ``resource="n_nurses"``). If an event
+          declares a ``resource`` but no ``scenario`` is passed, a warning is
+          raised and those icons are skipped.
         - Appending the resource identifier column (``resource_col_name``,
           "resource_id" by default) to the hover ``customdata``, so a custom
           ``hover_text_entity`` template can display it. This happens only when

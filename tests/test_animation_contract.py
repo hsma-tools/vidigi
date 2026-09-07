@@ -154,6 +154,70 @@ def test_one_resource_marker_per_available_resource(
     assert len(resource_trace.x) == scenario_with_resources.n_cubicles
 
 
+def test_resource_markers_accept_a_dict_scenario(
+    positioned_with_resources,
+    basic_event_position_df,
+    scenario_with_resources,
+    scenario_with_resources_dict,
+):
+    """A dict scenario (``{"n_cubicles": 3}``) resolves the resource count
+    exactly as an object with a ``n_cubicles`` attribute does - same trace."""
+    from_obj = generate_animation(
+        positioned_with_resources,
+        basic_event_position_df,
+        scenario=scenario_with_resources,
+        display_stage_labels=False,
+    )
+    from_dict = generate_animation(
+        positioned_with_resources,
+        basic_event_position_df,
+        scenario=scenario_with_resources_dict,
+        display_stage_labels=False,
+    )
+
+    obj_trace, dict_trace = from_obj.data[-1], from_dict.data[-1]
+    assert list(dict_trace.x) == list(obj_trace.x)
+    assert list(dict_trace.y) == list(obj_trace.y)
+    assert len(dict_trace.x) == 3
+
+
+def test_resource_declared_without_scenario_warns_and_skips_icons(
+    positioned_with_resources, basic_event_position_df, scenario_with_resources
+):
+    """``event_position_df`` names a ``resource`` but no ``scenario`` is passed:
+    the availability icons cannot be drawn, and that is now surfaced with a
+    warning instead of failing silently."""
+    with pytest.warns(UserWarning, match="declare a resource"):
+        no_scenario = generate_animation(
+            positioned_with_resources,
+            basic_event_position_df,
+            display_stage_labels=False,
+        )
+    with_scenario = generate_animation(
+        positioned_with_resources,
+        basic_event_position_df,
+        scenario=scenario_with_resources,
+        display_stage_labels=False,
+    )
+
+    # The resource-availability trace is exactly what goes missing.
+    assert len(no_scenario.data) == len(with_scenario.data) - 1
+
+
+def test_dict_scenario_missing_key_raises_listing_keys(
+    positioned_with_resources, basic_event_position_df
+):
+    with pytest.raises(AttributeError) as excinfo:
+        generate_animation(
+            positioned_with_resources,
+            basic_event_position_df,
+            scenario={"n_beds": 2},
+        )
+    message = str(excinfo.value)
+    assert "n_cubicles" in message  # the name that could not be resolved
+    assert "n_beds" in message  # listed among available keys
+
+
 def test_scenario_without_any_resource_positions_is_harmless(
     positioned, basic_event_position_df, scenario_with_resources
 ):
