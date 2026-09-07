@@ -162,6 +162,10 @@
 - New `to_pickle()` / `read_pickle()` on `EventLogger` and `TrialLogger` for saving a populated logger (including any attached `scenario` / `label`) to disk and loading it back
     - An `EventLogger` built with `env=` (the normal simpy pattern) previously could not be pickled at all — the live `Environment` holds generators. The `env` is now dropped on pickle (it is only read while logging), so a restored logger is a complete, finished record with `env=None`
     - An attached `scenario` that is not itself picklable — one holding a live simpy `Environment` or a `Store` — raises with a message naming it as the likely cause
+- New `occupancy_metrics=` on `EventLogger.generate_dfg()`, and an `occupancy_stats=` argument on `vidigi.process_mapping.discover_dfg`, for annotating a process map's nodes with how many entities were present at each step — queue build-up and resource load, alongside the frequency and timing statistics the graph already carries. Closes #176
+    - `generate_dfg(occupancy_metrics=True)` computes the figures with `vidigi.analysis.activity_occupancy_stats` (see New metrics) and merges them onto the node table; `occupancy_snapshot_interval=` sets the snapshot granularity. Off by default because the queue half runs `reshape_for_animations` once per run — the reason issue #176 asked for it to be optional
+    - Each queue or resource node then gets an extra label line — `avg queued 3.2 (min 0.0, max 9.0)` / `avg in use ...` — across all four output formats. New `show_occupancy=` (default `True`) on `dfg_to_graphviz`, `process_nodes_and_edges_for_cytoscape`, `dfg_to_cytoscape` and `dfg_to_cytoscape_streamlit` suppresses it; on a node table without occupancy columns it is a no-op, so nothing changes for a caller who does not opt in
+    - `warm_up` passed to `generate_dfg` is applied to the occupancy calculation too, on the raw (pre-filter) log so arrival rows survive for `reshape_for_animations`
 
 ### New metrics
 
@@ -223,6 +227,10 @@
     - `arrival_event` is deliberately independent of `first_event`/`second_event` — it can coincide with `first_event` (e.g. measuring time from arrival itself), but does not have to; this answers a different question from "how long did this specific interval take" ("does this duration vary depending on when the entity showed up at all")
     - The arrival lookup always uses the entity's *earliest* occurrence of `arrival_event`, regardless of `match` — an entity ordinarily arrives once, so `match` only ever governs how `first_event`/`second_event` are paired, never the arrival lookup. The join keying the two frames together is on `(run_number, entity_id)` only, not `occurrence`, so every occurrence-row for one entity under `match="occurrence"` shares the same `arrival_time`
     - An entity with a complete duration pairing but no `arrival_event` recorded in that run gets `arrival_time = NaN`, not a dropped row — matching `event_durations`'s own `keep_incomplete` philosophy
+- New `vidigi.analysis.activity_occupancy_stats(event_log, ...)`, reducing the per-snapshot occupancy series to the mean / min / max / median entities present at each step — one row per queue step and per resource step, built for merging onto a directly-follows graph's nodes (see `generate_dfg(occupancy_metrics=True)` under New features)
+    - Reuses `queue_size_over_time` for queue steps and `resource_occupancy_over_time` for resource steps rather than rescanning snapshots — so it inherits their "real zero, not a missing row" convention and the uncapped queue length
+    - `across_runs="average"` (default) takes each statistic within a run and averages the per-run values (the figure expected per replication); `across_runs="pool"` takes one statistic over every `(run, snapshot)` count (so `max` is the worst seen in any run). A single-run log gives the same answer either way
+    - An event name logged as both a `queue` and a `resource_use` step is reported as a queue only, with a warning — the two occupancy questions cannot share one node
 
 ### New plots
 
@@ -384,7 +392,7 @@
 
 ### Testing
 
-Test coverage grew from 31 to 1062 tests, concentrated on the parts of the pipeline where a
+Test coverage grew from 31 to 1080 tests, concentrated on the parts of the pipeline where a
 mistake changes what the animation *shows*, or what the reported numbers *say*, rather
 than raising an error.
 
@@ -446,6 +454,7 @@ than raising an error.
 - `entity_resource_offset_y` is covered on all three resource-icon code paths (glyph trace, plain dot trace, image `layout.images` entry) as the full list of y positions against the event's own anchor, with the historic `-10` default pinned by its own test and a shifted value on each path mutation-proven against a flipped sign
 - `hidden_run_before` and `step_snapshot_reveal_pop_in` gain their own test file: the full per-snapshot `hidden_run_before` series (not sampled entries) for a genuine arrival, an entity capped out and later revealed, and an entity that plays the overflow-row role before becoming individually visible - the last of these caught a real gap during development, where an entity's own id "surviving" every snapshot under the overflow-row role was wrongly read as continuous presence, since that row is relabelled to a synthetic id before drawing and the entity's own icon was never actually rendered; fixed and mutation-proven (reverting the fix leaves two dedicated tests failing). Also covered: the default's byte-identical no-op, exactly one phantom row per reveal at the correct snapshot/position/icon (mutation-proven against an off-by-one lead and against an empty-string icon), that a genuine arrival and the overflow row itself never get a phantom, and that an entity landing squarely on the overflow row after being hidden - simultaneously satisfying and testing both exclusions on the same row - still gets none
 - The attached `scenario` / `label` on `EventLogger` / `TrialLogger` is covered for storage and `summary()` surfacing, inheritance from constituent `EventLogger`s (and explicit-argument override), the between-run disagreement warning, and that `add_log` warns but does not mutate the trial's `scenario` on a conflict. The `TrialLogger` resource-utilisation `scenario=` fallback is mutation-proven — reverting the fallback line makes a `resource_map`-only call raise instead of resolving. Pickle round-trips (path and buffer) for both classes are asserted to preserve the log, `summary()` and the attached objects, with the wrong-type `read_pickle` and unpicklable-`scenario` error paths covered
+- `activity_occupancy_stats` and the process-map node occupancy annotation are covered against the hand-computed `emptying_queue_loggers`/`resource_use_loggers` fixtures: the full step→(mean, min, max, median) mapping for both `across_runs` modes on a two-run fixture where the two modes genuinely disagree (mutation-proven against swapping them), a combined queue+resource log, the queue-and-resource name collision warning, and the empty-log and `include_queues=False` paths. `discover_dfg(occupancy_stats=...)` is checked to merge the columns onto the right nodes with `arrival`/`depart` left `NaN` (full mapping, mutation-proven against a wrong merge key), `dfg_to_graphviz`/`process_nodes_and_edges_for_cytoscape` render the numbers only when `show_occupancy` and the columns are present (and never `KeyError` on a plain node table), and `EventLogger.generate_dfg(occupancy_metrics=True)` threads `warm_up` and the raw (unfiltered) log through end to end
 
 # 1.3.1
 

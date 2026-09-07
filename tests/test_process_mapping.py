@@ -17,8 +17,14 @@ drop-in replacement for the manual filter it was added to replace.
 import pandas as pd
 import pytest
 
+from vidigi.analysis import activity_occupancy_stats
 from vidigi.logging import EventLogger
-from vidigi.process_mapping import add_sim_timestamp, discover_dfg
+from vidigi.process_mapping import (
+    add_sim_timestamp,
+    dfg_to_graphviz,
+    discover_dfg,
+    process_nodes_and_edges_for_cytoscape,
+)
 
 
 def _log(*specs):
@@ -194,3 +200,148 @@ def test_generate_dfg_default_does_not_filter(straddling_logger, monkeypatch):
     straddling_logger.generate_dfg()
 
     assert calls == [None]
+
+
+# --------------------------------------------------------------------------- #
+# Occupancy metrics on the nodes (issue #176)
+#
+# `activity_occupancy_stats` itself is covered in test_analysis_activity_occupancy.py;
+# these pin how its output is merged onto the node table and rendered.
+# --------------------------------------------------------------------------- #
+
+
+@pytest.fixture
+def occupancy_logger():
+    """One run: two entities queue ('waiting') then hold a resource ('in_service').
+
+    With ``every_x_time_units=5``, ``limit_duration=20`` the snapshots are
+    0, 5, 10, 15, 20 and both steps hold two entities at their peak:
+
+    - ``waiting``:    counts [2, 2, 0, 0, 0] -> mean 0.8, min 0, max 2, median 0
+    - ``in_service``: counts [0, 0, 2, 2, 0] -> mean 0.8, min 0, max 2, median 0
+    """
+    logger = EventLogger(run_number=1)
+    for entity_id in (1, 2):
+        logger.log_arrival(entity_id=entity_id, time=0.0)
+        logger.log_queue(entity_id=entity_id, event="waiting", time=0.0)
+        logger.log_resource_use_start(
+            entity_id=entity_id, resource_id=entity_id, time=10.0, event="in_service"
+        )
+        logger.log_resource_use_end(
+            entity_id=entity_id, resource_id=entity_id, time=20.0, event="done"
+        )
+        logger.log_departure(entity_id=entity_id, time=20.0)
+    return logger
+
+
+def _stats(logger):
+    return activity_occupancy_stats(
+        logger.to_dataframe(), every_x_time_units=5, limit_duration=20
+    )
+
+
+def _col_map(nodes, col):
+    return {
+        activity: (None if pd.isna(value) else value)
+        for activity, value in zip(nodes["activity"], nodes[col])
+    }
+
+
+def test_occupancy_stats_merge_onto_the_right_nodes(occupancy_logger):
+    df = occupancy_logger.to_dataframe()
+    nodes, _ = discover_dfg(add_sim_timestamp(df), occupancy_stats=_stats(occupancy_logger))
+
+    # Only the queue and resource steps get a figure; arrival/depart/the
+    # resource_use_end label are left NaN, not zero-filled or dropped.
+    assert _col_map(nodes, "kind") == {
+        "arrival": None,
+        "depart": None,
+        "done": None,
+        "waiting": "queue",
+        "in_service": "resource",
+    }
+    assert _col_map(nodes, "max_occupancy") == {
+        "arrival": None,
+        "depart": None,
+        "done": None,
+        "waiting": 2.0,
+        "in_service": 2.0,
+    }
+
+
+def test_discover_dfg_without_occupancy_stats_leaves_nodes_unchanged(occupancy_logger):
+    nodes, _ = discover_dfg(add_sim_timestamp(occupancy_logger.to_dataframe()))
+    assert list(nodes.columns) == ["activity", "count"]
+
+
+def test_dfg_to_graphviz_shows_occupancy_only_when_asked(occupancy_logger):
+    df = occupancy_logger.to_dataframe()
+    nodes, edges = discover_dfg(add_sim_timestamp(df), occupancy_stats=_stats(occupancy_logger))
+
+    shown = dfg_to_graphviz(nodes.copy(), edges.copy(), show_occupancy=True).source
+    assert "avg queued 0.8 (min 0.0, max 2.0)" in shown
+    assert "avg in use 0.8 (min 0.0, max 2.0)" in shown
+
+    hidden = dfg_to_graphviz(nodes.copy(), edges.copy(), show_occupancy=False).source
+    assert "avg queued" not in hidden
+    assert "avg in use" not in hidden
+
+
+def test_cytoscape_elements_show_occupancy_in_the_node_label(occupancy_logger):
+    df = occupancy_logger.to_dataframe()
+    nodes, edges = discover_dfg(add_sim_timestamp(df), occupancy_stats=_stats(occupancy_logger))
+
+    cy_nodes, _ = process_nodes_and_edges_for_cytoscape(nodes, edges, show_occupancy=True)
+    labels = {n["data"]["id"]: n["data"]["label"] for n in cy_nodes}
+
+    assert "avg queued 0.8 (min 0.0, max 2.0)" in labels["waiting"]
+    assert "avg in use 0.8 (min 0.0, max 2.0)" in labels["in_service"]
+
+
+def test_renderers_do_not_break_on_a_plain_node_table(straddling_logger):
+    """A node table with no occupancy columns must not KeyError under the
+    default ``show_occupancy=True``."""
+    nodes, edges = discover_dfg(add_sim_timestamp(straddling_logger.to_dataframe()))
+
+    dfg_to_graphviz(nodes.copy(), edges.copy(), show_occupancy=True)
+    process_nodes_and_edges_for_cytoscape(nodes, edges, show_occupancy=True)
+
+
+def test_generate_dfg_occupancy_metrics_end_to_end(occupancy_logger):
+    graph = occupancy_logger.generate_dfg(occupancy_metrics=True)
+
+    assert "avg queued" in graph.source
+    assert "avg in use" in graph.source
+
+
+def test_generate_dfg_default_has_no_occupancy(occupancy_logger):
+    graph = occupancy_logger.generate_dfg()
+    assert "avg queued" not in graph.source
+
+
+def test_generate_dfg_occupancy_uses_the_raw_log_and_threads_warm_up(
+    occupancy_logger, monkeypatch
+):
+    """The stats must be built from the unfiltered log - so
+    `reshape_for_animations` still sees every arrival row - with the same
+    `warm_up` the graph itself uses.
+    """
+    seen = {}
+    import vidigi.logging as logging_module
+
+    real = logging_module.activity_occupancy_stats
+
+    def spy(event_log, **kwargs):
+        seen["n_rows"] = len(event_log)
+        seen["warm_up"] = kwargs.get("warm_up")
+        return real(event_log, **kwargs)
+
+    monkeypatch.setattr(logging_module, "activity_occupancy_stats", spy)
+
+    raw_rows = len(occupancy_logger.to_dataframe())
+    occupancy_logger.generate_dfg(occupancy_metrics=True, warm_up=5)
+
+    assert seen["warm_up"] == 5
+    # warm_up=5 drops the t=0 rows from the graph's own log; the stats call
+    # still gets all of them.
+    assert seen["n_rows"] == raw_rows

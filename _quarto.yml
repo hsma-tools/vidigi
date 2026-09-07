@@ -124,6 +124,7 @@ quartodoc:
         - analysis.resource_use_intervals
         - analysis.resource_utilisation
         - analysis.resource_occupancy_over_time
+        - analysis.activity_occupancy_stats
         - analysis.welch_moving_average
     - title: Analysis Plots
       desc: "go.Figure-returning charts, each a thin wrapper over the matching function in Analysis Functions above."

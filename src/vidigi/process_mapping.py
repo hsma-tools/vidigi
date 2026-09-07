@@ -120,6 +120,7 @@ def discover_dfg(
     activity_col: str = "event",
     timestamp_col: str = "timestamp",
     time_unit: str = "minutes",
+    occupancy_stats: pd.DataFrame | None = None,
 ):
     """
     Discover a Directly-Follows Graph (DFG) from an event log.
@@ -159,6 +160,15 @@ def discover_dfg(
         Time unit used when computing the duration between consecutive
         events. Determines the scale of all time-based edge statistics.
         This should reflect the time unit used in your simulation.
+    occupancy_stats : pandas.DataFrame, optional
+        Output of :func:`vidigi.analysis.activity_occupancy_stats`, run on the
+        same log with matching column names. When given, its
+        ``mean_occupancy`` / ``min_occupancy`` / ``max_occupancy`` /
+        ``median_occupancy`` / ``kind`` columns are left-merged onto the node
+        table (keyed on the activity name), so a renderer can annotate each
+        step with the number of entities present. Steps with no occupancy
+        figure - ``arrival``, ``depart``, custom milestones - get ``NaN``.
+        Default ``None`` leaves the node table unchanged.
 
     Returns
     -------
@@ -169,6 +179,9 @@ def discover_dfg(
           Activity label.
         - ``count`` : int
           Total number of times the activity appears in the log.
+
+        If ``occupancy_stats`` was passed, also ``kind``, ``mean_occupancy``,
+        ``min_occupancy``, ``max_occupancy`` and ``median_occupancy``.
 
     edges : pandas.DataFrame
         Edge table describing directly-follows relations between activities.
@@ -297,6 +310,13 @@ def discover_dfg(
         .rename(columns={activity_col: "activity"})
     )
 
+    if occupancy_stats is not None and not occupancy_stats.empty:
+        nodes = nodes.merge(
+            occupancy_stats.rename(columns={"event": "activity"}),
+            on="activity",
+            how="left",
+        )
+
     return nodes, edges
 
 
@@ -311,6 +331,26 @@ def _scale_penwidth(values, min_width=0.8, max_width=5.0):
         v: min_width + (v - vmin) / (vmax - vmin) * (max_width - min_width)
         for v in values
     }
+
+
+def _occupancy_label_suffix(row, show_occupancy: bool) -> str:
+    """Extra node-label text with the mean/min/max entities present at a step.
+
+    Empty string unless `show_occupancy` is set and `row` carries a non-null
+    `mean_occupancy` - i.e. the node table was built by
+    `discover_dfg(occupancy_stats=...)` and this step is a queue or resource
+    step. `kind` picks the wording.
+    """
+    if not show_occupancy:
+        return ""
+    mean = row.get("mean_occupancy")
+    if mean is None or pd.isna(mean):
+        return ""
+    noun = "in use" if row.get("kind") == "resource" else "queued"
+    return (
+        f"\navg {noun} {mean:.1f} "
+        f"(min {row['min_occupancy']:.1f}, max {row['max_occupancy']:.1f})"
+    )
 
 
 def dfg_to_graphviz(
@@ -332,6 +372,7 @@ def dfg_to_graphviz(
     show_edge_counts: bool = True,
     show_metric: bool = True,
     show_node_counts: bool = True,
+    show_occupancy: bool = True,
     size: tuple[float, float] | None = None,
     dpi: int | None = None,
     ratio: str | None = None,
@@ -418,6 +459,11 @@ default="mean"
         If True, include the selected time statistic in edge labels.
     show_node_counts : bool, default=True
         If True, include activity occurrence counts in node labels.
+    show_occupancy : bool, default=True
+        If True, and the node table carries occupancy columns (i.e. it came
+        from ``discover_dfg(occupancy_stats=...)``), add a line to each queue
+        or resource node's label with the mean, minimum and maximum number of
+        entities present at that step. No effect on a plain node table.
     size : tuple of float, optional
         Maximum size of the rendered graph in inches, given as ``(width, height)``.
         This value is passed to the Graphviz ``size`` graph attribute and acts as
@@ -525,7 +571,8 @@ default="mean"
         dot.node(
             row["activity"],
             label=str(row["activity"])
-            + (f"\nn={row['count']}" if show_node_counts else ""),
+            + (f"\nn={row['count']}" if show_node_counts else "")
+            + _occupancy_label_suffix(row, show_occupancy),
             shape="box",
             style="rounded",
         )
@@ -599,6 +646,7 @@ def process_nodes_and_edges_for_cytoscape(
     show_edge_counts: bool = True,
     show_metric: bool = True,
     show_node_counts: bool = True,
+    show_occupancy: bool = True,
 ):
     """
     Convert DFG node and edge tables into Cytoscape-compatible elements.
@@ -659,6 +707,11 @@ def process_nodes_and_edges_for_cytoscape(
         If True, include the selected time statistic in edge labels.
     show_node_counts : bool, default=True
         If True, include activity occurrence counts in node labels.
+    show_occupancy : bool, default=True
+        If True, and ``nodes`` carries occupancy columns (from
+        ``discover_dfg(occupancy_stats=...)``), add a line to each queue or
+        resource node's label with the mean, minimum and maximum number of
+        entities present at that step. No effect on a plain node table.
 
     Returns
     -------
@@ -696,7 +749,8 @@ def process_nodes_and_edges_for_cytoscape(
             "data": {
                 "id": str(row[node_label]),
                 "label": str(row[node_label])
-                + (f"\nn={row['count']}" if show_node_counts else ""),
+                + (f"\nn={row['count']}" if show_node_counts else "")
+                + _occupancy_label_suffix(row, show_occupancy),
             },
             "classes": "multiline-manual",
         }
@@ -745,6 +799,7 @@ def dfg_to_cytoscape(
     show_edge_counts: bool = True,
     show_metric: bool = True,
     show_node_counts: bool = True,
+    show_occupancy: bool = True,
     line_color: str = "#9dbaea",
     edge_font_size: int = 8,
     node_font_size: int = 10,
@@ -793,6 +848,10 @@ default="mean"
         If True, include the selected time statistic in edge labels.
     show_node_counts : bool, default=True
         If True, include activity occurrence counts in node labels.
+    show_occupancy : bool, default=True
+        If True, and the node table came from
+        ``discover_dfg(occupancy_stats=...)``, add mean/min/max entities
+        present to each queue or resource node's label. No effect otherwise.
     line_color: str
         Line colour as a hex colour string. Will also define colour of arrowhead.
     edge_font_size: int, default=8
@@ -817,6 +876,7 @@ default="mean"
         show_edge_counts=show_edge_counts,
         show_metric=show_metric,
         show_node_counts=show_node_counts,
+        show_occupancy=show_occupancy,
     )
 
     # Build widget
@@ -911,6 +971,7 @@ def dfg_to_cytoscape_streamlit(
     show_edge_counts: bool = True,
     show_metric: bool = True,
     show_node_counts: bool = True,
+    show_occupancy: bool = True,
     additional_layout_options: dict | None = None,
     **kwargs,
 ):
@@ -985,6 +1046,10 @@ default="mean"
         If True, include the selected time statistic in edge labels.
     show_node_counts : bool, default=True
         If True, include activity occurrence counts in node labels.
+    show_occupancy : bool, default=True
+        If True, and the node table came from
+        ``discover_dfg(occupancy_stats=...)``, add mean/min/max entities
+        present to each queue or resource node's label. No effect otherwise.
     additional_layout_options : dict or None, default=None
         Additional Cytoscape layout options to merge into the base layout
         configuration. Values in this dictionary override defaults.
@@ -1039,6 +1104,7 @@ default="mean"
         show_edge_counts=show_edge_counts,
         show_metric=show_metric,
         show_node_counts=show_node_counts,
+        show_occupancy=show_occupancy,
     )
 
     elements = cy_nodes + cy_edges

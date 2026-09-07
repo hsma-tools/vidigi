@@ -70,6 +70,10 @@ UnclosedResourceUse: TypeAlias = Literal["censor", "drop"]
 # What each row of `resource_utilisation`'s output summarises.
 ResourceUtilisationBy: TypeAlias = Literal["step", "resource", "run"]
 
+# How `activity_occupancy_stats` combines a per-snapshot occupancy series into a
+# single figure per step when the log holds more than one run.
+ActivityOccupancyAcrossRuns: TypeAlias = Literal["average", "pool"]
+
 
 def _nearest_match_hint(name, candidates, n: int = 3) -> str:
     suggestions = difflib.get_close_matches(
@@ -1894,6 +1898,198 @@ def resource_occupancy_over_time(
             )
 
     return pd.DataFrame(rows)[["run_number", "event", "snapshot_time", "count"]]
+
+
+def activity_occupancy_stats(
+    event_log: pd.DataFrame,
+    *,
+    every_x_time_units: float = 1,
+    warm_up: float = 0,
+    limit_duration: Optional[float] = None,
+    across_runs: ActivityOccupancyAcrossRuns = "average",
+    include_queues: bool = True,
+    include_resources: bool = True,
+    entity_col_name: str = "entity_id",
+    time_col_name: str = "time",
+    event_type_col_name: str = "event_type",
+    event_col_name: str = "event",
+    resource_col_name: str = "resource_id",
+    run_col_name: Optional[str] = "auto",
+    pathway_col_name: Optional[str] = None,
+) -> pd.DataFrame:
+    """
+    Summarise how many entities were present at each step of a process.
+
+    For every queue step (`event_type == "queue"`) and every resource step
+    (`event_type == "resource_use"`), this takes the per-snapshot occupancy
+    series - `queue_size_over_time` for queues, `resource_occupancy_over_time`
+    for resources - and reduces it to the mean, minimum, maximum and median
+    number of entities present. The result is one row per step, intended to be
+    merged onto the node table of a directly-follows graph
+    (`discover_dfg(occupancy_stats=...)`) so a process map can show queue
+    build-up and resource load alongside the frequency and timing statistics it
+    already carries.
+
+    Parameters
+    ----------
+    event_log : pandas.DataFrame
+        Long-format event log spanning one or more runs, e.g. the output of
+        `EventLogger.to_dataframe()` or `TrialLogger.to_dataframe()`. Pass the
+        raw log, not one already filtered by time - `warm_up` is applied here
+        the same way `reshape_for_animations` applies it.
+    every_x_time_units : float, default=1
+        Time granularity for snapshots. The queue path runs
+        `reshape_for_animations` once per run, so a small value on a long run
+        is the expensive case; the resource path is a cheap interval sweep
+        either way.
+    warm_up : float, default=0
+        Start of the reported window, forwarded to the underlying functions.
+    limit_duration : float, optional
+        End of the reported window. `None` (default) uses the latest time seen
+        anywhere in the log.
+    across_runs : {"average", "pool"}, default="average"
+        How a multi-run log is combined. `"average"` computes each statistic
+        within each run and then averages those per-run values, so `max` is
+        the mean of the per-run maxima - the figure expected per replication.
+        `"pool"` concatenates every ``(run, snapshot)`` count and takes one
+        statistic over the pool, so `max` is the largest queue seen in any
+        run. A single-run log gives the same answer either way.
+    include_queues : bool, default=True
+        Set ``False`` to skip queue steps entirely - this is what avoids the
+        `reshape_for_animations` cost.
+    include_resources : bool, default=True
+        Set ``False`` to skip resource steps.
+    entity_col_name, time_col_name, event_type_col_name, event_col_name, \
+resource_col_name, run_col_name, pathway_col_name : str or None
+        Column names, forwarded to `queue_size_over_time` /
+        `resource_occupancy_over_time`. See those functions' docstrings.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Columns ``event``, ``kind`` (``"queue"`` or ``"resource"``),
+        ``mean_occupancy``, ``min_occupancy``, ``max_occupancy``,
+        ``median_occupancy``. One row per step. Empty (with those columns) if
+        the log has no queue or resource steps.
+
+    Notes
+    -----
+    - An event name logged as *both* a queue and a resource-use step is
+      reported as a queue only, with a warning - the two occupancy questions
+      cannot share one node.
+    - Steps that are neither a queue nor a resource-use step (``arrival``,
+      ``depart``, a `resource_use_end` label, a custom milestone) get no row;
+      after the merge in `discover_dfg` their occupancy columns are ``NaN``.
+    """
+    if across_runs not in ("average", "pool"):
+        raise ValueError(
+            f"`across_runs` must be 'average' or 'pool', but {across_runs!r} "
+            f"was passed."
+        )
+
+    stat_cols = [
+        "mean_occupancy",
+        "min_occupancy",
+        "max_occupancy",
+        "median_occupancy",
+    ]
+    empty = pd.DataFrame(columns=["event", "kind", *stat_cols])
+
+    def _steps_of_type(event_type: str) -> list:
+        return sorted(
+            event_log.loc[
+                event_log[event_type_col_name] == event_type, event_col_name
+            ]
+            .dropna()
+            .unique()
+            .tolist(),
+            key=str,
+        )
+
+    queue_events = _steps_of_type("queue") if include_queues else []
+    resource_events = _steps_of_type("resource_use") if include_resources else []
+
+    both = sorted(set(queue_events) & set(resource_events), key=str)
+    if both:
+        warnings.warn(
+            f"Event(s) {both} are logged with both event_type 'queue' and "
+            f"'resource_use'. Reporting them as queue occupancy; their resource "
+            f"occupancy is omitted.",
+            UserWarning,
+            stacklevel=2,
+        )
+        resource_events = [e for e in resource_events if e not in set(both)]
+
+    if not queue_events and not resource_events:
+        return empty
+
+    if limit_duration is None:
+        # `int(round(...))`, not the bare numpy scalar `.max()` returns:
+        # `queue_size_over_time` warns whenever it has to coerce a non-`int`
+        # `limit_duration`, and auto-resolving the end of the window on every
+        # call would make that an uninformative, self-inflicted warning.
+        limit_duration = int(round(event_log[time_col_name].max()))
+
+    frames = []
+
+    if queue_events:
+        queue_series = queue_size_over_time(
+            event_log,
+            event_list=queue_events,
+            limit_duration=limit_duration,
+            every_x_time_units=every_x_time_units,
+            warm_up=warm_up,
+            run_col_name=run_col_name,
+            entity_col_name=entity_col_name,
+            time_col_name=time_col_name,
+            event_type_col_name=event_type_col_name,
+            event_col_name=event_col_name,
+            pathway_col_name=pathway_col_name,
+        )
+        frames.append(queue_series.assign(kind="queue"))
+
+    if resource_events:
+        resource_series = resource_occupancy_over_time(
+            event_log,
+            every_x_time_units=every_x_time_units,
+            warm_up=warm_up,
+            limit_duration=limit_duration,
+            entity_col_name=entity_col_name,
+            time_col_name=time_col_name,
+            event_type_col_name=event_type_col_name,
+            event_col_name=event_col_name,
+            resource_col_name=resource_col_name,
+            run_col_name=run_col_name,
+        )
+        resource_series = resource_series[
+            resource_series["event"].isin(resource_events)
+        ]
+        frames.append(resource_series.assign(kind="resource"))
+
+    series = pd.concat(frames, ignore_index=True)
+    if series.empty:
+        return empty
+
+    if across_runs == "pool":
+        stats = series.groupby(["kind", "event"], dropna=False).agg(
+            mean_occupancy=("count", "mean"),
+            min_occupancy=("count", "min"),
+            max_occupancy=("count", "max"),
+            median_occupancy=("count", "median"),
+        )
+    else:
+        per_run = series.groupby(
+            ["kind", "event", "run_number"], dropna=False
+        ).agg(
+            mean_occupancy=("count", "mean"),
+            min_occupancy=("count", "min"),
+            max_occupancy=("count", "max"),
+            median_occupancy=("count", "median"),
+        )
+        stats = per_run.groupby(["kind", "event"]).mean()
+
+    stats = stats.reset_index()[["event", "kind", *stat_cols]]
+    return stats.sort_values(["kind", "event"]).reset_index(drop=True)
 
 
 def _ensemble_mean(series_by_run: Sequence[Sequence[float]]):

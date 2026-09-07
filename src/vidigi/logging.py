@@ -27,6 +27,7 @@ from vidigi.analysis import (
     ResourceUtilisationBy,
     UnclosedResourceUse,
     _summarise_durations,
+    activity_occupancy_stats,
     entity_metric_by_arrival,
     event_durations,
     replication_means,
@@ -737,6 +738,8 @@ class EventLogger:
         output_format: DFGType = "graphviz-object",
         input_time_format="minutes",
         warm_up: Optional[float] = None,
+        occupancy_metrics: bool = False,
+        occupancy_snapshot_interval: float = 1,
         **kwargs,
     ):
         """
@@ -768,6 +771,16 @@ class EventLogger:
             which keeps every event. See
             :func:`vidigi.process_mapping.add_sim_timestamp` for what this
             does and does not affect.
+        occupancy_metrics : bool, default=False
+            If True, annotate each queue and resource node with the mean,
+            minimum and maximum number of entities present at that step, via
+            :func:`vidigi.analysis.activity_occupancy_stats`. Off by default
+            because the queue calculation runs `reshape_for_animations` once
+            per run, which is slow on a long log. `warm_up` is applied to
+            this the same way.
+        occupancy_snapshot_interval : float, default=1
+            Snapshot granularity for `occupancy_metrics`, in `input_time_format`
+            units. A larger value is faster and coarser.
         **kwargs
             Arbitrary keyword arguments passed to the underlying rendering
             functions (`dfg_to_graphviz`, `dfg_to_cytoscape`, etc.).
@@ -794,9 +807,20 @@ class EventLogger:
         - :func:`dfg_to_cytoscape_streamlit`: For streamlit cytoscape styling kwargs.
 
         """
-        df = self.to_dataframe()
-        df = add_sim_timestamp(df, time_unit=input_time_format, warm_up=warm_up)
-        nodes, edges = discover_dfg(df, time_unit=input_time_format)
+        raw_df = self.to_dataframe()
+        df = add_sim_timestamp(raw_df, time_unit=input_time_format, warm_up=warm_up)
+
+        occupancy_stats = None
+        if occupancy_metrics:
+            occupancy_stats = activity_occupancy_stats(
+                raw_df,
+                every_x_time_units=occupancy_snapshot_interval,
+                warm_up=warm_up or 0,
+            )
+
+        nodes, edges = discover_dfg(
+            df, time_unit=input_time_format, occupancy_stats=occupancy_stats
+        )
 
         if output_format == "graphviz-object":
             return dfg_to_graphviz(nodes, edges, time_unit=input_time_format, **kwargs)
