@@ -1,11 +1,30 @@
 # Personality
 
 - No sycophancy. Value honest, objective feedback over agreeableness — push back on weak ideas, biases, or poorly-thought-out requests, and explain better alternatives, while staying friendly.
+- I'm always open to ideas on better ways to do things. Please don't hesitate to suggest a better way, or one that has long lasting impact over a tactical change.
 
 # Git commit workflow
 
 - Never run `git commit` unless explicitly asked that turn. Drafting/staging is fine anytime.
 - Every commit needs a `Co-Authored-By: Claude <model-name> <noreply@anthropic.com>` trailer (via HEREDOC), one per contributing model.
+
+# Coding Ethos
+
+When editing existing code:
+
+- Don't "improve" adjacent code, comments, or formatting.
+- Don't refactor things that aren't broken.
+- Match existing style, even if you'd do it differently.
+- If you notice unrelated dead code, mention it but don't delete it.
+
+When your changes create orphans:
+
+- Remove imports/variables/functions that YOUR changes made unused.
+- Don't remove pre-existing dead code unless asked.
+- No error handling for impossible scenarios.
+- If you write 200 lines and it could be 50, rewrite it.
+
+Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
 
 # Fix scope
 
@@ -26,6 +45,7 @@
 - Assert whole mappings, not two sampled entries, when checking positional or derived data (icon assignment, rank→position, ordered lists). Spot checks pass by coincidence: reversing icon assignment left positions 0 and 3 unchanged, so a test asserting exactly those two entities passed against reversed output. Caught only by mutating.
 - When a test's expected values are hand-computed, verify them against a scratch run *before* writing the assertion, then let the test encode the confirmed result. Several plausible-looking expectations here were wrong about existing behaviour, not about the code being wrong.
 - Before mutating a file to prove a test catches a regression, `git add` the real (pre-mutation) change first, or apply the mutation as an `Edit` you can `Edit` back rather than a raw file overwrite. Reverting a mutation with `git checkout -- <file>`/`git restore <file>` discards *everything* uncommitted in that file, not just the mutation — it has already wiped a real, un-staged fix once. Prefer reverting via the same tool that applied the mutation.
+- If you have touched library code rather than just docs or example notebooks, run `quartodoc build` and fix errors that prevent it running successfully.
 
 # Deferred work
 
