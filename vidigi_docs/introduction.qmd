@@ -137,7 +137,9 @@ It's easy to miss because some events are safe to leave out in practice: if a st
 always logged at the exact same instant as the very next one (a common pattern for
 `resource_use_end`), it's never actually selected as an entity's current state, so it's
 never rendered. That's a coincidence of how your model logs events, though, not something
-vidigi guarantees — when in doubt, give every event a position.
+vidigi guarantees — when in doubt, give every event a position. `generate_animation_df`
+now warns automatically whenever a gap like this is actually rendered, so you don't need
+to check for it by hand.
 :::
 
 By default every queue builds out to the left of its anchor. To flip the whole

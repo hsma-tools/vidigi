@@ -864,7 +864,7 @@ You can also opt to skip any queue or resource_use steps you do not want to show
 :::
 
 :::{.callout-warning}
-If you skip an event that turns out to matter, the symptom is worse than a missing label: any entity whose current step *is* that event when a frame is drawn simply vanishes for that frame, then reappears - flying in from the top-left corner - once a positioned event takes over again. `resource_use_end` gets away with being skipped because it's almost always logged at the exact same instant as the next step, so it's never actually the "current step" shown in any frame - that's a coincidence of how it's logged, not a guarantee vidigi makes. `depart` doesn't get that same protection, so leaving it unpositioned is a common way to hit this by accident.
+If you skip an event that turns out to matter, the symptom is worse than a missing label: any entity whose current step *is* that event when a frame is drawn simply vanishes for that frame, then reappears - flying in from the top-left corner - once a positioned event takes over again. `resource_use_end` gets away with being skipped because it's almost always logged at the exact same instant as the next step, so it's never actually the "current step" shown in any frame - that's a coincidence of how it's logged, not a guarantee vidigi makes. `depart` doesn't get that same protection, so leaving it unpositioned is a common way to hit this by accident. `generate_animation_df` now warns automatically whenever this actually happens, naming the event responsible.
 :::
 
 :::{.callout-tip}

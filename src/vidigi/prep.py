@@ -83,6 +83,58 @@ def _warn_on_entities_without_an_arrival(
     )
 
 
+def _warn_on_unpositioned_rendered_events(
+    full_entity_df_plus_pos: pd.DataFrame,
+    entity_col_name: str,
+    event_col_name: str,
+) -> None:
+    """Warn about an event with no `event_position_df` row that got rendered anyway.
+
+    `generate_animation_df` resolves each snapshot's coordinates by left-merging onto
+    `event_position_df` on the event name. An event with no matching row picks up `NaN`
+    x/y - and a point with no coordinates can't be drawn, so it is dropped from that
+    frame outright instead of being placed somewhere sensible. The entity's icon just
+    disappears, then reappears once a positioned event takes over again.
+
+    This deliberately checks the merged, per-snapshot frame rather than the raw event
+    log. Checking the raw log would flag any event name missing from
+    `event_position_df` regardless of whether it is ever actually shown, and models
+    routinely log events - `arrival`, a `resource_use_end` step - at the exact same
+    instant as the very next step. Because only an entity's latest event at or before
+    each snapshot is ever selected for rendering, such an event is never chosen and
+    never needs a position; checking the raw log would warn on every single animation
+    that uses this (extremely common) pattern. Checking here, after the merge and after
+    that selection has already happened, only fires on an event that was actually
+    picked to represent some entity's state and had nothing to show for it.
+    """
+    real_rows = full_entity_df_plus_pos[full_entity_df_plus_pos[entity_col_name].notna()]
+    unpositioned = real_rows[real_rows["x"].isna()]
+    if unpositioned.empty:
+        return
+
+    affected = (
+        unpositioned.groupby(event_col_name)[entity_col_name]
+        .nunique()
+        .sort_values(ascending=False)
+    )
+    listed = ", ".join(
+        f"{event!r} ({n} entit{'y' if n == 1 else 'ies'})" for event, n in affected.items()
+    )
+    warnings.warn(
+        f"{len(unpositioned)} row(s) across {len(affected)} event(s) with no matching "
+        f"`event_position_df` row were rendered anyway: {listed}.\n"
+        "\n"
+        f"An event with no position gets no coordinates, and a point with no "
+        f"coordinates can't be drawn - the entity's icon disappears for that frame, "
+        f"then flies in from the top-left corner once a positioned event takes over "
+        f"again.\n"
+        "\n"
+        f"Add a row to `event_position_df` for each event listed above.",
+        UserWarning,
+        stacklevel=4,
+    )
+
+
 @_enforce_int_params(
     ["every_x_time_units", "limit_duration", "step_snapshot_max", "warm_up"],
     allow_none=["limit_duration"],
@@ -781,6 +833,13 @@ def generate_animation_df(
     - It assigns unique icons to entities for visualization.
     - Queues can be wrapped to multiple rows if they exceed a specified length.
     - The function adds a visual indicator for additional entities when exceeding the snapshot limit.
+    - If an event is ever an entity's most-recently-logged step at a rendered snapshot
+      but has no matching row in `event_position_df`, that entity is silently dropped
+      from the frame instead of drawn (it reappears once a positioned event takes
+      over). This function warns automatically when that happens - it only checks
+      events actually selected for rendering, so an event that is always simultaneous
+      with (and so superseded by) its successor, and therefore never rendered, does not
+      trigger it.
 
     TODO
     ----
@@ -838,6 +897,12 @@ def generate_animation_df(
     full_entity_df_plus_pos = full_entity_df.merge(
         event_position_df, on=event_col_name, how="left"
     ).sort_values([event_col_name, "snapshot_time", time_col_name])
+
+    _warn_on_unpositioned_rendered_events(
+        full_entity_df_plus_pos,
+        entity_col_name=entity_col_name,
+        event_col_name=event_col_name,
+    )
 
     # Separate the empty snapshots from the entity data
     # We can identify them as rows where the entity ID is null.

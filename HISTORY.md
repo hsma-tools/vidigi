@@ -60,6 +60,9 @@
     - Costs exactly one extra row per reveal, not per entity hidden or per snapshot spent hidden. Hover text is deliberately left unblanked on a phantom row (invisible and zero-width, so hovering one precisely is unlikely, and it would only show accurate, one-snapshot-early data); an `entity_annotation_by` label, unlike hover always visibly rendered, is blanked
     - The default `False` is a verified no-op - `generate_animation_df` output is byte-identical to omitting the argument. **Planned to change to `True` at the next major version (3.0)**, since popping in is closer to correct than flying in for a reveal
     - Express backend only - the experimental `go` backend does not support this
+- `generate_animation_df` now warns automatically when an event is genuinely rendered - it is some entity's most-recently-logged step at a rendered snapshot - but has no matching row in `event_position_df`, a second, unrelated way to get the same "flies in from the top-left" symptom as the `step_snapshot_reveal_pop_in` bug above, found while writing it up
+    - Checks the merged, per-snapshot frame rather than the raw event log, so it only fires on an event actually picked to represent some entity's state and left with nothing to show for it - an event that is always simultaneous with (and so superseded by) its successor, such as `arrival` or a `resource_use_end` step, is never selected for rendering and so never triggers this, however common that pattern is
+    - Reuses the merge `generate_animation_df` already builds, so it costs nothing extra to compute. Not breaking - animation output is unchanged, this only adds a warning to a case that was already silently wrong
 - New example notebook `examples/feat_custom_icons`, walking through all five features together, including a two-stage model whose nurse and bed stages each carry their own `resource_icon` rendered in `resource_icon_font`
 - New `warm_up` argument on `reshape_for_animations` and `animate_activity_log`, for discarding a warm-up period without damaging the animation
     - Discarding warm-up is routine, and the obvious way to do it to an event log — `event_log[event_log["time"] >= warm_up]` — quietly breaks the result. Presence at each snapshot is worked out from arrival and departure rows, so truncating the log removes the `arrival` row of everyone who was already in the system, and those entities then appear in *no* frame at all. The entities lost are precisely the ones a steady-state animation exists to show: on a log with five entities queuing since before the boundary and two arriving after it, the queue was drawn holding two
@@ -359,12 +362,13 @@
 
 ### Testing
 
-Test coverage grew from 31 to 997 tests, concentrated on the parts of the pipeline where a
+Test coverage grew from 31 to 1004 tests, concentrated on the parts of the pipeline where a
 mistake changes what the animation *shows*, or what the reported numbers *say*, rather
 than raising an error.
 
 - `reshape_for_animations` is now asserted by value rather than by shape: which entities are present at each snapshot, which event each is shown at, queue ordering, exit step timing, and the `step_snapshot_max` cap
 - `generate_animation_df` gained its first dedicated coverage: entity and resource positions, queue wrapping, icon assignment, and the overflow placeholder
+- The new unpositioned-rendered-event warning is covered by value, not just by trigger/no-trigger: an event always superseded by its successor (mutation-proven not to warn for the wrong reason - a naive check that skipped the "was it actually rendered" filter did warn, and was reverted), the row/entity counts and event names in the message for a genuinely rendered gap, multiple gaps collapsing into one warning, a hand-built (not `create_event_position_df`-built) frame, and the `step_snapshot_max` overflow row not double-counting
 - `animation.py` gained its first dedicated coverage: frame count and ordering, animation timings, hover configuration, resource markers, every time display format, background image embedding, and the error paths
 - The auto-layout margin fix is covered by value: `cliponaxis=False` reaching every content trace and every frame trace, the right margin growing only when a stage label overflows the last anchor (and not at all when labels are hidden), the left margin engaging only when queue icons cross `x = 0`, and a plain animation leaving both margins and the data range untouched — the margin computations each mutation-proven
 - `EventLogger` gained its first dedicated coverage: the event shape each helper produces, time taken from both simpy-style and salabim-style environments, event validation and its warnings, timestamp parsing, retrieval, and export
