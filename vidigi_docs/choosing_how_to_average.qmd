@@ -1,0 +1,132 @@
+---
+title: "Choosing how to summarise across replications"
+subtitle: "Pooled, per-replication, and equal-weight-with-zeros — which `TrialLogger` gives you, and which you want"
+toc: true
+toc-expand: 2
+---
+
+A `TrialLogger` holds one event log per replication. Almost every question you
+ask it — "what was the mean wait?", "how big did the queue get?", "how busy were
+the nurses?" — needs those replications combined into a single number or curve,
+and there is more than one defensible way to do that.
+
+This page lays out the three conventions vidigi uses, which method applies which,
+and how to pick.
+
+## The three conventions
+
+### 1. Pooled (entity-weighted)
+
+Every entity's value from every replication goes into one pile, and the statistic
+is taken over the pile. Run boundaries are ignored.
+
+A pooled mean is `sum(all values) / count(all values)`. Because a busy
+replication contributes more entities, it pulls the pooled figure towards itself
+— each replication is effectively weighted by its throughput, not counted once.
+
+This is an unbiased estimate of the *average entity's experience* when
+replications are independent and comparable, and it is what every release of
+vidigi before 2.0 gave. It carries no information about how much the answer
+varied between replications, so there is no confidence interval attached to it.
+
+### 2. Per-replication (equal weight)
+
+The statistic is computed *within* each replication first, giving one value per
+run, and those per-run values are then averaged — a "mean of means".
+
+Every replication counts once, regardless of how many entities passed through it.
+This is the standard unit of analysis for a replicated simulation study: the
+entities inside one run are strongly correlated (one bad morning makes fifty
+consecutive waits long together), so the replication, not the entity, is the
+independent observation. It is also the only basis on which a confidence interval
+across runs is meaningful — see [`mean_confidence_interval`](/reference/analysis.mean_confidence_interval.qmd)'s
+notes, and Law & Kelton, *Simulation Modeling and Analysis*.
+
+### 3. Equal weight, with genuine zeros
+
+For time-series and resource metrics — queue length at each snapshot, resource
+occupancy, utilisation — each replication contributes one observation per
+snapshot (or per resource), averaged with equal weight, **and a replication where
+the queue was empty or the resource unused contributes a real `0`**, not a
+missing value.
+
+Averaging only over the replications where "something happened" biases the result
+upwards: a queue that formed in one run out of four had an *average* length near
+its formed length, not a quarter of it. This convention is what
+[`plot_queue_size`](/reference/plots.plot_queue_size.qmd) and the resource plots
+use.
+
+## Which `TrialLogger` method uses which
+
+| Method | Convention | Confidence interval? |
+|---|---|---|
+| `get_event_duration_stat(...)` *(default, `across="entities"`)* | Pooled | — |
+| `get_event_duration_stat(..., across="runs")` | Per-replication | — |
+| `get_event_duration_ci(...)` | Per-replication | Student's *t* |
+| `get_replication_precision(...)` / `plot_replication_analysis(...)` | Per-replication, cumulative | Student's *t*, at each *k* |
+| `plot_metric_bar(...)` *(default, `across="entities"`)* | Pooled | — |
+| `plot_metric_bar(..., across="runs", error_bars="ci")` | Per-replication | Student's *t* |
+| `plot_duration_distribution(...)` | Pooled (all entities) | — |
+| `plot_queue_size(...)` | Equal weight, with zeros | — |
+| `plot_resource_utilisation(...)` | Per-replication mean of per-run ratios, with zeros | optional (`error_bars=`) |
+| `plot_resource_utilisation_over_time(...)` | Equal weight per snapshot, with zeros | — |
+| `plot_warm_up_diagnostic(...)` | Ensemble mean across runs per index | — |
+
+The default for a duration statistic stays **pooled**, so existing code keeps
+returning the number it always has. Reach for `across="runs"` /
+`get_event_duration_ci` when you want the replication-level view.
+
+## Seeing the difference
+
+```{python}
+from vidigi.logging import EventLogger, TrialLogger
+
+
+def make_run(run_number, waits):
+    log = EventLogger(run_number=run_number)
+    for entity_id, wait in enumerate(waits, start=1):
+        log.log_arrival(entity_id=entity_id, time=0.0)
+        log.log_departure(entity_id=entity_id, time=float(wait))
+    return log
+
+
+# Two quiet replications of 2 patients, one busy replication of 6.
+trial = TrialLogger(
+    [
+        make_run(1, [10, 12]),
+        make_run(2, [20, 22, 24, 26, 28, 30]),
+        make_run(3, [14, 16]),
+    ]
+)
+
+print("pooled (across='entities'):", trial.get_event_duration_stat("arrival", "depart"))
+print("per-replication (across='runs'):", trial.get_event_duration_stat("arrival", "depart", across="runs"))
+print("interval over replications:", trial.get_event_duration_ci("arrival", "depart"))
+```
+
+The pooled figure sits above the per-replication one: the busy replication puts
+six entities into the pool but is still just one of three replication means. Which
+is "right" depends on the question — *what does a typical patient experience*
+(pooled) versus *what does a typical run of this system look like, and how sure am
+I* (per-replication).
+
+The interval here is wide because three replications with this much spread cannot
+pin the mean down tightly. That is the honest answer, not a defect —
+[`get_replication_precision`](/reference/logging.TrialLogger.qmd) is the tool for
+deciding how many more replications to run (Hoad, Robinson & Davies, 2010).
+
+## Rules of thumb
+
+- **Reporting a headline number for a study:** `get_event_duration_ci` — the
+  per-replication mean with its interval.
+- **Comparing scenarios:** per-replication (`across="runs"`), so the comparison is
+  between systems, not between entity populations of different sizes; pair it with
+  an interval or `plot_metric_bar(across="runs", error_bars="ci")`.
+- **Describing the experience of an individual entity** (e.g. "what fraction
+  waited more than an hour"): pooled is defensible — you genuinely do want every
+  entity to count.
+- **Queue lengths and resource use over time:** the plotting functions already
+  apply the equal-weight-with-zeros convention; you do not need to choose.
+- **Deciding how many replications to run:** `get_replication_precision` /
+  `plot_replication_analysis`.
+- **Deciding how much warm-up to discard:** `plot_warm_up_diagnostic`.
