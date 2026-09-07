@@ -177,6 +177,15 @@ def test_run_number_absent_by_default_and_stamped_when_given(recs):
     assert (stamped["run_number"] == 7).all()
 
 
+def test_event_logger_scenario_and_label_passthrough(recs):
+    scenario = {"n_operators": 2}
+    logger = event_logger_from_ciw_recs(
+        recs, NODE_NAMES, scenario=scenario, label="run 1"
+    )
+    assert logger.scenario is scenario
+    assert logger.label == "run 1"
+
+
 def test_single_entity_event_sequence(recs):
     """The whole ordered event sequence for one entity, DataFrame vs logger."""
     entity_id = event_log_from_ciw_recs(recs, NODE_NAMES)["entity_id"].iloc[0]
@@ -205,8 +214,21 @@ def test_returns_trial_logger_with_one_run_per_recs(three_runs):
     trial = trial_logger_from_ciw_recs(three_runs, NODE_NAMES)
 
     assert isinstance(trial, TrialLogger)
-    assert trial.summary() == {"number_of_runs": 3}
+    assert trial.summary() == {
+        "number_of_runs": 3,
+        "label": None,
+        "scenario_attached": False,
+    }
     assert sorted(trial._run_index.keys()) == [1, 2, 3]
+
+
+def test_trial_scenario_and_label_passthrough(three_runs):
+    scenario = {"n_operators": 2}
+    trial = trial_logger_from_ciw_recs(
+        three_runs, NODE_NAMES, scenario=scenario, label="base case"
+    )
+    assert trial.scenario is scenario
+    assert trial.label == "base case"
 
 
 def test_trial_row_count_is_sum_of_per_run_logs(three_runs):

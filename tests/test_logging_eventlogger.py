@@ -5,6 +5,7 @@ log everything downstream consumes, so a mistake here corrupts the animation
 and every statistic derived from it, usually without raising.
 """
 
+import io
 import json
 import warnings
 from datetime import datetime
@@ -392,7 +393,7 @@ def test_summary(populated_logger):
 
 
 def test_summary_of_empty_log():
-    assert EventLogger().summary() == {"total_events": 0}
+    assert EventLogger().summary() == {"total_events": 0, "label": None}
 
 
 # --------------------------------------------------------------------------- #
@@ -562,3 +563,72 @@ def test_plot_entity_timeline_return_fig_true_returns_figure_without_showing(
 def test_generate_dfg_rejects_unknown_output_format(populated_logger):
     with pytest.raises(ValueError, match="Invalid output format"):
         populated_logger.generate_dfg(output_format="nonsense")
+
+
+# --------------------------------------------------------------------------- #
+# Attached scenario / label, and pickling (issue #154)
+# --------------------------------------------------------------------------- #
+
+
+def test_scenario_and_label_default_to_none():
+    logger = EventLogger()
+    assert logger.scenario is None
+    assert logger.label is None
+
+
+def test_scenario_and_label_are_stored():
+    scenario = {"n_cubicles": 3}
+    logger = EventLogger(run_number=1, scenario=scenario, label="run 1")
+    assert logger.scenario is scenario
+    assert logger.label == "run 1"
+    assert logger.summary()["label"] == "run 1"
+
+
+def test_pickle_round_trip(populated_logger):
+    populated_logger.scenario = {"n_cubicles": 3}
+    populated_logger.label = "a run"
+
+    buffer = io.BytesIO()
+    populated_logger.to_pickle(buffer)
+    buffer.seek(0)
+    restored = EventLogger.read_pickle(buffer)
+
+    assert restored.label == "a run"
+    assert restored.scenario == {"n_cubicles": 3}
+    assert restored.summary() == populated_logger.summary()
+    pd.testing.assert_frame_equal(
+        restored.to_dataframe(), populated_logger.to_dataframe()
+    )
+
+
+def test_pickle_drops_the_simulation_env():
+    """A logger built with `env=` is the normal case and must still pickle."""
+
+    class _FakeEnv:
+        now = 3.0
+
+        def __reduce__(self):  # stand in for simpy's unpicklable Environment
+            raise TypeError("cannot pickle this environment")
+
+    logger = EventLogger(env=_FakeEnv())
+    logger.log_arrival(entity_id=1)
+    logger.log_departure(entity_id=1, time=5.0)
+
+    buffer = io.BytesIO()
+    logger.to_pickle(buffer)
+    buffer.seek(0)
+    restored = EventLogger.read_pickle(buffer)
+
+    assert restored.env is None
+    pd.testing.assert_frame_equal(restored.to_dataframe(), logger.to_dataframe())
+
+
+def test_read_pickle_rejects_the_wrong_type(tmp_path):
+    path = tmp_path / "not_a_logger.pkl"
+    import pickle
+
+    with open(path, "wb") as f:
+        pickle.dump({"nope": 1}, f)
+
+    with pytest.raises(TypeError, match="not a EventLogger"):
+        EventLogger.read_pickle(path)

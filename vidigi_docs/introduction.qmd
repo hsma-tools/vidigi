@@ -308,6 +308,10 @@ If you are following the [DES RAP Book structure](https://pythonhealthdatascienc
 Otherwise, a dictionary or a small parameters class like the one above is all you need.
 :::
 
+::: {.callout-tip}
+If you record runs with an `EventLogger` / `TrialLogger`, you can attach this same object when you build the logger — `TrialLogger(event_logs, scenario=g(), label="base case")` (or pass `scenario=` to `EventLogger`). The `TrialLogger` resource-utilisation helpers (`get_resource_utilisation`, `plot_resource_utilisation`, `plot_resource_utilisation_over_time`) then use it automatically, so you don't have to pass `scenario=` again on every call, and the parameters travel with the logger when you `to_pickle()` it.
+:::
+
 
 
 ### Step 8. Update your event position dataframe

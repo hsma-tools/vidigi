@@ -6,6 +6,7 @@ below is hand-computable from the fixtures in conftest.py: each entity arrives,
 waits one time unit, and departs five time units after arriving.
 """
 
+import io
 import typing
 import warnings
 
@@ -24,7 +25,11 @@ from vidigi.logging import DurationStat, EventLogger, TrialLogger
 def test_construct_from_list_of_loggers(two_run_loggers):
     trial = TrialLogger(two_run_loggers)
 
-    assert trial.summary() == {"number_of_runs": 2}
+    assert trial.summary() == {
+        "number_of_runs": 2,
+        "label": None,
+        "scenario_attached": False,
+    }
 
 
 def test_construct_empty():
@@ -35,7 +40,11 @@ def test_construct_empty():
     """
     trial = TrialLogger()
 
-    assert trial.summary() == {"number_of_runs": 0}
+    assert trial.summary() == {
+        "number_of_runs": 0,
+        "label": None,
+        "scenario_attached": False,
+    }
     assert trial.to_dataframe().empty
 
 
@@ -44,7 +53,11 @@ def test_add_log_to_empty_trial(single_run_logger):
 
     trial.add_log(single_run_logger)
 
-    assert trial.summary() == {"number_of_runs": 1}
+    assert trial.summary() == {
+        "number_of_runs": 1,
+        "label": None,
+        "scenario_attached": False,
+    }
     assert len(trial.to_dataframe()) == len(single_run_logger.log)
 
 
@@ -1303,3 +1316,163 @@ def test_plot_metric_vs_arrival_time_warm_up_is_passed_through():
 
     assert list(unfiltered.data[0].y) == pytest.approx([10.0, 20.0])
     assert list(filtered.data[0].y) == pytest.approx([20.0])
+
+
+# --------------------------------------------------------------------------- #
+# Attached scenario / label (issue #154)
+# --------------------------------------------------------------------------- #
+
+
+def _treatment_scenario_route_b():
+    """Route-B capacity resolution args for the ``resource_use_loggers`` fixture."""
+    return (
+        {"n_treatment": 3},
+        {"treatment_begins": "n_treatment"},
+    )
+
+
+def test_scenario_and_label_are_stored_and_surfaced(two_run_loggers):
+    scenario = {"n_cubicles": 5}
+    trial = TrialLogger(two_run_loggers, scenario=scenario, label="base case")
+
+    assert trial.scenario is scenario
+    assert trial.label == "base case"
+    summary = trial.summary()
+    assert summary["label"] == "base case"
+    assert summary["scenario_attached"] is True
+
+
+def test_scenario_and_label_are_inherited_from_event_loggers():
+    scenario = {"n_cubicles": 5}
+    logs = [
+        EventLogger(run_number=n, scenario=scenario, label="from runs")
+        for n in (1, 2)
+    ]
+    for logger in logs:
+        logger.log_arrival(entity_id=1, time=0.0)
+        logger.log_departure(entity_id=1, time=5.0)
+
+    trial = TrialLogger(logs)
+
+    assert trial.scenario is scenario
+    assert trial.label == "from runs"
+
+
+def test_explicit_scenario_and_label_override_inherited():
+    logs = [EventLogger(run_number=n, scenario={"a": 1}, label="runs") for n in (1, 2)]
+    for logger in logs:
+        logger.log_arrival(entity_id=1, time=0.0)
+        logger.log_departure(entity_id=1, time=5.0)
+
+    override = {"b": 2}
+    trial = TrialLogger(logs, scenario=override, label="explicit")
+
+    assert trial.scenario is override
+    assert trial.label == "explicit"
+
+
+def test_disagreeing_scenarios_between_runs_warn_and_take_the_first():
+    logs = []
+    for n, scen in ((1, {"a": 1}), (2, {"a": 2})):
+        logger = EventLogger(run_number=n, scenario=scen)
+        logger.log_arrival(entity_id=1, time=0.0)
+        logger.log_departure(entity_id=1, time=5.0)
+        logs.append(logger)
+
+    with pytest.warns(UserWarning, match="more than one distinct `scenario`"):
+        trial = TrialLogger(logs)
+
+    assert trial.scenario == {"a": 1}
+
+
+def test_add_log_with_conflicting_scenario_warns_but_leaves_trial_scenario(
+    single_run_logger,
+):
+    trial = TrialLogger(scenario={"a": 1})
+    single_run_logger.scenario = {"a": 2}
+
+    with pytest.warns(UserWarning, match="different\\s+`scenario`"):
+        trial.add_log(single_run_logger)
+
+    assert trial.scenario == {"a": 1}
+
+
+def test_resource_utilisation_defaults_scenario_from_the_trial(resource_use_loggers):
+    scenario, resource_map = _treatment_scenario_route_b()
+
+    attached = TrialLogger(resource_use_loggers, scenario=scenario)
+    from_attached = attached.get_resource_utilisation(
+        by="step", resource_map=resource_map, limit_duration=20
+    )
+
+    plain = TrialLogger(resource_use_loggers)
+    passed_explicitly = plain.get_resource_utilisation(
+        by="step", scenario=scenario, resource_map=resource_map, limit_duration=20
+    )
+
+    pd.testing.assert_frame_equal(from_attached, passed_explicitly)
+    # The whole point: utilisation is resolved, not NaN.
+    assert from_attached["utilisation"].notna().all()
+    run1 = from_attached[from_attached["run_number"] == 1]
+    assert float(run1["utilisation"].iloc[0]) == pytest.approx(0.25)
+
+
+def test_explicit_scenario_still_beats_the_attached_one(resource_use_loggers):
+    attached = TrialLogger(resource_use_loggers, scenario={"n_treatment": 3})
+    _, resource_map = _treatment_scenario_route_b()
+
+    # An explicit (wrong-key) scenario should be used as-is and raise, proving the
+    # attached one was not silently substituted.
+    with pytest.raises(AttributeError, match="n_treatment"):
+        attached.get_resource_utilisation(
+            by="step",
+            scenario={"not_the_key": 3},
+            resource_map=resource_map,
+            limit_duration=20,
+        )
+
+
+# --------------------------------------------------------------------------- #
+# Pickling
+# --------------------------------------------------------------------------- #
+
+
+def test_pickle_round_trip_via_buffer(two_run_loggers):
+    trial = TrialLogger(
+        two_run_loggers, scenario={"n_cubicles": 5}, label="base case"
+    )
+
+    buffer = io.BytesIO()
+    trial.to_pickle(buffer)
+    buffer.seek(0)
+    restored = TrialLogger.read_pickle(buffer)
+
+    assert restored.label == "base case"
+    assert restored.scenario == {"n_cubicles": 5}
+    assert restored.summary() == trial.summary()
+    pd.testing.assert_frame_equal(restored.to_dataframe(), trial.to_dataframe())
+
+
+def test_pickle_round_trip_via_path(two_run_loggers, tmp_path):
+    trial = TrialLogger(two_run_loggers)
+    path = tmp_path / "trial.pkl"
+
+    trial.to_pickle(path)
+    restored = TrialLogger.read_pickle(path)
+
+    pd.testing.assert_frame_equal(restored.to_dataframe(), trial.to_dataframe())
+
+
+def test_read_pickle_rejects_the_wrong_type(single_run_logger, tmp_path):
+    path = tmp_path / "logger.pkl"
+    single_run_logger.to_pickle(path)
+
+    with pytest.raises(TypeError, match="not a TrialLogger"):
+        TrialLogger.read_pickle(path)
+
+
+def test_to_pickle_with_an_unpicklable_scenario_names_the_scenario(two_run_loggers):
+    trial = TrialLogger(two_run_loggers, scenario={"f": lambda x: x})
+
+    with pytest.raises((TypeError, AttributeError), match="scenario"):
+        trial.to_pickle(io.BytesIO())

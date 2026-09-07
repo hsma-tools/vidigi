@@ -166,6 +166,8 @@ def event_logger_from_ciw_recs(
     node_name_list: Sequence[str],
     *,
     run_number: Optional[int] = None,
+    scenario: Any = None,
+    label: Optional[str] = None,
 ) -> EventLogger:
     """
     Build a vidigi `EventLogger` from a single `ciw.data_record` object.
@@ -188,6 +190,11 @@ def event_logger_from_ciw_recs(
         logger's events can be told apart from other runs' - required if the
         logger is later added to a `TrialLogger`. Default `None` (no
         `run_number` column).
+    scenario : object or dict, optional
+        Parameters object / resource-count container to attach to the logger for
+        provenance. See :class:`vidigi.logging.EventLogger`.
+    label : str, optional
+        Human-readable name to attach to the logger.
 
     Returns
     -------
@@ -222,7 +229,7 @@ def event_logger_from_ciw_recs(
     )
     logger.to_dataframe()
     """
-    logger = EventLogger(run_number=run_number)
+    logger = EventLogger(run_number=run_number, scenario=scenario, label=label)
 
     for event_data in _ciw_event_dicts(ciw_recs_obj, node_name_list):
         logger.log_event(**event_data)
@@ -235,6 +242,8 @@ def trial_logger_from_ciw_recs(
     node_name_list: Sequence[str],
     *,
     run_numbers: Optional[Sequence[int]] = None,
+    scenario: Any = None,
+    label: Optional[str] = None,
 ) -> TrialLogger:
     """
     Build a vidigi `TrialLogger` from several ciw runs' records.
@@ -259,6 +268,12 @@ def trial_logger_from_ciw_recs(
         Run number to stamp onto each run's events, in the same order as
         `ciw_recs_list`. Default `None` uses `1, 2, ..., len(ciw_recs_list)`.
         If given, its length must match `ciw_recs_list`.
+    scenario : object or dict, optional
+        Parameters object / resource-count container to attach to the trial. When
+        set, the resource-utilisation helpers use it automatically. See
+        :class:`vidigi.logging.TrialLogger`.
+    label : str, optional
+        Human-readable name to attach to the trial.
 
     Returns
     -------
@@ -315,4 +330,4 @@ def trial_logger_from_ciw_recs(
             )
         event_logs.append(logger)
 
-    return TrialLogger(event_logs=event_logs)
+    return TrialLogger(event_logs=event_logs, scenario=scenario, label=label)

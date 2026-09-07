@@ -7,6 +7,7 @@ from pydantic import (
 )
 from typing import Optional, Any, List, ClassVar, Set, Literal, Sequence, TypeAlias
 import json
+import pickle
 import pandas as pd
 from pathlib import Path
 from io import TextIOBase
@@ -61,6 +62,52 @@ RECOGNIZED_EVENT_TYPES = {
 DFGType: TypeAlias = Literal[
     "graphviz-object", "graphviz-image", "cytoscape-jupyter", "cytoscape-streamlit"
 ]
+
+
+def _scenarios_agree(a, b) -> bool:
+    """Whether two attached `scenario` objects should be treated as the same one."""
+    if a is b:
+        return True
+    try:
+        return bool(a == b)
+    except Exception:
+        return False
+
+
+def _pickle_to(obj, path_or_buffer) -> None:
+    """Pickle `obj` to a path or writable binary buffer.
+
+    A common failure is an attached `scenario` that is not picklable (it holds a
+    live simpy Environment, a Store, or a lambda); re-raise those with a message
+    that points at the likely cause rather than the raw pickle error.
+    """
+    try:
+        if isinstance(path_or_buffer, (str, Path)):
+            with open(path_or_buffer, "wb") as f:
+                pickle.dump(obj, f)
+        else:
+            pickle.dump(obj, path_or_buffer)
+    except (pickle.PicklingError, TypeError, AttributeError) as e:
+        raise type(e)(
+            f"Could not pickle this {type(obj).__name__}. If a `scenario` is "
+            "attached, it may not itself be picklable - e.g. it holds a live "
+            f"simpy Environment, a Store, or a lambda. Original error: {e}"
+        ) from e
+
+
+def _unpickle_from(path_or_buffer, expected_type):
+    """Load a pickled object and check it is the expected logger class."""
+    if isinstance(path_or_buffer, (str, Path)):
+        with open(path_or_buffer, "rb") as f:
+            obj = pickle.load(f)
+    else:
+        obj = pickle.load(path_or_buffer)
+    if not isinstance(obj, expected_type):
+        raise TypeError(
+            f"Unpickled object is a {type(obj).__name__}, not a "
+            f"{expected_type.__name__}."
+        )
+    return obj
 
 
 class BaseEvent(BaseModel):
@@ -184,11 +231,34 @@ class BaseEvent(BaseModel):
 
 
 class EventLogger:
-    def __init__(self, event_model=BaseEvent, env: Any = None, run_number: int = None):
+    def __init__(
+        self,
+        event_model=BaseEvent,
+        env: Any = None,
+        run_number: int = None,
+        *,
+        scenario: Any = None,
+        label: Optional[str] = None,
+    ):
         self.event_model = event_model
         self.env = env  # Optional simulation env with .now
         self.run_number = run_number
+        # Optional provenance: the parameters object (a class, an instance, or a
+        # plain {name: count} dict) that produced this run, and a human-readable
+        # name for it. `scenario` is the same shape accepted by the animation and
+        # resource-utilisation helpers; neither is validated here.
+        self.scenario = scenario
+        self.label = label
         self._log: List[dict] = []
+
+    def __getstate__(self):
+        # The simulation environment (a simpy/salabim `Environment`) holds live
+        # generators and cannot be pickled. It is only read while logging, to
+        # stamp `time` onto an event - a restored logger has a complete `_log`
+        # and does not need it - so drop it rather than block `to_pickle`.
+        state = self.__dict__.copy()
+        state["env"] = None
+        return state
 
     def log_event(self, context: Optional[dict] = None, **event_data):
         if "time" not in event_data:
@@ -455,6 +525,21 @@ class EventLogger:
         """Convert the event log to a pandas DataFrame."""
         return pd.DataFrame(self._log).dropna(axis=1, how="all")
 
+    def to_pickle(self, path_or_buffer: str | Path | Any) -> None:
+        """Pickle this `EventLogger` to a file path or writable binary buffer.
+
+        The event log and any attached `scenario` / `label` are pickled; the
+        simulation `env` is not (it holds live generators), so a restored logger
+        has `env=None` and cannot log new events - it is a finished record. An
+        attached `scenario` must itself be picklable.
+        """
+        _pickle_to(self, path_or_buffer)
+
+    @classmethod
+    def read_pickle(cls, path_or_buffer: str | Path | Any) -> "EventLogger":
+        """Load an `EventLogger` previously written with `to_pickle`."""
+        return _unpickle_from(path_or_buffer, cls)
+
     ####################################################
     # Creating a log from an existing dataframe        #
     ####################################################
@@ -495,7 +580,7 @@ class EventLogger:
 
     def summary(self) -> dict:
         if not self._log:
-            return {"total_events": 0}
+            return {"total_events": 0, "label": self.label}
         df = self.to_dataframe()
         return {
             "total_events": len(df),
@@ -504,6 +589,7 @@ class EventLogger:
             "unique_entities": (
                 df["entity_id"].nunique() if "entity_id" in df else None
             ),
+            "label": self.label,
         }
 
     ####################################################
@@ -760,10 +846,26 @@ class TrialLogger:
     ----------
     event_logs : list[EventLogger], optional
         A list of vidigi `EventLogger` instances to initialize the trial log with.
+    scenario : object or dict, optional
+        The parameters object that produced these runs - a class, an instance, or
+        a plain ``{name: count}`` dict. Same shape accepted by the animation and
+        resource-utilisation helpers; when set, `get_resource_utilisation`,
+        `plot_resource_utilisation` and `plot_resource_utilisation_over_time` use
+        it automatically if no `scenario=` is passed to them. If omitted, it is
+        inherited from the `EventLogger`s (a disagreement between runs warns).
+    label : str, optional
+        A human-readable name for this trial. Inherited from the `EventLogger`s if
+        omitted. Surfaced in `summary()`.
 
     """
 
-    def __init__(self, event_logs: Optional[list[EventLogger]] = None):
+    def __init__(
+        self,
+        event_logs: Optional[list[EventLogger]] = None,
+        *,
+        scenario: Any = None,
+        label: Optional[str] = None,
+    ):
         self._event_logs = []
 
         if event_logs is not None:
@@ -773,6 +875,43 @@ class TrialLogger:
                 )
 
         self._run_index = {r["run_id"]: r for r in self._event_logs}
+
+        # Provenance. An explicit argument wins; otherwise inherit from the
+        # constituent EventLoggers (warning if they disagree).
+        self.scenario = (
+            scenario if scenario is not None else self._inherited_attr("scenario")
+        )
+        self.label = label if label is not None else self._inherited_attr("label")
+
+    def _inherited_attr(self, attr: str):
+        """The value of `attr` carried by the constituent `EventLogger`s.
+
+        Returns the first non-`None` value; warns if the logs carry more than one
+        distinct non-`None` value.
+        """
+        present = [
+            v
+            for v in (
+                getattr(rec["run_data"], attr, None) for rec in self._event_logs
+            )
+            if v is not None
+        ]
+        if not present:
+            return None
+        first = present[0]
+        if attr == "scenario":
+            disagree = any(not _scenarios_agree(first, v) for v in present[1:])
+        else:
+            disagree = any(v != first for v in present[1:])
+        if disagree:
+            warnings.warn(
+                f"The EventLoggers passed to this TrialLogger carry more than one "
+                f"distinct `{attr}`. Using the first; pass `{attr}=` explicitly to "
+                "silence this.",
+                UserWarning,
+                stacklevel=3,
+            )
+        return first
 
     @staticmethod
     def _run_id_of(event_log: EventLogger):
@@ -821,6 +960,20 @@ class TrialLogger:
         )
         self._run_index = {r["run_id"]: r for r in self._event_logs}
 
+        added_scenario = getattr(event_log, "scenario", None)
+        if (
+            added_scenario is not None
+            and self.scenario is not None
+            and not _scenarios_agree(self.scenario, added_scenario)
+        ):
+            warnings.warn(
+                "The EventLogger added to this TrialLogger carries a different "
+                "`scenario` from the one already attached; the trial's `scenario` "
+                "is left unchanged.",
+                UserWarning,
+                stacklevel=2,
+            )
+
     def get_log_by_run(self, run, as_df=False):
         """
         Retrieve the log for a specific run.
@@ -854,6 +1007,21 @@ class TrialLogger:
         """
         return self._trial_dataframe
 
+    def to_pickle(self, path_or_buffer: str | Path | Any) -> None:
+        """Pickle this `TrialLogger` to a file path or writable binary buffer.
+
+        Every constituent `EventLogger` and any attached `scenario` / `label`
+        are pickled; each logger's simulation `env` is not (see
+        `EventLogger.to_pickle`). An attached `scenario` must itself be
+        picklable.
+        """
+        _pickle_to(self, path_or_buffer)
+
+    @classmethod
+    def read_pickle(cls, path_or_buffer: str | Path | Any) -> "TrialLogger":
+        """Load a `TrialLogger` previously written with `to_pickle`."""
+        return _unpickle_from(path_or_buffer, cls)
+
     def summary(self):
         """
         Summarize the trial logs.
@@ -864,8 +1032,16 @@ class TrialLogger:
             Dictionary with summary information:
             - ``"number_of_runs"`` : int
               The number of runs currently stored.
+            - ``"label"`` : str or None
+              The trial's human-readable name.
+            - ``"scenario_attached"`` : bool
+              Whether a `scenario` / parameters object is attached.
         """
-        return {"number_of_runs": len(self._event_logs)}
+        return {
+            "number_of_runs": len(self._event_logs),
+            "label": self.label,
+            "scenario_attached": self.scenario is not None,
+        }
 
     def get_event_durations(
         self,
@@ -1060,7 +1236,8 @@ class TrialLogger:
             Capacity resolution - see `vidigi.analysis._resolve_resource_capacities`
             for the four routes. All optional; with none given, `utilisation`
             is `NaN` throughout and only `busy_time`/`mean_in_use` are
-            meaningful.
+            meaningful. `scenario` defaults to the one attached to this
+            `TrialLogger` (if any) when not passed here.
         warm_up : float, default=0
             Start of the analysis window.
         limit_duration : float, optional
@@ -1093,6 +1270,8 @@ class TrialLogger:
         vidigi.analysis.resource_utilisation : The underlying implementation.
         vidigi.analysis.resource_use_intervals : The underlying per-bout intervals.
         """
+        if scenario is None:
+            scenario = self.scenario
         trial_dataframe = self._trial_dataframe
         return resource_utilisation(
             trial_dataframe,
@@ -1428,7 +1607,8 @@ class TrialLogger:
         scenario, resource_map, event_position_df, resource_capacities, capacity :
             Capacity resolution - see
             `vidigi.analysis._resolve_resource_capacities` for the four
-            routes. Unused when `by="resource"`.
+            routes. Unused when `by="resource"`. `scenario` defaults to the one
+            attached to this `TrialLogger` (if any) when not passed here.
         warm_up : float, default=0
             Start of the analysis window.
         limit_duration : float, optional
@@ -1460,6 +1640,8 @@ class TrialLogger:
         vidigi.plots.plot_resource_utilisation : The underlying implementation.
         get_resource_utilisation : The underlying per-run, per-group summary.
         """
+        if scenario is None:
+            scenario = self.scenario
         trial_dataframe = self._trial_dataframe
         return _plot_resource_utilisation(
             trial_dataframe,
@@ -1527,7 +1709,9 @@ class TrialLogger:
             If True (and more than one step is plotted), every facet shares a
             y-axis range.
         scenario, resource_map, event_position_df, resource_capacities, capacity :
-            Capacity resolution, used only when `as_proportion=True`.
+            Capacity resolution, used only when `as_proportion=True`. `scenario`
+            defaults to the one attached to this `TrialLogger` (if any) when not
+            passed here.
         resource_col_name : str, optional
             Which column identifies the physical resource, used to pair
             `resource_use`/`resource_use_end` bouts. `None` (the default)
@@ -1554,6 +1738,8 @@ class TrialLogger:
         vidigi.plots.plot_resource_utilisation_over_time : The underlying implementation.
         vidigi.analysis.resource_occupancy_over_time : The underlying per-run, per-snapshot counts.
         """
+        if scenario is None:
+            scenario = self.scenario
         trial_dataframe = self._trial_dataframe
         return _plot_resource_utilisation_over_time(
             trial_dataframe,

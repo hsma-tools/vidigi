@@ -154,6 +154,14 @@
 - `scenario` on `animate_activity_log` / `generate_animation` (and the `vidigi.analysis` / `vidigi.plots` / `TrialLogger` resource-utilisation helpers) now accepts a plain dict — `scenario={"n_cubicles": 3}` — as well as an object with attributes. The names in `event_position_df`'s `resource` column (or a `resource_map`) are resolved as dict keys or object attributes interchangeably
     - `generate_animation` now emits a `UserWarning` when an event declares a `resource` but no `scenario` is passed, instead of silently drawing no resource-availability icons for that stage
     - Passing an object is unchanged; a dict is purely an additional accepted form
+- `EventLogger` and `TrialLogger` now take optional `scenario=` and `label=` arguments, so the parameters that produced a set of runs and a human-readable name for them can travel with the logger — groundwork for scenario comparison, and for reliably saving a trial and its inputs together
+    - `scenario` is the same object-or-dict shape the animation and resource-utilisation helpers already accept. When one is attached to a `TrialLogger`, `get_resource_utilisation` / `plot_resource_utilisation` / `plot_resource_utilisation_over_time` use it automatically when no `scenario=` is passed to the call
+    - A `TrialLogger` inherits `scenario` / `label` from its constituent `EventLogger`s when not given explicitly; a disagreement between runs warns and takes the first. An explicit argument always wins
+    - `label` (and whether a `scenario` is attached) is surfaced in `TrialLogger.summary()`; `label` is added to `EventLogger.summary()`
+    - `vidigi.ciw.event_logger_from_ciw_recs` and `trial_logger_from_ciw_recs` gained matching `scenario=` / `label=` passthrough arguments
+- New `to_pickle()` / `read_pickle()` on `EventLogger` and `TrialLogger` for saving a populated logger (including any attached `scenario` / `label`) to disk and loading it back
+    - An `EventLogger` built with `env=` (the normal simpy pattern) previously could not be pickled at all — the live `Environment` holds generators. The `env` is now dropped on pickle (it is only read while logging), so a restored logger is a complete, finished record with `env=None`
+    - An attached `scenario` that is not itself picklable — one holding a live simpy `Environment` or a `Store` — raises with a message naming it as the likely cause
 
 ### New metrics
 
@@ -376,7 +384,7 @@
 
 ### Testing
 
-Test coverage grew from 31 to 1004 tests, concentrated on the parts of the pipeline where a
+Test coverage grew from 31 to 1062 tests, concentrated on the parts of the pipeline where a
 mistake changes what the animation *shows*, or what the reported numbers *say*, rather
 than raising an error.
 
@@ -437,6 +445,7 @@ than raising an error.
 - `resource_icon_font` is covered for the resolved family and weight landing on the resource glyph trace (both from `custom_resource_icon` and from a per-event `resource_icon` column, the latter with the full `text` list asserted), the weight override, the default leaving the trace's font untouched, and the digit-in-name `ValueError` surfacing through the new argument. Its independence from `entity_icon_font` is pinned in both directions - each font reaches only its own trace, and the two can be set to different fonts at once - each mutation-proven against applying the entity family to the resource trace and against writing to the wrong trace index; the `entity_icon_font`-does-not-reach-resource-glyphs test carries a comment marking it as the boundary the two arguments deliberately draw
 - `entity_resource_offset_y` is covered on all three resource-icon code paths (glyph trace, plain dot trace, image `layout.images` entry) as the full list of y positions against the event's own anchor, with the historic `-10` default pinned by its own test and a shifted value on each path mutation-proven against a flipped sign
 - `hidden_run_before` and `step_snapshot_reveal_pop_in` gain their own test file: the full per-snapshot `hidden_run_before` series (not sampled entries) for a genuine arrival, an entity capped out and later revealed, and an entity that plays the overflow-row role before becoming individually visible - the last of these caught a real gap during development, where an entity's own id "surviving" every snapshot under the overflow-row role was wrongly read as continuous presence, since that row is relabelled to a synthetic id before drawing and the entity's own icon was never actually rendered; fixed and mutation-proven (reverting the fix leaves two dedicated tests failing). Also covered: the default's byte-identical no-op, exactly one phantom row per reveal at the correct snapshot/position/icon (mutation-proven against an off-by-one lead and against an empty-string icon), that a genuine arrival and the overflow row itself never get a phantom, and that an entity landing squarely on the overflow row after being hidden - simultaneously satisfying and testing both exclusions on the same row - still gets none
+- The attached `scenario` / `label` on `EventLogger` / `TrialLogger` is covered for storage and `summary()` surfacing, inheritance from constituent `EventLogger`s (and explicit-argument override), the between-run disagreement warning, and that `add_log` warns but does not mutate the trial's `scenario` on a conflict. The `TrialLogger` resource-utilisation `scenario=` fallback is mutation-proven — reverting the fallback line makes a `resource_map`-only call raise instead of resolving. Pickle round-trips (path and buffer) for both classes are asserted to preserve the log, `summary()` and the attached objects, with the wrong-type `read_pickle` and unpicklable-`scenario` error paths covered
 
 # 1.3.1
 
