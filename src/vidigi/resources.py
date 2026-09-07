@@ -494,6 +494,37 @@ def _handle_unawaited_request(request, exc_type, *, method_name, store_name,
 
 
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\#
+# Filtered-request helpers
+# \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\#
+# Shared by VidigiStore and VidigiPriorityStore's request()/get()/get_direct()/
+# request_direct() - see each method's `filter_fn=` parameter.
+
+
+def _validate_filter_fn(filter_fn):
+    """Reject a non-callable `filter_fn` at the call site.
+
+    Left to reach simpy's `FilterStore._do_get` (VidigiStore) or the queue walk in
+    `VidigiPriorityStore._put_item`, a non-callable `filter_fn` fails on a *later* put,
+    far from the `request()` / `get_direct()` call that passed it. Mirrors the loud
+    validation already done by `_reject_invalid_returned_item` / `_check_extra_attributes`.
+    """
+    if filter_fn is not None and not callable(filter_fn):
+        raise TypeError(
+            f"filter_fn must be callable or None, got {type(filter_fn).__name__}"
+        )
+
+
+def _request_accepts_item(request, item):
+    """Whether a queued `VidigiPriorityStore` get event's stored filter accepts `item`.
+
+    A request with no `filter_fn` (or `filter_fn=None`) accepts anything, so an
+    unfiltered waiter behaves exactly as before this parameter existed.
+    """
+    filter_fn = getattr(request, "filter_fn", None)
+    return filter_fn is None or filter_fn(item)
+
+
+# \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\#
 # VidigiStore and Associated Methods
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\#
 
@@ -545,7 +576,10 @@ class VidigiStore:
                 see `populate()`.
         """
         self.env = env
-        self.store = simpy.Store(env, capacity)
+        # simpy.FilterStore, not simpy.Store, so `request()`/`get_direct()` can take a
+        # `filter_fn`. With no `filter_fn` the two are equivalent - FilterStore is a Store
+        # subclass and its default filter accepts every item, granting in the same order.
+        self.store = simpy.FilterStore(env, capacity)
         self.logger = logger
         self.label = label
         self._warned_missing_entity_id = False
@@ -618,7 +652,7 @@ class VidigiStore:
                 )
             )
 
-    def request(self, entity_id=None, start_event=None, end_event=None, pathway=None, auto_log=True, **extra_fields):
+    def request(self, entity_id=None, start_event=None, end_event=None, pathway=None, auto_log=True, filter_fn=None, **extra_fields):
         """
         Request context manager for getting an item from the store.
         The item is automatically returned when exiting the context.
@@ -635,6 +669,16 @@ class VidigiStore:
         resource; the pending request is then granted to it later, after it has moved on.
         This is now flagged with a `UserWarning` and the abandoned request is released
         rather than silently corrupting the event log.
+
+        Filtering which unit is granted
+        -------------------------------
+        Pass `filter_fn` (a callable taking one pool item, returning `True` to accept it)
+        to be granted only a matching unit - e.g. `filter_fn=lambda r: r.grade == "senior"`
+        on a pool whose resources carry a `grade` attribute. With no match currently in the
+        store the request queues until a matching unit is returned; other units being
+        returned in the meantime do not satisfy it. `None` (the default) accepts any unit,
+        exactly as before this parameter existed. A `filter_fn` that never matches waits
+        forever, like any unsatisfiable get.
 
         Automatic resource-use logging
         -------------------------------
@@ -667,6 +711,9 @@ class VidigiStore:
                 while keeping the context manager's automatic item return. Unlike simply
                 omitting `entity_id`, this does not emit the "entity_id was not passed"
                 warning.
+            filter_fn: Optional callable taking one pool item and returning `True` to
+                accept it - only a matching unit is granted. `None` (the default) accepts
+                any unit. See "Filtering which unit is granted" above.
             **extra_fields: Any further keyword arguments are forwarded to both auto-logged
                 events as extra columns in the log, exactly as passing them to
                 `EventLogger.log_resource_use_start`/`log_resource_use_end` by hand would -
@@ -686,15 +733,16 @@ class VidigiStore:
             end_event=end_event,
             pathway=pathway,
             auto_log=auto_log,
+            filter_fn=filter_fn,
             extra_fields=extra_fields,
         )
 
-    def get(self, entity_id=None, start_event=None, end_event=None, pathway=None, auto_log=True, **extra_fields):
+    def get(self, entity_id=None, start_event=None, end_event=None, pathway=None, auto_log=True, filter_fn=None, **extra_fields):
         """
         Alias for request() to maintain compatibility with both patterns.
 
         See `request()` for the full parameter list, including automatic resource-use
-        logging.
+        logging and `filter_fn`.
 
         Returns:
             A context manager for getting an item
@@ -705,6 +753,7 @@ class VidigiStore:
             end_event=end_event,
             pathway=pathway,
             auto_log=auto_log,
+            filter_fn=filter_fn,
             **extra_fields,
         )
 
@@ -748,7 +797,7 @@ class VidigiStore:
             _log_resource_use_end_now(self, item, entity_id, event, pathway, extra_fields)
         return self.store.put(item)
 
-    def get_direct(self, entity_id=None, event=None, pathway=None, auto_log=True, **extra_fields):
+    def get_direct(self, entity_id=None, event=None, pathway=None, auto_log=True, filter_fn=None, **extra_fields):
         """
         Get an item from the store without the context manager.
         Use this if you don't want to automatically return the item.
@@ -772,6 +821,9 @@ class VidigiStore:
                 though the store has a `logger`, with no "entity_id was not passed"
                 warning - for pairing with a hand-written
                 `EventLogger.log_resource_use_start` call instead.
+            filter_fn: Optional callable taking one pool item and returning `True` to
+                accept it - only a matching unit is granted, and the get queues until one
+                is available. `None` (the default) accepts any unit. See `request()`.
             **extra_fields: Any further keyword arguments are forwarded to the auto-logged
                 `resource_use` event as extra columns in the log, the same as passing them
                 to `EventLogger.log_resource_use_start` directly. The paired `put()`/
@@ -781,25 +833,27 @@ class VidigiStore:
         Returns:
             A get event that can be yielded
         """
-        get_event = self.store.get()
+        _validate_filter_fn(filter_fn)
+        get_event = self.store.get() if filter_fn is None else self.store.get(filter_fn)
         if _should_auto_log(self, entity_id, "get_direct", auto_log=auto_log, stacklevel=3):
             _register_start_log_callback(
                 self, get_event, entity_id, event, pathway, extra_fields
             )
         return get_event
 
-    def request_direct(self, entity_id=None, event=None, pathway=None, auto_log=True, **extra_fields):
+    def request_direct(self, entity_id=None, event=None, pathway=None, auto_log=True, filter_fn=None, **extra_fields):
         """
         Alias for get_direct() to maintain consistent API with SimPy resources.
 
         See `get_direct()` for the full parameter list, including automatic resource-use
-        logging.
+        logging and `filter_fn`.
 
         Returns:
             A get event that can be yielded
         """
         return self.get_direct(
-            entity_id=entity_id, event=event, pathway=pathway, auto_log=auto_log, **extra_fields
+            entity_id=entity_id, event=event, pathway=pathway, auto_log=auto_log,
+            filter_fn=filter_fn, **extra_fields
         )
 
     def cancel_get(self, get_event):
@@ -858,6 +912,7 @@ class _StoreRequest:
         end_event=None,
         pathway=None,
         auto_log=True,
+        filter_fn=None,
         extra_fields=None,
     ):
         self.store = store
@@ -866,7 +921,11 @@ class _StoreRequest:
         self.end_event = end_event
         self.pathway = pathway
         self.extra_fields = extra_fields or {}
-        self.get_event = store.store.get()  # Create the get event
+        _validate_filter_fn(filter_fn)
+        # Create the get event - a plain get, or a FilterStore filtered get.
+        self.get_event = (
+            store.store.get() if filter_fn is None else store.store.get(filter_fn)
+        )
 
         # See `_register_start_log_callback`'s docstring for why appending here, before
         # returning the event, still reliably captures the true grant time.
@@ -1130,6 +1189,7 @@ class VidigiPriorityStore:
         end_event=None,
         pathway=None,
         auto_log=True,
+        filter_fn=None,
         **extra_fields,
     ):
         """
@@ -1146,6 +1206,20 @@ class VidigiPriorityStore:
         resource; the pending request is then granted to it later, after it has moved on.
         This is now flagged with a `UserWarning` and the abandoned request is released
         rather than silently corrupting the event log.
+
+        Filtering which unit is granted
+        -------------------------------
+        Pass `filter_fn` (a callable taking one pool item, returning `True` to accept it)
+        to be granted only a matching unit - e.g. `filter_fn=lambda r: r.grade == "senior"`
+        on a pool whose resources carry a `grade` attribute. With no match currently in the
+        store the request queues until a matching unit is returned. `filter_fn` and
+        `priority` combine: a returned unit goes to the highest-priority queued request
+        that *accepts* it, so a lower-priority waiter whose filter matches can be served
+        ahead of a higher-priority waiter whose filter the unit fails - this is the point
+        of the parameter. `None` (the default) accepts any unit, exactly as before this
+        parameter existed. Combining `filter_fn` with a finite `capacity` smaller than the
+        number of items put is not fully supported - a matching unit can end up stuck in
+        the put queue; the default `capacity` is infinite.
 
         Automatic resource-use logging
         -------------------------------
@@ -1179,6 +1253,9 @@ class VidigiPriorityStore:
                 while keeping the context manager's automatic item return. Unlike simply
                 omitting `entity_id`, this does not emit the "entity_id was not passed"
                 warning.
+            filter_fn: Optional callable taking one pool item and returning `True` to
+                accept it - only a matching unit is granted. `None` (the default) accepts
+                any unit. See "Filtering which unit is granted" above.
             **extra_fields: Any further keyword arguments are forwarded to both auto-logged
                 events as extra columns in the log, exactly as passing them to
                 `EventLogger.log_resource_use_start`/`log_resource_use_end` by hand would -
@@ -1199,29 +1276,46 @@ class VidigiPriorityStore:
             end_event=end_event,
             pathway=pathway,
             auto_log=auto_log,
+            filter_fn=filter_fn,
             extra_fields=extra_fields,
         )
 
-    def get(self, priority=0):
+    def get(self, priority=0, filter_fn=None):
         """
         Create an event to get an item from the store.
 
         Args:
             priority: Lower values indicate higher priority (default: 0)
+            filter_fn: Optional callable taking one pool item and returning `True` to
+                accept it - only a matching unit is granted, and the get queues until one
+                is available. `None` (the default) accepts any unit. See `request()`.
 
         Returns:
             A get event that can be yielded
         """
+        _validate_filter_fn(filter_fn)
+
         if self.items:
-            # Items available - get one immediately
-            item = self.items.pop(0)
+            if filter_fn is None:
+                match_idx = 0
+            else:
+                match_idx = next(
+                    (i for i, item in enumerate(self.items) if filter_fn(item)), None
+                )
+        else:
+            match_idx = None
+
+        if match_idx is not None:
+            # A matching item is available - get it immediately
+            item = self.items.pop(match_idx)
             event = self.env.event()
             event.succeed(item)
             return event
         else:
-            # No items available - create request and add to queue
+            # No matching item available - create request and add to queue
             request = self.env.event()
             request.priority = priority  # Add priority attribute to the event
+            request.filter_fn = filter_fn  # None => accepts any returned item
 
             # Insert into priority queue (sorted list)
             # Find the right position to maintain sorted order
@@ -1288,29 +1382,33 @@ class VidigiPriorityStore:
         `populate()` seeds the pool with this directly (not through `put()`) because pool
         initialization is not a resource being released by an entity.
         """
+        # Hand straight to the highest-priority waiting get that accepts this item. This
+        # consumes no capacity slot (the item is never added to self.items), so it is
+        # tried before the capacity check - otherwise a filtered waiter could starve
+        # behind a full finite-capacity store. For an unfiltered queue (the default) the
+        # first waiting request always accepts, so this matches the old behaviour.
+        served_idx = next(
+            (i for i, req in enumerate(self.get_queue) if _request_accepts_item(req, item)),
+            None,
+        )
+        if served_idx is not None:
+            request = self.get_queue.pop(served_idx)
+            # Directly trigger the request with this item - no need to add to items
+            request.succeed(item)
+
+            # Return a pre-triggered event
+            event = self.env.event()
+            event.succeed()
+            return event
+
         if len(self.items) < self.capacity:
-            # Space available - try to satisfy a waiting get request
-            if self.get_queue:
-                # Get highest-priority waiting request (first item in sorted queue)
-                request = self.get_queue.pop(
-                    0
-                )  # Get from front (highest priority)
-                # Directly trigger the request with this item
-                request.succeed(item)
-                # No need to add to items list as it's immediately consumed
+            # Space available, no waiting get wants it - add to items
+            self.items.append(item)
 
-                # Return a pre-triggered event
-                event = self.env.event()
-                event.succeed()
-                return event
-            else:
-                # No waiting get requests - add to items
-                self.items.append(item)
-
-                # Return a pre-triggered event
-                event = self.env.event()
-                event.succeed()
-                return event
+            # Return a pre-triggered event
+            event = self.env.event()
+            event.succeed()
+            return event
         else:
             # Store is full - create a put request
             request = self.env.event()
@@ -1388,18 +1486,22 @@ class VidigiPriorityStore:
         already does its own logging (with the request's own event names/pathway/extra
         fields) before calling this - going through `return_item()` there would log twice.
         """
-        # Check if there are waiting get requests
-        if self.get_queue:
-            # Get highest priority waiting request (first in sorted queue)
-            request = self.get_queue.pop(0)
-            # Directly trigger it with the item
+        # Hand to the highest-priority waiting get that accepts this item. An unfiltered
+        # waiter (filter_fn None) accepts anything, so with no filters in play this is the
+        # front of the queue, exactly as before.
+        served_idx = next(
+            (i for i, req in enumerate(self.get_queue) if _request_accepts_item(req, item)),
+            None,
+        )
+        if served_idx is not None:
+            request = self.get_queue.pop(served_idx)
+            # Directly trigger it with the item - consumed immediately, no need to store it
             request.succeed(item)
-            # Item is consumed immediately - no need to store it
         else:
-            # No waiting get requests - add to items
+            # No waiting get wants it - add to items
             self.items.append(item)
 
-    def get_direct(self, priority=0, entity_id=None, event=None, pathway=None, auto_log=True, **extra_fields):
+    def get_direct(self, priority=0, entity_id=None, event=None, pathway=None, auto_log=True, filter_fn=None, **extra_fields):
         """
         Get an item from the store without the context manager.
         Use this if you don't want to automatically return the item.
@@ -1424,6 +1526,9 @@ class VidigiPriorityStore:
                 though the store has a `logger`, with no "entity_id was not passed"
                 warning - for pairing with a hand-written
                 `EventLogger.log_resource_use_start` call instead.
+            filter_fn: Optional callable taking one pool item and returning `True` to
+                accept it - only a matching unit is granted, and the get queues until one
+                is available. `None` (the default) accepts any unit. See `request()`.
             **extra_fields: Any further keyword arguments are forwarded to the auto-logged
                 `resource_use` event as extra columns in the log, the same as passing them
                 to `EventLogger.log_resource_use_start` directly. The paired `put()`/
@@ -1433,19 +1538,19 @@ class VidigiPriorityStore:
         Returns:
             A get event that can be yielded
         """
-        get_event = self.get(priority=priority)
+        get_event = self.get(priority=priority, filter_fn=filter_fn)
         if _should_auto_log(self, entity_id, "get_direct", auto_log=auto_log, stacklevel=3):
             _register_start_log_callback(
                 self, get_event, entity_id, event, pathway, extra_fields
             )
         return get_event
 
-    def request_direct(self, priority=0, entity_id=None, event=None, pathway=None, auto_log=True, **extra_fields):
+    def request_direct(self, priority=0, entity_id=None, event=None, pathway=None, auto_log=True, filter_fn=None, **extra_fields):
         """
         Alias for get_direct() to maintain consistent API.
 
         See `get_direct()` for the full parameter list, including automatic resource-use
-        logging.
+        logging and `filter_fn`.
 
         Returns:
             A get event that can be yielded
@@ -1456,6 +1561,7 @@ class VidigiPriorityStore:
             event=event,
             pathway=pathway,
             auto_log=auto_log,
+            filter_fn=filter_fn,
             **extra_fields,
         )
 
@@ -1499,6 +1605,7 @@ class _OptimizedStoreRequest:
         end_event=None,
         pathway=None,
         auto_log=True,
+        filter_fn=None,
         extra_fields=None,
     ):
         self.store = store
@@ -1509,7 +1616,7 @@ class _OptimizedStoreRequest:
         self.pathway = pathway
         self.extra_fields = extra_fields or {}
         self.get_event = store.get(
-            priority=self.priority
+            priority=self.priority, filter_fn=filter_fn
         )  # Create the get event
 
         # See `_register_start_log_callback`'s docstring for why appending here, before
