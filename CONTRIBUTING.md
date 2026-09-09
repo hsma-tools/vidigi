@@ -99,23 +99,37 @@ A Docker-based build was previously used (to reuse a cached environment across r
 
 <br>
 
-## Linting
+## Linting and formatting
 
-We use Black to auto-format the vidigi package, setting the maximum line length to 79 to comply with PEP 8 - simply run:
+Code style is enforced with [`pre-commit`](https://pre-commit.com/) hooks rather than by running tools by hand. The hooks are defined in `.pre-commit-config.yaml`:
+
+* [`nbstripout`](https://github.com/kynan/nbstripout) - clears cell outputs and execution counts from Jupyter notebooks.
+* [`ruff`](https://docs.astral.sh/ruff/) - lints (`ruff check --fix`) and auto-formats (`ruff format`) the Python code.
+* [`pyupgrade`](https://github.com/asottile/pyupgrade) - rewrites Python to modern (3.10+) syntax.
+* `mixed-line-ending` - normalises line endings.
+
+### Installing the hooks
+
+`pre-commit` is a Python package, listed in the `dev` dependency group in `pyproject.toml`. If it is not already in your environment, install it with:
 
 ```
-black vidigi --line-length=79
+pip install pre-commit
 ```
 
-We also run other linters to manually check and edit package style:
+Then register the git hook in your local clone (once per clone):
 
 ```
-# Checks PEP8-style, basic errors and code complexity
-flake8 vidigi
-
-# Run flake8 on .ipynb files
-nbqa flake8 examples
-
-# Run flake8 on .qmd files
-lintquarto -l flake8 -p vidigi_docs
+pre-commit install
 ```
+
+The hooks now run automatically against staged files on every `git commit`. If a hook modifies a file (for example `ruff format` or `nbstripout`), the commit is aborted - re-stage the changed files and commit again.
+
+### Running the hooks manually
+
+To check the whole repository without making a commit - useful after first installing the hooks, or after editing `.pre-commit-config.yaml`:
+
+```
+pre-commit run --all-files
+```
+
+To run a single hook, give its id, for example `pre-commit run ruff-format --all-files`.
