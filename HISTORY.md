@@ -200,6 +200,12 @@
     - Both are thin wrappers over the existing `vidigi.animation.animate_activity_log` / `vidigi.prep.reshape_for_animations`, which already accepted a logger for `event_log` — this is the method-form sugar on top
     - On `TrialLogger`, `run_number=` selects the replication to animate; a multi-run trial without it raises the same `ValueError` listing the runs. `TrialLogger.animate_activity_log` also falls back to the trial's attached `scenario` when none is passed, like the `plot_resource_utilisation` delegators
     - `reshape_for_animations()` is the entry point to the manual three-step pipeline; `generate_animation_df` / `generate_animation` stay as functions since they act on the intermediate DataFrame, not the logger — the method docstring shows the full sequence
+- New `TrialLogger.generate_dfg()`, the trial-level counterpart to `EventLogger.generate_dfg()`, so a multi-run trial no longer has to be reduced to one run by hand before it can be drawn as a process map
+    - Three routes: the default is the **representative run** — the replication whose mean time in system is closest to the trial median (`Run K of M` in the title); `run_number=N` renders one named replication, delegating to that run's own `EventLogger.generate_dfg`; `across_runs=True` builds **one** combined cross-run map
+    - The cross-run map groups transitions per `(run, entity)` so no edge is fabricated between the last event of one replication and the first of the next. Node counts and edge frequencies are shown **per replication** (pooled total ÷ number of runs) with the between-run range — `n=3.5 (1–7)` — and transition times are pooled over every run, with the mean also carrying the between-run spread of the per-run mean (`mean=42.0 minutes (35.0–51.0 across runs)`; a range, not a CI — `get_event_duration_ci` remains the route to a formal interval). `occupancy_metrics=True` uses `activity_occupancy_stats(across_runs="average")`
+    - Graphviz output gets an auto `title` ("*M replications combined — simulation output, not observed data. Counts are per-run means.*"); the cytoscape renderers get the same text as a `caption`. `across_runs=True` with no `warm_up` warns, since start-up transient then feeds a stakeholder-facing aggregate
+    - `vidigi.process_mapping.discover_dfg` gains `run_col_name=` for the same run-aware grouping, and now emits a `UserWarning` (previously silent) when handed a log spanning more than one run without it — it builds transitions per case regardless of run, so a concatenated multi-run log fabricates cross-run edges. Default single-run output is a verified byte-for-byte no-op; the warning is flagged to raise in vidigi 3.0
+    - New `show_between_run_ci=` / `caption=` on `dfg_to_graphviz` / `process_nodes_and_edges_for_cytoscape` / `dfg_to_cytoscape` / `dfg_to_cytoscape_streamlit` for the range annotations and caveat text; both no-ops on a single-run graph
 - Lowered the minimum `pandas` to 1.5.3 (was 2.0.1) and the minimum `numpy` to 1.24.0 (was 1.26.2), so vidigi installs alongside an older scientific-Python stack
     - An audit of every pandas/numpy call in the library found nothing that needs the previous floors — the numpy API used all predates 1.20, and no pandas 2.x-only feature is used. The old bounds had been in place, unexplained, since the first commit
     - In practice this only widens the resolver's choices on Python 3.10 and 3.11; on 3.12+ pip already picks a newer pandas/numpy that ships wheels for that interpreter, regardless of this floor
@@ -441,7 +447,7 @@
 
 ### Testing
 
-Test coverage grew from 31 to 1159 tests, concentrated on the parts of the pipeline where a
+Test coverage grew from 31 to 1195 tests, concentrated on the parts of the pipeline where a
 mistake changes what the animation *shows*, or what the reported numbers *say*, rather
 than raising an error.
 
@@ -457,6 +463,7 @@ than raising an error.
 - Warm-up handling is covered end to end: that `warm_up` shows the entities a truncated log loses, that the truncation trap itself is detected, that both snapshot alignments move frame times without changing who is in them, and that the defaults are a true no-op rather than merely a similar result
 - Every value advertised by a literal-typed argument is asserted to be accepted at runtime, so the annotations cannot drift from the checks they describe
 - `process_mapping` gained its first dedicated coverage: the new `warm_up` filter, and what it does and does not affect for a case that spans the cutoff versus one entirely inside it
+- Run-aware DFG discovery is pinned: `discover_dfg`'s single-run output is byte-for-byte unchanged with `run_col_name=` set (all five time units), the fabricated cross-run edge is present without run grouping and gone with it (mutation-proven against dropping the run key), the multi-run warning fires only when it should, and the `TrialLogger.generate_dfg` routes are covered — the mutually-exclusive `run_number`/`across_runs` guard, representative-run selection (mutation-proven that it uses the median, not the mean), and the cross-run node/edge tables hand-computed whole-frame (per-replication counts, between-run ranges with zero-fill, pooled and per-run mean times, probabilities summing to 1) including the `across_runs="average"` occupancy threading and the missing-`warm_up` warning
 - `plot_queue_size` is now asserted against hand-computed queue lengths rather than only checking that a figure came back — the previous tests would have passed against a blank chart, and did pass while every long queue was saturating
 - `cancel_get` is now covered for both store types, including an end-to-end reneging scenario asserting who is served and when
 - Two invariants the source had flagged as unchecked are now enforced — no entity is drawn in two positions within a single frame, and each entity keeps the same icon throughout

@@ -71,6 +71,7 @@ from vidigi.prep import (
     reshape_for_animations as _reshape_for_animations,
 )
 from vidigi.process_mapping import (
+    _transitions,
     add_sim_timestamp,
     dfg_to_cytoscape,
     dfg_to_cytoscape_streamlit,
@@ -135,6 +136,156 @@ def _unpickle_from(path_or_buffer, expected_type):
             f"{expected_type.__name__}."
         )
     return obj
+
+
+def _render_dfg(nodes, edges, output_format, time_unit, **kwargs):
+    """Dispatch a discovered DFG to the renderer named by `output_format`.
+
+    Shared by `EventLogger.generate_dfg` and `TrialLogger.generate_dfg` so the
+    two stay in step.
+    """
+    if output_format == "graphviz-object":
+        return dfg_to_graphviz(nodes, edges, time_unit=time_unit, **kwargs)
+    elif output_format == "graphviz-image":
+        return dfg_to_graphviz(
+            nodes, edges, return_image=True, time_unit=time_unit, **kwargs
+        )
+    elif output_format == "cytoscape-jupyter":
+        return dfg_to_cytoscape(nodes, edges, time_unit=time_unit, **kwargs)
+    elif output_format == "cytoscape-streamlit":
+        return dfg_to_cytoscape_streamlit(nodes, edges, time_unit=time_unit, **kwargs)
+    else:
+        raise ValueError(f"Invalid output format passed. Valid formats are {DFGType}.")
+
+
+def _representative_run(trial_df: pd.DataFrame):
+    """The run id whose mean time-in-system is closest to the trial median.
+
+    Time-in-system is approximated per entity as the span (`max - min`) of its
+    event times; those are averaged within each run, and the run whose average
+    is nearest the median of the per-run averages is returned. Ties resolve to
+    the lowest run id. A single-run trial returns that run.
+    """
+    span = trial_df.groupby(["run_number", "entity_id"])["time"].agg(
+        lambda s: s.max() - s.min()
+    )
+    per_run = span.groupby("run_number").mean().sort_index()
+    if len(per_run) == 1:
+        return per_run.index[0]
+    return (per_run - per_run.median()).abs().idxmin()
+
+
+def _dfg_across_runs(
+    trial_df: pd.DataFrame,
+    *,
+    time_unit: str,
+    warm_up: float | None,
+    occupancy_metrics: bool,
+    occupancy_snapshot_interval: float,
+):
+    """Node/edge tables for one combined cross-run process map.
+
+    Transitions are grouped per `(run, entity)` so no cross-run edge is
+    fabricated. Node `count` and edge `frequency` are reported *per
+    replication* (pooled total / number of runs) and carry the between-run
+    min-max spread in `*_run_min` / `*_run_max` columns; a run in which a step
+    or transition never occurs counts as zero for that spread. Transition
+    times are pooled over every run's transitions, with `mean_time` also
+    carrying the between-run spread of the per-run mean (over the runs in
+    which the transition occurred). Occupancy, if requested, comes from
+    `activity_occupancy_stats(..., across_runs="average")`.
+    """
+    all_runs = sorted(trial_df["run_number"].unique())
+    n_runs = len(all_runs)
+
+    stamped = add_sim_timestamp(trial_df, time_unit=time_unit, warm_up=warm_up)
+    transitions = _transitions(stamped, time_unit=time_unit, run_col="run_number")
+
+    # Pooled edge statistics over every run's transitions.
+    edges = (
+        transitions.groupby(["source", "target"])
+        .agg(
+            frequency=("delta_time", "count"),
+            mean_time=("delta_time", "mean"),
+            median_time=("delta_time", "median"),
+            max_time=("delta_time", "max"),
+            min_time=("delta_time", "min"),
+            standard_deviation_time=("delta_time", "std"),
+        )
+        .reset_index()
+    )
+    edges["probability"] = edges["frequency"] / edges.groupby("source")[
+        "frequency"
+    ].transform("sum")
+
+    # Between-run spread of the per-run frequency (zero-filled for runs the
+    # transition never occurs in) and of the per-run mean time (only over runs
+    # it does occur in - a transition that never happened has no mean).
+    per_run_freq = (
+        transitions.groupby(["source", "target", "run_number"])
+        .size()
+        .unstack("run_number")
+        .reindex(columns=all_runs)
+        .fillna(0)
+        .astype(float)
+    )
+    per_run_mean = transitions.groupby(["source", "target", "run_number"])[
+        "delta_time"
+    ].mean()
+    edge_spread = pd.DataFrame(
+        {
+            "frequency_run_min": per_run_freq.min(axis=1),
+            "frequency_run_max": per_run_freq.max(axis=1),
+            "mean_time_run_min": per_run_mean.groupby(["source", "target"]).min(),
+            "mean_time_run_max": per_run_mean.groupby(["source", "target"]).max(),
+        }
+    ).reset_index()
+    edges = edges.merge(edge_spread, on=["source", "target"], how="left")
+    edges["frequency"] = (edges["frequency"] / n_runs).round(1)
+
+    # Node counts, per replication, with the same between-run spread.
+    per_run_node = (
+        stamped.groupby(["event", "run_number"])["entity_id"]
+        .count()
+        .unstack("run_number")
+        .reindex(columns=all_runs)
+        .fillna(0)
+        .astype(float)
+    )
+    nodes = (
+        stamped.groupby("event")
+        .agg(count=("entity_id", "count"))
+        .reset_index()
+        .rename(columns={"event": "activity"})
+    )
+    nodes["count"] = (nodes["count"] / n_runs).round(1)
+    node_spread = (
+        pd.DataFrame(
+            {
+                "count_run_min": per_run_node.min(axis=1),
+                "count_run_max": per_run_node.max(axis=1),
+            }
+        )
+        .reset_index()
+        .rename(columns={"event": "activity"})
+    )
+    nodes = nodes.merge(node_spread, on="activity", how="left")
+
+    if occupancy_metrics:
+        occupancy_stats = activity_occupancy_stats(
+            trial_df,
+            every_x_time_units=occupancy_snapshot_interval,
+            warm_up=warm_up or 0,
+            across_runs="average",
+        )
+        if not occupancy_stats.empty:
+            nodes = nodes.merge(
+                occupancy_stats.rename(columns={"event": "activity"}),
+                on="activity",
+                how="left",
+            )
+
+    return nodes, edges
 
 
 class BaseEvent(BaseModel):
@@ -846,22 +997,7 @@ class EventLogger:
             df, time_unit=input_time_format, occupancy_stats=occupancy_stats
         )
 
-        if output_format == "graphviz-object":
-            return dfg_to_graphviz(nodes, edges, time_unit=input_time_format, **kwargs)
-        elif output_format == "graphviz-image":
-            return dfg_to_graphviz(
-                nodes, edges, return_image=True, time_unit=input_time_format, **kwargs
-            )
-        elif output_format == "cytoscape-jupyter":
-            return dfg_to_cytoscape(nodes, edges, time_unit=input_time_format, **kwargs)
-        elif output_format == "cytoscape-streamlit":
-            return dfg_to_cytoscape_streamlit(
-                nodes, edges, time_unit=input_time_format, **kwargs
-            )
-        else:
-            raise ValueError(
-                f"Invalid output format passed. Valid formats are {DFGType}."
-            )
+        return _render_dfg(nodes, edges, output_format, input_time_format, **kwargs)
 
     def reshape_for_animations(self, **kwargs):
         """
@@ -967,6 +1103,10 @@ class TrialLogger:
         Compute statistics on durations between two event types across runs.
     plot_duration_distribution(first_event, second_event, kind="hist", **kwargs)
         Plot the distribution of durations between two events, across every run.
+    generate_dfg(output_format="graphviz-object", run_number=None,
+                 across_runs=False, **kwargs)
+        Build a process map: the representative run, one chosen run, or one
+        combined cross-run map.
     reshape_for_animations(run_number=None, **kwargs)
         Reshape one run into the per-snapshot frame the animation uses.
     animate_activity_log(event_position_df, scenario=None, run_number=None, **kwargs)
@@ -1535,6 +1675,165 @@ class TrialLogger:
             ),
             **kwargs,
         )
+
+    def generate_dfg(
+        self,
+        output_format: DFGType = "graphviz-object",
+        *,
+        run_number=None,
+        across_runs: bool = False,
+        input_time_format: str = "minutes",
+        warm_up: float | None = None,
+        occupancy_metrics: bool = False,
+        occupancy_snapshot_interval: float = 1,
+        **kwargs,
+    ):
+        """
+        Generate a Directly-Follows Graph (process map) from the trial.
+
+        Wraps :func:`vidigi.process_mapping.discover_dfg` and the DFG
+        renderers, the same way :meth:`EventLogger.generate_dfg` does, with
+        three ways to handle the several replications a trial holds:
+
+        =====================  =================================================
+        Call                   What you get
+        =====================  =================================================
+        (default)              The **representative run** - the replication
+                               whose mean time in system is closest to the
+                               trial median. Real integer counts.
+        ``run_number=N``       That one replication.
+        ``across_runs=True``   **One** combined cross-run map: transitions
+                               grouped per ``(run, entity)`` so no cross-run
+                               edge is fabricated, node/edge counts shown as
+                               per-run means with the between-run range,
+                               transition times pooled over every run.
+        =====================  =================================================
+
+        Parameters
+        ----------
+        output_format : DFGType, default="graphviz-object"
+            As :meth:`EventLogger.generate_dfg`.
+        run_number : int or str, optional
+            Render this one replication. Mutually exclusive with
+            ``across_runs=True``.
+        across_runs : bool, default=False
+            Render one combined map across every replication (see above).
+        input_time_format : str, default="minutes"
+            Time unit for durations and timestamps.
+        warm_up : float, optional
+            Discard events at or before this simulation time. With
+            ``across_runs=True`` a missing ``warm_up`` warns, because start-up
+            transient then feeds a stakeholder-facing aggregate.
+        occupancy_metrics : bool, default=False
+            Annotate queue/resource nodes with occupancy, via
+            :func:`vidigi.analysis.activity_occupancy_stats`. With
+            ``across_runs=True`` the figures are averaged over runs
+            (``across_runs="average"``) - note this averages over the runs in
+            which a step occurred, whereas the node counts zero-fill, so the
+            two conventions differ for a step absent from some runs.
+        occupancy_snapshot_interval : float, default=1
+            Snapshot granularity for ``occupancy_metrics``.
+        **kwargs
+            Forwarded to the renderer. An auto ``title`` (graphviz) or
+            ``caption`` (cytoscape) is set unless you pass your own.
+
+        Returns
+        -------
+        graphviz.Source or ipycytoscape widget or bytes
+
+        Raises
+        ------
+        ValueError
+            If both ``run_number`` and ``across_runs=True`` are given, or
+            ``run_number`` is not a run in this trial.
+
+        Notes
+        -----
+        For ``across_runs=True``:
+
+        - Counts are **per replication** (pooled total / number of runs);
+          the ``n=3.5 (1-7)`` annotation gives the between-run range. An edge
+          seen fewer than ``min_frequency`` times per run on average is hidden
+          by the cytoscape renderers' ``min_frequency=1`` default.
+        - Transition ``probability`` is pooled (frequency-weighted across
+          runs); with near-exchangeable replications the Simpson's-paradox
+          risk of pooling is negligible.
+        - Entities still in the system at a run's end have **truncated
+          paths**, which under-weights long-pathway transitions and biases
+          transition times downwards - the opposite of what a bottleneck
+          analysis wants. Set ``warm_up`` and be wary of a heavily censored
+          run.
+
+        See Also
+        --------
+        EventLogger.generate_dfg : The single-run version.
+        vidigi.process_mapping.discover_dfg : Edge discovery logic.
+        get_event_duration_ci : A formal confidence interval on a transition
+            time, rather than the between-run range shown here.
+        """
+        if run_number is not None and across_runs:
+            raise ValueError(
+                "Pass either `run_number=` (one replication) or "
+                "`across_runs=True` (one combined cross-run graph), not both."
+            )
+
+        trial_df = self._trial_dataframe
+        runs = sorted(trial_df["run_number"].unique().tolist())
+        n_runs = len(runs)
+
+        if not across_runs:
+            if run_number is None:
+                run_number = _representative_run(trial_df)
+                note = " (representative — closest to median time in system)"
+            else:
+                if run_number not in self._run_index:
+                    raise ValueError(
+                        f"run_number={run_number!r} is not in this trial. "
+                        f"Available runs: {runs}."
+                    )
+                note = ""
+            label = f"Run {run_number} of {n_runs}{note}"
+            if output_format in ("graphviz-object", "graphviz-image"):
+                kwargs.setdefault("title", label)
+            else:
+                kwargs.setdefault("caption", label)
+            return self.get_log_by_run(run_number).generate_dfg(
+                output_format,
+                input_time_format=input_time_format,
+                warm_up=warm_up,
+                occupancy_metrics=occupancy_metrics,
+                occupancy_snapshot_interval=occupancy_snapshot_interval,
+                **kwargs,
+            )
+
+        if warm_up is None:
+            warnings.warn(
+                "TrialLogger.generate_dfg(across_runs=True) is combining every "
+                "replication with no warm-up period, so start-up transient is "
+                "baked into the aggregate map. Pass `warm_up=` (the value you "
+                "use elsewhere) unless the log is already trimmed.",
+                UserWarning,
+                stacklevel=2,
+            )
+
+        nodes, edges = _dfg_across_runs(
+            trial_df,
+            time_unit=input_time_format,
+            warm_up=warm_up,
+            occupancy_metrics=occupancy_metrics,
+            occupancy_snapshot_interval=occupancy_snapshot_interval,
+        )
+
+        caveat = (
+            f"{n_runs} replications combined — simulation output, not observed "
+            "data. Counts are per-run means."
+        )
+        if output_format in ("graphviz-object", "graphviz-image"):
+            kwargs.setdefault("title", caveat)
+        else:
+            kwargs.setdefault("caption", caveat)
+
+        return _render_dfg(nodes, edges, output_format, input_time_format, **kwargs)
 
     def reshape_for_animations(self, *, run_number=None, **kwargs):
         """

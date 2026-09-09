@@ -17,9 +17,12 @@ drop-in replacement for the manual filter it was added to replace.
 import pandas as pd
 import pytest
 
+from pandas.testing import assert_frame_equal
+
 from vidigi.analysis import activity_occupancy_stats
 from vidigi.logging import EventLogger
 from vidigi.process_mapping import (
+    _transitions,
     add_sim_timestamp,
     dfg_to_graphviz,
     discover_dfg,
@@ -353,3 +356,201 @@ def test_generate_dfg_occupancy_uses_the_raw_log_and_threads_warm_up(
     # warm_up=5 drops the t=0 rows from the graph's own log; the stats call
     # still gets all of them.
     assert seen["n_rows"] == raw_rows
+
+
+# --------------------------------------------------------------------------- #
+# Run-aware transition grouping: `_transitions` / `discover_dfg(run_col_name=)`
+#
+# `discover_dfg` builds edges from each case's consecutive rows. A concatenated
+# multi-run log reuses `entity_id` across runs, so without run awareness the
+# last event of one run is joined to the first event of the same id in the
+# next run - an edge that occurs in no single replication.
+# --------------------------------------------------------------------------- #
+
+
+@pytest.fixture
+def two_run_reused_ids():
+    """Two runs, both using entity_id 1, run 2 entirely after run 1 in time.
+
+    Run 1: waiting -> treatment -> depart. Run 2: waiting -> depart.
+    Concatenated and sorted by (entity_id, time) the rows are:
+        r1 waiting, r1 treatment, r1 depart, r2 waiting, r2 depart
+    so an id-only shift fabricates a depart -> waiting edge across the seam.
+    """
+    return pd.DataFrame(
+        [
+            (10, 1, "waiting", 1),
+            (20, 1, "treatment", 1),
+            (30, 1, "depart", 1),
+            (110, 1, "waiting", 2),
+            (125, 1, "depart", 2),
+        ],
+        columns=["time", "entity_id", "event", "run_number"],
+    )
+
+
+def test_discover_dfg_single_run_unchanged_by_run_col_name(straddling_logger):
+    """`run_col_name` must be a true no-op on a genuinely single-run log."""
+    stamped = add_sim_timestamp(straddling_logger.to_dataframe())
+    base_nodes, base_edges = discover_dfg(stamped)
+
+    for opt in ("run_number", "auto"):
+        nodes, edges = discover_dfg(stamped, run_col_name=opt)
+        assert_frame_equal(nodes, base_nodes)
+        assert_frame_equal(edges, base_edges)
+
+
+def test_transitions_extraction_matches_the_inline_discover_dfg(straddling_logger):
+    """The `delta_time` column `_transitions` produces is what `discover_dfg`
+    aggregates - the split-out helper must not drift from it."""
+    stamped = add_sim_timestamp(straddling_logger.to_dataframe())
+    t = _transitions(stamped)
+
+    assert list(t.columns) == ["source", "target", "delta_time"]
+    # waiting (50) -> treatment (120) is the one multi-minute gap for entity 1
+    row = t[(t["source"] == "waiting") & (t["target"] == "treatment")]
+    assert row["delta_time"].item() == pytest.approx(70.0)
+
+
+def test_run_col_name_drops_the_fabricated_cross_run_edge(two_run_reused_ids):
+    stamped = add_sim_timestamp(two_run_reused_ids)
+
+    with pytest.warns(UserWarning, match="more than one run"):
+        _, id_only = discover_dfg(stamped)
+    grouped_nodes, grouped = discover_dfg(stamped, run_col_name="run_number")
+
+    id_only_edges = set(zip(id_only["source"], id_only["target"]))
+    grouped_edges = set(zip(grouped["source"], grouped["target"]))
+
+    # The seam edge is present without run awareness and gone with it; every
+    # real edge survives.
+    assert ("depart", "waiting") in id_only_edges
+    assert grouped_edges == {
+        ("waiting", "treatment"),
+        ("treatment", "depart"),
+        ("waiting", "depart"),
+    }
+    # Node counts are unaffected by grouping - 2 waiting, 1 treatment, 2 depart.
+    assert dict(zip(grouped_nodes["activity"], grouped_nodes["count"])) == {
+        "waiting": 2,
+        "treatment": 1,
+        "depart": 2,
+    }
+
+
+def test_run_col_name_grouping_needs_the_run_key(two_run_reused_ids):
+    """Mutation guard: grouping on the case column alone still fabricates the
+    seam edge, so the test above is really pinning the run key."""
+    stamped = add_sim_timestamp(two_run_reused_ids)
+    t_grouped = _transitions(stamped, run_col="run_number")
+    t_case_only = _transitions(stamped, run_col=None)
+
+    assert ("depart", "waiting") not in set(
+        zip(t_grouped["source"], t_grouped["target"])
+    )
+    assert ("depart", "waiting") in set(
+        zip(t_case_only["source"], t_case_only["target"])
+    )
+
+
+def test_multi_run_log_without_run_col_name_warns(two_run_reused_ids):
+    stamped = add_sim_timestamp(two_run_reused_ids)
+    with pytest.warns(UserWarning, match="will raise in vidigi 3.0"):
+        discover_dfg(stamped)
+
+
+def test_no_warning_when_run_col_name_is_given(two_run_reused_ids):
+    stamped = add_sim_timestamp(two_run_reused_ids)
+    import warnings as _w
+
+    with _w.catch_warnings():
+        _w.simplefilter("error")
+        discover_dfg(stamped, run_col_name="run_number")
+        discover_dfg(stamped, run_col_name="auto")
+
+
+def test_no_warning_on_a_single_run_log(straddling_logger):
+    import warnings as _w
+
+    with _w.catch_warnings():
+        _w.simplefilter("error")
+        discover_dfg(add_sim_timestamp(straddling_logger.to_dataframe()))
+
+
+# --------------------------------------------------------------------------- #
+# Between-run range annotations on the renderers (cross-run graph only).
+# --------------------------------------------------------------------------- #
+
+
+def _cross_run_tables():
+    """Minimal node/edge tables shaped like `_dfg_across_runs` output."""
+    nodes = pd.DataFrame(
+        {
+            "activity": ["waiting", "treatment"],
+            "count": [3.5, 2.0],
+            "count_run_min": [1, 2],
+            "count_run_max": [7, 2],
+        }
+    )
+    edges = pd.DataFrame(
+        {
+            "source": ["waiting"],
+            "target": ["treatment"],
+            "frequency": [3.5],
+            "mean_time": [42.0],
+            "median_time": [40.0],
+            "max_time": [60.0],
+            "min_time": [20.0],
+            "standard_deviation_time": [5.0],
+            "probability": [1.0],
+            "frequency_run_min": [1],
+            "frequency_run_max": [7],
+            "mean_time_run_min": [35.0],
+            "mean_time_run_max": [51.0],
+        }
+    )
+    return nodes, edges
+
+
+def test_graphviz_shows_between_run_ranges_when_the_columns_are_present():
+    nodes, edges = _cross_run_tables()
+    src = dfg_to_graphviz(nodes, edges).source
+
+    assert "n=3.5 (1–7)" in src  # node count range and edge frequency range
+    assert "mean=42.0 minutes (35.0–51.0 across runs)" in src
+
+
+def test_graphviz_between_run_ranges_hidden_when_asked():
+    nodes, edges = _cross_run_tables()
+    src = dfg_to_graphviz(nodes, edges, show_between_run_ci=False).source
+
+    assert "across runs" not in src
+    assert "(1–7)" not in src
+
+
+def test_graphviz_time_range_only_shown_for_the_mean_metric():
+    nodes, edges = _cross_run_tables()
+    src = dfg_to_graphviz(nodes, edges, time_metric="median").source
+
+    assert "across runs" not in src
+    # the count ranges are metric-independent and still shown
+    assert "(1–7)" in src
+
+
+def test_between_run_ranges_are_a_noop_on_a_plain_single_run_graph(straddling_logger):
+    """Mutation guard: a single-run graph has none of the range columns, so
+    the default `show_between_run_ci=True` must change nothing."""
+    nodes, edges = discover_dfg(add_sim_timestamp(straddling_logger.to_dataframe()))
+    with_flag = dfg_to_graphviz(nodes.copy(), edges.copy()).source
+    without = dfg_to_graphviz(
+        nodes.copy(), edges.copy(), show_between_run_ci=False
+    ).source
+    assert with_flag == without
+
+
+def test_cytoscape_elements_carry_the_between_run_ranges():
+    nodes, edges = _cross_run_tables()
+    cy_nodes, cy_edges = process_nodes_and_edges_for_cytoscape(nodes, edges)
+
+    assert "(1–7)" in cy_nodes[0]["data"]["label"]
+    assert "across runs" in cy_edges[0]["data"]["label"]

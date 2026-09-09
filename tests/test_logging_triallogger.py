@@ -1717,3 +1717,261 @@ def test_to_pickle_with_an_unpicklable_scenario_names_the_scenario(two_run_logge
 
     with pytest.raises((TypeError, AttributeError), match="scenario"):
         trial.to_pickle(io.BytesIO())
+
+
+# --------------------------------------------------------------------------- #
+# generate_dfg - trial-level process maps
+#
+# Three routes: the representative run (default), one chosen run
+# (`run_number=`), and one combined cross-run map (`across_runs=True`). The
+# cross-run figures are hand-computed from `branching_two_runs` below.
+# --------------------------------------------------------------------------- #
+
+
+def _edge_lines(source: str) -> list[str]:
+    return [ln for ln in source.splitlines() if "->" in ln]
+
+
+def test_generate_dfg_run_number_and_across_runs_are_mutually_exclusive(
+    two_run_loggers,
+):
+    with pytest.raises(ValueError, match="not both"):
+        TrialLogger(two_run_loggers).generate_dfg(run_number=1, across_runs=True)
+
+
+def test_generate_dfg_unknown_run_number_raises(two_run_loggers):
+    with pytest.raises(ValueError, match="not in this trial"):
+        TrialLogger(two_run_loggers).generate_dfg(run_number=99)
+
+
+def test_generate_dfg_run_number_delegates_to_that_eventlogger(two_run_loggers):
+    trial = TrialLogger(two_run_loggers)
+
+    via_trial = trial.generate_dfg(run_number=2)
+    via_logger = trial.get_log_by_run(2).generate_dfg()
+
+    # Same graph as calling generate_dfg on that run's own logger, plus an
+    # injected title naming the run.
+    assert _edge_lines(via_trial.source) == _edge_lines(via_logger.source)
+    assert 'label="Run 2 of 2"' in via_trial.source
+
+
+@pytest.fixture
+def spread_runs():
+    """Four runs whose mean time-in-system is 10, 20, 30, 100.
+
+    Median of [10, 20, 30, 100] is 25, so runs 2 and 3 are equidistant and
+    the representative run is the lower id, 2. The mean (40) would instead
+    pick run 3, and "farthest from the median" would pick run 4 - so this
+    fixture separates the correct rule from both plausible wrong ones.
+    """
+
+    def _run(run_number, span):
+        lg = EventLogger(run_number=run_number)
+        lg.log_arrival(entity_id=1, time=0.0)
+        lg.log_queue(entity_id=1, event="waiting", time=0.0)
+        lg.log_departure(entity_id=1, time=float(span))
+        return lg
+
+    return [_run(1, 10), _run(2, 20), _run(3, 30), _run(4, 100)]
+
+
+def test_representative_run_selection(spread_runs):
+    from vidigi.logging import _representative_run
+
+    assert _representative_run(TrialLogger(spread_runs).to_dataframe()) == 2
+
+
+def test_representative_run_uses_the_median_not_the_mean(spread_runs):
+    """Mutation guard: swapping `.median()` for `.mean()` in
+    `_representative_run` would return run 3 for this fixture."""
+    df = TrialLogger(spread_runs).to_dataframe()
+    span = df.groupby(["run_number", "entity_id"])["time"].agg(
+        lambda s: s.max() - s.min()
+    )
+    per_run = span.groupby("run_number").mean().sort_index()
+
+    assert (per_run - per_run.median()).abs().idxmin() == 2
+    assert (per_run - per_run.mean()).abs().idxmin() == 3  # the wrong answer
+
+
+def test_representative_run_single_run_trial(single_run_logger):
+    from vidigi.logging import _representative_run
+
+    assert _representative_run(TrialLogger([single_run_logger]).to_dataframe()) == 1
+
+
+def test_generate_dfg_default_is_the_representative_run(spread_runs):
+    g = TrialLogger(spread_runs).generate_dfg()
+    assert "Run 2 of 4 (representative" in g.source
+
+
+@pytest.fixture
+def branching_two_runs():
+    """Two runs, entity id reused, one branch in run 1.
+
+    Run 1: entity 1  arrival,waiting@0 -> treat@10 -> depart@20
+           entity 2  arrival,waiting@0 -> depart@50
+    Run 2: entity 1  arrival,waiting@0 -> treat@30 -> depart@40
+
+    Hand-computed cross-run tables (minutes, 2 runs):
+
+    edge                pooled freq  per-run freq   mean_time  per-run mean
+    ------------------  -----------  -------------  ---------  ------------
+    arrival -> waiting  3            [2, 1]         0.0        [0, 0]
+    treat -> depart     2            [1, 1]         10.0       [10, 10]
+    waiting -> depart   1            [1, 0]         50.0       [50]
+    waiting -> treat    2            [1, 1]         20.0       [10, 30]
+
+    node       total  per-run
+    ---------  -----  -------
+    arrival    3      [2, 1]
+    depart     3      [2, 1]
+    treat      2      [1, 1]
+    waiting    3      [2, 1]
+
+    Counts reported per replication are total / 2.
+    """
+
+    def _mk(run_number, journeys):
+        lg = EventLogger(run_number=run_number)
+        for entity_id, steps in journeys:
+            for event, t in steps:
+                if event == "arrival":
+                    lg.log_arrival(entity_id=entity_id, time=float(t))
+                elif event == "depart":
+                    lg.log_departure(entity_id=entity_id, time=float(t))
+                elif event == "treat":
+                    lg.log_resource_use_start(
+                        entity_id=entity_id, resource_id=1, time=float(t), event="treat"
+                    )
+                else:
+                    lg.log_queue(entity_id=entity_id, event=event, time=float(t))
+        return lg
+
+    run1 = _mk(
+        1,
+        [
+            (1, [("arrival", 0), ("waiting", 0), ("treat", 10), ("depart", 20)]),
+            (2, [("arrival", 0), ("waiting", 0), ("depart", 50)]),
+        ],
+    )
+    run2 = _mk(
+        2,
+        [(1, [("arrival", 0), ("waiting", 0), ("treat", 30), ("depart", 40)])],
+    )
+    return [run1, run2]
+
+
+def test_dfg_across_runs_tables_are_hand_computed(branching_two_runs):
+    from vidigi.logging import _dfg_across_runs
+
+    nodes, edges = _dfg_across_runs(
+        TrialLogger(branching_two_runs).to_dataframe(),
+        time_unit="minutes",
+        warm_up=None,
+        occupancy_metrics=False,
+        occupancy_snapshot_interval=1,
+    )
+
+    got_edges = edges.set_index(["source", "target"])[
+        [
+            "frequency",
+            "probability",
+            "frequency_run_min",
+            "frequency_run_max",
+            "mean_time",
+            "mean_time_run_min",
+            "mean_time_run_max",
+        ]
+    ]
+    expected_edges = pd.DataFrame(
+        {
+            "frequency": [1.5, 1.0, 0.5, 1.0],
+            "probability": [1.0, 1.0, 1 / 3, 2 / 3],
+            "frequency_run_min": [1.0, 1.0, 0.0, 1.0],
+            "frequency_run_max": [2.0, 1.0, 1.0, 1.0],
+            "mean_time": [0.0, 10.0, 50.0, 20.0],
+            "mean_time_run_min": [0.0, 10.0, 50.0, 10.0],
+            "mean_time_run_max": [0.0, 10.0, 50.0, 30.0],
+        },
+        index=pd.MultiIndex.from_tuples(
+            [
+                ("arrival", "waiting"),
+                ("treat", "depart"),
+                ("waiting", "depart"),
+                ("waiting", "treat"),
+            ],
+            names=["source", "target"],
+        ),
+    )
+    pd.testing.assert_frame_equal(got_edges, expected_edges)
+
+    got_nodes = nodes.set_index("activity")[["count", "count_run_min", "count_run_max"]]
+    expected_nodes = pd.DataFrame(
+        {
+            "count": [1.5, 1.5, 1.0, 1.5],
+            "count_run_min": [1.0, 1.0, 1.0, 1.0],
+            "count_run_max": [2.0, 2.0, 1.0, 2.0],
+        },
+        index=pd.Index(["arrival", "depart", "treat", "waiting"], name="activity"),
+    )
+    pd.testing.assert_frame_equal(got_nodes, expected_nodes)
+
+
+def test_dfg_across_runs_probabilities_sum_to_one_per_source(branching_two_runs):
+    from vidigi.logging import _dfg_across_runs
+
+    _, edges = _dfg_across_runs(
+        TrialLogger(branching_two_runs).to_dataframe(),
+        time_unit="minutes",
+        warm_up=None,
+        occupancy_metrics=False,
+        occupancy_snapshot_interval=1,
+    )
+    per_source = edges.groupby("source")["probability"].sum()
+    assert per_source.round(9).eq(1.0).all()
+
+
+def test_generate_dfg_across_runs_warns_without_warm_up(branching_two_runs):
+    with pytest.warns(UserWarning, match="no warm-up period"):
+        TrialLogger(branching_two_runs).generate_dfg(across_runs=True)
+
+
+def test_generate_dfg_across_runs_no_warning_with_warm_up(branching_two_runs):
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        TrialLogger(branching_two_runs).generate_dfg(across_runs=True, warm_up=1)
+
+
+def test_generate_dfg_across_runs_graphviz_carries_the_caveat_and_ranges(
+    branching_two_runs,
+):
+    g = TrialLogger(branching_two_runs).generate_dfg(across_runs=True, warm_up=1)
+
+    assert "replications combined" in g.source
+    assert "simulation output, not observed data" in g.source
+    assert "(1–2)" in g.source  # a between-run count range
+
+
+def test_generate_dfg_across_runs_occupancy_averages_over_runs(
+    branching_two_runs, monkeypatch
+):
+    """`occupancy_metrics=True` must ask `activity_occupancy_stats` for the
+    per-replication (`across_runs="average"`) figures, not the pool."""
+    seen = {}
+    import vidigi.logging as logging_module
+
+    real = logging_module.activity_occupancy_stats
+
+    def spy(event_log, **kwargs):
+        seen["across_runs"] = kwargs.get("across_runs")
+        return real(event_log, **kwargs)
+
+    monkeypatch.setattr(logging_module, "activity_occupancy_stats", spy)
+
+    TrialLogger(branching_two_runs).generate_dfg(
+        across_runs=True, warm_up=1, occupancy_metrics=True
+    )
+
+    assert seen["across_runs"] == "average"
