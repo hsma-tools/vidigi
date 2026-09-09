@@ -1061,6 +1061,62 @@ def _ensure_int(value, name: str) -> int:
     )
 
 
+def _resolve_step_snapshot_overrides(
+    overrides,
+    *,
+    valid_events=None,
+    param_name: str = "step_snapshot_max_overrides",
+) -> dict:
+    """Validate a per-event ``step_snapshot_max`` override mapping.
+
+    Parameters
+    ----------
+    overrides : Mapping or None
+        A mapping of event name to icon cap. ``None`` means "no overrides".
+    valid_events : iterable, optional
+        The event names that actually occur in the data. When given, a warning
+        is raised for any override key not among them, to catch a misspelt
+        event name (which would otherwise silently do nothing).
+    param_name : str
+        Name used in error and warning messages.
+
+    Returns
+    -------
+    dict
+        ``{}`` when `overrides` is ``None``; otherwise a plain dict with every
+        value coerced to ``int`` (a float value rounds, with a warning, exactly
+        as a scalar `step_snapshot_max` would).
+    """
+    if overrides is None:
+        return {}
+
+    if not isinstance(overrides, Mapping):
+        raise TypeError(
+            f"`{param_name}` must be a mapping of event name to cap, "
+            f"not {type(overrides).__name__}."
+        )
+
+    resolved = {
+        key: _ensure_int(value, f"{param_name}[{key!r}]")
+        for key, value in overrides.items()
+    }
+
+    if valid_events is not None:
+        known = set(valid_events)
+        unknown = [key for key in resolved if key not in known]
+        if unknown:
+            listed = ", ".join(repr(key) for key in unknown)
+            warnings.warn(
+                f"`{param_name}` has keys that match no event in the data: "
+                f"{listed}. These overrides will have no effect - check for a "
+                f"misspelt event name.",
+                UserWarning,
+                stacklevel=3,
+            )
+
+    return resolved
+
+
 def _enforce_int_params(param_names, allow_none=()):
     """Decorator to auto-check certain parameters are integer-like.
 

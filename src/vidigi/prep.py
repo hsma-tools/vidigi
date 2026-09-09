@@ -15,6 +15,7 @@ from vidigi.utils import (
     _coerce_event_log,
     _enforce_int_params,
     _resolve_direction_sign,
+    _resolve_step_snapshot_overrides,
     _warn_on_duplicate_event_positions,
 )
 
@@ -149,6 +150,7 @@ def reshape_for_animations(
     every_x_time_units: int = 10,
     limit_duration: int | None = 10 * 60 * 24,
     step_snapshot_max: int = 60,
+    step_snapshot_max_overrides: dict | None = None,
     time_col_name: str = "time",
     entity_col_name: str = "entity_id",
     event_type_col_name: str = "event_type",
@@ -182,6 +184,12 @@ def reshape_for_animations(
         from `warm_up` to `limit_duration`.
     step_snapshot_max : int, optional
         The maximum number of entities to include in each snapshot for each event (default is 60).
+        Acts as the fallback for any event not named in `step_snapshot_max_overrides`.
+    step_snapshot_max_overrides : dict, optional
+        A mapping of event name to a per-event `step_snapshot_max`, e.g.
+        ``{"waiting_for_bed": 250}``. Any event not listed uses the scalar
+        `step_snapshot_max`. Default `None` (every event uses `step_snapshot_max`).
+        A key that matches no event in the log raises a warning.
     time_col_name : str, default="time"
         Name of the column in `event_log` that contains the timestamp of each event.
         Timestamps should represent the number of time units since the simulation began.
@@ -262,7 +270,8 @@ def reshape_for_animations(
     - It handles entities who are present in the system at each snapshot time.
     - Entities are ranked within each event based on their arrival order.
     - A maximum number of patients per event can be set to limit the number of entities who will be
-      displayed on screen within any one event type at a time.
+      displayed on screen within any one event type at a time. This is `step_snapshot_max`,
+      optionally overridden per event by `step_snapshot_max_overrides`.
     - This function assumes entities only exist in one place/queue at a time. Simulations where this
       assumption does not hold may display unexpected behaviour.
     - An 'exit' event is added for each entity at the end of their journey.
@@ -302,6 +311,14 @@ def reshape_for_animations(
         event_col_name=event_col_name,
         pathway_col_name=pathway_col_name,
         frame_arg="event_log",
+    )
+
+    # Resolve the per-event snapshot caps once, up front. `caps` is a plain dict of
+    # event name -> cap; any event not in it falls back to the scalar `step_snapshot_max`
+    # inside the loop below.
+    caps = _resolve_step_snapshot_overrides(
+        step_snapshot_max_overrides,
+        valid_events=event_log[event_col_name].unique(),
     )
 
     # Begin logic
@@ -526,23 +543,34 @@ def reshape_for_animations(
                     event_type_col_name
                 ].isin(excluded_types)
 
-                # 2. Filter out rows where rank exceeds step_snapshot_max + 1 (only for non-excluded types)
+                # 2. Filter out rows where rank exceeds the cap + 1 (only for non-excluded
+                # types). The cap is per-event: `step_snapshot_max` unless the event has
+                # an entry in `step_snapshot_max_overrides`.
+                row_cap = (
+                    most_recent_events_time_unit_ungrouped[event_col_name]
+                    .map(caps)
+                    .fillna(step_snapshot_max)
+                )
                 keep_mask = (~to_process_mask) | (
-                    most_recent_events_time_unit_ungrouped["rank"]
-                    <= (step_snapshot_max + 1)
+                    most_recent_events_time_unit_ungrouped["rank"] <= (row_cap + 1)
                 )
                 most_recent_events_time_unit_ungrouped = (
                     most_recent_events_time_unit_ungrouped[keep_mask].copy()
                 )
 
                 # 3. Calculate the 'additional' column value only for the boundary rows
-                # (Re-evaluate masks on the trimmed dataframe)
+                # (Re-evaluate masks - and the per-event cap - on the trimmed dataframe)
                 still_processing_mask = ~most_recent_events_time_unit_ungrouped[
                     event_type_col_name
                 ].isin(excluded_types)
+                row_cap = (
+                    most_recent_events_time_unit_ungrouped[event_col_name]
+                    .map(caps)
+                    .fillna(step_snapshot_max)
+                )
                 boundary_row_mask = still_processing_mask & (
                     most_recent_events_time_unit_ungrouped["rank"]
-                    == float(step_snapshot_max + 1)
+                    == (row_cap + 1).astype(float)
                 )
 
                 most_recent_events_time_unit_ungrouped.loc[
@@ -597,8 +625,8 @@ def reshape_for_animations(
     # a real entity's absence from `full_entity_df` at a snapshot it was present
     # for is only ever the cap's doing.
     #
-    # "Individually-rendered" excludes the boundary row (`rank == step_snapshot_max
-    # + 1`, marked by a non-null `additional` here already) - `generate_animation_df`
+    # "Individually-rendered" excludes the boundary row (`rank == cap + 1` for that
+    # event, marked by a non-null `additional` here already) - `generate_animation_df`
     # relabels that row's entity id to a stable synthetic overflow id before
     # drawing it, so an entity playing that role never has *its own* id rendered,
     # even though its row survives in this dataframe. Left in the continuity chain,
@@ -720,6 +748,7 @@ def generate_animation_df(
     wrap_queues_at: int | None = 20,
     wrap_resources_at: int | None = 20,
     step_snapshot_max: int = 60,
+    step_snapshot_max_overrides: dict | None = None,
     gap_between_entities: int = 10,
     gap_between_resources: int = 10,
     gap_between_resource_rows: int = 30,
@@ -759,7 +788,14 @@ def generate_animation_df(
     wrap_resources_at : int, optional
         Number of resources to show before wrapping to a new row (default is 20).
     step_snapshot_max : int, optional
-        Maximum number of patients to show in each snapshot (default is 60).
+        Maximum number of patients to show in each snapshot (default is 60). Acts as
+        the fallback for any event not named in `step_snapshot_max_overrides`. Must
+        match the value passed to `reshape_for_animations`.
+    step_snapshot_max_overrides : dict, optional
+        A mapping of event name to a per-event `step_snapshot_max`, used here to
+        place the `+ n more` overflow label. Must match what was passed to
+        `reshape_for_animations`, which is where the row-shedding actually happens.
+        Default `None`.
     gap_between_entities : int, optional
         Horizontal spacing between entities in pixels (default is 10).
     gap_between_resources : int, optional
@@ -927,6 +963,13 @@ def generate_animation_df(
         event_position_df, event_col_name=event_col_name, stacklevel=3
     )
 
+    # Per-event snapshot caps. The row-shedding already happened in
+    # `reshape_for_animations`; here `caps` only feeds the `+ n more` label placement
+    # below. No `valid_events` check - `reshape_for_animations` already warned about
+    # unknown keys on the usual `animate_activity_log` path, and a duplicate warning
+    # would be noise.
+    caps = _resolve_step_snapshot_overrides(step_snapshot_max_overrides)
+
     if save_intermediate_outputs is not False:
         if isinstance(save_intermediate_outputs, str):
             extra_path = save_intermediate_outputs
@@ -934,14 +977,28 @@ def generate_animation_df(
             extra_path = ""
 
     # `wrap_queues_at=None` means "do not wrap", which is handled further down. Only
-    # check the multiple when wrapping is actually in use.
-    if wrap_queues_at is not None and step_snapshot_max % wrap_queues_at != 0:
-        warnings.warn(
-            "`step_snapshot_max` is not a multiple of `wrap_queues_at`."
-            "The animation will display better if this is resolved.",
-            UserWarning,
-            stacklevel=3,
+    # check the multiple when wrapping is actually in use - for the scalar cap and
+    # each per-event override alike.
+    if wrap_queues_at is not None:
+        if step_snapshot_max % wrap_queues_at != 0:
+            warnings.warn(
+                "`step_snapshot_max` is not a multiple of `wrap_queues_at`."
+                "The animation will display better if this is resolved.",
+                UserWarning,
+                stacklevel=3,
+            )
+        off_grid = sorted(
+            event for event, cap in caps.items() if cap % wrap_queues_at != 0
         )
+        if off_grid:
+            listed = ", ".join(repr(event) for event in off_grid)
+            warnings.warn(
+                f"`step_snapshot_max_overrides` values for {listed} are not multiples "
+                f"of `wrap_queues_at`. The animation will display better if this is "
+                f"resolved.",
+                UserWarning,
+                stacklevel=3,
+            )
 
     if debug_mode:
         print(
@@ -1055,8 +1112,11 @@ def generate_animation_df(
     # np.where evaluates both branches, so the division must be guarded rather than
     # relying on the condition to short-circuit it.
     if wrap_queues_at is not None:
+        # The overflow row sits at rank `cap + 1`, where `cap` is this event's
+        # per-event override or the scalar `step_snapshot_max`.
+        overflow_rank = queues[event_col_name].map(caps).fillna(step_snapshot_max) + 1
         queues["x_final"] = np.where(
-            queues["rank"] != step_snapshot_max + 1,
+            queues["rank"] != overflow_rank.to_numpy(),
             queues["x_final"],
             queues["x_final"]
             + sign.to_numpy() * (gap_between_entities * (wrap_queues_at / 2)),
@@ -1235,12 +1295,12 @@ def generate_animation_df(
             # so there is a consistent length that they can be used to compare across
             max_count = max(exceeded_snapshot_limit["additional"])
 
-            # If step snapshot max is very low, we don't want to display the icon as '+ x more' -
-            # we simply want to display it as 'x'
-            if step_snapshot_max <= 1:
-                display_fig_string = "raw"
-            else:
-                display_fig_string = "more"
+            # If this event's snapshot cap is very low, we don't want to display the
+            # icon as '+ x more' - we simply want to display it as 'x'. Decided per
+            # event from its override (or the scalar `step_snapshot_max`).
+            def _display_fig_string(event):
+                cap = caps.get(event, step_snapshot_max)
+                return "raw" if cap <= 1 else "more"
 
             # Update the icon column conditionally
             exceeded_snapshot_limit["icon"] = exceeded_snapshot_limit.apply(
@@ -1252,7 +1312,7 @@ def generate_animation_df(
                     ),
                     bar_length=gauge_segments,
                     display_count_as_fig=True,
-                    count_string_format=display_fig_string,
+                    count_string_format=_display_fig_string(row[event_col_name]),
                 ),
                 axis=1,
             )

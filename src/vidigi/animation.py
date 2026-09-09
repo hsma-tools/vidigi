@@ -2050,6 +2050,7 @@ def animate_activity_log(
     wrap_queues_at: int | None = 20,
     wrap_resources_at: int | None = 20,
     step_snapshot_max: int = 60,
+    step_snapshot_max_overrides: dict | None = None,
     limit_duration: int | None = None,
     plotly_height: int = 900,
     plotly_width: int | None = None,
@@ -2182,7 +2183,15 @@ def animate_activity_log(
         20).
     step_snapshot_max : int, optional
         Maximum number of patients to show in each snapshot per event (default
-        is 60).
+        is 60). Any entities beyond this are collapsed into a `+ n more` label
+        (or a gauge, see `step_snapshot_limit_gauges`). Acts as the fallback for
+        any event not named in `step_snapshot_max_overrides`.
+    step_snapshot_max_overrides : dict, optional
+        A mapping of event name to a per-event `step_snapshot_max`, e.g.
+        ``{"waiting_for_bed": 250}`` to show a long bottleneck queue in full
+        while keeping every other step capped at `step_snapshot_max`. Any event
+        not listed uses the scalar `step_snapshot_max`. Default `None`. A key
+        that matches no event in the log raises a warning.
     limit_duration : int, optional
         The time at which the animation stops (default is None, which
         auto-adjusts to the maximum time in the provided event log). Together
@@ -2517,6 +2526,7 @@ def animate_activity_log(
         every_x_time_units=every_x_time_units,
         limit_duration=limit_duration,
         step_snapshot_max=step_snapshot_max,
+        step_snapshot_max_overrides=step_snapshot_max_overrides,
         debug_mode=debug_mode,
         time_col_name=time_col_name,
         entity_col_name=entity_col_name,
@@ -2542,6 +2552,7 @@ def animate_activity_log(
         wrap_queues_at=wrap_queues_at,
         wrap_resources_at=wrap_resources_at,
         step_snapshot_max=step_snapshot_max,
+        step_snapshot_max_overrides=step_snapshot_max_overrides,
         gap_between_entities=gap_between_entities,
         gap_between_resources=gap_between_resources,
         gap_between_resource_rows=gap_between_resource_rows,

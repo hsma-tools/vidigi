@@ -26,7 +26,8 @@ is the last of the three step-by-step functions
 The appearance arguments below are accepted by **both**, except for a handful
 that act while the event log is being reshaped into per-frame snapshots
 (`wrap_queues_at`, `gap_between_entities`, `gap_between_queue_rows`,
-`step_snapshot_max`, `custom_entity_icon_list`, and the gauge arguments). Those
+`step_snapshot_max`, `step_snapshot_max_overrides`, `custom_entity_icon_list`,
+and the gauge arguments). Those
 live on `animate_activity_log` only — if you are using the step-by-step route,
 pass them to `reshape_for_animations` / `generate_animation_df` instead.
 :::
@@ -325,6 +326,7 @@ When more entities are at a step than will fit, vidigi shows a
 | Argument | Default | Effect |
 |---|---|---|
 | `step_snapshot_max` | `60` | Maximum entity icons drawn per step before the `+ n more` label appears (`animate_activity_log` only). |
+| `step_snapshot_max_overrides` | `None` | A `{event: cap}` dict setting a per-event `step_snapshot_max` — e.g. `{"waiting_for_bed": 250}` to show one long bottleneck queue in full while every other step stays capped at `step_snapshot_max` (`animate_activity_log` only). |
 | `step_snapshot_limit_gauges` | `False` | Replace the `+ n more` text with a segmented gauge (`animate_activity_log` only). |
 | `gauge_segments` | `10` | Number of segments in that gauge — higher is finer-grained. |
 | `gauge_max_override` | `None` | Fix the gauge's upper bound instead of taking it from the busiest observed step. |
