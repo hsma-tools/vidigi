@@ -199,6 +199,11 @@
     - Both are thin wrappers over the existing `vidigi.animation.animate_activity_log` / `vidigi.prep.reshape_for_animations`, which already accepted a logger for `event_log` — this is the method-form sugar on top
     - On `TrialLogger`, `run_number=` selects the replication to animate; a multi-run trial without it raises the same `ValueError` listing the runs. `TrialLogger.animate_activity_log` also falls back to the trial's attached `scenario` when none is passed, like the `plot_resource_utilisation` delegators
     - `reshape_for_animations()` is the entry point to the manual three-step pipeline; `generate_animation_df` / `generate_animation` stay as functions since they act on the intermediate DataFrame, not the logger — the method docstring shows the full sequence
+- Lowered the minimum `pandas` to 1.5.3 (was 2.0.1) and the minimum `numpy` to 1.24.0 (was 1.26.2), so vidigi installs alongside an older scientific-Python stack
+    - An audit of every pandas/numpy call in the library found nothing that needs the previous floors — the numpy API used all predates 1.20, and no pandas 2.x-only feature is used. The old bounds had been in place, unexplained, since the first commit
+    - In practice this only widens the resolver's choices on Python 3.10 and 3.11; on 3.12+ pip already picks a newer pandas/numpy that ships wheels for that interpreter, regardless of this floor
+    - Verified once against the floor (`pandas==1.5.3`, `numpy==1.24.0`) with the full test suite; a continuous minimum-version CI job is still to be added, so the `tox` `min-versions` / `min-numpy-pandas-simpy` environments (updated to match) are the check until then
+    - Dropped the `packaging` dependency, which was no longer imported anywhere — it had been added for a pandas-2.2 version gate that was later replaced with a version-agnostic approach
 
 ### New metrics
 
