@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import simpy
 from sim_tools.distributions import Exponential, Lognormal, Uniform, Normal, Bernoulli
-from vidigi.resources import populate_store
+from vidigi.resources import VidigiStore
 
 TRACE = False
 
@@ -288,50 +288,30 @@ class Model:
 
         """
         # Shared Resources
-        self.triage_cubicles = simpy.Store(self.env)
-        populate_store(
-            num_resources=g.n_triage, simpy_store=self.triage_cubicles, sim_env=self.env,
-            label="triage",
+        self.triage_cubicles = VidigiStore(
+            self.env, num_resources=g.n_triage, label="triage"
         )
 
-        self.registration_cubicles = simpy.Store(self.env)
-        populate_store(
-            num_resources=g.n_reg,
-            simpy_store=self.registration_cubicles,
-            sim_env=self.env,
-            label="registration",
+        self.registration_cubicles = VidigiStore(
+            self.env, num_resources=g.n_reg, label="registration"
         )
 
         # Non-trauma
-        self.exam_cubicles = simpy.Store(self.env)
-        populate_store(
-            num_resources=g.n_exam, simpy_store=self.exam_cubicles, sim_env=self.env,
-            label="exam",
+        self.exam_cubicles = VidigiStore(
+            self.env, num_resources=g.n_exam, label="exam"
         )
 
-        self.non_trauma_treatment_cubicles = simpy.Store(self.env)
-        populate_store(
-            num_resources=g.n_cubicles_non_trauma_treat,
-            simpy_store=self.non_trauma_treatment_cubicles,
-            sim_env=self.env,
-            label="non_trauma_treatment",
+        self.non_trauma_treatment_cubicles = VidigiStore(
+            self.env, num_resources=g.n_cubicles_non_trauma_treat, label="non_trauma_treatment"
         )
 
         # Trauma
-        self.trauma_stabilisation_bays = simpy.Store(self.env)
-        populate_store(
-            num_resources=g.n_trauma,
-            simpy_store=self.trauma_stabilisation_bays,
-            sim_env=self.env,
-            label="trauma_stabilisation",
+        self.trauma_stabilisation_bays = VidigiStore(
+            self.env, num_resources=g.n_trauma, label="trauma_stabilisation"
         )
 
-        self.trauma_treatment_cubicles = simpy.Store(self.env)
-        populate_store(
-            num_resources=g.n_cubicles_trauma_treat,
-            simpy_store=self.trauma_treatment_cubicles,
-            sim_env=self.env,
-            label="trauma_treatment",
+        self.trauma_treatment_cubicles = VidigiStore(
+            self.env, num_resources=g.n_cubicles_trauma_treat, label="trauma_treatment"
         )
 
     # A generator function that represents the DES generator for patient
@@ -423,7 +403,7 @@ class Model:
 
         ###################################################
         # request sign-in/triage
-        triage_resource = yield self.triage_cubicles.get()
+        triage_resource = yield self.triage_cubicles.get_direct()
 
         # record the waiting time for triage
         patient.wait_triage = self.env.now - patient.arrival
@@ -476,7 +456,7 @@ class Model:
 
         #########################################################
         # request registration clerk
-        registration_resource = yield self.registration_cubicles.get()
+        registration_resource = yield self.registration_cubicles.get_direct()
 
         # record the waiting time for registration
         patient.wait_reg = self.env.now - start_wait
@@ -530,7 +510,7 @@ class Model:
 
         #########################################################
         # request examination resource
-        examination_resource = yield self.exam_cubicles.get()
+        examination_resource = yield self.exam_cubicles.get_direct()
 
         # record the waiting time for examination to begin
         patient.wait_exam = self.env.now - start_wait
@@ -597,7 +577,7 @@ class Model:
             ###################################################
             # request treatment cubicle
 
-            non_trauma_treatment_resource = yield self.non_trauma_treatment_cubicles.get()
+            non_trauma_treatment_resource = yield self.non_trauma_treatment_cubicles.get_direct()
 
             # record the waiting time for treatment
             patient.wait_treat = self.env.now - start_wait
@@ -675,7 +655,7 @@ class Model:
 
         ###################################################
         # request sign-in/triage
-        triage_resource = yield self.triage_cubicles.get()
+        triage_resource = yield self.triage_cubicles.get_direct()
 
         # record the waiting time for triage
         patient.wait_triage = self.env.now - patient.arrival
@@ -729,7 +709,7 @@ class Model:
 
         ###################################################
         # request trauma room
-        trauma_resource = yield self.trauma_stabilisation_bays.get()
+        trauma_resource = yield self.trauma_stabilisation_bays.get_direct()
 
         self.event_log.append(
             {
@@ -779,7 +759,7 @@ class Model:
 
         ########################################################
         # request treatment cubicle
-        trauma_treatment_resource = yield self.trauma_treatment_cubicles.get()
+        trauma_treatment_resource = yield self.trauma_treatment_cubicles.get_direct()
 
         # record the waiting time for trauma
         patient.wait_treat = self.env.now - start_wait

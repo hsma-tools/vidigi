@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import simpy
 from sim_tools.distributions import Exponential, Lognormal
-from vidigi.resources import populate_store
+from vidigi.resources import VidigiStore
 
 
 # Class to store global parameter values.  We don't create an instance of this
@@ -125,12 +125,9 @@ class Model:
             1. Nurses/treatment bays (same thing in this model)
 
         '''
-        self.treatment_cubicles = simpy.Store(self.env)
-
-        populate_store(num_resources=g.n_cubicles,
-                       simpy_store=self.treatment_cubicles,
-                       sim_env=self.env,
-                       label="treatment_cubicle")
+        self.treatment_cubicles = VidigiStore(self.env,
+                                              num_resources=g.n_cubicles,
+                                              label="treatment_cubicle")
 
     # A generator function that represents the DES generator for patient
     # arrivals
@@ -192,7 +189,7 @@ class Model:
         )
 
         # Seize a treatment resource when available
-        treatment_resource = yield self.treatment_cubicles.get()
+        treatment_resource = yield self.treatment_cubicles.get_direct()
 
         # record the waiting time for registration
         self.wait_treat = self.env.now - start_wait

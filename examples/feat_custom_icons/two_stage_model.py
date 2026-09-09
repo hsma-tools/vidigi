@@ -10,7 +10,7 @@ import pandas as pd
 import simpy
 from sim_tools.distributions import Exponential, Lognormal
 
-from vidigi.resources import populate_store
+from vidigi.resources import VidigiStore
 
 
 class g:
@@ -38,20 +38,11 @@ class Model:
         self.patient_counter = 0
         self.run_number = run_number
 
-        self.nurses = simpy.Store(self.env)
-        populate_store(
-            num_resources=g.n_nurses,
-            simpy_store=self.nurses,
-            sim_env=self.env,
-            label="nurse",
+        self.nurses = VidigiStore(
+            self.env, num_resources=g.n_nurses, label="nurse"
         )
-
-        self.beds = simpy.Store(self.env)
-        populate_store(
-            num_resources=g.n_beds,
-            simpy_store=self.beds,
-            sim_env=self.env,
-            label="bed",
+        self.beds = VidigiStore(
+            self.env, num_resources=g.n_beds, label="bed"
         )
 
         seed = run_number * g.random_number_set
@@ -85,7 +76,7 @@ class Model:
         self._log(patient, "arrival", "arrival_departure")
 
         self._log(patient, "nurse_wait_begins", "queue")
-        nurse = yield self.nurses.get()
+        nurse = yield self.nurses.get_direct()
         self._log(
             patient, "nurse_begins", "resource_use", resource_id=nurse.id_attribute
         )
@@ -99,7 +90,7 @@ class Model:
         self.nurses.put(nurse)
 
         self._log(patient, "bed_wait_begins", "queue")
-        bed = yield self.beds.get()
+        bed = yield self.beds.get_direct()
         self._log(
             patient, "bed_begins", "resource_use", resource_id=bed.id_attribute
         )

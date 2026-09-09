@@ -412,6 +412,7 @@
     - It predates the `num_resources=` constructor argument and `.populate()` method on `VidigiStore` / `VidigiPriorityStore`, which now cover the same job. Build the pool with `VidigiStore(env, num_resources=N, label=...)` (or `store.populate(N, label=...)` to top one up); a plain `simpy.Store` filled with `populate_store()` should become a `VidigiStore`, a drop-in replacement for `simpy.Resource`
     - Calling it emits a `DeprecationWarning` regardless of `label` (the whole function is going, not just the unlabelled path). It still works unchanged until 3.0
     - `populate_store()` does not feed the new `count` / `num_resources` properties — another reason to populate through the store
+    - Every bundled example that used `populate_store()` is migrated to `VidigiStore(num_resources=…)` / `VidigiPriorityStore(num_resources=…)` (verified byte-identical event logs). `example_3` now demonstrates the rewritten `VidigiPriorityStore` with the direct `get(priority=…)` / `put()` pattern rather than `VidigiPriorityStoreLegacy`
 
 ### Testing
 
