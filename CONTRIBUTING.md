@@ -133,3 +133,30 @@ pre-commit run --all-files
 ```
 
 To run a single hook, give its id, for example `pre-commit run ruff-format --all-files`.
+
+<br>
+
+## Releasing
+
+vidigi follows [semantic versioning](https://semver.org/). Releases are cut from `main`; PyPI and Zenodo publishing happen automatically once a GitHub Release is created.
+
+Before releasing, check the following are all updated **to the same version number**:
+
+* [ ] `HISTORY.md` - the top section has a bare-number version header (`# 2.0.0`, not `## v2.0.0`), and, if the release contains breaking changes, opens with a `### ⚠️ Breaking changes` summary. See the HISTORY.md conventions in `CLAUDE.md`.
+* [ ] `pyproject.toml` - `version` matches that header exactly.
+* [ ] `CITATION.cff` - `version` and `date-released` (ISO `YYYY-MM-DD`) updated to this release. Leave `doi` as the all-versions Zenodo DOI (`10.5281/zenodo.14635602`) - do **not** swap in the per-version DOI.
+
+Then confirm:
+
+* [ ] `pytest` passes.
+* [ ] `quartodoc build && quarto render` runs clean locally (CI also builds docs on push to `main`, but catch failures first).
+
+To publish:
+
+1. Merge the above to `main`.
+2. Create a [GitHub Release](https://github.com/hsma-tools/vidigi/releases/new), creating a new `v`-prefixed tag (e.g. `v2.0.0`) that targets the latest `main` commit. Draw the notes from `HISTORY.md`. Publishing the release triggers:
+   * [`publish_package_pypi.yml`](.github/workflows/publish_package_pypi.yml) - builds with `hatch` and publishes to PyPI via OIDC.
+   * the Zenodo GitHub integration - archives the tag and mints a new version DOI under the [concept DOI](https://doi.org/10.5281/zenodo.14635602).
+3. The conda-forge bot opens a PR on [`vidigi-feedstock`](https://github.com/conda-forge/vidigi-feedstock) within a day or so of the PyPI upload - review and merge it to publish the conda-forge build.
+
+If the accompanying paper's citation details change (e.g. the *Journal of Simulation* article is assigned a volume/issue), update `CITATION.cff` and the Citation sections in `README.md` and `vidigi_docs/citation.qmd` together.

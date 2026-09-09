@@ -88,3 +88,10 @@ Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, sim
 - A `**BREAKING:**` bullet lands in whichever section matches its primary nature (a new capability that happens to break vs. a correction to existing wrong behaviour) — not a separate breaking-only section, since the summary at the top is what readers scan for that. Wherever it lands, it keeps the `**BREAKING:**` prefix and says what happens to callers on the defaults — usually "nothing changes", which is the reassurance most readers need.
 - Releases that meaningfully add test coverage get a `### Testing` section: a one-line before/after test count, then a few bullets on which areas gained coverage and what class of bug that guards against. High level only — users don't need individual test names, just confidence that the tested surface grew.
 - Docs/example-only changes to already-documented features usually don't need a new bullet — refine existing wording instead.
+
+# Releasing
+
+- Full procedure and the pre-release checklist live in `CONTRIBUTING.md` (`## Releasing`) — keep the two in sync when either changes.
+- Three files carry the version number and must match exactly: `HISTORY.md` top header, `pyproject.toml` `version`, and `CITATION.cff` `version` (plus `date-released`, ISO `YYYY-MM-DD`). Bumping any one is a prompt to check the other two.
+- `CITATION.cff` `doi` stays the all-versions Zenodo DOI (`10.5281/zenodo.14635602`) across releases — never swap in a per-version DOI.
+- Publishing (PyPI, Zenodo archive, conda-forge PR) is automated off a GitHub Release — don't run `hatch publish`/`twine` by hand.
