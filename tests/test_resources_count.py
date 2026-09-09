@@ -17,6 +17,8 @@ see CLAUDE.md):
     ``test_count_raises_when_pool_size_untracked`` fails.
   * ``n_waiting`` hard-wired to ``0`` or ``len(...) - 1``:
     ``test_n_waiting_sequence_through_a_queueing_run`` fails.
+  * ``_reject_over_capacity_return`` body removed: the ``test_over_capacity_*`` and
+    ``test_context_manager_double_return_*`` tests fail.
 """
 
 import warnings
@@ -313,15 +315,154 @@ def test_count_raises_after_populate_store_free_function(store_class):
 
 
 # ---------------------------------------------------------------------------
-# capacity is untouched
+# capacity reflects the pool size (changed in 2.0.0 - was always float("inf"))
 # ---------------------------------------------------------------------------
 
 
-def test_capacity_property_is_unchanged(store_class):
+def test_capacity_reflects_pool_size(store_class):
     env = simpy.Environment()
 
-    assert store_class(env, label="a").capacity == float("inf")
-    assert store_class(env, num_resources=2, capacity=5, label="b").capacity == 5
+    # Pooled store: capacity == num_resources (was float("inf") before 2.0.0).
+    pooled = store_class(env, num_resources=4, label="a")
+    assert pooled.capacity == 4 == pooled.num_resources
+
+    # Bare store: still float("inf").
+    assert store_class(env, label="b").capacity == float("inf")
+
+    # Explicit capacity= wins over the pool size.
+    assert store_class(env, num_resources=2, capacity=5, label="c").capacity == 5
+
+    # Tracks a top-up populate().
+    pooled.populate(3, label="a2")
+    assert pooled.capacity == 7 == pooled.num_resources
+
+    # capacity == count + units available, at every point in a run.
+    store = store_class(env, num_resources=3, label="d")
+    assert store.capacity == store.count + len(_available(store))
+    store.get_direct()
+    env.run(until=1)
+    assert store.capacity == store.count + len(_available(store)) == 3
+
+
+# ---------------------------------------------------------------------------
+# strict_capacity: an over-capacity return is rejected
+# ---------------------------------------------------------------------------
+
+
+def _drain_and_return(store, n):
+    """Take all ``n`` units and put them all back, so the pool is full again."""
+    env = store.env
+    got = [store.get_direct() for _ in range(n)]
+    env.run()
+    for ev in got:
+        store.put(ev.value)
+    env.run()
+    return got
+
+
+def test_over_capacity_put_raises(store_class):
+    env = simpy.Environment()
+    store = store_class(env, num_resources=2, label="bay")
+    got = _drain_and_return(store, 2)
+    assert store.count == 0 and len(_available(store)) == 2
+
+    with pytest.raises(ValueError, match="strict_capacity"):
+        store.put(got[0].value)  # a third unit into a 2-unit pool
+
+
+def test_over_capacity_return_item_raises():
+    env = simpy.Environment()
+    store = VidigiPriorityStore(env, num_resources=2, label="bay")
+    got = _drain_and_return(store, 2)
+
+    with pytest.raises(ValueError, match="strict_capacity"):
+        store.return_item(got[0].value)
+
+
+def test_strict_capacity_false_allows_the_pool_to_grow(store_class):
+    env = simpy.Environment()
+    store = store_class(env, num_resources=2, label="bay", strict_capacity=False)
+    got = _drain_and_return(store, 2)
+
+    store.put(got[0].value)  # must not raise
+    env.run()
+    assert len(_available(store)) == 3
+    # count now goes negative internally -> the existing RuntimeError guard fires.
+    with pytest.raises(RuntimeError):
+        store.count
+
+
+def test_bare_store_is_still_an_unbounded_generic_pool(store_class):
+    """No num_resources -> pool size unknown -> the guard cannot and does not fire."""
+    env = simpy.Environment()
+    store = store_class(env)
+    store.put(VidigiResource(id_attribute=1, env=env))
+    store.put(VidigiResource(id_attribute=2, env=env))
+    store.put(VidigiResource(id_attribute=3, env=env))  # must not raise
+    env.run()
+    assert len(_available(store)) == 3
+
+
+def test_explicit_capacity_keeps_simpy_parking_behaviour():
+    """An explicit capacity= disables the strict guard (that path is the escape hatch);
+    the pre-existing finite-capacity put-queue behaviour is unchanged."""
+    env = simpy.Environment()
+    store = VidigiPriorityStore(env, capacity=1, label="w")
+    store.put(VidigiResource(id_attribute=1, env=env))
+    # Second put has nowhere to go and no waiter - parked, not raised.
+    store.put(VidigiResource(id_attribute=2, env=env))
+    env.run()
+    assert len(store.items) == 1 and len(store.put_queue) == 1
+
+
+def test_topup_populate_not_blocked_by_the_guard(store_class):
+    env = simpy.Environment()
+    store = store_class(env, num_resources=2, label="p")
+    store.populate(3, label="p2")
+    env.run()
+    assert len(_available(store)) == 5 and store.num_resources == 5
+
+
+def test_context_manager_double_return_raises_on_clean_exit(store_class):
+    """Returning a unit by hand *and* letting __exit__ return it again is a bug."""
+    env = simpy.Environment()
+    store = store_class(env, num_resources=1, label="bay")
+    outcome = []
+
+    def proc():
+        try:
+            with store.request() as req:
+                r = yield req
+                store.put(r)  # premature manual return; __exit__ will return it again
+                yield env.timeout(1)
+        except ValueError:
+            outcome.append("raised")
+
+    env.process(proc())
+    env.run()
+    assert outcome == ["raised"]
+
+
+def test_context_manager_return_not_masked_when_an_exception_propagates(store_class):
+    """If the `with` body raises, __exit__ must not shadow it with a capacity ValueError."""
+    env = simpy.Environment()
+    store = store_class(env, num_resources=1, label="bay")
+    seen = []
+
+    def proc():
+        try:
+            with store.request() as req:
+                r = yield req
+                store.put(r)  # would make __exit__'s return over-capacity
+                raise KeyError("the real failure")
+        except KeyError:
+            seen.append("keyerror")
+        except ValueError:
+            seen.append("valueerror")
+
+    env.process(proc())
+    env.run()
+    assert seen == ["keyerror"]
 
 
 # ---------------------------------------------------------------------------

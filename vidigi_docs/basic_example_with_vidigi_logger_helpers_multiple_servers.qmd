@@ -14,7 +14,7 @@ pub-info:
 
 When dealing with multiple servers, we need to have a way to monitor which resource is in use. This is where vidigi's custom resource classes come in, such as VidigiStore.
 
-VidigiStore is designed to mimic the Resource class in Simpy - so you can continue to use the same patterns of resource requesting you are familiar with. It also exposes `store.count` (units currently in use), `store.num_resources` (pool size) and `store.n_waiting` (requests queued for a unit), mirroring `simpy.Resource.count` / `.capacity` / `.queue` for conditional model logic or manual logging.
+VidigiStore is designed to mimic the Resource class in Simpy - so you can continue to use the same patterns of resource requesting you are familiar with. It also exposes `store.count` (units currently in use), `store.capacity` / `store.num_resources` (pool size) and `store.n_waiting` (requests queued for a unit), mirroring `simpy.Resource.count` / `.capacity` / `.queue` for conditional model logic or manual logging. Returning more units than the pool holds raises `ValueError` (pass `strict_capacity=False` to opt out).
 
 ## Step 1. Import required libraries
 
