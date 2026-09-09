@@ -717,6 +717,7 @@ def generate_animation_df(
     gauge_segments: int = 10,
     gauge_max_override: Optional[Union[int, float]] = None,
     step_snapshot_reveal_pop_in: bool = False,
+    spawn_in_from_arrival: bool = False,
 ):
     """
     Generate a DataFrame for animation purposes by adding position information to entity data.
@@ -830,6 +831,36 @@ def generate_animation_df(
         next major version (3.0)**, since "pop in" is closer to correct than
         "fly in" for a reveal; pass it explicitly either way to pin your animation's
         behaviour across that release.
+    spawn_in_from_arrival : bool, default=False
+        If True, a genuinely new entity glides into the animation from the
+        `event_position_df` anchor named `"arrival"` instead of flying in from the
+        plot's top-left corner (the default Plotly behaviour for any point new to a
+        frame's `text` trace - see `step_snapshot_reveal_pop_in`). This is the
+        arrival-side mirror of how the synthetic `depart` step makes an exit land
+        at a chosen anchor.
+
+        Works by inserting, for each such entity, a visible row at the arrival
+        anchor one snapshot before its first real position (so Plotly animates it
+        moving from there) plus one invisible phantom row (a zero-width space) the
+        snapshot before that (so the spawn row itself has nothing to fly in from).
+        The synthetic rows land on existing snapshot slots, so no new frames are
+        created.
+
+        Only entities that arrive at least two snapshots after the animation window
+        opens are affected - an entity already present when the window opens has no
+        earlier slot to spawn from and keeps the top-left fly-in. An entity that
+        arrives straight into an over-cap queue (represented by the `+ N more`
+        overflow row rather than drawn individually) is likewise unaffected until it
+        emerges, at which point it is a reveal handled by
+        `step_snapshot_reveal_pop_in`, not an arrival.
+
+        Requires an `event_position_df` row with `event == "arrival"` and
+        `reshape_for_animations`'s `hidden_run_before` column; without either this
+        is a silent no-op. Independent of `step_snapshot_reveal_pop_in` - both may
+        be set. Express backend only.
+
+        The default `False` is a verified no-op - output is byte-identical to
+        omitting the argument.
 
     Returns
     -------
@@ -1286,6 +1317,108 @@ def generate_animation_df(
 
                     full_entity_df_plus_pos = pd.concat(
                         [full_entity_df_plus_pos, _phantom_rows], ignore_index=True
+                    )
+
+    # `spawn_in_from_arrival`: the arrival-side mirror of the synthetic `depart`
+    # step. A genuinely new entity otherwise flies in from the plot's top-left the
+    # first frame it is drawn (the same Plotly `text`-trace behaviour the reveal
+    # phantom above fixes). When this is on and `event_position_df` names an
+    # `"arrival"` anchor, give each new entity a visible row at that anchor one
+    # snapshot before its first real position - so Plotly animates it moving from
+    # there - plus a zero-width-space phantom the snapshot before that, so the
+    # spawn row itself has nothing to fly in from. Both land on existing snapshot
+    # slots, so no frames are added.
+    if spawn_in_from_arrival:
+        if "_phantom" not in full_entity_df_plus_pos.columns:
+            full_entity_df_plus_pos["_phantom"] = False
+
+        _arrival_anchor = event_position_df[
+            event_position_df[event_col_name] == "arrival"
+        ]
+
+        if (
+            len(_arrival_anchor)
+            and _arrival_anchor[["x", "y"]].notna().to_numpy().all()
+            and "hidden_run_before" in full_entity_df_plus_pos.columns
+        ):
+            _x_arrival = _arrival_anchor["x"].iloc[0]
+            _y_arrival = _arrival_anchor["y"].iloc[0]
+
+            if "additional" in full_entity_df_plus_pos.columns:
+                _not_overflow = full_entity_df_plus_pos["additional"].isna()
+            else:
+                _not_overflow = pd.Series(
+                    True, index=full_entity_df_plus_pos.index
+                )
+
+            # Individually-drawn rows under an entity's own id (the overflow /
+            # boundary row carries a synthetic id and `additional`, and the
+            # phantom rows just added above are excluded so they cannot be picked
+            # as an entity's "first" row).
+            _drawn_mask = (
+                _not_overflow
+                & full_entity_df_plus_pos[entity_col_name].notna()
+                & (~full_entity_df_plus_pos["_phantom"].fillna(False))
+            )
+
+            if _drawn_mask.any():
+                _grid = np.sort(
+                    full_entity_df_plus_pos["snapshot_time"].dropna().unique()
+                )
+                _grid_pos = pd.Series(np.arange(len(_grid)), index=_grid)
+
+                _candidates = full_entity_df_plus_pos.loc[_drawn_mask]
+                _first_idx = _candidates.groupby(entity_col_name)[
+                    "snapshot_time"
+                ].idxmin()
+                _first_rows = full_entity_df_plus_pos.loc[_first_idx].copy()
+
+                # A genuine new arrival's first drawn row carries
+                # `hidden_run_before == 0`; if it is `>= 1` the entity was already
+                # present but capped out of view, so its first appearance is a
+                # reveal (`step_snapshot_reveal_pop_in`'s job) rather than an
+                # arrival, and it gets no spawn row.
+                _first_rows = _first_rows[_first_rows["hidden_run_before"] == 0]
+                _first_grid_idx = (
+                    _first_rows["snapshot_time"].map(_grid_pos).astype(int)
+                )
+
+                # Need two free earlier slots: one for the visible spawn row, one
+                # for its phantom. An entity already present when the window opens
+                # (or one snapshot in) has nowhere to spawn from and keeps the
+                # top-left fly-in.
+                _has_lead = (_first_grid_idx >= 2).to_numpy()
+                _first_rows = _first_rows[_has_lead]
+                _first_grid_idx = _first_grid_idx[_has_lead]
+
+                if len(_first_rows):
+                    _spawn_rows = _first_rows.copy()
+                    _spawn_rows["snapshot_time"] = _grid[
+                        (_first_grid_idx - 1).to_numpy()
+                    ]
+                    _spawn_rows["x_final"] = _x_arrival
+                    _spawn_rows["y_final"] = _y_arrival
+                    _spawn_rows["_phantom"] = False
+                    # Present the row as the arrival step it visually is, so hover
+                    # reads coherently at the anchor rather than showing the first
+                    # queue's name (and its "Queue Position") a snapshot early.
+                    _spawn_rows[event_col_name] = "arrival"
+                    _spawn_rows[event_type_col_name] = "arrival_departure"
+                    if "label" in _arrival_anchor.columns:
+                        _spawn_rows["label"] = _arrival_anchor["label"].iloc[0]
+
+                    _spawn_phantoms = _first_rows.copy()
+                    _spawn_phantoms["snapshot_time"] = _grid[
+                        (_first_grid_idx - 2).to_numpy()
+                    ]
+                    _spawn_phantoms["x_final"] = _x_arrival
+                    _spawn_phantoms["y_final"] = _y_arrival
+                    _spawn_phantoms["icon"] = "​"
+                    _spawn_phantoms["_phantom"] = True
+
+                    full_entity_df_plus_pos = pd.concat(
+                        [full_entity_df_plus_pos, _spawn_rows, _spawn_phantoms],
+                        ignore_index=True,
                     )
 
     full_entity_df_plus_pos["opacity"] = 1.0

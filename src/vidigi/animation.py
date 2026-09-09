@@ -2095,6 +2095,7 @@ def animate_activity_log(
     gauge_segments: int = 10,
     gauge_max_override: Optional[int | float] = None,
     step_snapshot_reveal_pop_in: bool = False,
+    spawn_in_from_arrival: bool = False,
     run_number: Optional[int] = None,
     run_col_name: Optional[str] = "auto",
     warm_up: int = 0,
@@ -2406,6 +2407,16 @@ def animate_activity_log(
         `generate_animation_df`'s docstring for the full mechanism and cost.
         The default `False` is a verified no-op; **planned to change to `True`
         at the next major version (3.0)**.
+    spawn_in_from_arrival : bool, default=False
+        If True, a genuinely new entity glides into the animation from the
+        `event_position_df` anchor named `"arrival"` instead of flying in from
+        the plot's top-left corner - the arrival-side mirror of how the synthetic
+        `depart` step makes an exit land at a chosen anchor. Only affects entities
+        that arrive at least two snapshots after the animation window opens; an
+        entity already present when it opens keeps the top-left fly-in. Requires
+        an `"arrival"` row in `event_position_df`. Independent of
+        `step_snapshot_reveal_pop_in`. See `generate_animation_df`'s docstring for
+        the full mechanism. The default `False` is a verified no-op.
     run_number : int, optional
         Selects a single replication from a `TrialLogger` passed as `event_log`.
         Only valid with a `TrialLogger`: passing it alongside a DataFrame or an
@@ -2538,6 +2549,7 @@ def animate_activity_log(
         gauge_max_override=gauge_max_override,
         gauge_segments=gauge_segments,
         step_snapshot_reveal_pop_in=step_snapshot_reveal_pop_in,
+        spawn_in_from_arrival=spawn_in_from_arrival,
         run_col_name=run_col_name,
     )
 
