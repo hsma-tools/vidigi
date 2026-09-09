@@ -53,7 +53,9 @@ def test_id_and_id_attribute_agree_across_a_whole_pool(store_class):
     env = simpy.Environment()
     store = store_class(env, num_resources=4, label="triage")
     resources = _resources(store)
-    assert [r.id for r in resources] == [r.id_attribute for r in resources] == [1, 2, 3, 4]
+    assert (
+        [r.id for r in resources] == [r.id_attribute for r in resources] == [1, 2, 3, 4]
+    )
 
 
 def test_conflicting_id_and_id_attribute_raises():
@@ -93,7 +95,9 @@ def test_unique_id_agrees_across_a_labelled_pool(store_class):
     env = simpy.Environment()
     store = store_class(env, num_resources=3, label="triage")
     resources = _resources(store)
-    assert [r.unique_id for r in resources] == [r.unique_id_attribute for r in resources]
+    assert [r.unique_id for r in resources] == [
+        r.unique_id_attribute for r in resources
+    ]
     assert [r.unique_id for r in resources] == ["triage_1", "triage_2", "triage_3"]
 
 

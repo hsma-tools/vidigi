@@ -1,8 +1,10 @@
 import random
+
 import numpy as np
 import pandas as pd
 import simpy
-from sim_tools.distributions import Exponential, Lognormal, Uniform, Normal, Bernoulli
+from sim_tools.distributions import Bernoulli, Exponential, Lognormal, Normal, Uniform
+
 from vidigi.resources import populate_store
 
 TRACE = False

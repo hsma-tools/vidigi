@@ -71,7 +71,8 @@ Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, sim
 - Lives at `examples/<name>/index.ipynb`. Front matter markdown cell: `title`, `toc: true`, `execute: {enabled: true}`, `image:`.
 - `image:` is expected in practice, not truly optional -- it's the listing grid's thumbnail. This will need to be a manually generated gif, so remind the author to do so if a brand new notebook is created.
 - Must be wired into either `examples/examples.qmd` or `examples/feature_breakdowns.qmd`  (both the `listing` metadata's `contents` list and the matching `:::{#id}:::` div) or it's invisible.
-- Committed with real executed outputs. After editing code cells, run `python -m jupyter nbconvert --to notebook --execute --inplace <path>` from the notebook's own directory and check for error outputs.
+- On commit, outputs will be stripped.
+- After editing code cells, run `python -m jupyter nbconvert --to notebook --execute --inplace <path>` from the notebook's own directory and check for error outputs.
 - Don't fabricate numbers in prose — derive by running the scenario. Re-run and check any notebook whose narrated numbers a core-code change could have shifted.
 - Revert re-execution diffs that are pure timestamp/widget-ID/execution-count churn with no value change.
 - Hand-editing prose in an already-executed notebook (no re-run needed): edit `source` as a JSON list of lines (each ending `\n` except the last), matching existing style, for a line-granular diff.

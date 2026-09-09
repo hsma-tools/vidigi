@@ -38,12 +38,8 @@ class Model:
         self.patient_counter = 0
         self.run_number = run_number
 
-        self.nurses = VidigiStore(
-            self.env, num_resources=g.n_nurses, label="nurse"
-        )
-        self.beds = VidigiStore(
-            self.env, num_resources=g.n_beds, label="bed"
-        )
+        self.nurses = VidigiStore(self.env, num_resources=g.n_nurses, label="nurse")
+        self.beds = VidigiStore(self.env, num_resources=g.n_beds, label="bed")
 
         seed = run_number * g.random_number_set
         self.arrival_dist = Exponential(mean=g.arrival_rate, random_seed=seed)
@@ -91,9 +87,7 @@ class Model:
 
         self._log(patient, "bed_wait_begins", "queue")
         bed = yield self.beds.get_direct()
-        self._log(
-            patient, "bed_begins", "resource_use", resource_id=bed.id_attribute
-        )
+        self._log(patient, "bed_begins", "resource_use", resource_id=bed.id_attribute)
         yield self.env.timeout(self.bed_dist.sample())
         self._log(
             patient, "bed_complete", "resource_use_end", resource_id=bed.id_attribute

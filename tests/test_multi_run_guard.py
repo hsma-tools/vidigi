@@ -44,9 +44,7 @@ def positioned_two_runs(log, event_position_df):
         reshaped = reshape_for_animations(
             log[log["run"] == run], every_x_time_units=10, limit_duration=150
         )
-        parts.append(
-            generate_animation_df(reshaped, event_position_df).assign(run=run)
-        )
+        parts.append(generate_animation_df(reshaped, event_position_df).assign(run=run))
     return pd.concat(parts, ignore_index=True)
 
 
@@ -64,9 +62,7 @@ def test_animate_activity_log_rejects_multi_run_log(
     multi_run_log, basic_event_position_df
 ):
     with pytest.raises(ValueError, match="spans 2 replications"):
-        animate_activity_log(
-            multi_run_log, basic_event_position_df, limit_duration=50
-        )
+        animate_activity_log(multi_run_log, basic_event_position_df, limit_duration=50)
 
 
 def test_generate_animation_df_rejects_multi_run_frame(
@@ -109,7 +105,10 @@ def test_error_message_is_actionable(multi_run_log):
 @pytest.mark.parametrize("column", RUN_COLUMN_CANDIDATES)
 def test_all_candidate_column_names_are_detected(simple_queue_log, column):
     log = pd.concat(
-        [simple_queue_log.assign(**{column: 1}), simple_queue_log.assign(**{column: 2})],
+        [
+            simple_queue_log.assign(**{column: 1}),
+            simple_queue_log.assign(**{column: 2}),
+        ],
         ignore_index=True,
     )
 
@@ -120,7 +119,10 @@ def test_all_candidate_column_names_are_detected(simple_queue_log, column):
 @pytest.mark.parametrize("column", ["Run", "RUN", "Run_Number", "Replication"])
 def test_column_detection_is_case_insensitive(simple_queue_log, column):
     log = pd.concat(
-        [simple_queue_log.assign(**{column: 1}), simple_queue_log.assign(**{column: 2})],
+        [
+            simple_queue_log.assign(**{column: 1}),
+            simple_queue_log.assign(**{column: 2}),
+        ],
         ignore_index=True,
     )
 
@@ -131,8 +133,10 @@ def test_column_detection_is_case_insensitive(simple_queue_log, column):
 def test_custom_run_column_name(simple_queue_log):
     """A column vidigi would not guess is still usable if the caller names it."""
     log = pd.concat(
-        [simple_queue_log.assign(scenario_iteration=1),
-         simple_queue_log.assign(scenario_iteration=2)],
+        [
+            simple_queue_log.assign(scenario_iteration=1),
+            simple_queue_log.assign(scenario_iteration=2),
+        ],
         ignore_index=True,
     )
 
@@ -182,8 +186,12 @@ def test_reused_entity_ids_within_one_run_are_rejected():
             "time": [0, 0, 10, 20, 20, 30],
             "entity_id": [1, 1, 1, 1, 1, 1],
             "event_type": [
-                "arrival_departure", "queue", "arrival_departure",
-                "arrival_departure", "queue", "arrival_departure",
+                "arrival_departure",
+                "queue",
+                "arrival_departure",
+                "arrival_departure",
+                "queue",
+                "arrival_departure",
             ],
             "event": ["arrival", "waiting", "depart", "arrival", "waiting", "depart"],
         }
@@ -219,7 +227,9 @@ def test_run_column_check_catches_what_the_structural_check_cannot(simple_queue_
     )
 
     # Confirm the structural check genuinely cannot fire here.
-    arrivals = log[(log["event_type"] == "arrival_departure") & (log["event"] == "arrival")]
+    arrivals = log[
+        (log["event_type"] == "arrival_departure") & (log["event"] == "arrival")
+    ]
     assert (arrivals.groupby("entity_id").size() == 1).all()
 
     with pytest.raises(ValueError, match="spans 2 replications"):
@@ -304,7 +314,9 @@ def test_event_logger_output_animates(basic_event_position_df):
     logger = EventLogger(run_number=3)
     for entity_id in (1, 2):
         logger.log_arrival(entity_id=entity_id, time=float(entity_id))
-        logger.log_queue(entity_id=entity_id, event="waiting", time=float(entity_id) + 1)
+        logger.log_queue(
+            entity_id=entity_id, event="waiting", time=float(entity_id) + 1
+        )
         logger.log_departure(entity_id=entity_id, time=float(entity_id) + 20)
 
     fig = animate_activity_log(
@@ -338,8 +350,11 @@ def test_real_trial_output_is_rejected_unfiltered_and_accepted_filtered(
             {"event": "arrival", "x": 50, "y": 300, "label": "Arrival"},
             {"event": "treatment_wait_begins", "x": 205, "y": 275, "label": "Wait"},
             {
-                "event": "treatment_begins", "x": 205, "y": 175,
-                "resource": "n_cubicles", "label": "Treated",
+                "event": "treatment_begins",
+                "x": 205,
+                "y": 175,
+                "resource": "n_cubicles",
+                "label": "Treated",
             },
             {"event": "depart", "x": 270, "y": 70, "label": "Exit"},
         ]

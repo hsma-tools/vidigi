@@ -1,10 +1,10 @@
-from tests.sample_models.simple_fifo_with_logging_storewrapper import Trial, g
-from vidigi.prep import reshape_for_animations, generate_animation_df
-from vidigi.animation import generate_animation, animate_activity_log
 import pandas as pd
 import plotly.io as pio
-import os
 import pytest
+
+from tests.sample_models.simple_fifo_with_logging_storewrapper import Trial, g
+from vidigi.animation import animate_activity_log, generate_animation
+from vidigi.prep import generate_animation_df, reshape_for_animations
 
 pio.renderers.default = "notebook"
 

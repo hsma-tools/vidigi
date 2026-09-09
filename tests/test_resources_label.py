@@ -11,8 +11,8 @@ separate `unique_id_attribute` that stays unique across pools even though
 
 import warnings
 
-import simpy
 import pytest
+import simpy
 
 from vidigi.resources import VidigiPriorityStore, VidigiStore, populate_store
 
@@ -186,7 +186,9 @@ def test_two_vidigi_priority_stores_distinct_labels_are_disjoint():
     a = VidigiPriorityStore(env, num_resources=2, label="a")
     b = VidigiPriorityStore(env, num_resources=2, label="b")
 
-    assert [r.id_attribute for r in a.items] == [r.id_attribute for r in b.items] == [1, 2]
+    assert (
+        [r.id_attribute for r in a.items] == [r.id_attribute for r in b.items] == [1, 2]
+    )
     a_unique = {r.unique_id_attribute for r in a.items}
     b_unique = {r.unique_id_attribute for r in b.items}
     assert a_unique.isdisjoint(b_unique)
@@ -198,7 +200,11 @@ def test_two_populate_store_pools_distinct_labels_are_disjoint():
     populate_store(2, a_store, env, label="a")
     populate_store(2, b_store, env, label="b")
 
-    assert [r.id_attribute for r in a_store.items] == [r.id_attribute for r in b_store.items] == [1, 2]
+    assert (
+        [r.id_attribute for r in a_store.items]
+        == [r.id_attribute for r in b_store.items]
+        == [1, 2]
+    )
     a_unique = {r.unique_id_attribute for r in a_store.items}
     b_unique = {r.unique_id_attribute for r in b_store.items}
     assert a_unique.isdisjoint(b_unique)
@@ -320,7 +326,10 @@ def test_label_fixes_the_by_resource_collision_end_to_end():
     with warnings.catch_warnings():
         warnings.simplefilter("error", UserWarning)
         fixed = resource_utilisation(
-            log, by="resource", limit_duration=20, resource_col_name="unique_resource_id"
+            log,
+            by="resource",
+            limit_duration=20,
+            resource_col_name="unique_resource_id",
         )
     assert len(fixed) == 2  # each physical unit now its own row
     assert set(fixed["resource_id"]) == {"triage_1", "registration_1"}

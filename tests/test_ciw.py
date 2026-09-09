@@ -60,7 +60,7 @@ def _reference_event_log(ciw_recs_obj, node_name_list):
     Kept here so the generator refactor is pinned against the exact list-append
     implementation it replaced.
     """
-    entity_ids = list(set([log.id_number for log in ciw_recs_obj]))
+    entity_ids = list({log.id_number for log in ciw_recs_obj})
     event_logs = []
     for entity_id in entity_ids:
         entity_tuples = [log for log in ciw_recs_obj if log.id_number == entity_id]

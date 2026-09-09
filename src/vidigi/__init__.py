@@ -2,10 +2,10 @@ from . import (
     analysis,
     animation,
     ciw,
+    logging,
     plots,
     prep,
-    utils,
-    logging,
-    resources,
     process_mapping,
+    resources,
+    utils,
 )

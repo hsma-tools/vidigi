@@ -1,7 +1,6 @@
-import pytest
 import pandas as pd
-import numpy as np
-from unittest.mock import patch
+import pytest
+
 from vidigi.prep import reshape_for_animations
 
 # Tests have been written with the aid of Claude Sonnet 4

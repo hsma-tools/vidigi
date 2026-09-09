@@ -1,10 +1,12 @@
 import gc
-import time
-import pandas as pd
-import numpy as np
 import hashlib
+import time
 import warnings
-from typing import Literal, Optional, TypeAlias, Union
+from typing import Literal, TypeAlias
+
+import numpy as np
+import pandas as pd
+
 from vidigi.utils import (
     PHANTOM_ICON,
     QueueDirection,
@@ -15,8 +17,6 @@ from vidigi.utils import (
     _resolve_direction_sign,
     _warn_on_duplicate_event_positions,
 )
-from packaging import version
-
 
 # Sentinel so a deprecated parameter can tell "caller passed a value" apart from
 # "caller left it alone", without warning everyone who simply uses the default.
@@ -109,7 +109,9 @@ def _warn_on_unpositioned_rendered_events(
     that selection has already happened, only fires on an event that was actually
     picked to represent some entity's state and had nothing to show for it.
     """
-    real_rows = full_entity_df_plus_pos[full_entity_df_plus_pos[entity_col_name].notna()]
+    real_rows = full_entity_df_plus_pos[
+        full_entity_df_plus_pos[entity_col_name].notna()
+    ]
     unpositioned = real_rows[real_rows["x"].isna()]
     if unpositioned.empty:
         return
@@ -120,7 +122,8 @@ def _warn_on_unpositioned_rendered_events(
         .sort_values(ascending=False)
     )
     listed = ", ".join(
-        f"{event!r} ({n} entit{'y' if n == 1 else 'ies'})" for event, n in affected.items()
+        f"{event!r} ({n} entit{'y' if n == 1 else 'ies'})"
+        for event, n in affected.items()
     )
     warnings.warn(
         f"{len(unpositioned)} row(s) across {len(affected)} event(s) with no matching "
@@ -144,17 +147,17 @@ def _warn_on_unpositioned_rendered_events(
 def reshape_for_animations(
     event_log: pd.DataFrame,
     every_x_time_units: int = 10,
-    limit_duration: Optional[int] = 10 * 60 * 24,
+    limit_duration: int | None = 10 * 60 * 24,
     step_snapshot_max: int = 60,
     time_col_name: str = "time",
     entity_col_name: str = "entity_id",
     event_type_col_name: str = "event_type",
     event_col_name: str = "event",
-    pathway_col_name: Optional[str] = None,
+    pathway_col_name: str | None = None,
     debug_mode: bool = False,
-    save_intermediate_outputs: Optional[Union[bool, str]] = False,
-    run_number: Optional[int] = None,
-    run_col_name: Optional[str] = "auto",
+    save_intermediate_outputs: bool | str | None = False,
+    run_number: int | None = None,
+    run_col_name: str | None = "auto",
     warm_up: int = 0,
     snapshot_alignment: SnapshotAlignment = "warm_up",
 ) -> pd.DataFrame:
@@ -519,22 +522,41 @@ def reshape_for_animations(
                 excluded_types = ["resource_use", "resource_use_end"]
 
                 # 1. Separate data into what needs capping and what doesn't
-                to_process_mask = ~most_recent_events_time_unit_ungrouped[event_type_col_name].isin(excluded_types)
+                to_process_mask = ~most_recent_events_time_unit_ungrouped[
+                    event_type_col_name
+                ].isin(excluded_types)
 
                 # 2. Filter out rows where rank exceeds step_snapshot_max + 1 (only for non-excluded types)
-                keep_mask = (~to_process_mask) | (most_recent_events_time_unit_ungrouped["rank"] <= (step_snapshot_max + 1))
-                most_recent_events_time_unit_ungrouped = most_recent_events_time_unit_ungrouped[keep_mask].copy()
+                keep_mask = (~to_process_mask) | (
+                    most_recent_events_time_unit_ungrouped["rank"]
+                    <= (step_snapshot_max + 1)
+                )
+                most_recent_events_time_unit_ungrouped = (
+                    most_recent_events_time_unit_ungrouped[keep_mask].copy()
+                )
 
                 # 3. Calculate the 'additional' column value only for the boundary rows
                 # (Re-evaluate masks on the trimmed dataframe)
-                still_processing_mask = ~most_recent_events_time_unit_ungrouped[event_type_col_name].isin(excluded_types)
-                boundary_row_mask = still_processing_mask & (most_recent_events_time_unit_ungrouped["rank"] == float(step_snapshot_max + 1))
-
-                most_recent_events_time_unit_ungrouped.loc[boundary_row_mask, "additional"] = (
-                    most_recent_events_time_unit_ungrouped.loc[boundary_row_mask, "max"] - most_recent_events_time_unit_ungrouped.loc[boundary_row_mask, "rank"]
+                still_processing_mask = ~most_recent_events_time_unit_ungrouped[
+                    event_type_col_name
+                ].isin(excluded_types)
+                boundary_row_mask = still_processing_mask & (
+                    most_recent_events_time_unit_ungrouped["rank"]
+                    == float(step_snapshot_max + 1)
                 )
 
-                most_recent_events_time_unit_ungrouped = most_recent_events_time_unit_ungrouped.reset_index(drop=True)
+                most_recent_events_time_unit_ungrouped.loc[
+                    boundary_row_mask, "additional"
+                ] = (
+                    most_recent_events_time_unit_ungrouped.loc[boundary_row_mask, "max"]
+                    - most_recent_events_time_unit_ungrouped.loc[
+                        boundary_row_mask, "rank"
+                    ]
+                )
+
+                most_recent_events_time_unit_ungrouped = (
+                    most_recent_events_time_unit_ungrouped.reset_index(drop=True)
+                )
 
                 # Clean up and store snapshot in our list of snapshots, which will all be
                 # concatenated into one large dataframe at the end
@@ -695,8 +717,8 @@ def reshape_for_animations(
 def generate_animation_df(
     full_entity_df: pd.DataFrame,
     event_position_df: pd.DataFrame,
-    wrap_queues_at: Optional[int] = 20,
-    wrap_resources_at: Optional[int] = 20,
+    wrap_queues_at: int | None = 20,
+    wrap_resources_at: int | None = 20,
     step_snapshot_max: int = 60,
     gap_between_entities: int = 10,
     gap_between_resources: int = 10,
@@ -709,14 +731,14 @@ def generate_animation_df(
     event_col_name: str = "event",
     resource_col_name: str = "resource_id",
     debug_mode: bool = False,
-    custom_entity_icon_list: Optional[list[str]] = None,
+    custom_entity_icon_list: list[str] | None = None,
     include_fun_emojis: bool = False,
-    save_intermediate_outputs: Optional[Union[bool, str]] = False,
+    save_intermediate_outputs: bool | str | None = False,
     minimize_output_df=_UNSET,
-    run_col_name: Optional[str] = "auto",
+    run_col_name: str | None = "auto",
     step_snapshot_limit_gauges=False,
     gauge_segments: int = 10,
-    gauge_max_override: Optional[Union[int, float]] = None,
+    gauge_max_override: float | None = None,
     step_snapshot_reveal_pop_in: bool = False,
     spawn_in_from_arrival: bool = True,
 ):
@@ -915,8 +937,8 @@ def generate_animation_df(
     # check the multiple when wrapping is actually in use.
     if wrap_queues_at is not None and step_snapshot_max % wrap_queues_at != 0:
         warnings.warn(
-            f"`step_snapshot_max` is not a multiple of `wrap_queues_at`."
-            f"The animation will display better if this is resolved.",
+            "`step_snapshot_max` is not a multiple of `wrap_queues_at`."
+            "The animation will display better if this is resolved.",
             UserWarning,
             stacklevel=3,
         )
@@ -992,7 +1014,8 @@ def generate_animation_df(
 
             resource_use["x_final"] = (
                 resource_use["x_final"]
-                - sign_r * (wrap_resources_at * resource_use["row"] * gap_between_resources)
+                - sign_r
+                * (wrap_resources_at * resource_use["row"] * gap_between_resources)
                 - sign_r * gap_between_resources
             )
 
@@ -1279,9 +1302,7 @@ def generate_animation_df(
                 # phantom, which would be redundant at best.
                 _not_overflow = full_entity_df_plus_pos["additional"].isna()
             else:
-                _not_overflow = pd.Series(
-                    True, index=full_entity_df_plus_pos.index
-                )
+                _not_overflow = pd.Series(True, index=full_entity_df_plus_pos.index)
 
             _reveal_mask = (
                 (full_entity_df_plus_pos["hidden_run_before"] >= 1)
@@ -1347,9 +1368,7 @@ def generate_animation_df(
             if "additional" in full_entity_df_plus_pos.columns:
                 _not_overflow = full_entity_df_plus_pos["additional"].isna()
             else:
-                _not_overflow = pd.Series(
-                    True, index=full_entity_df_plus_pos.index
-                )
+                _not_overflow = pd.Series(True, index=full_entity_df_plus_pos.index)
 
             # Individually-drawn rows under an entity's own id (the overflow /
             # boundary row carries a synthetic id and `additional`, and the

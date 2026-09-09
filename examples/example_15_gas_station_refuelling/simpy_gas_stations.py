@@ -23,12 +23,10 @@ Scenario:
 import itertools
 import random
 
-from vidigi.resources import VidigiStore
-from vidigi.animation import animate_activity_log
-from vidigi.logging import EventLogger
-from vidigi.utils import EventPosition, create_event_position_df
-
 import simpy
+
+from vidigi.logging import EventLogger
+from vidigi.resources import VidigiStore
 
 # fmt: off
 RANDOM_SEED = 42
@@ -55,9 +53,13 @@ def car(name, env, gas_station, station_tank, logger):
     """
     car_tank_level = random.randint(*CAR_TANK_LEVEL)
     logger.log_arrival(entity_id=name)
-    print(f'{env.now:6.1f} s: {name} arrived at gas station')
-    logger.log_queue(entity_id=name, event='pump_queue_wait_begins',
-                     fuel_level_start=car_tank_level, fuel_level_end=CAR_TANK_SIZE)
+    print(f"{env.now:6.1f} s: {name} arrived at gas station")
+    logger.log_queue(
+        entity_id=name,
+        event="pump_queue_wait_begins",
+        fuel_level_start=car_tank_level,
+        fuel_level_end=CAR_TANK_SIZE,
+    )
     with gas_station.request() as req:
         # Request one of the gas pumps
         gas_pump = yield req
@@ -66,28 +68,44 @@ def car(name, env, gas_station, station_tank, logger):
         fuel_required = CAR_TANK_SIZE - car_tank_level
         yield station_tank.get(fuel_required)
 
-        logger.log_resource_use_start(entity_id=name, event="payment_begins",
-                                  resource_id=gas_pump.id_attribute,
-                     fuel_level_start=car_tank_level, fuel_level_end=CAR_TANK_SIZE)
+        logger.log_resource_use_start(
+            entity_id=name,
+            event="payment_begins",
+            resource_id=gas_pump.id_attribute,
+            fuel_level_start=car_tank_level,
+            fuel_level_end=CAR_TANK_SIZE,
+        )
 
         yield env.timeout(random.randint(*PAYMENT_TIME))
 
-        logger.log_resource_use_end(entity_id=name, event="payment_ends",
-                            resource_id=gas_pump.id_attribute,
-                     fuel_level_start=car_tank_level, fuel_level_end=CAR_TANK_SIZE)
+        logger.log_resource_use_end(
+            entity_id=name,
+            event="payment_ends",
+            resource_id=gas_pump.id_attribute,
+            fuel_level_start=car_tank_level,
+            fuel_level_end=CAR_TANK_SIZE,
+        )
 
-        logger.log_resource_use_start(entity_id=name, event="pumping_begins",
-                            resource_id=gas_pump.id_attribute,
-                fuel_level_start=car_tank_level, fuel_level_end=CAR_TANK_SIZE)
+        logger.log_resource_use_start(
+            entity_id=name,
+            event="pumping_begins",
+            resource_id=gas_pump.id_attribute,
+            fuel_level_start=car_tank_level,
+            fuel_level_end=CAR_TANK_SIZE,
+        )
 
         # The "actual" refueling process takes some time
         yield env.timeout(fuel_required / REFUELING_SPEED)
 
-        logger.log_resource_use_end(entity_id=name, event="pumping_ends",
-                                  resource_id=gas_pump.id_attribute,
-                     fuel_level_start=car_tank_level, fuel_level_end=CAR_TANK_SIZE)
+        logger.log_resource_use_end(
+            entity_id=name,
+            event="pumping_ends",
+            resource_id=gas_pump.id_attribute,
+            fuel_level_start=car_tank_level,
+            fuel_level_end=CAR_TANK_SIZE,
+        )
 
-        print(f'{env.now:6.1f} s: {name} refueled with {fuel_required:.1f}L')
+        print(f"{env.now:6.1f} s: {name} refueled with {fuel_required:.1f}L")
         logger.log_departure(entity_id=name)
 
 
@@ -101,7 +119,7 @@ def gas_station_control(env, station_tank, logger):
             # We need to call the tank truck now!
             logger.log_arrival(entity_id=f"Call {truck_call_id}")
             logger.log_queue(entity_id=f"Call {truck_call_id}", event="calling_truck")
-            print(f'{env.now:6.1f} s: Calling tank truck')
+            print(f"{env.now:6.1f} s: Calling tank truck")
             # Wait for the tank truck to arrive and refuel the station tank
             yield env.process(tank_truck(env, station_tank, logger, truck_call_id))
 
@@ -124,6 +142,7 @@ def gas_station_control(env, station_tank, logger):
 #     )
 #     logger.log_departure(entity_id=f"Truck {truck_call_id}")
 
+
 # Modification to make refuelling a smooth, loggable process
 def tank_truck(env, station_tank, logger, truck_call_id):
     """Tank truck arrives and refuels the station tank for a fixed duration."""
@@ -132,14 +151,16 @@ def tank_truck(env, station_tank, logger, truck_call_id):
     logger.log_arrival(entity_id=f"Truck {truck_call_id}")
     logger.log_queue(entity_id=f"Truck {truck_call_id}", event="refuelling")
 
-    refuel_time = TANK_TRUCK_REFUEL_TIME     # total time truck stays
-    refuel_rate = 10                         # L/s (or adjust based on need)
-    step = 1                                 # seconds between each refill step
+    refuel_time = TANK_TRUCK_REFUEL_TIME  # total time truck stays
+    refuel_rate = 10  # L/s (or adjust based on need)
+    step = 1  # seconds between each refill step
 
     total_refueled = 0
     elapsed = 0
 
-    while (elapsed < refuel_time) | station_tank.level < (STATION_TANK_SIZE - (STATION_TANK_SIZE*0.02)):
+    while (elapsed < refuel_time) | station_tank.level < (
+        STATION_TANK_SIZE - (STATION_TANK_SIZE * 0.02)
+    ):
         yield env.timeout(step)
         elapsed += step
 
@@ -151,16 +172,18 @@ def tank_truck(env, station_tank, logger, truck_call_id):
             station_tank.put(actual_increment)
             total_refueled += actual_increment
 
-    print(f'{env.now:6.1f} s: Truck {truck_call_id} refueled station with {total_refueled:.1f}L')
+    print(
+        f"{env.now:6.1f} s: Truck {truck_call_id} refueled station with {total_refueled:.1f}L"
+    )
     logger.log_departure(entity_id=f"Truck {truck_call_id}")
-
 
 
 def car_generator(env, gas_station, station_tank, logger):
     """Generate new cars that arrive at the gas station."""
     for i in itertools.count():
         yield env.timeout(random.randint(*T_INTER))
-        env.process(car(f'Car {i}', env, gas_station, station_tank, logger))
+        env.process(car(f"Car {i}", env, gas_station, station_tank, logger))
+
 
 def fuel_monitor(env, station_tank, logger, interval=1):
     """Logs the fuel level at regular intervals."""
@@ -169,13 +192,13 @@ def fuel_monitor(env, station_tank, logger, interval=1):
             entity_id="StationTank",
             event_type="fuel_level_change",
             event="fuel_level_change",
-            value=station_tank.level
+            value=station_tank.level,
         )
         yield env.timeout(interval)
 
 
 # Setup and start the simulation
-print('Gas Station refuelling')
+print("Gas Station refuelling")
 random.seed(RANDOM_SEED)
 
 # Create environment and start processes
@@ -183,7 +206,12 @@ env = simpy.Environment()
 gas_station = VidigiStore(env, num_resources=2, label="pump")
 station_tank = simpy.Container(env, capacity=STATION_TANK_SIZE, init=STATION_TANK_SIZE)
 logger = EventLogger(env=env)
-logger.log_queue(entity_id="parameter", event_type="parameter", event="tank_size", value=STATION_TANK_SIZE)
+logger.log_queue(
+    entity_id="parameter",
+    event_type="parameter",
+    event="tank_size",
+    value=STATION_TANK_SIZE,
+)
 env.process(gas_station_control(env, station_tank, logger))
 env.process(car_generator(env, gas_station, station_tank, logger))
 env.process(fuel_monitor(env, station_tank, logger))

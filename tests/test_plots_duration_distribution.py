@@ -53,9 +53,7 @@ def test_hist_matches_numpy_binning_with_default_bins():
 
 
 def test_hist_bins_argument_is_forwarded_to_numpy():
-    fig = plot_duration_distribution(
-        _basic_event_log(), "arrival", "depart", bins=5
-    )
+    fig = plot_duration_distribution(_basic_event_log(), "arrival", "depart", bins=5)
 
     edges = np.histogram_bin_edges(DURATIONS, bins=5)
     expected_centers = (edges[:-1] + edges[1:]) / 2
@@ -102,7 +100,9 @@ def test_warm_up_reaches_event_durations_via_kwargs():
     logger.log_departure(entity_id=2, time=15.0)
     event_log = TrialLogger([logger]).to_dataframe()
 
-    fig = plot_duration_distribution(event_log, "arrival", "depart", kind="box", warm_up=5)
+    fig = plot_duration_distribution(
+        event_log, "arrival", "depart", kind="box", warm_up=5
+    )
 
     assert list(fig.data[0].y) == [5.0]
 
@@ -113,7 +113,9 @@ def test_warm_up_reaches_event_durations_via_kwargs():
 
 
 def test_ecdf_gives_the_full_step_arrays():
-    fig = plot_duration_distribution(_basic_event_log(), "arrival", "depart", kind="ecdf")
+    fig = plot_duration_distribution(
+        _basic_event_log(), "arrival", "depart", kind="ecdf"
+    )
 
     n = len(DURATIONS)
     assert list(fig.data[0].x) == [float(d) for d in sorted(DURATIONS)]
@@ -124,7 +126,9 @@ def test_ecdf_is_drawn_as_a_step_line():
     """Linear interpolation between sorted points would draw cumulative
     probabilities that never occurred between two observed durations.
     """
-    fig = plot_duration_distribution(_basic_event_log(), "arrival", "depart", kind="ecdf")
+    fig = plot_duration_distribution(
+        _basic_event_log(), "arrival", "depart", kind="ecdf"
+    )
     assert fig.data[0].line.shape == "hv"
 
 
@@ -182,9 +186,7 @@ def test_split_by_missing_column_raises():
     event_log = _basic_event_log()  # no pathway information at all
 
     with pytest.raises(ValueError, match="pathway"):
-        plot_duration_distribution(
-            event_log, "arrival", "depart", split_by="pathway"
-        )
+        plot_duration_distribution(event_log, "arrival", "depart", split_by="pathway")
 
 
 # --------------------------------------------------------------------------- #
@@ -333,9 +335,7 @@ def test_ridgeline_uses_density_so_group_size_does_not_affect_height():
 
 def test_invalid_kind_raises():
     with pytest.raises(ValueError, match="`kind`"):
-        plot_duration_distribution(
-            _basic_event_log(), "arrival", "depart", kind="pie"
-        )
+        plot_duration_distribution(_basic_event_log(), "arrival", "depart", kind="pie")
 
 
 def test_invalid_split_by_raises():
@@ -373,9 +373,7 @@ def test_every_split_by_literal_is_accepted(split_by):
     logger = _logger_with_durations([1, 2, 3], pathway_by_entity=["a", "a", "a"])
     event_log = TrialLogger([logger]).to_dataframe()
 
-    fig = plot_duration_distribution(
-        event_log, "arrival", "depart", split_by=split_by
-    )
+    fig = plot_duration_distribution(event_log, "arrival", "depart", split_by=split_by)
     assert isinstance(fig, go.Figure)
 
 

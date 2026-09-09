@@ -85,9 +85,14 @@ def test_utilisation_falls_back_to_mean_in_use_when_capacity_unresolved(
     assert "mean_in_use" in fig.layout.title.text
 
 
-def test_metric_busy_time_skips_the_utilisation_fallback_and_hline(resource_use_loggers):
+def test_metric_busy_time_skips_the_utilisation_fallback_and_hline(
+    resource_use_loggers,
+):
     fig = plot_resource_utilisation(
-        _trial_df(resource_use_loggers), by="step", metric="busy_time", limit_duration=20
+        _trial_df(resource_use_loggers),
+        by="step",
+        metric="busy_time",
+        limit_duration=20,
     )
 
     assert fig.data[0].y == pytest.approx((22.5,))
@@ -174,7 +179,9 @@ def test_show_runs_false_omits_the_runs_trace(resource_use_loggers):
 )
 def test_invalid_options_raise(kwargs, resource_use_loggers):
     with pytest.raises(ValueError):
-        plot_resource_utilisation(_trial_df(resource_use_loggers), limit_duration=20, **kwargs)
+        plot_resource_utilisation(
+            _trial_df(resource_use_loggers), limit_duration=20, **kwargs
+        )
 
 
 def test_bar_chart_no_resource_use_events_raises(two_run_loggers):
@@ -187,7 +194,9 @@ def test_bar_chart_no_resource_use_events_raises(two_run_loggers):
 # --------------------------------------------------------------------------- #
 
 
-def test_matches_the_hand_computed_occupancy_curve_and_uses_hv_steps(resource_use_loggers):
+def test_matches_the_hand_computed_occupancy_curve_and_uses_hv_steps(
+    resource_use_loggers,
+):
     fig = plot_resource_utilisation_over_time(
         _trial_df(resource_use_loggers), every_x_time_units=5, limit_duration=20
     )

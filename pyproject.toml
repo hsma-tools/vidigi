@@ -67,6 +67,14 @@ markers = [
 ]
 addopts = "-ra"
 
+[tool.ruff]
+# Keep tests/ out of ruff's file discovery (editors, `ruff check .`). The
+# ruff-check pre-commit hook also needs its own `exclude`, because pre-commit
+# passes file paths to ruff explicitly and those bypass this without
+# force-exclude. force-exclude is deliberately left off so `ruff format` still
+# applies to tests/.
+extend-exclude = ["tests","src/vidigi/__init__.py","examples"]
+
 
 [dependency-groups]
 dev = [

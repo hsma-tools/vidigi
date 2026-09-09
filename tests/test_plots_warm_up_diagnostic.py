@@ -238,7 +238,9 @@ def test_occupancy_unknown_event_raises_with_available_steps(resource_use_logger
         )
 
 
-def test_occupancy_unknown_event_close_to_a_real_one_gets_the_hint(resource_use_loggers):
+def test_occupancy_unknown_event_close_to_a_real_one_gets_the_hint(
+    resource_use_loggers,
+):
     """`"nope"` (above) isn't close enough to any real step for
     `difflib.get_close_matches` to suggest anything - this exercises the
     branch where it does."""
@@ -294,9 +296,7 @@ def test_queue_series_limit_duration_none_resolves_to_latest_time_without_warnin
             show_ensemble=False,
         )
 
-    assert not any(
-        "rounding to nearest integer" in str(w.message) for w in caught
-    )
+    assert not any("rounding to nearest integer" in str(w.message) for w in caught)
 
     fig_explicit = plot_warm_up_diagnostic(
         df,

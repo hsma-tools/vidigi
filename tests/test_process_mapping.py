@@ -249,7 +249,9 @@ def _col_map(nodes, col):
 
 def test_occupancy_stats_merge_onto_the_right_nodes(occupancy_logger):
     df = occupancy_logger.to_dataframe()
-    nodes, _ = discover_dfg(add_sim_timestamp(df), occupancy_stats=_stats(occupancy_logger))
+    nodes, _ = discover_dfg(
+        add_sim_timestamp(df), occupancy_stats=_stats(occupancy_logger)
+    )
 
     # Only the queue and resource steps get a figure; arrival/depart/the
     # resource_use_end label are left NaN, not zero-filled or dropped.
@@ -276,7 +278,9 @@ def test_discover_dfg_without_occupancy_stats_leaves_nodes_unchanged(occupancy_l
 
 def test_dfg_to_graphviz_shows_occupancy_only_when_asked(occupancy_logger):
     df = occupancy_logger.to_dataframe()
-    nodes, edges = discover_dfg(add_sim_timestamp(df), occupancy_stats=_stats(occupancy_logger))
+    nodes, edges = discover_dfg(
+        add_sim_timestamp(df), occupancy_stats=_stats(occupancy_logger)
+    )
 
     shown = dfg_to_graphviz(nodes.copy(), edges.copy(), show_occupancy=True).source
     assert "avg queued 0.8 (min 0.0, max 2.0)" in shown
@@ -289,9 +293,13 @@ def test_dfg_to_graphviz_shows_occupancy_only_when_asked(occupancy_logger):
 
 def test_cytoscape_elements_show_occupancy_in_the_node_label(occupancy_logger):
     df = occupancy_logger.to_dataframe()
-    nodes, edges = discover_dfg(add_sim_timestamp(df), occupancy_stats=_stats(occupancy_logger))
+    nodes, edges = discover_dfg(
+        add_sim_timestamp(df), occupancy_stats=_stats(occupancy_logger)
+    )
 
-    cy_nodes, _ = process_nodes_and_edges_for_cytoscape(nodes, edges, show_occupancy=True)
+    cy_nodes, _ = process_nodes_and_edges_for_cytoscape(
+        nodes, edges, show_occupancy=True
+    )
     labels = {n["data"]["id"]: n["data"]["label"] for n in cy_nodes}
 
     assert "avg queued 0.8 (min 0.0, max 2.0)" in labels["waiting"]

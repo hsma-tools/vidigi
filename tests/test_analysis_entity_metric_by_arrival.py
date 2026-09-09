@@ -9,8 +9,12 @@ from vidigi.logging import EventLogger, TrialLogger
 
 
 def _logger_with_arrivals(
-    entries, *, arrival_event="arrival", first_event="wait_begins",
-    second_event="depart", run_number=1,
+    entries,
+    *,
+    arrival_event="arrival",
+    first_event="wait_begins",
+    second_event="depart",
+    run_number=1,
 ):
     """One run where entity i arrives, hits `first_event`, then `second_event`
     at the three times in entries[i-1] = (arrival_time, first_time, second_time).
@@ -59,7 +63,10 @@ def test_arrival_time_comes_from_arrival_event_not_first_time():
     `arrival_time` tracks the former, not `event_durations`'s own `first_time`."""
     entries = [(0.0, 3.0, 10.0), (1.0, 6.0, 12.0)]
     logger = _logger_with_arrivals(
-        entries, arrival_event="arrival", first_event="wait_begins", second_event="depart"
+        entries,
+        arrival_event="arrival",
+        first_event="wait_begins",
+        second_event="depart",
     )
     df = entity_metric_by_arrival(_trial_df([logger]), "wait_begins", "depart")
 
@@ -97,7 +104,9 @@ def test_last_match_arrival_time_still_uses_earliest_assessment(rework_loop_logg
         match="last",
     )
     assert df["duration"].iloc[0] == pytest.approx(10.0)  # 30 - 20
-    assert df["arrival_time"].iloc[0] == pytest.approx(1.0)  # earliest assessment, not 20
+    assert df["arrival_time"].iloc[0] == pytest.approx(
+        1.0
+    )  # earliest assessment, not 20
 
 
 def test_entity_with_no_arrival_event_keeps_row_with_nan_arrival_time():
@@ -106,8 +115,12 @@ def test_entity_with_no_arrival_event_keeps_row_with_nan_arrival_time():
     presence checks) - entity 2 provides that, while entity 1, whose row is
     the one under test, has no arrival event of its own."""
     logger = EventLogger(run_number=1)
-    logger.log_custom_event(entity_id=1, event_type="milestone", event="wait_begins", time=3.0)
-    logger.log_custom_event(entity_id=1, event_type="milestone", event="depart", time=10.0)
+    logger.log_custom_event(
+        entity_id=1, event_type="milestone", event="wait_begins", time=3.0
+    )
+    logger.log_custom_event(
+        entity_id=1, event_type="milestone", event="depart", time=10.0
+    )
     logger.log_arrival(entity_id=2, time=0.0)
     logger.log_departure(entity_id=2, time=1.0)
 
@@ -139,7 +152,10 @@ def test_arrival_event_may_coincide_with_second_event():
     one event when two slots name the same event)."""
     entries = [(0.0, 3.0, 99.0)]
     logger = _logger_with_arrivals(
-        entries, arrival_event="depart", first_event="wait_begins", second_event="depart"
+        entries,
+        arrival_event="depart",
+        first_event="wait_begins",
+        second_event="depart",
     )
     df = entity_metric_by_arrival(
         _trial_df([logger]), "wait_begins", "depart", arrival_event="depart"
@@ -178,7 +194,9 @@ def test_no_run_column_still_joins_correctly():
         }
     )
 
-    df = entity_metric_by_arrival(event_log, "arrival", "depart", arrival_event="arrival")
+    df = entity_metric_by_arrival(
+        event_log, "arrival", "depart", arrival_event="arrival"
+    )
 
     assert df["run_number"].isna().all()
     assert list(df["duration"]) == pytest.approx([5.0, 7.0])

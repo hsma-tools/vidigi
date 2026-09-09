@@ -256,9 +256,7 @@ def test_unrecognised_event_type_warns_only_once_per_type():
         logger.log_event(entity_id=1, event_type="mystery", event="a", time=1.0)
         logger.log_event(entity_id=2, event_type="mystery", event="b", time=2.0)
 
-    unrecognised = [
-        w for w in recorded if "Unrecognized event_type" in str(w.message)
-    ]
+    unrecognised = [w for w in recorded if "Unrecognized event_type" in str(w.message)]
     assert len(unrecognised) == 1
 
 
@@ -268,16 +266,12 @@ def test_log_custom_event_does_not_warn_about_its_event_type():
 
     with warnings.catch_warnings(record=True) as recorded:
         warnings.simplefilter("always")
-        logger.log_custom_event(
-            entity_id=1, event_type="my_type", event="a", time=1.0
-        )
+        logger.log_custom_event(entity_id=1, event_type="my_type", event="a", time=1.0)
 
     assert recorded == []
 
 
-@pytest.mark.parametrize(
-    "event_type", ["resource_use", "resource_use_end"]
-)
+@pytest.mark.parametrize("event_type", ["resource_use", "resource_use_end"])
 def test_missing_resource_id_warns_on_resource_events(event_type):
     """Resource events without an id cannot be positioned in the animation.
 
@@ -288,9 +282,7 @@ def test_missing_resource_id_warns_on_resource_events(event_type):
     logger = EventLogger()
 
     with pytest.warns(UserWarning, match="resource_id is recommended"):
-        logger.log_event(
-            entity_id=1, event_type=event_type, event="x", time=1.0
-        )
+        logger.log_event(entity_id=1, event_type=event_type, event="x", time=1.0)
 
 
 def test_no_resource_id_warning_for_non_resource_events():
@@ -533,7 +525,9 @@ def test_plot_entity_timeline_rejects_empty_log():
         EventLogger().plot_entity_timeline(entity_id=1)
 
 
-def test_plot_entity_timeline_default_shows_and_returns_none(populated_logger, monkeypatch):
+def test_plot_entity_timeline_default_shows_and_returns_none(
+    populated_logger, monkeypatch
+):
     shown = []
     monkeypatch.setattr(go.Figure, "show", lambda self, *a, **k: shown.append(self))
 

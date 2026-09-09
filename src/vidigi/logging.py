@@ -1,26 +1,22 @@
+import json
+import pickle
+import warnings
+from collections.abc import Sequence
+from datetime import datetime
+from io import TextIOBase
+from pathlib import Path
+from typing import Any, ClassVar, Literal, TypeAlias
+
+import pandas as pd
+import plotly.express as px
 from pydantic import (
     BaseModel,
     Field,
+    ValidationInfo,
     field_validator,
     model_validator,
-    ValidationInfo,
 )
-from typing import Optional, Any, List, ClassVar, Set, Literal, Sequence, TypeAlias
-import json
-import pickle
-import pandas as pd
-from pathlib import Path
-from io import TextIOBase
-from datetime import datetime
-import plotly.express as px
-import warnings
-from vidigi.process_mapping import (
-    discover_dfg,
-    add_sim_timestamp,
-    dfg_to_graphviz,
-    dfg_to_cytoscape,
-    dfg_to_cytoscape_streamlit,
-)
+
 from vidigi.analysis import (
     DurationStat,
     MatchMode,
@@ -36,14 +32,6 @@ from vidigi.analysis import (
     resource_utilisation,
 )
 from vidigi.plots import (
-    plot_queue_size as _plot_queue_size,
-    plot_duration_distribution as _plot_duration_distribution,
-    plot_metric_bar as _plot_metric_bar,
-    plot_metric_vs_arrival_time as _plot_metric_vs_arrival_time,
-    plot_replication_analysis as _plot_replication_analysis,
-    plot_resource_utilisation as _plot_resource_utilisation,
-    plot_resource_utilisation_over_time as _plot_resource_utilisation_over_time,
-    plot_warm_up_diagnostic as _plot_warm_up_diagnostic,
     Across,
     DistributionKind,
     ErrorBars,
@@ -51,6 +39,37 @@ from vidigi.plots import (
     ResourceMetric,
     SplitBy,
     WarmUpMethod,
+)
+from vidigi.plots import (
+    plot_duration_distribution as _plot_duration_distribution,
+)
+from vidigi.plots import (
+    plot_metric_bar as _plot_metric_bar,
+)
+from vidigi.plots import (
+    plot_metric_vs_arrival_time as _plot_metric_vs_arrival_time,
+)
+from vidigi.plots import (
+    plot_queue_size as _plot_queue_size,
+)
+from vidigi.plots import (
+    plot_replication_analysis as _plot_replication_analysis,
+)
+from vidigi.plots import (
+    plot_resource_utilisation as _plot_resource_utilisation,
+)
+from vidigi.plots import (
+    plot_resource_utilisation_over_time as _plot_resource_utilisation_over_time,
+)
+from vidigi.plots import (
+    plot_warm_up_diagnostic as _plot_warm_up_diagnostic,
+)
+from vidigi.process_mapping import (
+    add_sim_timestamp,
+    dfg_to_cytoscape,
+    dfg_to_cytoscape_streamlit,
+    dfg_to_graphviz,
+    discover_dfg,
 )
 
 RECOGNIZED_EVENT_TYPES = {
@@ -113,7 +132,7 @@ def _unpickle_from(path_or_buffer, expected_type):
 
 
 class BaseEvent(BaseModel):
-    _warned_unrecognized_event_types: ClassVar[Set[str]] = set()
+    _warned_unrecognized_event_types: ClassVar[set[str]] = set()
 
     entity_id: Any = Field(
         ...,
@@ -130,19 +149,19 @@ class BaseEvent(BaseModel):
     time: float = Field(..., description="Simulation time or timestamp of event.")
 
     # Optional commonly-used fields
-    pathway: Optional[str] = None
+    pathway: str | None = None
 
-    run_number: Optional[int] = Field(
+    run_number: int | None = Field(
         default=None,
         description="A numeric value identifying the simulation run this record is associated with.",
     )
 
-    timestamp: Optional[datetime] = Field(
+    timestamp: datetime | None = Field(
         default=None,
         description="Real-world timestamp of the event, if available.",
     )
 
-    resource_id: Optional[int] = Field(
+    resource_id: int | None = Field(
         None,
         description="ID of the resource involved (required for resource use events).",
         # Without this, pydantic skips the field's validators when the caller omits it,
@@ -240,7 +259,7 @@ class EventLogger:
         run_number: int = None,
         *,
         scenario: Any = None,
-        label: Optional[str] = None,
+        label: str | None = None,
     ):
         self.event_model = event_model
         self.env = env  # Optional simulation env with .now
@@ -251,7 +270,7 @@ class EventLogger:
         # resource-utilisation helpers; neither is validated here.
         self.scenario = scenario
         self.label = label
-        self._log: List[dict] = []
+        self._log: list[dict] = []
 
     def __getstate__(self):
         # The simulation environment (a simpy/salabim `Environment`) holds live
@@ -262,13 +281,11 @@ class EventLogger:
         state["env"] = None
         return state
 
-    def log_event(self, context: Optional[dict] = None, **event_data):
+    def log_event(self, context: dict | None = None, **event_data):
         if "time" not in event_data:
             if self.env is not None and hasattr(self.env, "now"):
                 now_attr = self.env.now
-                event_data["time"] = (
-                    now_attr() if callable(now_attr) else now_attr
-                )
+                event_data["time"] = now_attr() if callable(now_attr) else now_attr
             else:
                 raise ValueError(
                     "Missing 'time' and no simulation environment provided."
@@ -293,9 +310,9 @@ class EventLogger:
         self,
         *,
         entity_id: Any,
-        time: Optional[float] = None,
-        pathway: Optional[str] = None,
-        run_number: Optional[int] = None,
+        time: float | None = None,
+        pathway: str | None = None,
+        run_number: int | None = None,
         **extra_fields,
     ):
         """
@@ -316,9 +333,9 @@ class EventLogger:
         self,
         *,
         entity_id: Any,
-        time: Optional[float] = None,
-        pathway: Optional[str] = None,
-        run_number: Optional[int] = None,
+        time: float | None = None,
+        pathway: str | None = None,
+        run_number: int | None = None,
         **extra_fields,
     ):
         """
@@ -340,9 +357,9 @@ class EventLogger:
         *,
         entity_id: Any,
         event: str,
-        time: Optional[float] = None,
-        pathway: Optional[str] = None,
-        run_number: Optional[int] = None,
+        time: float | None = None,
+        pathway: str | None = None,
+        run_number: int | None = None,
         **extra_fields,
     ):
         """
@@ -365,9 +382,9 @@ class EventLogger:
         entity_id: Any,
         resource_id: int,
         event: str = "start",
-        time: Optional[float] = None,
-        pathway: Optional[str] = None,
-        run_number: Optional[int] = None,
+        time: float | None = None,
+        pathway: str | None = None,
+        run_number: int | None = None,
         **extra_fields,
     ):
         """
@@ -416,9 +433,9 @@ class EventLogger:
         entity_id: Any,
         resource_id: int,
         event: str = "end",
-        time: Optional[float] = None,
-        pathway: Optional[str] = None,
-        run_number: Optional[int] = None,
+        time: float | None = None,
+        pathway: str | None = None,
+        run_number: int | None = None,
         **extra_fields,
     ):
         """
@@ -464,9 +481,9 @@ class EventLogger:
         entity_id: Any,
         event_type: str,
         event: str,
-        time: Optional[float] = None,
-        pathway: Optional[str] = None,
-        run_number: Optional[int] = None,
+        time: float | None = None,
+        pathway: str | None = None,
+        run_number: int | None = None,
         **extra_fields,
     ):
         """
@@ -495,7 +512,7 @@ class EventLogger:
     def log(self):
         return self._log
 
-    def get_log(self) -> List[dict]:
+    def get_log(self) -> list[dict]:
         return self._log
 
     def to_json_string(self, indent: int = 2) -> str:
@@ -553,8 +570,8 @@ class EventLogger:
         time_col_name: str = "time",
         event_col_name: str = "event",
         event_type_col_name: str = "event_type",
-        run_col_name: Optional[str] = None,
-        pathway_col_name: Optional[str] = None,
+        run_col_name: str | None = None,
+        pathway_col_name: str | None = None,
     ):
         df = df.rename(
             columns={
@@ -738,7 +755,7 @@ class EventLogger:
         self,
         output_format: DFGType = "graphviz-object",
         input_time_format="minutes",
-        warm_up: Optional[float] = None,
+        warm_up: float | None = None,
         occupancy_metrics: bool = False,
         occupancy_snapshot_interval: float = 1,
         **kwargs,
@@ -886,10 +903,10 @@ class TrialLogger:
 
     def __init__(
         self,
-        event_logs: Optional[list[EventLogger]] = None,
+        event_logs: list[EventLogger] | None = None,
         *,
         scenario: Any = None,
-        label: Optional[str] = None,
+        label: str | None = None,
     ):
         self._event_logs = []
 
@@ -916,9 +933,7 @@ class TrialLogger:
         """
         present = [
             v
-            for v in (
-                getattr(rec["run_data"], attr, None) for rec in self._event_logs
-            )
+            for v in (getattr(rec["run_data"], attr, None) for rec in self._event_logs)
             if v is not None
         ]
         if not present:
@@ -1205,9 +1220,7 @@ class TrialLogger:
         get_replication_precision : How that interval tightens as replications accumulate.
         """
         if across not in ("entities", "runs"):
-            raise ValueError(
-                f"`across` must be 'entities' or 'runs'; got {across!r}."
-            )
+            raise ValueError(f"`across` must be 'entities' or 'runs'; got {across!r}.")
         if across == "runs" and not exclude_incomplete:
             raise ValueError(
                 '`exclude_incomplete=False` is not supported with `across="runs"`: '
@@ -1326,7 +1339,7 @@ class TrialLogger:
         return mean_confidence_interval(run_values, ci_level=ci_level)
 
     def _resolve_resource_col_name(
-        self, resource_col_name: Optional[str], trial_dataframe: pd.DataFrame
+        self, resource_col_name: str | None, trial_dataframe: pd.DataFrame
     ) -> str:
         """Resolve `resource_col_name=None` (the default) to `"unique_resource_id"`
         when that column is present on `trial_dataframe`, else the canonical
@@ -1355,14 +1368,14 @@ class TrialLogger:
         *,
         by: ResourceUtilisationBy = "step",
         scenario=None,
-        resource_map: Optional[dict] = None,
-        event_position_df: Optional[pd.DataFrame] = None,
-        resource_capacities: Optional[dict] = None,
-        capacity: Optional[Literal["infer"]] = None,
+        resource_map: dict | None = None,
+        event_position_df: pd.DataFrame | None = None,
+        resource_capacities: dict | None = None,
+        capacity: Literal["infer"] | None = None,
         warm_up: float = 0,
-        limit_duration: Optional[float] = None,
+        limit_duration: float | None = None,
         unclosed: UnclosedResourceUse = "censor",
-        resource_col_name: Optional[str] = None,
+        resource_col_name: str | None = None,
         **kwargs,
     ):
         """
@@ -1441,11 +1454,11 @@ class TrialLogger:
         second_event,
         *,
         kind: DistributionKind = "hist",
-        split_by: Optional[SplitBy] = None,
+        split_by: SplitBy | None = None,
         bins=None,
         match: MatchMode = "first",
         normalise: bool = False,
-        title: Optional[str] = None,
+        title: str | None = None,
         **kwargs,
     ):
         """
@@ -1509,7 +1522,7 @@ class TrialLogger:
         what: DurationStat = "mean",
         exclude_incomplete: bool = True,
         across: Across = "entities",
-        error_bars: Optional[ErrorBars] = None,
+        error_bars: ErrorBars | None = None,
         ci_level: float = 0.95,
         show_runs: bool = False,
         match: MatchMode = "first",
@@ -1709,19 +1722,19 @@ class TrialLogger:
         *,
         by: ResourceUtilisationBy = "step",
         metric: ResourceMetric = "utilisation",
-        error_bars: Optional[ErrorBars] = "ci",
+        error_bars: ErrorBars | None = "ci",
         ci_level: float = 0.95,
         show_runs: bool = True,
-        sort_by: Optional[Literal["value"]] = None,
+        sort_by: Literal["value"] | None = None,
         scenario=None,
-        resource_map: Optional[dict] = None,
-        event_position_df: Optional[pd.DataFrame] = None,
-        resource_capacities: Optional[dict] = None,
-        capacity: Optional[Literal["infer"]] = None,
+        resource_map: dict | None = None,
+        event_position_df: pd.DataFrame | None = None,
+        resource_capacities: dict | None = None,
+        capacity: Literal["infer"] | None = None,
         warm_up: float = 0,
-        limit_duration: Optional[float] = None,
+        limit_duration: float | None = None,
         unclosed: UnclosedResourceUse = "censor",
-        resource_col_name: Optional[str] = None,
+        resource_col_name: str | None = None,
         **kwargs,
     ):
         """
@@ -1815,16 +1828,16 @@ class TrialLogger:
         *,
         every_x_time_units: float = 1,
         warm_up: float = 0,
-        limit_duration: Optional[float] = None,
+        limit_duration: float | None = None,
         as_proportion: bool = False,
         show_all_runs: bool = True,
         shared_y_axis: bool = True,
         scenario=None,
-        resource_map: Optional[dict] = None,
-        event_position_df: Optional[pd.DataFrame] = None,
-        resource_capacities: Optional[dict] = None,
-        capacity: Optional[Literal["infer"]] = None,
-        resource_col_name: Optional[str] = None,
+        resource_map: dict | None = None,
+        event_position_df: pd.DataFrame | None = None,
+        resource_capacities: dict | None = None,
+        capacity: Literal["infer"] | None = None,
+        resource_col_name: str | None = None,
         **kwargs,
     ):
         """
@@ -1909,13 +1922,13 @@ class TrialLogger:
         self,
         *,
         series: Literal["queue", "occupancy", "duration"] = "queue",
-        event: Optional[str] = None,
-        first_event: Optional[str] = None,
-        second_event: Optional[str] = None,
+        event: str | None = None,
+        first_event: str | None = None,
+        second_event: str | None = None,
         method: WarmUpMethod = "welch",
         windows: Sequence[int] = (5, 10, 20),
         every_x_time_units: float = 1,
-        limit_duration: Optional[float] = None,
+        limit_duration: float | None = None,
         show_ensemble: bool = True,
         show_runs: bool = False,
         **kwargs,
@@ -2167,14 +2180,14 @@ class TrialLogger:
         second_event,
         *,
         arrival_event: str = "arrival",
-        colour_by: Optional[SplitBy] = None,
-        rolling_window: Optional[int] = None,
-        rolling_time: Optional[float] = None,
+        colour_by: SplitBy | None = None,
+        rolling_window: int | None = None,
+        rolling_time: float | None = None,
         warm_up: float = 0,
         match: MatchMode = "first",
         marker_size: float = 6,
         line_width: float = 3,
-        title: Optional[str] = None,
+        title: str | None = None,
         **kwargs,
     ):
         """
@@ -2237,4 +2250,3 @@ class TrialLogger:
             title=title,
             **kwargs,
         )
-

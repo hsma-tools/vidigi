@@ -25,7 +25,9 @@ def test_returns_a_figure(unequal_run_loggers):
     assert isinstance(fig, go.Figure)
 
 
-def test_cumulative_mean_matches_the_hand_computed_unequal_run_example(unequal_run_loggers):
+def test_cumulative_mean_matches_the_hand_computed_unequal_run_example(
+    unequal_run_loggers,
+):
     """`unequal_run_loggers`'s own docstring already hand-computes cumulative
     means [4.0, 4.5, 6.0] for this exact event pair."""
     fig = plot_replication_analysis(_trial_df(unequal_run_loggers), "arrival", "depart")
@@ -77,7 +79,9 @@ def test_ci_level_reaches_the_figure(unequal_run_loggers):
     """No prior test passes a non-default `ci_level` - pins that it reaches
     `replication_precision`/`mean_confidence_interval` rather than being
     dropped in this function's own body."""
-    fig_95 = plot_replication_analysis(_trial_df(unequal_run_loggers), "arrival", "depart")
+    fig_95 = plot_replication_analysis(
+        _trial_df(unequal_run_loggers), "arrival", "depart"
+    )
     fig_90 = plot_replication_analysis(
         _trial_df(unequal_run_loggers), "arrival", "depart", ci_level=0.90
     )
@@ -92,12 +96,16 @@ def test_deviation_threshold_reaches_the_reference_line(unequal_run_loggers):
         _trial_df(unequal_run_loggers), "arrival", "depart", deviation_threshold=0.2
     )
     hlines = [
-        shape for shape in fig.layout.shapes if shape.type == "line" and shape.y0 == shape.y1
+        shape
+        for shape in fig.layout.shapes
+        if shape.type == "line" and shape.y0 == shape.y1
     ]
     assert any(shape.y0 == pytest.approx(0.2) for shape in hlines)
 
 
-def test_marker_size_and_line_width_default_to_the_previous_hardcoded_values(unequal_run_loggers):
+def test_marker_size_and_line_width_default_to_the_previous_hardcoded_values(
+    unequal_run_loggers,
+):
     fig = plot_replication_analysis(_trial_df(unequal_run_loggers), "arrival", "depart")
     assert fig.data[1].marker.size == 6
     assert fig.data[1].line.width == 3
@@ -110,8 +118,11 @@ def test_marker_size_and_line_width_reach_both_traces(unequal_run_loggers):
     that both actually reach the cumulative-mean and deviation traces rather
     than being silently dropped."""
     fig = plot_replication_analysis(
-        _trial_df(unequal_run_loggers), "arrival", "depart",
-        marker_size=2, line_width=1,
+        _trial_df(unequal_run_loggers),
+        "arrival",
+        "depart",
+        marker_size=2,
+        line_width=1,
     )
     assert fig.data[1].marker.size == 2
     assert fig.data[1].line.width == 1
@@ -152,8 +163,12 @@ def test_what_reaches_replication_means(unequal_run_loggers):
     logger2.log_arrival(entity_id=1, time=0.0)
     logger2.log_departure(entity_id=1, time=10.0)
 
-    mean_fig = plot_replication_analysis(_trial_df([logger, logger2]), "arrival", "depart", what="mean")
-    max_fig = plot_replication_analysis(_trial_df([logger, logger2]), "arrival", "depart", what="max")
+    mean_fig = plot_replication_analysis(
+        _trial_df([logger, logger2]), "arrival", "depart", what="mean"
+    )
+    max_fig = plot_replication_analysis(
+        _trial_df([logger, logger2]), "arrival", "depart", what="max"
+    )
 
     assert list(mean_fig.data[1].y) == pytest.approx([5.0, 7.5])
     assert list(max_fig.data[1].y) == pytest.approx([8.0, 9.0])

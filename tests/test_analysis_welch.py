@@ -89,7 +89,9 @@ def test_single_run_welch_method_uses_its_own_values_as_the_ensemble():
     """With one run, the ensemble mean is just that run's series, so the
     shrinking-edge/interior formula runs against non-linear real values
     rather than only ever being exercised on an averaged-out series."""
-    result = welch_moving_average([[10.0, 4.0, 2.0, 8.0, 6.0, 12.0]], window=2, method="welch")
+    result = welch_moving_average(
+        [[10.0, 4.0, 2.0, 8.0, 6.0, 12.0]], window=2, method="welch"
+    )
 
     # i=1 (shrink, size 1): [10]; i=2 (shrink, size 3): mean([10,4,2]);
     # i=3 (interior, size 5): mean([10,4,2,8,6]); i=4: mean([4,2,8,6,12])

@@ -1,10 +1,12 @@
-import simpy
+import random
+
 import numpy as np
 import pandas as pd
+import simpy
+from sim_tools.distributions import Exponential, Lognormal
+
 from vidigi.logging import EventLogger
 from vidigi.resources import VidigiStore
-from sim_tools.distributions import Lognormal, Exponential
-import random
 
 
 # Class to store global parameter values.  We don't create an instance of this
@@ -130,7 +132,9 @@ class Model:
             1. Nurses/treatment bays (same thing in this model)
 
         """
-        self.treatment_cubicles = VidigiStore(self.env, num_resources=g.n_cubicles, label="treatment_cubicle")
+        self.treatment_cubicles = VidigiStore(
+            self.env, num_resources=g.n_cubicles, label="treatment_cubicle"
+        )
 
     # A generator function that represents the DES generator for patient
     # arrivals
@@ -225,7 +229,7 @@ class Trial:
     # Method to run a trial
     def run_trial(self):
         print(f"{g.n_cubicles} nurses")
-        print("")  ## Print a blank line
+        print()  ## Print a blank line
 
         # Run the simulation for the number of runs specified in g class.
         # For each run, we create a new instance of the Model class and call its

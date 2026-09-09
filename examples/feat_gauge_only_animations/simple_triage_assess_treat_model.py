@@ -1,5 +1,7 @@
-import simpy
 import random
+
+import simpy
+
 from vidigi.logging import EventLogger
 
 

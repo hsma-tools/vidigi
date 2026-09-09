@@ -29,7 +29,6 @@ import pytest
 
 from vidigi.prep import generate_animation_df, reshape_for_animations
 
-
 # --------------------------------------------------------------------------- #
 # generate_animation_df - point of use
 # --------------------------------------------------------------------------- #
@@ -83,9 +82,7 @@ def test_missing_event_warning_names_the_event_with_its_row_and_entity_count(
     ].copy()
     with pytest.warns(UserWarning) as record:
         generate_animation_df(reshaped, event_position_df)
-    message = next(
-        str(w.message) for w in record if "no matching" in str(w.message)
-    )
+    message = next(str(w.message) for w in record if "no matching" in str(w.message))
     # All three entities depart within the animation window, so this is exact,
     # not a sampled entry.
     assert "3 row(s) across 1 event(s)" in message

@@ -7,7 +7,6 @@ function are the "entity shown in the wrong place" class of animation bug, which
 shape assertions cannot detect.
 """
 
-import numpy as np
 import pandas as pd
 import pytest
 
@@ -23,8 +22,7 @@ def entities_at(result, snapshot_time):
 def event_at(result, snapshot_time, entity_id):
     """The single event an entity is shown at for a given snapshot."""
     rows = result[
-        (result["snapshot_time"] == snapshot_time)
-        & (result["entity_id"] == entity_id)
+        (result["snapshot_time"] == snapshot_time) & (result["entity_id"] == entity_id)
     ]
     assert len(rows) == 1, (
         f"Entity {entity_id} should appear exactly once at snapshot "
@@ -134,9 +132,7 @@ def test_rank_follows_order_of_joining_the_queue(simple_queue_log):
     result = reshape_for_animations(
         simple_queue_log, every_x_time_units=10, limit_duration=50
     )
-    snapshot = result[
-        (result["snapshot_time"] == 20) & (result["event"] == "waiting")
-    ]
+    snapshot = result[(result["snapshot_time"] == 20) & (result["event"] == "waiting")]
 
     ranks = dict(zip(snapshot["entity_id"], snapshot["rank"]))
 
@@ -148,9 +144,7 @@ def test_queue_closes_up_when_an_entity_leaves(simple_queue_log):
     result = reshape_for_animations(
         simple_queue_log, every_x_time_units=10, limit_duration=50
     )
-    snapshot = result[
-        (result["snapshot_time"] == 30) & (result["event"] == "waiting")
-    ]
+    snapshot = result[(result["snapshot_time"] == 30) & (result["event"] == "waiting")]
 
     ranks = dict(zip(snapshot["entity_id"], snapshot["rank"]))
 
@@ -222,9 +216,7 @@ def test_step_snapshot_max_caps_displayed_entities(overflow_queue_log):
         limit_duration=30,
         step_snapshot_max=5,
     )
-    snapshot = result[
-        (result["snapshot_time"] == 20) & (result["event"] == "waiting")
-    ]
+    snapshot = result[(result["snapshot_time"] == 20) & (result["event"] == "waiting")]
 
     # 12 entities are queued, but only ranks 1-6 survive: 1-5 are displayed and
     # rank 6 becomes the "+ x more" placeholder.
@@ -240,9 +232,7 @@ def test_only_boundary_row_carries_additional_count(overflow_queue_log):
         limit_duration=30,
         step_snapshot_max=5,
     )
-    snapshot = result[
-        (result["snapshot_time"] == 20) & (result["event"] == "waiting")
-    ]
+    snapshot = result[(result["snapshot_time"] == 20) & (result["event"] == "waiting")]
     with_additional = snapshot[snapshot["additional"].notna()]
 
     assert len(with_additional) == 1
@@ -293,7 +283,10 @@ def test_custom_event_type_column_used_for_exit_rows(simple_queue_log):
     renamed = simple_queue_log.rename(columns={"event_type": "category"})
 
     result = reshape_for_animations(
-        renamed, event_type_col_name="category", every_x_time_units=10, limit_duration=50
+        renamed,
+        event_type_col_name="category",
+        every_x_time_units=10,
+        limit_duration=50,
     )
 
     assert "event_type" not in result.columns
@@ -357,9 +350,7 @@ def test_log_with_no_departures_still_animates(no_departure_log):
 
 def test_log_with_no_arrivals_raises_informative_error(simple_queue_log):
     """Without arrivals there is no way to tell who is in the system."""
-    queue_only = simple_queue_log[
-        simple_queue_log["event_type"] != "arrival_departure"
-    ]
+    queue_only = simple_queue_log[simple_queue_log["event_type"] != "arrival_departure"]
 
     with pytest.raises(ValueError, match="No 'arrival' events"):
         reshape_for_animations(queue_only, every_x_time_units=10, limit_duration=30)
@@ -375,8 +366,9 @@ def test_limit_duration_none_uses_max_time_in_log(simple_queue_log):
     # Latest event in the log is entity 3 departing at t=45, so the limit
     # resolves to 45 and the warning says so.
     with pytest.warns(UserWarning, match="has been set to 45"):
-        result = reshape_for_animations(simple_queue_log, every_x_time_units=10,
-                                        limit_duration=None)
+        result = reshape_for_animations(
+            simple_queue_log, every_x_time_units=10, limit_duration=None
+        )
 
     explicit = reshape_for_animations(
         simple_queue_log, every_x_time_units=10, limit_duration=45

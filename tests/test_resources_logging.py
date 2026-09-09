@@ -27,7 +27,8 @@ def store_class(request):
 def _events(logger):
     """(event_type, event, entity_id, time) tuples, in log order, for compact assertions."""
     return [
-        (e["event_type"], e["event"], e["entity_id"], e["time"]) for e in logger.get_log()
+        (e["event_type"], e["event"], e["entity_id"], e["time"])
+        for e in logger.get_log()
     ]
 
 
@@ -105,11 +106,10 @@ def test_context_manager_exception_during_use_still_logs_end_exactly_once(store_
         pass
 
     def proc(env, store):
-        with pytest.raises(Boom):
-            with store.request(entity_id="p1") as req:
-                yield req
-                yield env.timeout(1)
-                raise Boom("kaboom")
+        with pytest.raises(Boom), store.request(entity_id="p1") as req:
+            yield req
+            yield env.timeout(1)
+            raise Boom("kaboom")
 
     env.process(proc(env, store))
     env.run()
@@ -178,7 +178,10 @@ def test_per_call_event_overrides(store_class):
     env.process(proc(env, store))
     env.run()
 
-    assert [e["event"] for e in logger.get_log()] == ["treatment_begins", "treatment_ends"]
+    assert [e["event"] for e in logger.get_log()] == [
+        "treatment_begins",
+        "treatment_ends",
+    ]
 
 
 def test_pathway_and_extra_fields_forwarded(store_class):
@@ -187,7 +190,9 @@ def test_pathway_and_extra_fields_forwarded(store_class):
     store = store_class(env, num_resources=1, label="bed", logger=logger)
 
     def proc(env, store):
-        with store.request(entity_id="p1", pathway="fast_track", priority_score=3) as req:
+        with store.request(
+            entity_id="p1", pathway="fast_track", priority_score=3
+        ) as req:
             yield req
             yield env.timeout(1)
 
@@ -433,7 +438,9 @@ def test_auto_log_false_does_not_arm_the_missing_entity_id_warning(store_class):
 # MARK: label / self.label staleness
 
 
-def test_populate_top_up_without_label_leaves_default_event_names_unchanged(store_class):
+def test_populate_top_up_without_label_leaves_default_event_names_unchanged(
+    store_class,
+):
     env = simpy.Environment()
     logger = EventLogger(env=env, run_number=1)
     store = store_class(env, num_resources=1, label="bed", logger=logger)

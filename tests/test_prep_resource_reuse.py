@@ -76,10 +76,26 @@ def sequential_reuse_log():
         (55, 4, "arrival_departure", "depart"),
     )
     log["resource_id"] = [
-        None, None, 1, 1, None,
-        None, None, 2, 2, None,
-        None, None, 1, 1, None,
-        None, None, 1, 1, None,
+        None,
+        None,
+        1,
+        1,
+        None,
+        None,
+        None,
+        2,
+        2,
+        None,
+        None,
+        None,
+        1,
+        1,
+        None,
+        None,
+        None,
+        1,
+        1,
+        None,
     ]
     return log
 
@@ -130,7 +146,9 @@ def test_no_entity_sits_at_the_exit_anchor_while_in_service(
     in_service = result[result["event"] == "treatment_begins"]
     # (270, 70) is the 'depart' anchor - a treatment row landing there would be the
     # "skips straight to the exit" bug.
-    assert not ((in_service["x_final"] == 270.0) & (in_service["y_final"] == 70.0)).any()
+    assert not (
+        (in_service["x_final"] == 270.0) & (in_service["y_final"] == 70.0)
+    ).any()
 
 
 def test_resource_use_after_the_queue_row_keeps_the_entity_at_the_resource(

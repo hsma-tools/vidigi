@@ -9,8 +9,8 @@ test_against_core_simpy.py, which check they produce the same event logs as
 plain simpy resources.
 """
 
-import simpy
 import pytest
+import simpy
 
 from vidigi.resources import VidigiPriorityStore, VidigiStore
 

@@ -20,14 +20,11 @@ Scenario:
 
 import itertools
 import random
-from vidigi.resources import VidigiStore
-from vidigi.animation import animate_activity_log
-from vidigi.logging import EventLogger
-from vidigi.utils import EventPosition, create_event_position_df
 
 import simpy
 
-import pandas as pd
+from vidigi.logging import EventLogger
+from vidigi.resources import VidigiStore
 
 # fmt: off
 RANDOM_SEED = 42
@@ -70,23 +67,29 @@ def car(env, name, cw):
     leaves to never come back ...
 
     """
-    print(f'{name} arrives at the carwash at {env.now:.2f}.')
+    print(f"{name} arrives at the carwash at {env.now:.2f}.")
     cw.logger.log_arrival(entity_id=name)
-    cw.logger.log_queue(entity_id=name, event='carwash_queue_wait_begins')
+    cw.logger.log_queue(entity_id=name, event="carwash_queue_wait_begins")
     with cw.machine.request() as request:
         carwash_spot = yield request
 
-        print(f'{name} enters the carwash at {env.now:.2f}.')
+        print(f"{name} enters the carwash at {env.now:.2f}.")
 
-        cw.logger.log_resource_use_start(entity_id=name, event="carwashing_begins",
-                                  resource_id=carwash_spot.id_attribute)
+        cw.logger.log_resource_use_start(
+            entity_id=name,
+            event="carwashing_begins",
+            resource_id=carwash_spot.id_attribute,
+        )
 
         yield env.process(cw.wash(name))
 
-        cw.logger.log_resource_use_end(entity_id=name, event="carwashing_ends",
-                            resource_id=carwash_spot.id_attribute)
+        cw.logger.log_resource_use_end(
+            entity_id=name,
+            event="carwashing_ends",
+            resource_id=carwash_spot.id_attribute,
+        )
 
-        print(f'{name} leaves the carwash at {env.now:.2f}.')
+        print(f"{name} leaves the carwash at {env.now:.2f}.")
         cw.logger.log_departure(entity_id=name)
 
 
@@ -100,22 +103,25 @@ def setup(env, num_machines, washtime, t_inter, duration):
 
     # Create 4 initial cars
     for _ in range(4):
-        env.process(car(env, f'Car {next(car_count)}', carwash))
+        env.process(car(env, f"Car {next(car_count)}", carwash))
 
     # Create more cars while the simulation is running
     while env.now < duration:
         yield env.timeout(random.randint(t_inter - 2, t_inter + 2))
-        env.process(car(env, f'Car {next(car_count)}', carwash))
+        env.process(car(env, f"Car {next(car_count)}", carwash))
 
     # Allow remaining events to finish before returning
     yield env.timeout(0)
-    carwash.logger.to_dataframe().to_csv(f"logs_{NUM_MACHINES}_machines_{T_INTER}_IAT.csv")
+    carwash.logger.to_dataframe().to_csv(
+        f"logs_{NUM_MACHINES}_machines_{T_INTER}_IAT.csv"
+    )
 
 
 # Setup and start the simulation
-print('Carwash')
-print('Check out http://youtu.be/fXXmeP9TvBg while simulating ... ;-)')
+print("Carwash")
+print("Check out http://youtu.be/fXXmeP9TvBg while simulating ... ;-)")
 random.seed(RANDOM_SEED)  # This helps to reproduce the results
+
 
 def run_model():
     # Create an environment and start the setup process
@@ -123,6 +129,7 @@ def run_model():
     carwash_process = env.process(setup(env, NUM_MACHINES, WASHTIME, T_INTER, SIM_TIME))
     # Execute!
     env.run(until=carwash_process)
+
 
 run_model()
 

@@ -1,9 +1,7 @@
-from typing import Optional
-
-import pandas as pd
-from graphviz import Digraph
 import ipycytoscape
 import ipywidgets as widgets
+import pandas as pd
+from graphviz import Digraph
 
 VALID_TIME_UNITS = {"seconds", "minutes", "hours", "days", "weeks"}
 
@@ -27,7 +25,7 @@ def add_sim_timestamp(
     timestamp_col: str = "timestamp",
     sim_start: pd.Timestamp | str | None = None,
     time_unit: str = "minutes",
-    warm_up: Optional[float] = None,
+    warm_up: float | None = None,
 ) -> pd.DataFrame:
     """
     Add a pseudo-timestamp column to a simulation event log.
@@ -107,9 +105,7 @@ def add_sim_timestamp(
     else:
         sim_start = pd.to_datetime(sim_start)
 
-    df[timestamp_col] = sim_start + pd.to_timedelta(
-        df[time_col], unit=time_unit
-    )
+    df[timestamp_col] = sim_start + pd.to_timedelta(df[time_col], unit=time_unit)
 
     return df
 
@@ -253,25 +249,18 @@ def discover_dfg(
 
     # Transition duration
     if time_unit == "seconds":
-        dfg["delta_time"] = (
-            dfg["next_time"] - dfg[timestamp_col]
-        ).dt.total_seconds()
+        dfg["delta_time"] = (dfg["next_time"] - dfg[timestamp_col]).dt.total_seconds()
     elif time_unit == "minutes":
         dfg["delta_time"] = (
             (dfg["next_time"] - dfg[timestamp_col]).dt.total_seconds()
         ) / 60
     elif time_unit == "hours":
         dfg["delta_time"] = (
-            ((dfg["next_time"] - dfg[timestamp_col]).dt.total_seconds())
-            / 60
-            / 60
+            ((dfg["next_time"] - dfg[timestamp_col]).dt.total_seconds()) / 60 / 60
         )
     elif time_unit == "days":
         dfg["delta_time"] = (
-            ((dfg["next_time"] - dfg[timestamp_col]).dt.total_seconds())
-            / 60
-            / 60
-            / 24
+            ((dfg["next_time"] - dfg[timestamp_col]).dt.total_seconds()) / 60 / 60 / 24
         )
     elif time_unit == "weeks":
         dfg["delta_time"] = (
@@ -588,8 +577,6 @@ default="mean"
                 if row["probability"] < infrequent_path_dash_threshold
                 else "solid"
             )
-        else:
-            None
 
         pw = penwidth_map[row["frequency"]]
 
@@ -605,11 +592,7 @@ default="mean"
         # Label the edges
         label = (
             (f"n={row.frequency}\n" if show_edge_counts else "")
-            + (
-                f"p={row.probability:.2f}\n"
-                if show_transition_probabilities
-                else ""
-            )
+            + (f"p={row.probability:.2f}\n" if show_transition_probabilities else "")
             + (
                 f"{time_metric}={row[f'{time_metric}_time']:.1f} {time_unit}"
                 if show_metric
@@ -626,9 +609,7 @@ default="mean"
         )
 
     if title:
-        dot.attr(
-            label=title, labelloc=title_loc, fontsize=f"{title_font_size}"
-        )
+        dot.attr(label=title, labelloc=title_loc, fontsize=f"{title_font_size}")
 
     if not return_image:
         return dot
@@ -885,9 +866,7 @@ default="mean"
     cytoscapeobj.layout.width = f"{width - 20}px"
     cytoscapeobj.layout.height = f"{height - 20}px"
 
-    cytoscapeobj.graph.add_graph_from_json(
-        {"nodes": cy_nodes, "edges": cy_edges}
-    )
+    cytoscapeobj.graph.add_graph_from_json({"nodes": cy_nodes, "edges": cy_edges})
 
     cytoscapeobj.set_tooltip_source("label")
 

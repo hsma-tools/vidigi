@@ -1,12 +1,15 @@
 import random
+
 import numpy as np
 import pandas as pd
 import simpy
 from sim_tools.distributions import Exponential, Lognormal
+
 from vidigi.resources import VidigiPriorityStore
 
+
 class g:
-    '''
+    """
     Create a scenario to parameterise the simulation model
 
     Parameters:
@@ -28,7 +31,8 @@ class g:
         Set the mean of the exponential distribution that is used to sample the
         inter-arrival time of patients
 
-    '''
+    """
+
     random_number_set = 42
 
     n_cubicles = 4
@@ -39,19 +43,21 @@ class g:
     sim_duration = 600
     number_of_runs = 100
 
+
 class Patient:
-    '''
+    """
     Class defining details for a patient entity
-    '''
+    """
+
     def __init__(self, p_id):
-        '''
+        """
         Constructor method
 
         Params:
         -----
         identifier: int
             a numeric identifier for the patient.
-        '''
+        """
         self.identifier = p_id
         self.arrival = -np.inf
         self.wait_treat = -np.inf
@@ -65,14 +71,16 @@ class Patient:
         else:
             self.priority = 2
 
+
 class Model:
-    '''
+    """
     Simulates the simplest minor treatment process for a patient
 
     1. Arrive
     2. Examined/treated by nurse when one available
     3. Discharged
-    '''
+    """
+
     # Constructor to set up the model for a run.  We pass in a run number when
     # we create a new model.
     def __init__(self, run_number):
@@ -104,24 +112,27 @@ class Model:
         # the model
         self.mean_q_time_cubicle = 0
 
-        self.patient_inter_arrival_dist = Exponential(mean = g.arrival_rate,
-                                                      random_seed = self.run_number*g.random_number_set)
-        self.treat_dist = Lognormal(mean = g.trauma_treat_mean,
-                                    stdev = g.trauma_treat_var,
-                                    random_seed = self.run_number*g.random_number_set)
+        self.patient_inter_arrival_dist = Exponential(
+            mean=g.arrival_rate, random_seed=self.run_number * g.random_number_set
+        )
+        self.treat_dist = Lognormal(
+            mean=g.trauma_treat_mean,
+            stdev=g.trauma_treat_var,
+            random_seed=self.run_number * g.random_number_set,
+        )
 
     def init_resources(self):
-        '''
+        """
         Init the number of resources
         and store in the arguments container object
 
         Resource list:
             1. Nurses/treatment bays (same thing in this model)
 
-        '''
-        self.treatment_cubicles = VidigiPriorityStore(self.env,
-                                                     num_resources=g.n_cubicles,
-                                                     label="treatment_cubicle")
+        """
+        self.treatment_cubicles = VidigiPriorityStore(
+            self.env, num_resources=g.n_cubicles, label="treatment_cubicle"
+        )
 
     # A generator function that represents the DES generator for patient arrivals
     def generator_patient_arrivals(self):
@@ -157,11 +168,13 @@ class Model:
 
         # ===== LOGGING FOR VIDIGI ANIMATION  ===== #
         self.event_log.append(
-            {'patient': patient.identifier,
-             'pathway': patient.priority,
-             'event_type': 'arrival_departure',
-             'event': 'arrival',
-             'time': self.env.now}
+            {
+                "patient": patient.identifier,
+                "pathway": patient.priority,
+                "event_type": "arrival_departure",
+                "event": "arrival",
+                "time": self.env.now,
+            }
         )
         # ========================================= #
 
@@ -170,30 +183,35 @@ class Model:
 
         # ===== LOGGING FOR VIDIGI ANIMATION  ===== #
         self.event_log.append(
-            {'patient': patient.identifier,
-             'pathway': patient.priority,
-             'event': 'treatment_wait_begins',
-             'event_type': 'queue',
-             'time': self.env.now}
+            {
+                "patient": patient.identifier,
+                "pathway": patient.priority,
+                "event": "treatment_wait_begins",
+                "event_type": "queue",
+                "time": self.env.now,
+            }
         )
         # ========================================= #
 
         # Seize a treatment resource when available
         # Note that we must pass in the patient priority
-        treatment_resource = yield self.treatment_cubicles.get(priority=patient.priority)
+        treatment_resource = yield self.treatment_cubicles.get(
+            priority=patient.priority
+        )
 
         # record the waiting time for registration
         self.wait_treat = self.env.now - start_wait
 
         # ===== LOGGING FOR VIDIGI ANIMATION  ===== #
         self.event_log.append(
-            {'patient': patient.identifier,
-                'pathway': patient.priority,
-                'event': 'treatment_begins',
-                'event_type': 'resource_use',
-                'time': self.env.now,
-                'resource_id': treatment_resource.id_attribute
-                }
+            {
+                "patient": patient.identifier,
+                "pathway": patient.priority,
+                "event": "treatment_begins",
+                "event_type": "resource_use",
+                "time": self.env.now,
+                "resource_id": treatment_resource.id_attribute,
+            }
         )
         # ========================================= #
 
@@ -203,12 +221,14 @@ class Model:
 
         # ===== LOGGING FOR VIDIGI ANIMATION  ===== #
         self.event_log.append(
-            {'patient': patient.identifier,
-                'pathway': patient.priority,
-                'event': 'treatment_complete',
-                'event_type': 'resource_use_end',
-                'time': self.env.now,
-                'resource_id': treatment_resource.id_attribute}
+            {
+                "patient": patient.identifier,
+                "pathway": patient.priority,
+                "event": "treatment_complete",
+                "event_type": "resource_use_end",
+                "time": self.env.now,
+                "resource_id": treatment_resource.id_attribute,
+            }
         )
         # ========================================= #
 
@@ -220,14 +240,15 @@ class Model:
 
         # ===== LOGGING FOR VIDIGI ANIMATION  ===== #
         self.event_log.append(
-            {'patient': patient.identifier,
-            'pathway': patient.priority,
-            'event': 'depart',
-            'event_type': 'arrival_departure',
-            'time': self.env.now}
+            {
+                "patient": patient.identifier,
+                "pathway": patient.priority,
+                "event": "depart",
+                "event_type": "arrival_departure",
+                "time": self.env.now,
+            }
         )
         # ========================================= #
-
 
     # This method calculates results over a single run.  Here we just calculate
     # a mean, but in real world models you'd probably want to calculate more.
@@ -255,13 +276,14 @@ class Model:
 
         self.event_log["run"] = self.run_number
 
-        return {'results': self.results_df, 'event_log': self.event_log}
+        return {"results": self.results_df, "event_log": self.event_log}
+
 
 # Class representing a Trial for our simulation - a batch of simulation runs.
 class Trial:
     # The constructor sets up a pandas dataframe that will store the key
     # results from each run against run number, with run number as the index.
-    def  __init__(self):
+    def __init__(self):
         self.df_trial_results = pd.DataFrame()
         self.df_trial_results["Run Number"] = [0]
         self.df_trial_results["Arrivals"] = [0]
@@ -273,7 +295,7 @@ class Trial:
     # Method to run a trial
     def run_trial(self):
         print(f"{g.n_cubicles} nurses")
-        print("") ## Print a blank line
+        print()  ## Print a blank line
 
         # Run the simulation for the number of runs specified in g class.
         # For each run, we create a new instance of the Model class and call its

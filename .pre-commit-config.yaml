@@ -3,3 +3,22 @@ repos:
   rev: 0.9.1
   hooks:
     - id: nbstripout
+- repo: https://github.com/astral-sh/ruff-pre-commit
+  # Ruff version.
+  rev: v0.16.6
+  hooks:
+    # Run the linter.
+    - id: ruff-check
+      args: [ --fix, "--ignore=C408,SIM102,C403,BLE001,DTZ007,DTZ011,RUF013,RUF046" ]
+      exclude: ^tests/
+    # Run the formatter.
+    - id: ruff-format
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v6.0.0  # Use the ref you want to point at
+  hooks:
+    - id: mixed-line-ending
+- repo: https://github.com/asottile/pyupgrade
+  rev: v3.21.2
+  hooks:
+    -   id: pyupgrade
+        args: [--py310-plus]

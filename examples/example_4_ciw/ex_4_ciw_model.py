@@ -4,9 +4,9 @@ Time units of the simulation model are in minutes.
 """
 # Imports
 
+import ciw
 import numpy as np
 import pandas as pd
-import ciw
 
 # Module level variables, constants, and default values
 

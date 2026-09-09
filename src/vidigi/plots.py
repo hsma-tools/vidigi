@@ -20,7 +20,8 @@ docstring says which:
 """
 
 import warnings
-from typing import Literal, Optional, Sequence, TypeAlias, Union
+from collections.abc import Sequence
+from typing import Literal, TypeAlias
 
 import numpy as np
 import pandas as pd
@@ -92,12 +93,12 @@ def plot_queue_size(
     show_all_runs: bool = True,
     shared_y_axis: bool = True,
     backend: PlotBackend = "express",
-    run_col_name: Optional[str] = "auto",
+    run_col_name: str | None = "auto",
     entity_col_name: str = "entity_id",
     time_col_name: str = "time",
     event_type_col_name: str = "event_type",
     event_col_name: str = "event",
-    pathway_col_name: Optional[str] = None,
+    pathway_col_name: str | None = None,
     **kwargs,
 ) -> go.Figure:
     """
@@ -211,7 +212,9 @@ def plot_queue_size(
             UserWarning,
             stacklevel=2,
         )
-    return _plot_queue_size_go(event_counts, mean_df, event_list, show_all_runs, shared_y_axis)
+    return _plot_queue_size_go(
+        event_counts, mean_df, event_list, show_all_runs, shared_y_axis
+    )
 
 
 def _plot_queue_size_express(
@@ -334,9 +337,7 @@ def _plot_queue_size_go(
             else:
                 run_rows = event_counts[event_counts["run_number"] == run_id]
             for j, event in enumerate(event_list):
-                sub = run_rows[run_rows["event"] == event].sort_values(
-                    "snapshot_time"
-                )
+                sub = run_rows[run_rows["event"] == event].sort_values("snapshot_time")
                 _add_trace(
                     go.Scatter(
                         x=sub["snapshot_time"],
@@ -391,11 +392,11 @@ def plot_duration_distribution(
     second_event: str,
     *,
     kind: DistributionKind = "hist",
-    split_by: Optional[SplitBy] = None,
-    bins: Optional[Union[int, list, np.ndarray]] = None,
+    split_by: SplitBy | None = None,
+    bins: int | list | np.ndarray | None = None,
     match: MatchMode = "first",
     normalise: bool = False,
-    title: Optional[str] = None,
+    title: str | None = None,
     **kwargs,
 ) -> go.Figure:
     """
@@ -486,9 +487,7 @@ def plot_duration_distribution(
     directly if you need to know how many were excluded.
     """
     if kind not in _DISTRIBUTION_KINDS:
-        raise ValueError(
-            f"`kind` must be one of {_DISTRIBUTION_KINDS}; got {kind!r}."
-        )
+        raise ValueError(f"`kind` must be one of {_DISTRIBUTION_KINDS}; got {kind!r}.")
     if split_by is not None and split_by not in _SPLIT_BY_COLUMNS:
         raise ValueError(
             f"`split_by` must be one of 'run', 'pathway', or None; got {split_by!r}."
@@ -593,7 +592,12 @@ def plot_duration_distribution(
         # shape, which reads as "busier" rather than "differently distributed".
         row_height = 1.0
         group_densities = [
-            (group_value, np.histogram(group_df["duration"].to_numpy(), bins=edges, density=True)[0])
+            (
+                group_value,
+                np.histogram(group_df["duration"].to_numpy(), bins=edges, density=True)[
+                    0
+                ],
+            )
             for group_value, group_df in groups
         ]
         peak = max((counts.max() for _, counts in group_densities), default=0.0)
@@ -694,7 +698,7 @@ def plot_metric_bar(
     what: DurationStat = "mean",
     exclude_incomplete: bool = True,
     across: Across = "entities",
-    error_bars: Optional[ErrorBars] = None,
+    error_bars: ErrorBars | None = None,
     ci_level: float = 0.95,
     show_runs: bool = False,
     match: MatchMode = "first",
@@ -702,8 +706,8 @@ def plot_metric_bar(
     entity_col_name: str = "entity_id",
     time_col_name: str = "time",
     event_col_name: str = "event",
-    run_col_name: Optional[str] = "auto",
-    pathway_col_name: Optional[str] = "pathway",
+    run_col_name: str | None = "auto",
+    pathway_col_name: str | None = "pathway",
     **kwargs,
 ) -> go.Figure:
     """
@@ -813,25 +817,25 @@ def plot_metric_bar(
 
     if error_bars is not None and across != "runs":
         raise ValueError(
-            "`error_bars` requires `across=\"runs\"`. An interval computed over "
+            '`error_bars` requires `across="runs"`. An interval computed over '
             "replication means attached to a bar height pooled over entities "
             "would be internally inconsistent - entities within a run are "
-            "correlated, runs are the independent unit. Pass `across=\"runs\"`, "
+            'correlated, runs are the independent unit. Pass `across="runs"`, '
             "or drop `error_bars` for a plain pooled bar."
         )
 
     if show_runs and across != "runs":
         raise ValueError(
-            "`show_runs=True` requires `across=\"runs\"` - there is one point "
+            '`show_runs=True` requires `across="runs"` - there is one point '
             "per run to overlay only when the bar itself is a statistic "
             "computed across runs."
         )
 
     if across == "runs" and not exclude_incomplete:
         raise ValueError(
-            "`exclude_incomplete=False` is not supported with `across=\"runs\"`: "
+            '`exclude_incomplete=False` is not supported with `across="runs"`: '
             "a per-replication statistic cannot include an incomplete (NaN) "
-            "duration. Use `across=\"entities\"` for `exclude_incomplete=False` "
+            'duration. Use `across="entities"` for `exclude_incomplete=False` '
             "semantics."
         )
 
@@ -918,24 +922,24 @@ def plot_resource_utilisation(
     *,
     by: ResourceUtilisationBy = "step",
     metric: ResourceMetric = "utilisation",
-    error_bars: Optional[ErrorBars] = "ci",
+    error_bars: ErrorBars | None = "ci",
     ci_level: float = 0.95,
     show_runs: bool = True,
-    sort_by: Optional[Literal["value"]] = None,
+    sort_by: Literal["value"] | None = None,
     scenario=None,
-    resource_map: Optional[dict] = None,
-    event_position_df: Optional[pd.DataFrame] = None,
-    resource_capacities: Optional[dict] = None,
-    capacity: Optional[Literal["infer"]] = None,
+    resource_map: dict | None = None,
+    event_position_df: pd.DataFrame | None = None,
+    resource_capacities: dict | None = None,
+    capacity: Literal["infer"] | None = None,
     warm_up: float = 0,
-    limit_duration: Optional[float] = None,
+    limit_duration: float | None = None,
     unclosed: UnclosedResourceUse = "censor",
     entity_col_name: str = "entity_id",
     time_col_name: str = "time",
     event_type_col_name: str = "event_type",
     event_col_name: str = "event",
     resource_col_name: str = "resource_id",
-    run_col_name: Optional[str] = "auto",
+    run_col_name: str | None = "auto",
 ) -> go.Figure:
     """
     Plot a bar chart of resource utilisation, one bar per group, across runs.
@@ -1082,7 +1086,9 @@ def plot_resource_utilisation(
 
     order = list(range(len(labels)))
     if sort_by == "value":
-        order.sort(key=lambda i: (pd.isna(values[i]), -values[i] if pd.notna(values[i]) else 0))
+        order.sort(
+            key=lambda i: (pd.isna(values[i]), -values[i] if pd.notna(values[i]) else 0)
+        )
 
     labels = [labels[i] for i in order]
     values = [values[i] for i in order]
@@ -1093,7 +1099,9 @@ def plot_resource_utilisation(
     fig = go.Figure()
     bar_kwargs = dict(x=labels, y=values, name=effective_metric)
     if error_bars is not None:
-        bar_kwargs["error_y"] = dict(type="data", array=error_plus, arrayminus=error_minus)
+        bar_kwargs["error_y"] = dict(
+            type="data", array=error_plus, arrayminus=error_minus
+        )
     fig.add_trace(go.Bar(**bar_kwargs))
 
     if show_runs:
@@ -1128,21 +1136,21 @@ def plot_resource_utilisation_over_time(
     *,
     every_x_time_units: float = 1,
     warm_up: float = 0,
-    limit_duration: Optional[float] = None,
+    limit_duration: float | None = None,
     as_proportion: bool = False,
     show_all_runs: bool = True,
     shared_y_axis: bool = True,
     scenario=None,
-    resource_map: Optional[dict] = None,
-    event_position_df: Optional[pd.DataFrame] = None,
-    resource_capacities: Optional[dict] = None,
-    capacity: Optional[Literal["infer"]] = None,
+    resource_map: dict | None = None,
+    event_position_df: pd.DataFrame | None = None,
+    resource_capacities: dict | None = None,
+    capacity: Literal["infer"] | None = None,
     entity_col_name: str = "entity_id",
     time_col_name: str = "time",
     event_type_col_name: str = "event_type",
     event_col_name: str = "event",
     resource_col_name: str = "resource_id",
-    run_col_name: Optional[str] = "auto",
+    run_col_name: str | None = "auto",
 ) -> go.Figure:
     """
     Plot how many units of each resource step were in use over time, across runs.
@@ -1272,7 +1280,9 @@ def plot_resource_utilisation_over_time(
         )
         y_col, y_title = "proportion", "proportion in use"
 
-    mean_df = occupancy.groupby(["snapshot_time", "event"], as_index=False)[y_col].mean()
+    mean_df = occupancy.groupby(["snapshot_time", "event"], as_index=False)[
+        y_col
+    ].mean()
 
     n_steps = len(steps)
     if n_steps > 1:
@@ -1340,13 +1350,13 @@ def plot_warm_up_diagnostic(
     event_log: pd.DataFrame,
     *,
     series: Literal["queue", "occupancy", "duration"] = "queue",
-    event: Optional[str] = None,
-    first_event: Optional[str] = None,
-    second_event: Optional[str] = None,
+    event: str | None = None,
+    first_event: str | None = None,
+    second_event: str | None = None,
     method: WarmUpMethod = "welch",
     windows: Sequence[int] = (5, 10, 20),
     every_x_time_units: float = 1,
-    limit_duration: Optional[float] = None,
+    limit_duration: float | None = None,
     show_ensemble: bool = True,
     show_runs: bool = False,
     **col_kwargs,
@@ -1467,8 +1477,7 @@ def plot_warm_up_diagnostic(
     """
     if series not in ("queue", "occupancy", "duration"):
         raise ValueError(
-            f"`series` must be one of 'queue', 'occupancy', 'duration'; got "
-            f"{series!r}."
+            f"`series` must be one of 'queue', 'occupancy', 'duration'; got {series!r}."
         )
 
     if series in ("queue", "occupancy"):
@@ -1486,8 +1495,7 @@ def plot_warm_up_diagnostic(
     else:
         if first_event is None or second_event is None:
             raise ValueError(
-                "`series='duration'` requires both `first_event=` and "
-                "`second_event=`."
+                "`series='duration'` requires both `first_event=` and `second_event=`."
             )
         if event is not None:
             raise ValueError(
@@ -1553,9 +1561,7 @@ def plot_warm_up_diagnostic(
                 f"steps: {available}."
             )
         occupancy = occupancy[occupancy["event"] == event]
-        run_ids = sorted(occupancy["run_number"].dropna().unique().tolist()) or [
-            pd.NA
-        ]
+        run_ids = sorted(occupancy["run_number"].dropna().unique().tolist()) or [pd.NA]
 
         def _run_rows(run_id):
             frame = (
@@ -1573,9 +1579,7 @@ def plot_warm_up_diagnostic(
         durations = event_durations(
             event_log, first_event, second_event, keep_incomplete=False, **col_kwargs
         )
-        run_ids = sorted(durations["run_number"].dropna().unique().tolist()) or [
-            pd.NA
-        ]
+        run_ids = sorted(durations["run_number"].dropna().unique().tolist()) or [pd.NA]
 
         def _run_rows(run_id):
             frame = (
@@ -1758,7 +1762,12 @@ def plot_replication_analysis(
     <plotly.graph_objs._figure.Figure>
     """
     durations = event_durations(
-        event_log, first_event, second_event, match=match, keep_incomplete=False, **col_kwargs
+        event_log,
+        first_event,
+        second_event,
+        match=match,
+        keep_incomplete=False,
+        **col_kwargs,
     )
     run_values = replication_means(durations, what=what)["value"]
     if run_values.empty:
@@ -1876,14 +1885,14 @@ def plot_metric_vs_arrival_time(
     second_event: str,
     *,
     arrival_event: str = "arrival",
-    colour_by: Optional[SplitBy] = None,
-    rolling_window: Optional[int] = None,
-    rolling_time: Optional[float] = None,
+    colour_by: SplitBy | None = None,
+    rolling_window: int | None = None,
+    rolling_time: float | None = None,
     warm_up: float = 0,
     match: MatchMode = "first",
     marker_size: float = 6,
     line_width: float = 3,
-    title: Optional[str] = None,
+    title: str | None = None,
     **col_kwargs,
 ) -> go.Figure:
     """
@@ -1996,7 +2005,12 @@ def plot_metric_vs_arrival_time(
         raise ValueError(f"`warm_up` must not be negative, but {warm_up} was passed.")
 
     df = entity_metric_by_arrival(
-        event_log, first_event, second_event, arrival_event=arrival_event, match=match, **col_kwargs
+        event_log,
+        first_event,
+        second_event,
+        arrival_event=arrival_event,
+        match=match,
+        **col_kwargs,
     )
     df = df[df["duration"].notna() & df["arrival_time"].notna()]
     df = df[df["arrival_time"] >= warm_up]

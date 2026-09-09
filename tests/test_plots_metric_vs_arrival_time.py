@@ -29,7 +29,9 @@ POINTS = [(0.0, 10.0), (2.0, 20.0), (4.0, 30.0), (6.0, 25.0), (8.0, 15.0), (10.0
 
 
 def test_returns_a_figure(unequal_run_loggers):
-    fig = plot_metric_vs_arrival_time(_trial_df(unequal_run_loggers), "arrival", "depart")
+    fig = plot_metric_vs_arrival_time(
+        _trial_df(unequal_run_loggers), "arrival", "depart"
+    )
     assert isinstance(fig, go.Figure)
 
 
@@ -99,7 +101,10 @@ def test_rolling_window_and_rolling_time_together_raises(unequal_run_loggers):
 def test_non_positive_rolling_window_raises(unequal_run_loggers, rolling_window):
     with pytest.raises(ValueError, match="rolling_window"):
         plot_metric_vs_arrival_time(
-            _trial_df(unequal_run_loggers), "arrival", "depart", rolling_window=rolling_window
+            _trial_df(unequal_run_loggers),
+            "arrival",
+            "depart",
+            rolling_window=rolling_window,
         )
 
 
@@ -107,7 +112,10 @@ def test_non_positive_rolling_window_raises(unequal_run_loggers, rolling_window)
 def test_non_positive_rolling_time_raises(unequal_run_loggers, rolling_time):
     with pytest.raises(ValueError, match="rolling_time"):
         plot_metric_vs_arrival_time(
-            _trial_df(unequal_run_loggers), "arrival", "depart", rolling_time=rolling_time
+            _trial_df(unequal_run_loggers),
+            "arrival",
+            "depart",
+            rolling_time=rolling_time,
         )
 
 
@@ -120,10 +128,14 @@ def test_warm_up_filters_by_arrival_time_not_first_time():
     first_time=5 < 10 would not)."""
     logger = EventLogger(run_number=1)
     logger.log_arrival(entity_id=1, time=0.0)
-    logger.log_custom_event(entity_id=1, event_type="milestone", event="wait_begins", time=50.0)
+    logger.log_custom_event(
+        entity_id=1, event_type="milestone", event="wait_begins", time=50.0
+    )
     logger.log_departure(entity_id=1, time=60.0)
     logger.log_arrival(entity_id=2, time=100.0)
-    logger.log_custom_event(entity_id=2, event_type="milestone", event="wait_begins", time=5.0)
+    logger.log_custom_event(
+        entity_id=2, event_type="milestone", event="wait_begins", time=5.0
+    )
     logger.log_departure(entity_id=2, time=8.0)
 
     fig = plot_metric_vs_arrival_time(
@@ -155,7 +167,9 @@ def test_warm_up_applied_before_smoothing():
 def test_warm_up_zero_is_a_no_op(unequal_run_loggers):
     event_log = _trial_df(unequal_run_loggers)
     default_fig = plot_metric_vs_arrival_time(event_log, "arrival", "depart")
-    explicit_fig = plot_metric_vs_arrival_time(event_log, "arrival", "depart", warm_up=0)
+    explicit_fig = plot_metric_vs_arrival_time(
+        event_log, "arrival", "depart", warm_up=0
+    )
 
     assert list(default_fig.data[0].y) == pytest.approx(list(explicit_fig.data[0].y))
 
@@ -170,9 +184,15 @@ def test_no_points_survive_filtering_raises():
 
 def test_match_kwarg_reaches_event_durations():
     logger = EventLogger(run_number=1)
-    logger.log_custom_event(entity_id=1, event_type="milestone", event="arrival", time=0.0)
-    logger.log_custom_event(entity_id=1, event_type="milestone", event="assessment", time=1.0)
-    logger.log_custom_event(entity_id=1, event_type="milestone", event="assessment", time=20.0)
+    logger.log_custom_event(
+        entity_id=1, event_type="milestone", event="arrival", time=0.0
+    )
+    logger.log_custom_event(
+        entity_id=1, event_type="milestone", event="assessment", time=1.0
+    )
+    logger.log_custom_event(
+        entity_id=1, event_type="milestone", event="assessment", time=20.0
+    )
 
     first_fig = plot_metric_vs_arrival_time(
         _trial_df([logger]), "arrival", "assessment", match="first"
@@ -192,7 +212,9 @@ def test_title_reaches_the_figure(unequal_run_loggers):
     assert fig.layout.title.text == "my title"
 
 
-def test_marker_size_and_line_width_default_to_the_documented_values(unequal_run_loggers):
+def test_marker_size_and_line_width_default_to_the_documented_values(
+    unequal_run_loggers,
+):
     fig = plot_metric_vs_arrival_time(
         _trial_df(unequal_run_loggers), "arrival", "depart", rolling_window=1
     )

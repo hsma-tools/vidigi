@@ -58,9 +58,7 @@ def test_multi_run_triallogger_without_run_number_is_rejected():
 def test_run_number_selects_the_named_replication():
     trial = TrialLogger([_logger(run_number=1), _logger(run_number=2, shift=3.0)])
     selected = reshape_for_animations(trial, run_number=2, **RESHAPE_KW)
-    expected = reshape_for_animations(
-        trial.get_log_by_run(2, as_df=True), **RESHAPE_KW
-    )
+    expected = reshape_for_animations(trial.get_log_by_run(2, as_df=True), **RESHAPE_KW)
     # Whole-frame equality: picking the wrong run would still produce a
     # plausible-looking frame, so a spot check could pass by coincidence.
     assert_frame_equal(selected, expected)

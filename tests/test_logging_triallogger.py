@@ -16,7 +16,6 @@ import pytest
 
 from vidigi.logging import DurationStat, EventLogger, TrialLogger
 
-
 # --------------------------------------------------------------------------- #
 # Construction
 # --------------------------------------------------------------------------- #
@@ -260,9 +259,7 @@ def test_get_event_durations_matches_the_old_pivot_where_it_worked(
 
     assert list(new["entity_id"]) == list(old["entity_id"])
     assert list(new["run_number"]) == list(old["run_number"])
-    pd.testing.assert_series_equal(
-        new["duration"], old["duration"], check_names=False
-    )
+    pd.testing.assert_series_equal(new["duration"], old["duration"], check_names=False)
 
 
 def test_old_pivot_raises_on_a_rework_loop(rework_loop_logger):
@@ -312,15 +309,16 @@ def test_get_event_duration_stat_warm_up_is_passed_through(two_run_loggers):
     were dropped on the way to `get_event_durations`."""
     trial = TrialLogger(two_run_loggers)
 
-    assert trial.get_event_duration_stat("arrival", "depart", what="count", warm_up=1.5) == 2
+    assert (
+        trial.get_event_duration_stat("arrival", "depart", what="count", warm_up=1.5)
+        == 2
+    )
 
 
 def test_quantile_accepts_kwargs(two_run_loggers):
     trial = TrialLogger(two_run_loggers)
 
-    result = trial.get_event_duration_stat(
-        "arrival", "depart", what="quantile", q=0.9
-    )
+    result = trial.get_event_duration_stat("arrival", "depart", what="quantile", q=0.9)
 
     assert result == 5.0
 
@@ -331,7 +329,9 @@ def test_rounding_honours_dp():
     logger.log_departure(entity_id=1, time=1.23456)
     trial = TrialLogger([logger])
 
-    assert trial.get_event_duration_stat("arrival", "depart", what="mean", dp=3) == 1.235
+    assert (
+        trial.get_event_duration_stat("arrival", "depart", what="mean", dp=3) == 1.235
+    )
 
 
 def test_label_wraps_result(two_run_loggers):
@@ -397,9 +397,7 @@ def test_get_event_duration_stat_across_runs_rejects_entity_counting_what(
     trial = TrialLogger(two_run_loggers)
 
     with pytest.raises(ValueError, match="per-replication"):
-        trial.get_event_duration_stat(
-            "arrival", "depart", what="count", across="runs"
-        )
+        trial.get_event_duration_stat("arrival", "depart", what="count", across="runs")
 
 
 def test_get_event_duration_stat_across_runs_requires_exclude_incomplete(
@@ -730,7 +728,11 @@ def test_get_resource_utilisation_is_passed_through(resource_use_loggers):
     )
 
     run1 = result[result["run_number"] == 1]
-    assert dict(zip(run1["resource_id"], run1["busy_time"])) == {1: 10.0, 2: 5.0, 3: 0.0}
+    assert dict(zip(run1["resource_id"], run1["busy_time"])) == {
+        1: 10.0,
+        2: 5.0,
+        3: 0.0,
+    }
 
 
 def _colliding_pool_logger():
@@ -739,16 +741,32 @@ def _colliding_pool_logger():
     case for `VidigiStore`'s `label=`/`unique_id_attribute`."""
     logger = EventLogger(run_number=1)
     logger.log_resource_use_start(
-        entity_id=1, resource_id=1, unique_resource_id="a_1", time=0.0, event="step_begins"
+        entity_id=1,
+        resource_id=1,
+        unique_resource_id="a_1",
+        time=0.0,
+        event="step_begins",
     )
     logger.log_resource_use_end(
-        entity_id=1, resource_id=1, unique_resource_id="a_1", time=10.0, event="step_ends"
+        entity_id=1,
+        resource_id=1,
+        unique_resource_id="a_1",
+        time=10.0,
+        event="step_ends",
     )
     logger.log_resource_use_start(
-        entity_id=2, resource_id=1, unique_resource_id="b_1", time=5.0, event="step_begins"
+        entity_id=2,
+        resource_id=1,
+        unique_resource_id="b_1",
+        time=5.0,
+        event="step_begins",
     )
     logger.log_resource_use_end(
-        entity_id=2, resource_id=1, unique_resource_id="b_1", time=15.0, event="step_ends"
+        entity_id=2,
+        resource_id=1,
+        unique_resource_id="b_1",
+        time=15.0,
+        event="step_ends",
     )
     return logger
 
@@ -786,13 +804,17 @@ def test_resolve_resource_col_name_defaults_to_unique_resource_id_when_present()
     assert trial._resolve_resource_col_name(None, df) == "unique_resource_id"
 
 
-def test_resolve_resource_col_name_falls_back_to_resource_id_when_absent(resource_use_loggers):
+def test_resolve_resource_col_name_falls_back_to_resource_id_when_absent(
+    resource_use_loggers,
+):
     trial = TrialLogger(resource_use_loggers)
     df = trial.to_dataframe()
     assert trial._resolve_resource_col_name(None, df) == "resource_id"
 
 
-def test_resolve_resource_col_name_explicit_value_is_returned_unchanged(resource_use_loggers):
+def test_resolve_resource_col_name_explicit_value_is_returned_unchanged(
+    resource_use_loggers,
+):
     trial = TrialLogger(resource_use_loggers)
     df = trial.to_dataframe()
     assert trial._resolve_resource_col_name("something_else", df) == "something_else"
@@ -820,10 +842,18 @@ def test_get_resource_utilisation_auto_raises_on_a_partially_populated_column():
     resource_col_name="resource_id" explicitly restores the old behaviour."""
     with_unique_id = EventLogger(run_number=1)
     with_unique_id.log_resource_use_start(
-        entity_id=1, resource_id=1, unique_resource_id="a_1", time=0.0, event="step_begins"
+        entity_id=1,
+        resource_id=1,
+        unique_resource_id="a_1",
+        time=0.0,
+        event="step_begins",
     )
     with_unique_id.log_resource_use_end(
-        entity_id=1, resource_id=1, unique_resource_id="a_1", time=10.0, event="step_ends"
+        entity_id=1,
+        resource_id=1,
+        unique_resource_id="a_1",
+        time=10.0,
+        event="step_ends",
     )
     without_unique_id = EventLogger(run_number=2)
     without_unique_id.log_resource_use_start(
@@ -1026,16 +1056,32 @@ def _two_units_sharing_a_resource_id_logger():
     apart."""
     logger = EventLogger(run_number=1)
     logger.log_resource_use_start(
-        entity_id=1, resource_id=1, unique_resource_id="a_1", time=0.0, event="step_begins"
+        entity_id=1,
+        resource_id=1,
+        unique_resource_id="a_1",
+        time=0.0,
+        event="step_begins",
     )
     logger.log_resource_use_end(
-        entity_id=1, resource_id=1, unique_resource_id="a_1", time=10.0, event="step_ends"
+        entity_id=1,
+        resource_id=1,
+        unique_resource_id="a_1",
+        time=10.0,
+        event="step_ends",
     )
     logger.log_resource_use_start(
-        entity_id=2, resource_id=1, unique_resource_id="b_1", time=20.0, event="step_begins"
+        entity_id=2,
+        resource_id=1,
+        unique_resource_id="b_1",
+        time=20.0,
+        event="step_begins",
     )
     logger.log_resource_use_end(
-        entity_id=2, resource_id=1, unique_resource_id="b_1", time=30.0, event="step_ends"
+        entity_id=2,
+        resource_id=1,
+        unique_resource_id="b_1",
+        time=30.0,
+        event="step_ends",
     )
     return logger
 
@@ -1083,8 +1129,12 @@ def test_plot_resource_utilisation_over_time_resource_col_name_is_passed_through
     hatch either. Proven by pointing it at a nonexistent column and seeing the
     underlying missing-column fallback warning name it."""
     logger = EventLogger(run_number=1)
-    logger.log_resource_use_start(entity_id=1, resource_id=1, time=0.0, event="step_begins")
-    logger.log_resource_use_end(entity_id=1, resource_id=1, time=10.0, event="step_ends")
+    logger.log_resource_use_start(
+        entity_id=1, resource_id=1, time=0.0, event="step_begins"
+    )
+    logger.log_resource_use_end(
+        entity_id=1, resource_id=1, time=10.0, event="step_ends"
+    )
     trial = TrialLogger([logger])
 
     with pytest.warns(UserWarning, match="totally_not_a_column"):
@@ -1187,7 +1237,9 @@ def test_plot_warm_up_diagnostic_show_runs_is_passed_through(resource_use_logger
     assert [list(t.y) for t in run_traces] == [[2, 1, 0, 0, 0], [1, 2, 2, 1, 0]]
 
 
-def test_plot_warm_up_diagnostic_match_kwarg_reaches_event_durations(rework_loop_logger):
+def test_plot_warm_up_diagnostic_match_kwarg_reaches_event_durations(
+    rework_loop_logger,
+):
     """`match=` isn't a named parameter on `plot_warm_up_diagnostic` - it
     reaches `vidigi.analysis.event_durations` purely via `**kwargs`, the same
     path `run_col_name` would take. Entity 1 hits `assessment`/`treated`
@@ -1248,8 +1300,12 @@ def test_get_replication_precision_deviation_threshold_is_passed_through():
         logger.log_departure(entity_id=1, time=5.0)
     trial = TrialLogger(loggers)
 
-    generous = trial.get_replication_precision("arrival", "depart", deviation_threshold=0.5)
-    impossible = trial.get_replication_precision("arrival", "depart", deviation_threshold=-0.01)
+    generous = trial.get_replication_precision(
+        "arrival", "depart", deviation_threshold=0.5
+    )
+    impossible = trial.get_replication_precision(
+        "arrival", "depart", deviation_threshold=-0.01
+    )
 
     assert generous["stays_below_threshold"].any()
     assert not impossible["stays_below_threshold"].any()
@@ -1295,14 +1351,24 @@ def test_get_replication_precision_match_kwarg_reaches_event_durations():
     loggers = []
     for run_number in (1, 2):
         logger = EventLogger(run_number=run_number)
-        logger.log_custom_event(entity_id=1, event_type="milestone", event="assessment", time=1.0)
-        logger.log_custom_event(entity_id=1, event_type="milestone", event="treated", time=5.0)
-        logger.log_custom_event(entity_id=1, event_type="milestone", event="assessment", time=20.0)
-        logger.log_custom_event(entity_id=1, event_type="milestone", event="treated", time=30.0)
+        logger.log_custom_event(
+            entity_id=1, event_type="milestone", event="assessment", time=1.0
+        )
+        logger.log_custom_event(
+            entity_id=1, event_type="milestone", event="treated", time=5.0
+        )
+        logger.log_custom_event(
+            entity_id=1, event_type="milestone", event="assessment", time=20.0
+        )
+        logger.log_custom_event(
+            entity_id=1, event_type="milestone", event="treated", time=30.0
+        )
         loggers.append(logger)
     trial = TrialLogger(loggers)
 
-    first_result = trial.get_replication_precision("assessment", "treated", match="first")
+    first_result = trial.get_replication_precision(
+        "assessment", "treated", match="first"
+    )
     occurrence_result = trial.get_replication_precision(
         "assessment", "treated", match="occurrence"
     )
@@ -1337,7 +1403,9 @@ def test_plot_replication_analysis_is_passed_through(unequal_run_loggers):
     assert list(mean_trace.y) == pytest.approx([4.0, 4.5, 6.0])
 
 
-def test_plot_replication_analysis_show_deviation_is_passed_through(unequal_run_loggers):
+def test_plot_replication_analysis_show_deviation_is_passed_through(
+    unequal_run_loggers,
+):
     trial = TrialLogger(unequal_run_loggers)
 
     with_deviation = trial.plot_replication_analysis("arrival", "depart")
@@ -1358,10 +1426,18 @@ def test_plot_replication_analysis_match_kwarg_reaches_event_durations():
     loggers = []
     for run_number in (1, 2):
         logger = EventLogger(run_number=run_number)
-        logger.log_custom_event(entity_id=1, event_type="milestone", event="assessment", time=1.0)
-        logger.log_custom_event(entity_id=1, event_type="milestone", event="treated", time=5.0)
-        logger.log_custom_event(entity_id=1, event_type="milestone", event="assessment", time=20.0)
-        logger.log_custom_event(entity_id=1, event_type="milestone", event="treated", time=30.0)
+        logger.log_custom_event(
+            entity_id=1, event_type="milestone", event="assessment", time=1.0
+        )
+        logger.log_custom_event(
+            entity_id=1, event_type="milestone", event="treated", time=5.0
+        )
+        logger.log_custom_event(
+            entity_id=1, event_type="milestone", event="assessment", time=20.0
+        )
+        logger.log_custom_event(
+            entity_id=1, event_type="milestone", event="treated", time=30.0
+        )
         loggers.append(logger)
     trial = TrialLogger(loggers)
 
@@ -1402,8 +1478,12 @@ def test_get_entity_metric_by_arrival_arrival_event_is_passed_through():
     `rework_loop_logger`'s own event set has no 'arrival' event at all, so
     the default would raise if this kwarg were silently dropped."""
     logger = EventLogger(run_number=1)
-    logger.log_custom_event(entity_id=1, event_type="milestone", event="assessment", time=1.0)
-    logger.log_custom_event(entity_id=1, event_type="milestone", event="treated", time=5.0)
+    logger.log_custom_event(
+        entity_id=1, event_type="milestone", event="assessment", time=1.0
+    )
+    logger.log_custom_event(
+        entity_id=1, event_type="milestone", event="treated", time=5.0
+    )
     trial = TrialLogger([logger])
 
     result = trial.get_entity_metric_by_arrival(
@@ -1436,13 +1516,17 @@ def test_plot_metric_vs_arrival_time_colour_by_is_passed_through(unequal_run_log
 
 def test_plot_metric_vs_arrival_time_rolling_window_is_passed_through():
     logger = EventLogger(run_number=1)
-    for i, (arrival, duration) in enumerate([(0.0, 10.0), (2.0, 20.0), (4.0, 30.0)], start=1):
+    for i, (arrival, duration) in enumerate(
+        [(0.0, 10.0), (2.0, 20.0), (4.0, 30.0)], start=1
+    ):
         logger.log_arrival(entity_id=i, time=arrival)
         logger.log_departure(entity_id=i, time=arrival + duration)
     trial = TrialLogger([logger])
 
     no_trend = trial.plot_metric_vs_arrival_time("arrival", "depart")
-    with_trend = trial.plot_metric_vs_arrival_time("arrival", "depart", rolling_window=1)
+    with_trend = trial.plot_metric_vs_arrival_time(
+        "arrival", "depart", rolling_window=1
+    )
 
     assert "rolling mean" not in [t.name for t in no_trend.data]
     trend = [t for t in with_trend.data if t.name == "rolling mean"][0]
@@ -1451,7 +1535,9 @@ def test_plot_metric_vs_arrival_time_rolling_window_is_passed_through():
 
 def test_plot_metric_vs_arrival_time_rolling_time_is_passed_through():
     logger = EventLogger(run_number=1)
-    for i, (arrival, duration) in enumerate([(0.0, 10.0), (2.0, 20.0), (4.0, 30.0)], start=1):
+    for i, (arrival, duration) in enumerate(
+        [(0.0, 10.0), (2.0, 20.0), (4.0, 30.0)], start=1
+    ):
         logger.log_arrival(entity_id=i, time=arrival)
         logger.log_departure(entity_id=i, time=arrival + duration)
     trial = TrialLogger([logger])
@@ -1503,8 +1589,7 @@ def test_scenario_and_label_are_stored_and_surfaced(two_run_loggers):
 def test_scenario_and_label_are_inherited_from_event_loggers():
     scenario = {"n_cubicles": 5}
     logs = [
-        EventLogger(run_number=n, scenario=scenario, label="from runs")
-        for n in (1, 2)
+        EventLogger(run_number=n, scenario=scenario, label="from runs") for n in (1, 2)
     ]
     for logger in logs:
         logger.log_arrival(entity_id=1, time=0.0)
@@ -1596,9 +1681,7 @@ def test_explicit_scenario_still_beats_the_attached_one(resource_use_loggers):
 
 
 def test_pickle_round_trip_via_buffer(two_run_loggers):
-    trial = TrialLogger(
-        two_run_loggers, scenario={"n_cubicles": 5}, label="base case"
-    )
+    trial = TrialLogger(two_run_loggers, scenario={"n_cubicles": 5}, label="base case")
 
     buffer = io.BytesIO()
     trial.to_pickle(buffer)

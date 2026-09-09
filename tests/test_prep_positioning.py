@@ -17,10 +17,10 @@ import pandas as pd
 import pytest
 
 from vidigi.prep import (
+    _event_to_icon_id,
     ascii_queue_icon,
     generate_animation_df,
     reshape_for_animations,
-    _event_to_icon_id,
 )
 
 
@@ -29,9 +29,7 @@ def positions_at(result, snapshot_time, event):
     rows = result[
         (result["snapshot_time"] == snapshot_time) & (result["event"] == event)
     ]
-    return {
-        row["rank"]: (row["x_final"], row["y_final"]) for _, row in rows.iterrows()
-    }
+    return {row["rank"]: (row["x_final"], row["y_final"]) for _, row in rows.iterrows()}
 
 
 @pytest.fixture
@@ -52,9 +50,7 @@ def overflow_positions(overflow_queue_log, basic_event_position_df):
             limit_duration=30,
             step_snapshot_max=params["step_snapshot_max"],
         )
-        return generate_animation_df(
-            reshaped, basic_event_position_df, **params
-        )
+        return generate_animation_df(reshaped, basic_event_position_df, **params)
 
     return _build
 
@@ -271,7 +267,11 @@ def test_direction_column_absent_falls_back_to_global(
         overflow_queue_log, every_x_time_units=10, limit_duration=30
     )
     result = generate_animation_df(
-        reshaped, epd, wrap_queues_at=5, gap_between_entities=10, queue_direction="right"
+        reshaped,
+        epd,
+        wrap_queues_at=5,
+        gap_between_entities=10,
+        queue_direction="right",
     )
     positions = positions_at(result, 20, "waiting")
 
@@ -446,9 +446,7 @@ def test_no_entity_occupies_two_positions_in_one_frame(
     )
 
 
-def test_empty_snapshots_survive_positioning(
-    simple_queue_log, basic_event_position_df
-):
+def test_empty_snapshots_survive_positioning(simple_queue_log, basic_event_position_df):
     """Placeholder rows for empty frames must not be dropped by the merges."""
     reshaped = reshape_for_animations(
         simple_queue_log, every_x_time_units=10, limit_duration=50

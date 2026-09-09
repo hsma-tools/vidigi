@@ -24,7 +24,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 import warnings
 import weakref
-from typing import Optional
 
 import simpy
 from simpy.core import BoundClass
@@ -148,7 +147,13 @@ class VidigiResource:
         return f"VidigiResource(id={self.id_attribute})"
 
 
-_RESERVED_POOL_ATTRS = ("id_attribute", "id", "label", "unique_id_attribute", "unique_id")
+_RESERVED_POOL_ATTRS = (
+    "id_attribute",
+    "id",
+    "label",
+    "unique_id_attribute",
+    "unique_id",
+)
 
 
 def _check_extra_attributes(extra_attributes):
@@ -207,8 +212,8 @@ def _new_pool_resource(env, index, label=None, *, extra_attributes=None, stackle
             "`label`. Resources from different pools currently number "
             "themselves 1..capacity independently, so the same resource_id can "
             "mean different physical things in different pools - this silently "
-            "breaks vidigi.analysis.resource_utilisation(by=\"resource\"). Pass "
-            "label=\"...\" to give this pool's resources a collision-proof "
+            'breaks vidigi.analysis.resource_utilisation(by="resource"). Pass '
+            'label="..." to give this pool\'s resources a collision-proof '
             "unique_id_attribute. `label` becomes mandatory in vidigi 3.0.",
             DeprecationWarning,
             stacklevel=stacklevel,
@@ -221,7 +226,9 @@ def _new_pool_resource(env, index, label=None, *, extra_attributes=None, stackle
     return VidigiResource(env=env, capacity=1, id_attribute=index + 1, **extra)
 
 
-def populate_store(num_resources, simpy_store, sim_env, label=None, extra_attributes=None):
+def populate_store(
+    num_resources, simpy_store, sim_env, label=None, extra_attributes=None
+):
     """
     Populate a SimPy Store (or VidigiPriorityStore) with VidigiResource objects.
 
@@ -304,7 +311,9 @@ def populate_store(num_resources, simpy_store, sim_env, label=None, extra_attrib
     _check_extra_attributes(extra_attributes)
     _check_label_not_reused(sim_env, label, stacklevel=3)
     for i in range(num_resources):
-        simpy_store.put(_new_pool_resource(sim_env, i, label, extra_attributes=extra_attributes))
+        simpy_store.put(
+            _new_pool_resource(sim_env, i, label, extra_attributes=extra_attributes)
+        )
 
 
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\#
@@ -393,7 +402,9 @@ def _resource_use_log_kwargs(store, item, phase, *, event, pathway, extra_fields
     return kwargs
 
 
-def _register_start_log_callback(store, get_event, entity_id, event, pathway, extra_fields):
+def _register_start_log_callback(
+    store, get_event, entity_id, event, pathway, extra_fields
+):
     """Append a callback to `get_event` that logs `resource_use` once it is granted.
 
     A simpy `Event`'s callbacks aren't invoked until `env.step()` processes it - even when
@@ -464,8 +475,9 @@ def _reject_invalid_returned_item(item, method_name):
         )
 
 
-def _handle_unawaited_request(request, exc_type, *, method_name, store_name,
-                              return_item, cancel_get):
+def _handle_unawaited_request(
+    request, exc_type, *, method_name, store_name, return_item, cancel_get
+):
     """Common `__exit__` path for a `request()` context manager left without `yield req`.
 
     Reached only when the get event was never *processed*. That cannot happen under correct
@@ -577,7 +589,7 @@ class VidigiStore:
         num_resources=None,
         capacity=float("inf"),
         label=None,
-        logger: Optional[EventLogger] = None,
+        logger: EventLogger | None = None,
         extra_attributes=None,
         #  , init_items=None
     ):
@@ -614,7 +626,10 @@ class VidigiStore:
 
         if num_resources is not None:
             self.populate(
-                num_resources, label=label, extra_attributes=extra_attributes, _stacklevel=4
+                num_resources,
+                label=label,
+                extra_attributes=extra_attributes,
+                _stacklevel=4,
             )
 
         # # Initialize with items if provided
@@ -622,7 +637,9 @@ class VidigiStore:
         #     for item in init_items:
         #         self.store.put(item)
 
-    def populate(self, num_resources, label=None, extra_attributes=None, *, _stacklevel=3):
+    def populate(
+        self, num_resources, label=None, extra_attributes=None, *, _stacklevel=3
+    ):
         """
         Populate this VidigiStore with VidigiResource objects.
 
@@ -676,12 +693,25 @@ class VidigiStore:
             # or the "missing entity_id" warning.
             self.store.put(
                 _new_pool_resource(
-                    self.env, i, label, extra_attributes=extra_attributes, stacklevel=_stacklevel
+                    self.env,
+                    i,
+                    label,
+                    extra_attributes=extra_attributes,
+                    stacklevel=_stacklevel,
                 )
             )
         self._n_pool_units += num_resources
 
-    def request(self, entity_id=None, start_event=None, end_event=None, pathway=None, auto_log=True, filter_fn=None, **extra_fields):
+    def request(
+        self,
+        entity_id=None,
+        start_event=None,
+        end_event=None,
+        pathway=None,
+        auto_log=True,
+        filter_fn=None,
+        **extra_fields,
+    ):
         """
         Request context manager for getting an item from the store.
         The item is automatically returned when exiting the context.
@@ -766,7 +796,16 @@ class VidigiStore:
             extra_fields=extra_fields,
         )
 
-    def get(self, entity_id=None, start_event=None, end_event=None, pathway=None, auto_log=True, filter_fn=None, **extra_fields):
+    def get(
+        self,
+        entity_id=None,
+        start_event=None,
+        end_event=None,
+        pathway=None,
+        auto_log=True,
+        filter_fn=None,
+        **extra_fields,
+    ):
         """
         Alias for request() to maintain compatibility with both patterns.
 
@@ -786,7 +825,15 @@ class VidigiStore:
             **extra_fields,
         )
 
-    def put(self, item, entity_id=None, event=None, pathway=None, auto_log=True, **extra_fields):
+    def put(
+        self,
+        item,
+        entity_id=None,
+        event=None,
+        pathway=None,
+        auto_log=True,
+        **extra_fields,
+    ):
         """
         Put an item into the store.
 
@@ -823,10 +870,20 @@ class VidigiStore:
         """
         _reject_invalid_returned_item(item, "VidigiStore.put()")
         if _should_auto_log(self, entity_id, "put", auto_log=auto_log, stacklevel=3):
-            _log_resource_use_end_now(self, item, entity_id, event, pathway, extra_fields)
+            _log_resource_use_end_now(
+                self, item, entity_id, event, pathway, extra_fields
+            )
         return self.store.put(item)
 
-    def get_direct(self, entity_id=None, event=None, pathway=None, auto_log=True, filter_fn=None, **extra_fields):
+    def get_direct(
+        self,
+        entity_id=None,
+        event=None,
+        pathway=None,
+        auto_log=True,
+        filter_fn=None,
+        **extra_fields,
+    ):
         """
         Get an item from the store without the context manager.
         Use this if you don't want to automatically return the item.
@@ -864,13 +921,23 @@ class VidigiStore:
         """
         _validate_filter_fn(filter_fn)
         get_event = self.store.get() if filter_fn is None else self.store.get(filter_fn)
-        if _should_auto_log(self, entity_id, "get_direct", auto_log=auto_log, stacklevel=3):
+        if _should_auto_log(
+            self, entity_id, "get_direct", auto_log=auto_log, stacklevel=3
+        ):
             _register_start_log_callback(
                 self, get_event, entity_id, event, pathway, extra_fields
             )
         return get_event
 
-    def request_direct(self, entity_id=None, event=None, pathway=None, auto_log=True, filter_fn=None, **extra_fields):
+    def request_direct(
+        self,
+        entity_id=None,
+        event=None,
+        pathway=None,
+        auto_log=True,
+        filter_fn=None,
+        **extra_fields,
+    ):
         """
         Alias for get_direct() to maintain consistent API with SimPy resources.
 
@@ -881,8 +948,12 @@ class VidigiStore:
             A get event that can be yielded
         """
         return self.get_direct(
-            entity_id=entity_id, event=event, pathway=pathway, auto_log=auto_log,
-            filter_fn=filter_fn, **extra_fields
+            entity_id=entity_id,
+            event=event,
+            pathway=pathway,
+            auto_log=auto_log,
+            filter_fn=filter_fn,
+            **extra_fields,
         )
 
     def cancel_get(self, get_event):
@@ -1018,7 +1089,12 @@ class _StoreRequest:
         self._start_log_callback = None
         if self._should_log:
             self._start_log_callback = _register_start_log_callback(
-                store, self.get_event, entity_id, start_event, pathway, self.extra_fields
+                store,
+                self.get_event,
+                entity_id,
+                start_event,
+                pathway,
+                self.extra_fields,
             )
 
     def __enter__(self):
@@ -1170,7 +1246,7 @@ class VidigiPriorityStore:
         num_resources=None,
         capacity=float("inf"),
         label=None,
-        logger: Optional[EventLogger] = None,
+        logger: EventLogger | None = None,
         extra_attributes=None,
         #  , init_items=None
     ):
@@ -1211,10 +1287,15 @@ class VidigiPriorityStore:
 
         if num_resources is not None:
             self.populate(
-                num_resources, label=label, extra_attributes=extra_attributes, _stacklevel=4
+                num_resources,
+                label=label,
+                extra_attributes=extra_attributes,
+                _stacklevel=4,
             )
 
-    def populate(self, num_resources, label=None, extra_attributes=None, *, _stacklevel=3):
+    def populate(
+        self, num_resources, label=None, extra_attributes=None, *, _stacklevel=3
+    ):
         """
         Populate this VidigiPriorityStore with VidigiResource objects.
 
@@ -1268,7 +1349,11 @@ class VidigiPriorityStore:
             # or the "missing entity_id" warning.
             self._put_item(
                 _new_pool_resource(
-                    self.env, i, label, extra_attributes=extra_attributes, stacklevel=_stacklevel
+                    self.env,
+                    i,
+                    label,
+                    extra_attributes=extra_attributes,
+                    stacklevel=_stacklevel,
                 )
             )
         self._n_pool_units += num_resources
@@ -1426,7 +1511,15 @@ class VidigiPriorityStore:
 
             return request
 
-    def put(self, item, entity_id=None, event=None, pathway=None, auto_log=True, **extra_fields):
+    def put(
+        self,
+        item,
+        entity_id=None,
+        event=None,
+        pathway=None,
+        auto_log=True,
+        **extra_fields,
+    ):
         """
         Put an item into the store.
 
@@ -1465,7 +1558,9 @@ class VidigiPriorityStore:
         """
         _reject_invalid_returned_item(item, "VidigiPriorityStore.put()")
         if _should_auto_log(self, entity_id, "put", auto_log=auto_log, stacklevel=3):
-            _log_resource_use_end_now(self, item, entity_id, event, pathway, extra_fields)
+            _log_resource_use_end_now(
+                self, item, entity_id, event, pathway, extra_fields
+            )
         return self._put_item(item)
 
     def _put_item(self, item):
@@ -1480,7 +1575,11 @@ class VidigiPriorityStore:
         # behind a full finite-capacity store. For an unfiltered queue (the default) the
         # first waiting request always accepts, so this matches the old behaviour.
         served_idx = next(
-            (i for i, req in enumerate(self.get_queue) if _request_accepts_item(req, item)),
+            (
+                i
+                for i, req in enumerate(self.get_queue)
+                if _request_accepts_item(req, item)
+            ),
             None,
         )
         if served_idx is not None:
@@ -1529,7 +1628,15 @@ class VidigiPriorityStore:
             # Directly satisfy the get request
             request.succeed(item)
 
-    def return_item(self, item, entity_id=None, event=None, pathway=None, auto_log=True, **extra_fields):
+    def return_item(
+        self,
+        item,
+        entity_id=None,
+        event=None,
+        pathway=None,
+        auto_log=True,
+        **extra_fields,
+    ):
         """
         Return an item to the store and immediately process any waiting get requests.
 
@@ -1567,8 +1674,12 @@ class VidigiPriorityStore:
                 passing the get event back instead of the item it yielded.
         """
         _reject_invalid_returned_item(item, "VidigiPriorityStore.return_item()")
-        if _should_auto_log(self, entity_id, "return_item", auto_log=auto_log, stacklevel=3):
-            _log_resource_use_end_now(self, item, entity_id, event, pathway, extra_fields)
+        if _should_auto_log(
+            self, entity_id, "return_item", auto_log=auto_log, stacklevel=3
+        ):
+            _log_resource_use_end_now(
+                self, item, entity_id, event, pathway, extra_fields
+            )
         self._return_item_raw(item)
 
     def _return_item_raw(self, item):
@@ -1582,7 +1693,11 @@ class VidigiPriorityStore:
         # waiter (filter_fn None) accepts anything, so with no filters in play this is the
         # front of the queue, exactly as before.
         served_idx = next(
-            (i for i, req in enumerate(self.get_queue) if _request_accepts_item(req, item)),
+            (
+                i
+                for i, req in enumerate(self.get_queue)
+                if _request_accepts_item(req, item)
+            ),
             None,
         )
         if served_idx is not None:
@@ -1593,7 +1708,16 @@ class VidigiPriorityStore:
             # No waiting get wants it - add to items
             self.items.append(item)
 
-    def get_direct(self, priority=0, entity_id=None, event=None, pathway=None, auto_log=True, filter_fn=None, **extra_fields):
+    def get_direct(
+        self,
+        priority=0,
+        entity_id=None,
+        event=None,
+        pathway=None,
+        auto_log=True,
+        filter_fn=None,
+        **extra_fields,
+    ):
         """
         Get an item from the store without the context manager.
         Use this if you don't want to automatically return the item.
@@ -1631,13 +1755,24 @@ class VidigiPriorityStore:
             A get event that can be yielded
         """
         get_event = self.get(priority=priority, filter_fn=filter_fn)
-        if _should_auto_log(self, entity_id, "get_direct", auto_log=auto_log, stacklevel=3):
+        if _should_auto_log(
+            self, entity_id, "get_direct", auto_log=auto_log, stacklevel=3
+        ):
             _register_start_log_callback(
                 self, get_event, entity_id, event, pathway, extra_fields
             )
         return get_event
 
-    def request_direct(self, priority=0, entity_id=None, event=None, pathway=None, auto_log=True, filter_fn=None, **extra_fields):
+    def request_direct(
+        self,
+        priority=0,
+        entity_id=None,
+        event=None,
+        pathway=None,
+        auto_log=True,
+        filter_fn=None,
+        **extra_fields,
+    ):
         """
         Alias for get_direct() to maintain consistent API.
 
@@ -1776,7 +1911,12 @@ class _OptimizedStoreRequest:
         self._start_log_callback = None
         if self._should_log:
             self._start_log_callback = _register_start_log_callback(
-                store, self.get_event, entity_id, start_event, pathway, self.extra_fields
+                store,
+                self.get_event,
+                entity_id,
+                start_event,
+                pathway,
+                self.extra_fields,
             )
 
     def __enter__(self):

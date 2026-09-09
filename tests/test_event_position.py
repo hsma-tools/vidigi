@@ -167,7 +167,11 @@ def test_create_event_position_df_always_has_a_resource_icon_column():
         [
             EventPosition(event="arrival", x=50, y=300, label="Arrival"),
             EventPosition(
-                event="treatment", x=1, y=2, label="T", resource="beds",
+                event="treatment",
+                x=1,
+                y=2,
+                label="T",
+                resource="beds",
                 resource_icon="https://example.com/bed.png",
             ),
         ]

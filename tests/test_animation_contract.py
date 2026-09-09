@@ -10,7 +10,6 @@ animation.py had no dedicated test file; the existing coverage is four
 figure.
 """
 
-import datetime as dt
 import typing
 import warnings
 
@@ -28,10 +27,8 @@ from vidigi.animation import (
 )
 from vidigi.prep import generate_animation_df, reshape_for_animations
 from vidigi.utils import (
-    EventPosition,
     ICON_FLIP_MARKER,
     PHANTOM_ICON,
-    create_event_position_df,
 )
 
 
@@ -122,9 +119,7 @@ def test_stage_labels_add_one_trace_with_every_label(
         positioned, basic_event_position_df, display_stage_labels=True
     )
     label_traces = [
-        trace
-        for trace in fig.data
-        if trace.mode == "text" and trace.text is not None
+        trace for trace in fig.data if trace.mode == "text" and trace.text is not None
     ]
 
     assert len(label_traces) == 1
@@ -234,9 +229,7 @@ def test_scenario_without_any_resource_positions_is_harmless(
     no_resources = basic_event_position_df.copy()
     no_resources["resource"] = None
 
-    fig = generate_animation(
-        positioned, no_resources, scenario=scenario_with_resources
-    )
+    fig = generate_animation(positioned, no_resources, scenario=scenario_with_resources)
 
     assert isinstance(fig, go.Figure)
 
@@ -342,14 +335,18 @@ def test_override_x_max_warns_when_an_anchor_exceeds_it(
     positioned, basic_event_position_df
 ):
     # waiting/treatment_begins are anchored at x=400, depart at x=270.
-    with pytest.warns(UserWarning, match=r"outside the `override_x_max` range \[0, 100\]"):
+    with pytest.warns(
+        UserWarning, match=r"outside the `override_x_max` range \[0, 100\]"
+    ):
         generate_animation(positioned, basic_event_position_df, override_x_max=100)
 
 
 def test_override_y_max_warns_when_an_anchor_exceeds_it(
     positioned, basic_event_position_df
 ):
-    with pytest.warns(UserWarning, match=r"outside the `override_y_max` range \[0, 50\]"):
+    with pytest.warns(
+        UserWarning, match=r"outside the `override_y_max` range \[0, 50\]"
+    ):
         generate_animation(positioned, basic_event_position_df, override_y_max=50)
 
 
@@ -358,9 +355,7 @@ def test_override_range_warning_names_every_offending_event(
 ):
     with pytest.warns(UserWarning) as record:
         generate_animation(positioned, basic_event_position_df, override_x_max=100)
-    message = next(
-        str(w.message) for w in record if "override_x_max" in str(w.message)
-    )
+    message = next(str(w.message) for w in record if "override_x_max" in str(w.message))
     # Anchors: arrival x=50 (in range), waiting/treatment_begins x=400, depart x=270.
     assert "'waiting' (x=400)" in message
     assert "'treatment_begins' (x=400)" in message
@@ -372,12 +367,12 @@ def test_override_within_range_does_not_warn(positioned, basic_event_position_df
     with warnings.catch_warnings(record=True) as record:
         warnings.simplefilter("always")
         generate_animation(
-            positioned, basic_event_position_df,
-            override_x_max=1000, override_y_max=1000,
+            positioned,
+            basic_event_position_df,
+            override_x_max=1000,
+            override_y_max=1000,
         )
-    assert [
-        str(w.message) for w in record if "override_" in str(w.message)
-    ] == []
+    assert [str(w.message) for w in record if "override_" in str(w.message)] == []
 
 
 def test_no_override_never_triggers_the_range_warning(
@@ -506,7 +501,9 @@ def test_stage_label_sits_left_of_a_right_building_queue(
 ):
     """With the queue extending right, the label must move to the left of the
     anchor or the queue runs straight over it."""
-    fig = generate_animation(positioned, basic_event_position_df, queue_direction="right")
+    fig = generate_animation(
+        positioned, basic_event_position_df, queue_direction="right"
+    )
 
     label_trace = [t for t in fig.data if t.mode == "text"][-1]
     anchors = basic_event_position_df["x"].to_list()
@@ -616,7 +613,10 @@ def positioned_overflow(overflow_queue_log, basic_event_position_df):
     """Twelve entities queued at once with only 5 slots shown - the rest
     collapse into a single '+ N more' overflow row per snapshot."""
     reshaped = reshape_for_animations(
-        overflow_queue_log, every_x_time_units=10, limit_duration=30, step_snapshot_max=5
+        overflow_queue_log,
+        every_x_time_units=10,
+        limit_duration=30,
+        step_snapshot_max=5,
     )
     return generate_animation_df(
         reshaped, basic_event_position_df, step_snapshot_max=5, wrap_queues_at=5
@@ -992,7 +992,9 @@ def test_entity_annotation_by_matches_entity_trace_point_for_point_per_frame(
         assert annotation_xs == entity_xs
 
 
-def test_entity_annotation_by_offset_y(positioned_with_priority, basic_event_position_df):
+def test_entity_annotation_by_offset_y(
+    positioned_with_priority, basic_event_position_df
+):
     fig = generate_animation(
         positioned_with_priority,
         basic_event_position_df,
@@ -1006,7 +1008,9 @@ def test_entity_annotation_by_offset_y(positioned_with_priority, basic_event_pos
     assert list(annotation.y) == [y - 25 for y in icon_trace.y]
 
 
-def test_entity_annotation_size_and_color(positioned_with_priority, basic_event_position_df):
+def test_entity_annotation_size_and_color(
+    positioned_with_priority, basic_event_position_df
+):
     fig = generate_animation(
         positioned_with_priority,
         basic_event_position_df,
@@ -1077,7 +1081,9 @@ def test_entity_annotation_by_suppresses_the_overflow_row(
     annotation text - the same exemption the icon trace already gives it from
     flipping and icon fonts."""
     fig = generate_animation(
-        positioned_overflow_with_los, basic_event_position_df, entity_annotation_by="los"
+        positioned_overflow_with_los,
+        basic_event_position_df,
+        entity_annotation_by="los",
     )
     saw_overflow = False
     for frame in fig.frames:
@@ -1100,10 +1106,14 @@ def test_entity_annotation_by_suppresses_the_overflow_row(
     assert saw_overflow  # sanity: overflow really is present
 
 
-def test_entity_annotation_by_unknown_column_raises(positioned, basic_event_position_df):
+def test_entity_annotation_by_unknown_column_raises(
+    positioned, basic_event_position_df
+):
     with pytest.raises(ValueError, match="entity_annotation_by"):
         generate_animation(
-            positioned, basic_event_position_df, entity_annotation_by="not_a_real_column"
+            positioned,
+            basic_event_position_df,
+            entity_annotation_by="not_a_real_column",
         )
 
 
@@ -1589,9 +1599,7 @@ def test_display_format_coarser_than_snapshots_warns(
     assert len(fig.frames) == 0
 
 
-def test_day_clock_counts_from_simulation_start(
-    positioned, basic_event_position_df
-):
+def test_day_clock_counts_from_simulation_start(positioned, basic_event_position_df):
     fig = generate_animation(
         positioned,
         basic_event_position_df,
@@ -1758,9 +1766,7 @@ def test_bgcolors_left_untouched_by_default(positioned, basic_event_position_df)
 
 
 def test_plot_bgcolor_reaches_layout(positioned, basic_event_position_df):
-    fig = generate_animation(
-        positioned, basic_event_position_df, plot_bgcolor="white"
-    )
+    fig = generate_animation(positioned, basic_event_position_df, plot_bgcolor="white")
 
     assert fig.layout.plot_bgcolor == "white"
     assert fig.layout.paper_bgcolor is None
@@ -1826,9 +1832,7 @@ def test_animate_activity_log_honours_custom_time_column(basic_event_position_df
         }
     )
 
-    fig = animate_activity_log(
-        log, basic_event_position_df, time_col_name="sim_time"
-    )
+    fig = animate_activity_log(log, basic_event_position_df, time_col_name="sim_time")
 
     assert isinstance(fig, go.Figure)
     assert len(fig.frames) > 0
@@ -1929,9 +1933,7 @@ def test_overlay_adds_two_traces(positioned, basic_event_position_df):
     assert len(fig.data) == before + 2
 
 
-def test_overlay_visibility_follows_on_off_cycle(
-    positioned, basic_event_position_df
-):
+def test_overlay_visibility_follows_on_off_cycle(positioned, basic_event_position_df):
     """Frames inside the 'on' window carry overlay geometry; others are empty."""
     fig = generate_animation(positioned, basic_event_position_df)
 
@@ -1966,9 +1968,7 @@ def test_overlay_on_figure_without_frames_is_a_no_op():
     assert len(result.data) == 0
 
 
-def test_overlay_with_zero_cycle_length_is_a_no_op(
-    positioned, basic_event_position_df
-):
+def test_overlay_with_zero_cycle_length_is_a_no_op(positioned, basic_event_position_df):
     fig = generate_animation(positioned, basic_event_position_df)
     before = len(fig.data)
 

@@ -1,12 +1,13 @@
-import streamlit as st
-import pandas as pd
 import ast
 
+import pandas as pd
+import streamlit as st
+
 from vidigi.process_mapping import (
-    dfg_to_cytoscape_streamlit,
     add_sim_timestamp,
-    discover_dfg,
+    dfg_to_cytoscape_streamlit,
     dfg_to_graphviz,
+    discover_dfg,
 )
 
 st.set_page_config(layout="wide")
@@ -64,23 +65,22 @@ nodes, edges = discover_dfg(stroke_df_timestamp, case_col="id")
 
 tab1, tab2 = st.tabs(["Static", "Interactive"])
 
-with tab1:
-    with st.spinner():
-        st.subheader("Left to right")
-        st.image(
-            dfg_to_graphviz(
-                nodes,
-                edges,
-                return_image=True,
-                size=[10, 5],
-                dpi=600,
-                show_metric=False,
-                wrap_node_labels_at=10,
-            )
+with tab1, st.spinner():
+    st.subheader("Left to right")
+    st.image(
+        dfg_to_graphviz(
+            nodes,
+            edges,
+            return_image=True,
+            size=[10, 5],
+            dpi=600,
+            show_metric=False,
+            wrap_node_labels_at=10,
         )
+    )
 
-        st.subheader("Top to bottom")
-        st.image(dfg_to_graphviz(nodes, edges, return_image=True, direction="TD"))
+    st.subheader("Top to bottom")
+    st.image(dfg_to_graphviz(nodes, edges, return_image=True, direction="TD"))
 
 
 with tab2:

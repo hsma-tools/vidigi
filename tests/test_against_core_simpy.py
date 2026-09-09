@@ -3,31 +3,25 @@
 # OpenAI. (2025). ChatGPT (GPT-4-turbo) [Large language model]. https://chat.openai.com
 
 import pytest
-import pandas as pd
 from pandas.testing import assert_frame_equal
 
 from tests.sample_models.simplest_fifo_with_logging_resources import (
     Trial as simplest_fifo_with_logging_resources_TRIAL,
 )
-
 from tests.sample_models.simplest_fifo_with_logging_stores import (
     Trial as simplest_fifo_with_logging_store_TRIAL,
 )
-
 from tests.sample_models.simplest_fifo_with_logging_stores_context_manager import (
     Trial as simplest_fifo_with_logging_stores_context_manager,
 )
-
 from tests.sample_models.simplest_with_logging_priority_resources import (
     Trial as simplest_with_logging_priority_resources,
 )
-
-from tests.sample_models.simplest_with_logging_priority_storesLEGACY import (
-    Trial as simplest_with_logging_priority_storesLEGACY,
-)
-
 from tests.sample_models.simplest_with_logging_priority_stores import (
     Trial as simplest_with_logging_priority_stores,
+)
+from tests.sample_models.simplest_with_logging_priority_storesLEGACY import (
+    Trial as simplest_with_logging_priority_storesLEGACY,
 )
 
 
@@ -215,14 +209,14 @@ def test_trial_equivalence(trial_1_config, trial_2_config, trial_id):
     df1 = run_trial(
         trial_cls=trial_1_config["trial_cls"],
         run_kwargs=trial_1_config.get("run_kwargs", {}),
-        drop_resource_id=trial_1_config.get("drop_resource_id", False)
+        drop_resource_id=trial_1_config.get("drop_resource_id", False),
         # filename=f"TEST_{trial_id}_df_1",
     )
 
     df2 = run_trial(
         trial_cls=trial_2_config["trial_cls"],
         run_kwargs=trial_2_config.get("run_kwargs", {}),
-        drop_resource_id=trial_2_config.get("drop_resource_id", False)
+        drop_resource_id=trial_2_config.get("drop_resource_id", False),
         # filename=f"TEST_{trial_id}_df_2",
     )
 

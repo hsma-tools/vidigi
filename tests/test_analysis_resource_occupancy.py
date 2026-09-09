@@ -30,12 +30,16 @@ def test_matches_the_hand_computed_step_function(resource_use_loggers):
     assert (occupancy["event"] == "treatment_begins").all()
 
 
-def test_unclosed_use_is_occupied_through_to_the_window_end(unclosed_resource_use_logger):
+def test_unclosed_use_is_occupied_through_to_the_window_end(
+    unclosed_resource_use_logger,
+):
     """The resource use starts at t=15 and is never closed - `resource_occupancy_over_time`
     always censors (there is no `unclosed` parameter), so it must read as
     occupied for [15, 20), not vanish or read as occupied for the whole window."""
     occupancy = resource_occupancy_over_time(
-        _trial_df([unclosed_resource_use_logger]), every_x_time_units=5, limit_duration=20
+        _trial_df([unclosed_resource_use_logger]),
+        every_x_time_units=5,
+        limit_duration=20,
     )
 
     counts = dict(zip(occupancy["snapshot_time"], occupancy["count"]))

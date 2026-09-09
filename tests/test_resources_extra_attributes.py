@@ -44,7 +44,9 @@ def _resources(store):
 
 def test_constructor_sets_extra_attributes_on_whole_pool(store_class):
     store = store_class(
-        _make_env(), num_resources=3, label="nurse",
+        _make_env(),
+        num_resources=3,
+        label="nurse",
         extra_attributes={"staff_type": "nurse", "band": 5},
     )
     resources = _resources(store)
@@ -63,23 +65,31 @@ def test_populate_store_threads_extra_attributes():
 
 
 def test_populate_topup_applies_to_new_resources_only(store_class):
-    store = store_class(_make_env(), num_resources=2, label="nurse",
-                        extra_attributes={"staff_type": "substantive"})
+    store = store_class(
+        _make_env(),
+        num_resources=2,
+        label="nurse",
+        extra_attributes={"staff_type": "substantive"},
+    )
     with warnings.catch_warnings():
         # a no-label top-up warns that label will become mandatory - expected here,
         # covered by test_resources_label.py; not what this test is about.
         warnings.simplefilter("ignore", DeprecationWarning)
         store.populate(2, extra_attributes={"staff_type": "agency"})
     assert [r.staff_type for r in _resources(store)] == [
-        "substantive", "substantive", "agency", "agency",
+        "substantive",
+        "substantive",
+        "agency",
+        "agency",
     ]
 
 
 def test_extra_attributes_without_label():
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", DeprecationWarning)
-        store = VidigiStore(_make_env(), num_resources=2,
-                            extra_attributes={"staff_type": "nurse"})
+        store = VidigiStore(
+            _make_env(), num_resources=2, extra_attributes={"staff_type": "nurse"}
+        )
     resources = store.store.items
     assert [r.staff_type for r in resources] == ["nurse", "nurse"]
     for r in resources:
@@ -98,8 +108,9 @@ def test_none_and_empty_dict_add_no_attributes(extra_attributes):
     only - the two pools are built on different environments, so `env` and other
     simpy internals will not compare equal by value.
     """
-    store = VidigiStore(_make_env(), num_resources=3, label="nurse",
-                        extra_attributes=extra_attributes)
+    store = VidigiStore(
+        _make_env(), num_resources=3, label="nurse", extra_attributes=extra_attributes
+    )
     plain = VidigiStore(_make_env(), num_resources=3, label="nurse")
     assert len(store.store.items) == len(plain.store.items) == 3  # not a vacuous zip
     for a, b in zip(store.store.items, plain.store.items):
@@ -114,12 +125,15 @@ def test_none_and_empty_dict_add_no_attributes(extra_attributes):
 @pytest.mark.parametrize(
     "build",
     [
-        lambda env: VidigiStore(env, num_resources=1, label="x",
-                                extra_attributes={"id_attribute": 9}),
-        lambda env: VidigiPriorityStore(env, num_resources=1, label="x",
-                                        extra_attributes={"id_attribute": 9}),
-        lambda env: populate_store(1, simpy.Store(env), env, label="x",
-                                   extra_attributes={"id_attribute": 9}),
+        lambda env: VidigiStore(
+            env, num_resources=1, label="x", extra_attributes={"id_attribute": 9}
+        ),
+        lambda env: VidigiPriorityStore(
+            env, num_resources=1, label="x", extra_attributes={"id_attribute": 9}
+        ),
+        lambda env: populate_store(
+            1, simpy.Store(env), env, label="x", extra_attributes={"id_attribute": 9}
+        ),
     ],
 )
 def test_all_entrypoints_reject_a_reserved_key(build):

@@ -303,7 +303,9 @@ def test_count_raises_after_populate_store_free_function(store_class):
     env = simpy.Environment()
     store = store_class(env)
     with warnings.catch_warnings():
-        warnings.simplefilter("ignore", DeprecationWarning)  # populate_store is deprecated
+        warnings.simplefilter(
+            "ignore", DeprecationWarning
+        )  # populate_store is deprecated
         populate_store(3, store, env, label="x")
 
     with pytest.raises(RuntimeError, match="populate_store"):

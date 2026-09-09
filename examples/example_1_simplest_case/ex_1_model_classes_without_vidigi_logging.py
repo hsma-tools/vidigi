@@ -1,14 +1,16 @@
 import random
+
 import numpy as np
 import pandas as pd
 import simpy
 from sim_tools.distributions import Exponential, Lognormal
 
+
 # Class to store global parameter values.  We don't create an instance of this
 # class - we just refer to the class blueprint itself to access the numbers
 # inside.
 class g:
-    '''
+    """
     Create a scenario to parameterise the simulation model
 
     Parameters:
@@ -36,7 +38,8 @@ class g:
     number_of_runs: int
         The number of times the simulation will be run with different random number streams
 
-    '''
+    """
+
     random_number_set = 42
 
     n_cubicles = 4
@@ -48,35 +51,39 @@ class g:
     sim_duration = 600
     number_of_runs = 100
 
+
 # Class representing patients coming in to the clinic.
 class Patient:
-    '''
+    """
     Class defining details for a patient entity
-    '''
+    """
+
     def __init__(self, p_id):
-        '''
+        """
         Constructor method
 
         Params:
         -----
         identifier: int
             a numeric identifier for the patient.
-        '''
+        """
         self.identifier = p_id
         self.arrival = -np.inf
         self.wait_treat = -np.inf
         self.total_time = -np.inf
         self.treat_duration = -np.inf
 
+
 # Class representing our model of the clinic.
 class Model:
-    '''
+    """
     Simulates the simplest minor treatment process for a patient
 
     1. Arrive
     2. Examined/treated by nurse when one available
     3. Discharged
-    '''
+    """
+
     # Constructor to set up the model for a run.  We pass in a run number when
     # we create a new model.
     def __init__(self, run_number):
@@ -106,20 +113,23 @@ class Model:
         # the model
         self.mean_q_time_cubicle = 0
 
-        self.patient_inter_arrival_dist = Exponential(mean = g.arrival_rate,
-                                                      random_seed = self.run_number*g.random_number_set)
-        self.treat_dist = Lognormal(mean = g.trauma_treat_mean,
-                                    stdev = g.trauma_treat_var,
-                                    random_seed = self.run_number*g.random_number_set)
+        self.patient_inter_arrival_dist = Exponential(
+            mean=g.arrival_rate, random_seed=self.run_number * g.random_number_set
+        )
+        self.treat_dist = Lognormal(
+            mean=g.trauma_treat_mean,
+            stdev=g.trauma_treat_var,
+            random_seed=self.run_number * g.random_number_set,
+        )
 
     def init_resources(self):
-        '''
+        """
         Init the number of resources
 
         Resource list:
             1. Nurses/treatment bays (same thing in this model)
 
-        '''
+        """
         self.treatment_cubicles = simpy.Resource(self.env, capacity=g.n_cubicles)
 
     # A generator function that represents the DES generator for patient
@@ -181,7 +191,6 @@ class Model:
         # total time in system
         self.total_time = self.env.now - self.arrival
 
-
     # This method calculates results over a single run.  Here we just calculate
     # a mean, but in real world models you'd probably want to calculate more.
     def calculate_run_results(self):
@@ -204,11 +213,12 @@ class Model:
         # run results
         self.calculate_run_results()
 
+
 # Class representing a Trial for our simulation - a batch of simulation runs.
 class Trial:
     # The constructor sets up a pandas dataframe that will store the key
     # results from each run against run number, with run number as the index.
-    def  __init__(self):
+    def __init__(self):
         self.df_trial_results = pd.DataFrame()
         self.df_trial_results["Run Number"] = [0]
         self.df_trial_results["Arrivals"] = [0]
@@ -218,7 +228,7 @@ class Trial:
     # Method to run a trial
     def run_trial(self):
         print(f"{g.n_cubicles} nurses")
-        print("") ## Print a blank line
+        print()  ## Print a blank line
 
         # Run the simulation for the number of runs specified in g class.
         # For each run, we create a new instance of the Model class and call its

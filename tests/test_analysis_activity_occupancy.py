@@ -80,20 +80,20 @@ def test_across_runs_average_and_pool_give_different_answers(diverging_queue_log
     average = activity_occupancy_stats(event_log, across_runs="average", **common)
     pooled = activity_occupancy_stats(event_log, across_runs="pool", **common)
 
-    assert _stats_map(average) == {
-        "waiting": ("queue", round(5 / 6, 4), 0.5, 1.5, 0.5)
-    }
-    assert _stats_map(pooled) == {
-        "waiting": ("queue", round(5 / 6, 4), 0.0, 2.0, 1.0)
-    }
+    assert _stats_map(average) == {"waiting": ("queue", round(5 / 6, 4), 0.5, 1.5, 0.5)}
+    assert _stats_map(pooled) == {"waiting": ("queue", round(5 / 6, 4), 0.0, 2.0, 1.0)}
 
 
 def test_single_run_gives_the_same_answer_either_way(long_queue_logger):
     event_log = _trial_df([long_queue_logger])
     common = dict(every_x_time_units=10, limit_duration=30)
 
-    average = _stats_map(activity_occupancy_stats(event_log, across_runs="average", **common))
-    pooled = _stats_map(activity_occupancy_stats(event_log, across_runs="pool", **common))
+    average = _stats_map(
+        activity_occupancy_stats(event_log, across_runs="average", **common)
+    )
+    pooled = _stats_map(
+        activity_occupancy_stats(event_log, across_runs="pool", **common)
+    )
 
     assert average == pooled
 
@@ -152,9 +152,7 @@ def test_event_logged_as_both_queue_and_resource_warns_and_is_queue_only():
     logger = EventLogger(run_number=1)
     logger.log_arrival(entity_id=1, time=0.0)
     logger.log_queue(entity_id=1, event="triage", time=0.0)
-    logger.log_resource_use_start(
-        entity_id=1, resource_id=1, time=1.0, event="triage"
-    )
+    logger.log_resource_use_start(entity_id=1, resource_id=1, time=1.0, event="triage")
     logger.log_resource_use_end(
         entity_id=1, resource_id=1, time=2.0, event="triage_end"
     )

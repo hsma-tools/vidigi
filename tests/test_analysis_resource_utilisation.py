@@ -30,7 +30,9 @@ class _Scenario:
 
 
 def test_basic_pairing_matches_the_hand_computed_fixture(resource_use_loggers):
-    intervals = resource_use_intervals(_trial_df(resource_use_loggers), limit_duration=20)
+    intervals = resource_use_intervals(
+        _trial_df(resource_use_loggers), limit_duration=20
+    )
 
     rows = {
         (row.run_number, row.resource_id): (row.start, row.end, row.busy_time)
@@ -59,7 +61,9 @@ def test_unclosed_censor_is_the_default(unclosed_resource_use_logger):
 
 def test_unclosed_censor_warns(unclosed_resource_use_logger):
     with pytest.warns(UserWarning, match="still open"):
-        resource_use_intervals(_trial_df([unclosed_resource_use_logger]), limit_duration=20)
+        resource_use_intervals(
+            _trial_df([unclosed_resource_use_logger]), limit_duration=20
+        )
 
 
 def test_unclosed_drop_excludes_the_interval_entirely(unclosed_resource_use_logger):
@@ -75,7 +79,9 @@ def test_unclosed_drop_excludes_the_interval_entirely(unclosed_resource_use_logg
 def test_invalid_unclosed_raises(unclosed_resource_use_logger):
     with pytest.raises(ValueError, match="`unclosed`"):
         resource_use_intervals(
-            _trial_df([unclosed_resource_use_logger]), limit_duration=20, unclosed="nonsense"
+            _trial_df([unclosed_resource_use_logger]),
+            limit_duration=20,
+            unclosed="nonsense",
         )
 
 
@@ -277,9 +283,15 @@ def test_route_b_resource_map_and_scenario(resource_use_loggers):
 def test_route_c_event_position_df_and_scenario(resource_use_loggers):
     intervals = _intervals(resource_use_loggers)
     epdf = create_event_position_df(
-        [EventPosition(event="treatment_begins", x=0, y=0, label="x", resource="n_cubicles")]
+        [
+            EventPosition(
+                event="treatment_begins", x=0, y=0, label="x", resource="n_cubicles"
+            )
+        ]
     )
-    caps = _resolve_resource_capacities(intervals, scenario=_Scenario(), event_position_df=epdf)
+    caps = _resolve_resource_capacities(
+        intervals, scenario=_Scenario(), event_position_df=epdf
+    )
     assert caps == {"treatment_begins": 3}
 
 
@@ -318,7 +330,11 @@ def test_route_b_takes_precedence_over_route_c(resource_use_loggers):
         n_beds = 7
 
     epdf = create_event_position_df(
-        [EventPosition(event="treatment_begins", x=0, y=0, label="x", resource="n_cubicles")]
+        [
+            EventPosition(
+                event="treatment_begins", x=0, y=0, label="x", resource="n_cubicles"
+            )
+        ]
     )
     caps = _resolve_resource_capacities(
         intervals,
@@ -334,7 +350,11 @@ def test_route_b_and_c_accept_a_dict_scenario(resource_use_loggers):
     resolve it to the same capacities as an equivalent object."""
     intervals = _intervals(resource_use_loggers)
     epdf = create_event_position_df(
-        [EventPosition(event="treatment_begins", x=0, y=0, label="x", resource="n_cubicles")]
+        [
+            EventPosition(
+                event="treatment_begins", x=0, y=0, label="x", resource="n_cubicles"
+            )
+        ]
     )
 
     from_map = _resolve_resource_capacities(
@@ -427,11 +447,23 @@ def test_by_resource_gives_the_full_hand_computed_dict(resource_use_loggers):
     run1 = result[result["run_number"] == 1]
     run2 = result[result["run_number"] == 2]
 
-    assert dict(zip(run1["resource_id"], run1["busy_time"])) == {1: 10.0, 2: 5.0, 3: 0.0}
-    assert dict(zip(run2["resource_id"], run2["busy_time"])) == {1: 0.0, 2: 20.0, 3: 10.0}
+    assert dict(zip(run1["resource_id"], run1["busy_time"])) == {
+        1: 10.0,
+        2: 5.0,
+        3: 0.0,
+    }
+    assert dict(zip(run2["resource_id"], run2["busy_time"])) == {
+        1: 0.0,
+        2: 20.0,
+        3: 10.0,
+    }
     # capacity is always 1 per physical unit
     assert (result["capacity"] == 1.0).all()
-    assert dict(zip(run1["resource_id"], run1["mean_in_use"])) == {1: 0.5, 2: 0.25, 3: 0.0}
+    assert dict(zip(run1["resource_id"], run1["mean_in_use"])) == {
+        1: 0.5,
+        2: 0.25,
+        3: 0.0,
+    }
 
 
 def test_by_resource_warns_on_genuinely_overlapping_bouts_for_one_resource_id(
@@ -442,7 +474,9 @@ def test_by_resource_warns_on_genuinely_overlapping_bouts_for_one_resource_id(
     `VidigiStore`s both numbering from 1. Impossible for one physical unit,
     so this should warn, naming the run/resource_id pair."""
     with pytest.warns(UserWarning, match=r"overlapping busy bouts.*\(1, 1\)"):
-        resource_utilisation(_trial_df([colliding_pools_logger]), by="resource", limit_duration=20)
+        resource_utilisation(
+            _trial_df([colliding_pools_logger]), by="resource", limit_duration=20
+        )
 
 
 def test_by_resource_does_not_warn_on_sequential_non_overlapping_reuse(
@@ -455,7 +489,9 @@ def test_by_resource_does_not_warn_on_sequential_non_overlapping_reuse(
     with warnings.catch_warnings():
         warnings.simplefilter("error", UserWarning)
         result = resource_utilisation(
-            _trial_df([shared_pool_across_steps_logger]), by="resource", limit_duration=20
+            _trial_df([shared_pool_across_steps_logger]),
+            by="resource",
+            limit_duration=20,
         )
 
     assert len(result) == 1
@@ -497,7 +533,9 @@ def test_by_resource_does_not_warn_when_a_handoff_exactly_touches():
 
     with warnings.catch_warnings():
         warnings.simplefilter("error", UserWarning)
-        result = resource_utilisation(_trial_df([logger]), by="resource", limit_duration=20)
+        result = resource_utilisation(
+            _trial_df([logger]), by="resource", limit_duration=20
+        )
 
     assert len(result) == 1
     assert result.iloc[0]["busy_time"] == 10.0
@@ -509,7 +547,9 @@ def test_resource_idle_in_one_run_but_used_in_another_reports_a_genuine_zero(
     """Resource 3 never appears in run 1's log at all - proves it is filled as
     a real zero, not simply absent, the same convention as
     `queue_size_over_time`."""
-    result = resource_utilisation(_trial_df(resource_use_loggers), by="resource", limit_duration=20)
+    result = resource_utilisation(
+        _trial_df(resource_use_loggers), by="resource", limit_duration=20
+    )
 
     run1_resource_3 = result[(result["run_number"] == 1) & (result["resource_id"] == 3)]
     assert len(run1_resource_3) == 1
@@ -540,7 +580,9 @@ def test_by_resource_with_missing_resource_id_pools_into_one_row_per_run_and_war
     )
 
     with pytest.warns(UserWarning, match="reporting one pooled row per run"):
-        result = resource_utilisation(_trial_df([logger]), by="resource", limit_duration=20)
+        result = resource_utilisation(
+            _trial_df([logger]), by="resource", limit_duration=20
+        )
 
     assert len(result) == 1
     assert result.iloc[0]["busy_time"] == 10.0
@@ -663,7 +705,9 @@ def test_no_capacity_given_leaves_utilisation_nan_but_mean_in_use_intact(
     """`by="step"` has no built-in capacity - unlike `by="resource"`, where a
     single physical unit's own capacity is always 1 regardless of what the
     caller supplies."""
-    result = resource_utilisation(_trial_df(resource_use_loggers), by="step", limit_duration=20)
+    result = resource_utilisation(
+        _trial_df(resource_use_loggers), by="step", limit_duration=20
+    )
 
     assert result["utilisation"].isna().all()
     assert not result["mean_in_use"].isna().any()
@@ -692,7 +736,9 @@ def test_by_resource_capacity_is_always_one_regardless_of_capacity_routes(
 
 def test_invalid_by_raises(resource_use_loggers):
     with pytest.raises(ValueError, match="`by`"):
-        resource_utilisation(_trial_df(resource_use_loggers), by="nonsense", limit_duration=20)
+        resource_utilisation(
+            _trial_df(resource_use_loggers), by="nonsense", limit_duration=20
+        )
 
 
 def test_warm_up_reduces_mean_in_use(resource_use_loggers):
@@ -703,7 +749,12 @@ def test_warm_up_reduces_mean_in_use(resource_use_loggers):
         _trial_df(resource_use_loggers), by="resource", warm_up=5, limit_duration=20
     )
 
-    full_r1 = dict(zip(full[full["run_number"] == 1]["resource_id"], full[full["run_number"] == 1]["busy_time"]))
+    full_r1 = dict(
+        zip(
+            full[full["run_number"] == 1]["resource_id"],
+            full[full["run_number"] == 1]["busy_time"],
+        )
+    )
     trimmed_r1 = dict(
         zip(
             trimmed[trimmed["run_number"] == 1]["resource_id"],
@@ -734,5 +785,8 @@ def test_warm_up_equal_to_limit_duration_raises(resource_use_loggers):
     (`mean_in_use = busy_time / 0`), giving a NaN with no explanation."""
     with pytest.raises(ValueError, match="zero length"):
         resource_utilisation(
-            _trial_df(resource_use_loggers), by="resource", warm_up=20, limit_duration=20
+            _trial_df(resource_use_loggers),
+            by="resource",
+            warm_up=20,
+            limit_duration=20,
         )

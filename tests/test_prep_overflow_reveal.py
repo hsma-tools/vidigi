@@ -162,9 +162,9 @@ def test_boundary_role_entity_becoming_individual_is_a_reveal(reveal_queue_log):
     series = _series_for(result, 6.0)
     # Boundary role from arrival (t=6) through t=19 - 14 snapshots - then
     # individually visible from t=20.
-    expected = [(t, 0) for t in range(6, 20)] + [(20.0, 14)] + [
-        (t, 0) for t in range(21, 36)
-    ]
+    expected = (
+        [(t, 0) for t in range(6, 20)] + [(20.0, 14)] + [(t, 0) for t in range(21, 36)]
+    )
     assert series == expected
 
 
@@ -178,9 +178,7 @@ def test_exit_row_hidden_run_before_is_zero(reveal_queue_log):
         limit_duration=40,
         step_snapshot_max=5,
     )
-    exit_row = result[
-        (result["entity_id"] == 8.0) & (result["event_type"] == "exit")
-    ]
+    exit_row = result[(result["entity_id"] == 8.0) & (result["event_type"] == "exit")]
     assert len(exit_row) == 1
     assert exit_row.iloc[0]["hidden_run_before"] == 0
 
@@ -377,9 +375,7 @@ def test_entity_landing_on_the_boundary_row_gets_no_phantom(
         "boundary row, relabelled to the synthetic overflow id"
     )
 
-    entity_8_phantoms = result[
-        (result["entity_id"] == 8.0) & (result["_phantom"])
-    ]
+    entity_8_phantoms = result[(result["entity_id"] == 8.0) & (result["_phantom"])]
     assert len(entity_8_phantoms) == 0
 
 

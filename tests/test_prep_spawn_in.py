@@ -223,9 +223,7 @@ def test_spawn_row_at_exactly_two_slots_in(spawn_log, spawn_positions):
     rows = _entity_rows(result, 3.0)
     synthetic = rows[(rows["event"] == "arrival") | rows["_phantom"]]
     assert sorted(synthetic["snapshot_time"]) == [0, 10]
-    assert list(
-        synthetic.sort_values("snapshot_time")["_phantom"]
-    ) == [True, False]
+    assert list(synthetic.sort_values("snapshot_time")["_phantom"]) == [True, False]
 
 
 def test_no_new_frames_created(spawn_log, spawn_positions):
@@ -299,9 +297,7 @@ def reveal_and_arrival_log():
     return _rows(*specs)
 
 
-def test_spawn_and_pop_in_coexist(
-    reveal_and_arrival_log, reveal_and_arrival_positions
-):
+def test_spawn_and_pop_in_coexist(reveal_and_arrival_log, reveal_and_arrival_positions):
     reshaped = reshape_for_animations(
         reveal_and_arrival_log,
         every_x_time_units=EVERY,

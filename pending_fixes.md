@@ -164,10 +164,14 @@ the placeholder row carrying only `snapshot_time`. The concatenated frame theref
 `entity_id` column, and the sort at the end fails:
 
 ```python
-log = pd.DataFrame({
-    "time": [100, 100, 145], "entity_id": [1, 1, 1],
-    "event_type": ["arrival_departure", "queue", "arrival_departure"],
-    "event": ["arrival", "waiting", "depart"]})
+log = pd.DataFrame(
+    {
+        "time": [100, 100, 145],
+        "entity_id": [1, 1, 1],
+        "event_type": ["arrival_departure", "queue", "arrival_departure"],
+        "event": ["arrival", "waiting", "depart"],
+    }
+)
 reshape_for_animations(log, every_x_time_units=10, limit_duration=50)
 # KeyError: 'entity_id'
 ```

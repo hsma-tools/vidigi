@@ -11,7 +11,8 @@ import difflib
 import inspect
 import warnings
 from collections import namedtuple
-from typing import Literal, Optional, Sequence, TypeAlias, Union
+from collections.abc import Sequence
+from typing import Literal, TypeAlias
 
 import numpy as np
 import pandas as pd
@@ -105,8 +106,8 @@ def _check_events_present(
 
 
 def _resolve_pathway_column(
-    df: pd.DataFrame, pathway_col_name: Optional[str]
-) -> Optional[str]:
+    df: pd.DataFrame, pathway_col_name: str | None
+) -> str | None:
     """Resolve the optional pathway column, tolerating its absence at the default name.
 
     `EventLogger.to_dataframe()` drops all-null columns, so a log built without a
@@ -128,7 +129,7 @@ def _resolve_pathway_column(
 
 def _resolve_window(
     event_log: pd.DataFrame,
-    limit_duration: Optional[float],
+    limit_duration: float | None,
     warm_up: float,
     time_col_name: str = "time",
 ) -> tuple:
@@ -167,8 +168,8 @@ def event_durations(
     entity_col_name: str = "entity_id",
     event_col_name: str = "event",
     time_col_name: str = "time",
-    run_col_name: Optional[str] = "auto",
-    pathway_col_name: Optional[str] = "pathway",
+    run_col_name: str | None = "auto",
+    pathway_col_name: str | None = "pathway",
     keep_incomplete: bool = True,
 ) -> pd.DataFrame:
     """
@@ -338,9 +339,7 @@ def event_durations(
         firsts_cols = firsts_cols + ["pathway_first"]
         seconds_cols = seconds_cols + ["pathway_second"]
 
-    merged = firsts[firsts_cols].merge(
-        seconds[seconds_cols], on=keep_cols, how="outer"
-    )
+    merged = firsts[firsts_cols].merge(seconds[seconds_cols], on=keep_cols, how="outer")
 
     if pathway_col:
         merged["pathway"] = merged["pathway_first"].combine_first(
@@ -380,7 +379,7 @@ def _first_event_time(
     entity_col_name: str = "entity_id",
     event_col_name: str = "event",
     time_col_name: str = "time",
-    run_col_name: Optional[str] = "auto",
+    run_col_name: str | None = "auto",
 ) -> pd.DataFrame:
     """Each entity's earliest occurrence of `event_name`, one row per (run, entity).
 
@@ -423,8 +422,8 @@ def entity_metric_by_arrival(
     entity_col_name: str = "entity_id",
     event_col_name: str = "event",
     time_col_name: str = "time",
-    run_col_name: Optional[str] = "auto",
-    pathway_col_name: Optional[str] = "pathway",
+    run_col_name: str | None = "auto",
+    pathway_col_name: str | None = "pathway",
     keep_incomplete: bool = True,
 ) -> pd.DataFrame:
     """
@@ -548,9 +547,9 @@ def _summarise_durations(
     what: str,
     exclude_incomplete: bool,
     n_runs: int,
-    dp: Optional[int] = None,
+    dp: int | None = None,
     **kwargs,
-) -> Union[float, dict]:
+) -> float | dict:
     """Reduce a series of durations to a single statistic (or, for `"summary"`, several).
 
     Shared by `TrialLogger.get_event_duration_stat` and `vidigi.plots.plot_metric_bar`'s
@@ -919,8 +918,8 @@ def replication_precision(
 
     result = pd.DataFrame(rows)
     suffix_max = result["deviation"][::-1].cummax()[::-1]
-    result["stays_below_threshold"] = (
-        result["deviation"].notna() & (suffix_max <= deviation_threshold)
+    result["stays_below_threshold"] = result["deviation"].notna() & (
+        suffix_max <= deviation_threshold
     )
     return result
 
@@ -932,12 +931,12 @@ def queue_size_over_time(
     *,
     every_x_time_units: int = 1,
     warm_up: int = 0,
-    run_col_name: Optional[str] = "auto",
+    run_col_name: str | None = "auto",
     entity_col_name: str = "entity_id",
     time_col_name: str = "time",
     event_type_col_name: str = "event_type",
     event_col_name: str = "event",
-    pathway_col_name: Optional[str] = None,
+    pathway_col_name: str | None = None,
 ) -> pd.DataFrame:
     """
     Compute the size of one or more queues at regular snapshots, across every run.
@@ -1071,13 +1070,13 @@ def resource_use_intervals(
     *,
     unclosed: UnclosedResourceUse = "censor",
     warm_up: float = 0,
-    limit_duration: Optional[float] = None,
+    limit_duration: float | None = None,
     entity_col_name: str = "entity_id",
     time_col_name: str = "time",
     event_type_col_name: str = "event_type",
     event_col_name: str = "event",
     resource_col_name: str = "resource_id",
-    run_col_name: Optional[str] = "auto",
+    run_col_name: str | None = "auto",
 ) -> pd.DataFrame:
     """
     Pair `resource_use`/`resource_use_end` rows into one interval per bout of use.
@@ -1241,7 +1240,9 @@ def resource_use_intervals(
     # any such pre-existing column sharing a rename target's name first, or
     # the rename below would produce two identically-named columns and every
     # later `[col]` access would raise "not unique".
-    collisions = [target for target in set(rename_map.values()) if target not in rename_map]
+    collisions = [
+        target for target in set(rename_map.values()) if target not in rename_map
+    ]
     starts = starts.drop(columns=[c for c in collisions if c in starts.columns]).rename(
         columns={**rename_map, time_col_name: "start"}
     )
@@ -1334,7 +1335,10 @@ def _check_no_overlapping_resource_bouts(
         return
 
     pairs = sorted(
-        {(row[run_col_name], row[resource_col_name]) for _, row in overlapping.iterrows()},
+        {
+            (row[run_col_name], row[resource_col_name])
+            for _, row in overlapping.iterrows()
+        },
         key=lambda pair: (str(pair[0]), str(pair[1])),
     )
     warnings.warn(
@@ -1343,7 +1347,7 @@ def _check_no_overlapping_resource_bouts(
         f"{pairs[:5]}{'...' if len(pairs) > 5 else ''}. This usually means two "
         f"different resource pools are numbering their units the same way (e.g. "
         f"two vidigi.resources.VidigiStore instances both starting from 1), so "
-        f"resource_id does not identify one physical unit as by=\"resource\" "
+        f'resource_id does not identify one physical unit as by="resource" '
         f"assumes. Pass a distinct label= to each pool (see "
         f"vidigi.resources.VidigiStore) and use its unique_id instead.",
         UserWarning,
@@ -1355,10 +1359,10 @@ def _resolve_resource_capacities(
     intervals: pd.DataFrame,
     *,
     scenario=None,
-    resource_map: Optional[dict] = None,
-    event_position_df: Optional[pd.DataFrame] = None,
-    resource_capacities: Optional[dict] = None,
-    capacity: Optional[Literal["infer"]] = None,
+    resource_map: dict | None = None,
+    event_position_df: pd.DataFrame | None = None,
+    resource_capacities: dict | None = None,
+    capacity: Literal["infer"] | None = None,
     step_col_name: str = "event",
     resource_col_name: str = "resource_id",
 ) -> dict:
@@ -1527,19 +1531,19 @@ def resource_utilisation(
     *,
     by: ResourceUtilisationBy = "step",
     scenario=None,
-    resource_map: Optional[dict] = None,
-    event_position_df: Optional[pd.DataFrame] = None,
-    resource_capacities: Optional[dict] = None,
-    capacity: Optional[Literal["infer"]] = None,
+    resource_map: dict | None = None,
+    event_position_df: pd.DataFrame | None = None,
+    resource_capacities: dict | None = None,
+    capacity: Literal["infer"] | None = None,
     warm_up: float = 0,
-    limit_duration: Optional[float] = None,
+    limit_duration: float | None = None,
     unclosed: UnclosedResourceUse = "censor",
     entity_col_name: str = "entity_id",
     time_col_name: str = "time",
     event_type_col_name: str = "event_type",
     event_col_name: str = "event",
     resource_col_name: str = "resource_id",
-    run_col_name: Optional[str] = "auto",
+    run_col_name: str | None = "auto",
 ) -> pd.DataFrame:
     """
     Summarise resource use into busy time, mean-in-use and utilisation, per run.
@@ -1743,7 +1747,9 @@ def resource_utilisation(
         )
 
     ordered_cols = ["run_number"] + ([group_col] if group_col else [])
-    return grouped[ordered_cols + ["busy_time", "mean_in_use", "capacity", "utilisation"]]
+    return grouped[
+        ordered_cols + ["busy_time", "mean_in_use", "capacity", "utilisation"]
+    ]
 
 
 def resource_occupancy_over_time(
@@ -1751,13 +1757,13 @@ def resource_occupancy_over_time(
     *,
     every_x_time_units: float = 1,
     warm_up: float = 0,
-    limit_duration: Optional[float] = None,
+    limit_duration: float | None = None,
     entity_col_name: str = "entity_id",
     time_col_name: str = "time",
     event_type_col_name: str = "event_type",
     event_col_name: str = "event",
     resource_col_name: str = "resource_id",
-    run_col_name: Optional[str] = "auto",
+    run_col_name: str | None = "auto",
 ) -> pd.DataFrame:
     """
     Compute how many units of each resource step were busy at regular snapshots.
@@ -1871,9 +1877,7 @@ def resource_occupancy_over_time(
                 counts = np.zeros(len(snapshot_times), dtype=int)
             else:
                 change_times = np.concatenate([starts, ends])
-                deltas = np.concatenate(
-                    [np.ones(len(starts)), -np.ones(len(ends))]
-                )
+                deltas = np.concatenate([np.ones(len(starts)), -np.ones(len(ends))])
                 order = np.argsort(change_times, kind="stable")
                 change_times = change_times[order]
                 cum_counts = np.cumsum(deltas[order])
@@ -1905,7 +1909,7 @@ def activity_occupancy_stats(
     *,
     every_x_time_units: float = 1,
     warm_up: float = 0,
-    limit_duration: Optional[float] = None,
+    limit_duration: float | None = None,
     across_runs: ActivityOccupancyAcrossRuns = "average",
     include_queues: bool = True,
     include_resources: bool = True,
@@ -1914,8 +1918,8 @@ def activity_occupancy_stats(
     event_type_col_name: str = "event_type",
     event_col_name: str = "event",
     resource_col_name: str = "resource_id",
-    run_col_name: Optional[str] = "auto",
-    pathway_col_name: Optional[str] = None,
+    run_col_name: str | None = "auto",
+    pathway_col_name: str | None = None,
 ) -> pd.DataFrame:
     """
     Summarise how many entities were present at each step of a process.
@@ -1997,9 +2001,7 @@ resource_col_name, run_col_name, pathway_col_name : str or None
 
     def _steps_of_type(event_type: str) -> list:
         return sorted(
-            event_log.loc[
-                event_log[event_type_col_name] == event_type, event_col_name
-            ]
+            event_log.loc[event_log[event_type_col_name] == event_type, event_col_name]
             .dropna()
             .unique()
             .tolist(),
@@ -2078,9 +2080,7 @@ resource_col_name, run_col_name, pathway_col_name : str or None
             median_occupancy=("count", "median"),
         )
     else:
-        per_run = series.groupby(
-            ["kind", "event", "run_number"], dropna=False
-        ).agg(
+        per_run = series.groupby(["kind", "event", "run_number"], dropna=False).agg(
             mean_occupancy=("count", "mean"),
             min_occupancy=("count", "min"),
             max_occupancy=("count", "max"),
@@ -2128,7 +2128,7 @@ WarmUpMethod: TypeAlias = Literal["welch", "cumulative", "none"]
 
 def welch_moving_average(
     series_by_run: Sequence[Sequence[float]],
-    window: Optional[int] = None,
+    window: int | None = None,
     *,
     method: WarmUpMethod = "welch",
 ) -> np.ndarray:
@@ -2242,8 +2242,7 @@ def welch_moving_average(
 
     if window is None or window < 1:
         raise ValueError(
-            f"`window` must be a positive integer when method='welch'; got "
-            f"{window!r}."
+            f"`window` must be a positive integer when method='welch'; got {window!r}."
         )
     if window >= m:
         raise ValueError(

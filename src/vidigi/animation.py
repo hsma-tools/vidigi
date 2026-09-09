@@ -1,9 +1,19 @@
+import base64
 import datetime as dt
+import mimetypes
 import time
 import warnings
+from collections.abc import Callable, Sequence
+from pathlib import Path
+from typing import Literal, TypeAlias
+
+import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+from plotly.basedatatypes import BaseTraceType
+from plotly.subplots import make_subplots
+
 from vidigi.prep import (
     SnapshotAlignment,
     generate_animation_df,
@@ -27,14 +37,6 @@ from vidigi.utils import (
     inject_icon_flip_css,
     inject_icon_font_css,
 )
-import numpy as np
-from plotly.basedatatypes import BaseTraceType
-from plotly.subplots import make_subplots
-from typing import Callable, Literal, Optional, Sequence, TypeAlias, Union
-import base64
-import mimetypes
-from pathlib import Path
-
 
 # Which plotly API draws the animation. Several spellings of each are accepted, and
 # matching is case-insensitive; the canonical forms are listed first. Editors offer
@@ -167,7 +169,9 @@ def _reconcile_grouped_traces(fig: go.Figure, categories) -> None:
             # created this placeholder.
             marker=dict(opacity=0, color=marker_color),
             legendgroup=category,
-            showlegend=getattr(template, "showlegend", None) if template is not None else None,
+            showlegend=getattr(template, "showlegend", None)
+            if template is not None
+            else None,
         )
 
     # `fig.data = (...)` only accepts a permutation of fig's *own* existing traces -
@@ -211,7 +215,7 @@ def _disable_axis_clipping(fig: go.Figure) -> None:
                     pass
 
 
-def _series_min(df: Optional[pd.DataFrame], col: str) -> Optional[float]:
+def _series_min(df: pd.DataFrame | None, col: str) -> float | None:
     """Smallest finite value in ``df[col]``, or ``None`` if unavailable."""
     if df is None or col not in getattr(df, "columns", []) or not len(df):
         return None
@@ -219,7 +223,7 @@ def _series_min(df: Optional[pd.DataFrame], col: str) -> Optional[float]:
     return float(value) if pd.notna(value) else None
 
 
-def _series_max(df: Optional[pd.DataFrame], col: str) -> Optional[float]:
+def _series_max(df: pd.DataFrame | None, col: str) -> float | None:
     """Largest finite value in ``df[col]``, or ``None`` if unavailable."""
     if df is None or col not in getattr(df, "columns", []) or not len(df):
         return None
@@ -230,13 +234,13 @@ def _series_max(df: Optional[pd.DataFrame], col: str) -> Optional[float]:
 def _overflow_margin_updates(
     *,
     event_position_df: pd.DataFrame,
-    entity_df: Optional[pd.DataFrame],
-    resource_df: Optional[pd.DataFrame],
+    entity_df: pd.DataFrame | None,
+    resource_df: pd.DataFrame | None,
     x_max: float,
     y_max: float,
     text_size: int,
-    plotly_width: Optional[int],
-    plotly_height: Optional[int],
+    plotly_width: int | None,
+    plotly_height: int | None,
     display_stage_labels: bool,
     queue_direction: QueueDirection = "left",
     entity_resource_offset_y: float = -10,
@@ -286,7 +290,10 @@ def _overflow_margin_updates(
     # sits outside [0, .]. Converted from data units via the axis span and a
     # reference figure size (the real width is often unknown at build time).
     x_candidates = [0.0]
-    for value in (_series_min(entity_df, "x_final"), _series_min(resource_df, "x_final")):
+    for value in (
+        _series_min(entity_df, "x_final"),
+        _series_min(resource_df, "x_final"),
+    ):
         if value is not None:
             x_candidates.append(value)
     x_min_data = min(x_candidates)
@@ -305,15 +312,16 @@ def _overflow_margin_updates(
     # Right: how far the furthest right-building queue or resource icon sits
     # past x_max (the mirror of the left-margin logic below).
     x_candidates_hi = [x_max]
-    for value in (_series_max(entity_df, "x_final"), _series_max(resource_df, "x_final")):
+    for value in (
+        _series_max(entity_df, "x_final"),
+        _series_max(resource_df, "x_final"),
+    ):
         if value is not None:
             x_candidates_hi.append(value)
     x_max_data = max(x_candidates_hi)
 
     if x_max and x_min_data < 0:
-        need["l"] = max(
-            need["l"], (-x_min_data) / (x_max - x_min_data) * ref_w + 20
-        )
+        need["l"] = max(need["l"], (-x_min_data) / (x_max - x_min_data) * ref_w + 20)
     if y_max and y_min_data < 0:
         need["b"] = (-y_min_data) / (y_max - y_min_data) * ref_h + 20
     if x_max and x_max_data > x_max:
@@ -356,7 +364,7 @@ def _warn_on_missing_scenario_resources(resource_attr_map: dict) -> None:
 def generate_animation(
     full_entity_df_plus_pos: pd.DataFrame,
     event_position_df: pd.DataFrame,
-    scenario: Optional[object] = None,
+    scenario: object | None = None,
     time_col_name: str = "time",
     entity_col_name: str = "entity_id",
     event_col_name: str = "event",
@@ -364,39 +372,39 @@ def generate_animation(
     resource_col_name: str = "resource_id",
     simulation_time_unit: SimulationTimeUnit = "minutes",
     plotly_height: int = 900,
-    plotly_width: Optional[int] = None,
+    plotly_width: int | None = None,
     include_play_button: bool = True,
-    add_background_image: Optional[str] = None,
+    add_background_image: str | None = None,
     display_stage_labels: bool = True,
     entity_icon_size: int = 24,
     text_size: int = 24,
-    hover_text_entity: Optional[str] = "default",
-    custom_hover_data: Optional[list[str]] = None,
+    hover_text_entity: str | None = "default",
+    custom_hover_data: list[str] | None = None,
     resource_icon_size: int = 24,
-    override_x_max: Optional[int] = None,
-    override_y_max: Optional[int] = None,
-    time_display_units: Optional[int] = None,
-    start_date: Optional[str] = None,
-    start_time: Optional[str] = None,
+    override_x_max: int | None = None,
+    override_y_max: int | None = None,
+    time_display_units: int | None = None,
+    start_date: str | None = None,
+    start_time: str | None = None,
     resource_opacity: float = 0.8,
-    custom_resource_icon: Optional[str] = None,
-    wrap_resources_at: Optional[int] = 20,
+    custom_resource_icon: str | None = None,
+    wrap_resources_at: int | None = 20,
     gap_between_resources: int = 10,
     gap_between_resource_rows: int = 30,
     queue_direction: QueueDirection = "left",
     flip_entity_icons: bool = False,
-    entity_icon_font: Optional[str] = None,
-    entity_icon_font_weight: Optional[int] = None,
-    resource_icon_font: Optional[str] = None,
-    resource_icon_font_weight: Optional[int] = None,
-    entity_colour_by: Optional[str] = None,
-    entity_colour_map: Optional[dict] = None,
+    entity_icon_font: str | None = None,
+    entity_icon_font_weight: int | None = None,
+    resource_icon_font: str | None = None,
+    resource_icon_font_weight: int | None = None,
+    entity_colour_by: str | None = None,
+    entity_colour_map: dict | None = None,
     show_entity_legend: bool = True,
-    entity_annotation_by: Optional[str] = None,
+    entity_annotation_by: str | None = None,
     entity_annotation_size: int = 14,
     entity_annotation_color: str = "black",
     entity_annotation_offset_y: float = -15,
-    resource_image_size: Optional[float] = None,
+    resource_image_size: float | None = None,
     entity_resource_offset_y: float = -10,
     setup_mode: bool = False,
     frame_duration: int = 400,  # milliseconds
@@ -405,10 +413,10 @@ def generate_animation(
     background_image_opacity: float = 0.5,
     overflow_text_color: str = "black",
     stage_label_text_colour: str = "black",
-    plot_bgcolor: Optional[str] = None,
-    paper_bgcolor: Optional[str] = None,
+    plot_bgcolor: str | None = None,
+    paper_bgcolor: str | None = None,
     backend: AnimationBackend = "express",
-    run_col_name: Optional[str] = "auto",
+    run_col_name: str | None = "auto",
 ) -> go.Figure:
     """
     Generate an animated visualization of patient flow through a system.
@@ -944,7 +952,7 @@ def generate_animation(
             use_ampm = time_display_units.endswith("_ampm")
 
             def format_day_clock(t):
-                delta = t - pd.Timestamp(t.date())
+                # delta = t - pd.Timestamp(t.date())
                 sim_day = (
                     t.normalize()
                     - full_entity_df_plus_pos_copy["snapshot_time"].min().normalize()
@@ -1006,8 +1014,8 @@ def generate_animation(
             "default template, which expects exactly these six columns in this "
             "order: entity id, time, snapshot time, label, time in event, queue "
             "position. Pass your own `hover_text_entity` string that references "
-            "your columns by position - e.g. hover_text_entity=\"Widgets: "
-            "%{customdata[0]}\" for custom_hover_data=[\"widgets\"] - or drop "
+            'your columns by position - e.g. hover_text_entity="Widgets: '
+            '%{customdata[0]}" for custom_hover_data=["widgets"] - or drop '
             "`custom_hover_data` to use the default hover text."
         )
 
@@ -1062,21 +1070,21 @@ def generate_animation(
         if "additional" in full_entity_df_plus_pos_copy:
             full_entity_df_plus_pos_copy["entity_display_hover"] = (
                 full_entity_df_plus_pos_copy.apply(
-                    lambda x: ("N/A" if x["additional"] > 1.0 else x[entity_col_name]),
+                    lambda x: "N/A" if x["additional"] > 1.0 else x[entity_col_name],
                     axis=1,
                 )
             )
 
             full_entity_df_plus_pos_copy["time_hover"] = (
                 full_entity_df_plus_pos_copy.apply(
-                    lambda x: ("N/A" if x["additional"] > 1.0 else x[time_col_name]),
+                    lambda x: "N/A" if x["additional"] > 1.0 else x[time_col_name],
                     axis=1,
                 )
             )
 
             full_entity_df_plus_pos_copy["time_in_event"] = (
                 full_entity_df_plus_pos_copy.apply(
-                    lambda x: ("N/A" if x["additional"] > 1.0 else x["time_in_event"]),
+                    lambda x: "N/A" if x["additional"] > 1.0 else x["time_in_event"],
                     axis=1,
                 )
             )
@@ -1704,9 +1712,7 @@ def generate_animation(
             pos - 10 if s > 0 else pos + 10
             for pos, s in zip(event_position_df["x"].to_list(), label_sign)
         ]
-        label_pos = [
-            "middle left" if s > 0 else "middle right" for s in label_sign
-        ]
+        label_pos = ["middle left" if s > 0 else "middle right" for s in label_sign]
         fig.add_trace(
             go.Scatter(
                 x=label_x,
@@ -2032,74 +2038,74 @@ def generate_animation(
 def animate_activity_log(
     event_log: pd.DataFrame,
     event_position_df: pd.DataFrame,
-    scenario: Optional[object] = None,
+    scenario: object | None = None,
     time_col_name: str = "time",
     entity_col_name: str = "entity_id",
     event_type_col_name: str = "event_type",
     event_col_name: str = "event",
-    pathway_col_name: Optional[str] = None,
+    pathway_col_name: str | None = None,
     resource_col_name: str = "resource_id",
     simulation_time_unit: SimulationTimeUnit = "minutes",
     every_x_time_units: int = 10,
-    wrap_queues_at: Optional[int] = 20,
-    wrap_resources_at: Optional[int] = 20,
+    wrap_queues_at: int | None = 20,
+    wrap_resources_at: int | None = 20,
     step_snapshot_max: int = 60,
-    limit_duration: Optional[int] = None,
+    limit_duration: int | None = None,
     plotly_height: int = 900,
-    plotly_width: Optional[int] = None,
+    plotly_width: int | None = None,
     include_play_button: bool = True,
-    add_background_image: Optional[str] = None,
+    add_background_image: str | None = None,
     display_stage_labels: bool = True,
     entity_icon_size: int = 24,
     text_size: int = 24,
     resource_icon_size: int = 24,
-    hover_text_entity: Optional[str] = "default",
-    custom_hover_data: Optional[list[str]] = None,
+    hover_text_entity: str | None = "default",
+    custom_hover_data: list[str] | None = None,
     gap_between_entities: int = 10,
     gap_between_queue_rows: int = 30,
     gap_between_resource_rows: int = 30,
     gap_between_resources: int = 10,
     queue_direction: QueueDirection = "left",
     flip_entity_icons: bool = False,
-    entity_icon_font: Optional[str] = None,
-    entity_icon_font_weight: Optional[int] = None,
-    resource_icon_font: Optional[str] = None,
-    resource_icon_font_weight: Optional[int] = None,
-    entity_colour_by: Optional[str] = None,
-    entity_colour_map: Optional[dict] = None,
+    entity_icon_font: str | None = None,
+    entity_icon_font_weight: int | None = None,
+    resource_icon_font: str | None = None,
+    resource_icon_font_weight: int | None = None,
+    entity_colour_by: str | None = None,
+    entity_colour_map: dict | None = None,
     show_entity_legend: bool = True,
-    entity_annotation_by: Optional[str] = None,
+    entity_annotation_by: str | None = None,
     entity_annotation_size: int = 14,
     entity_annotation_color: str = "black",
     entity_annotation_offset_y: float = -15,
-    resource_image_size: Optional[float] = None,
+    resource_image_size: float | None = None,
     entity_resource_offset_y: float = -10,
     resource_opacity: float = 0.8,
-    custom_resource_icon: Optional[str] = None,
-    override_x_max: Optional[int] = None,
-    override_y_max: Optional[int] = None,
-    start_date: Optional[str] = None,
-    start_time: Optional[str] = None,
-    time_display_units: Optional[str] = None,
+    custom_resource_icon: str | None = None,
+    override_x_max: int | None = None,
+    override_y_max: int | None = None,
+    start_date: str | None = None,
+    start_time: str | None = None,
+    time_display_units: str | None = None,
     setup_mode: bool = False,
     frame_duration: int = 400,  # milliseconds
     frame_transition_duration: int = 600,  # milliseconds
     debug_mode: bool = False,
-    custom_entity_icon_list: Optional[list[str]] = None,
+    custom_entity_icon_list: list[str] | None = None,
     debug_write_intermediate_objects: bool = False,
     background_image_opacity: float = 0.5,
     overflow_text_color: str = "black",
     stage_label_text_colour: str = "black",
-    plot_bgcolor: Optional[str] = None,
-    paper_bgcolor: Optional[str] = None,
+    plot_bgcolor: str | None = None,
+    paper_bgcolor: str | None = None,
     backend: AnimationBackend = "express",
     step_snapshot_limit_gauges: bool = False,
     gauge_segments: int = 10,
-    gauge_max_override: Optional[int | float] = None,
+    gauge_max_override: float | None = None,
     step_snapshot_reveal_pop_in: bool = False,
     spawn_in_from_arrival: bool = True,
-    run_number: Optional[int] = None,
-    run_col_name: Optional[str] = "auto",
+    run_number: int | None = None,
+    run_col_name: str | None = "auto",
     warm_up: int = 0,
     snapshot_alignment: SnapshotAlignment = "warm_up",
 ) -> go.Figure:
@@ -2883,9 +2889,7 @@ def _enable_frame_redraw(fig: go.Figure) -> None:
 # A single trace, or several, or nothing - accepted anywhere the synchronised
 # trace helpers take trace input. Frame data can also be a bare dict (the `go`
 # animation backend stores it that way), so those are tolerated too.
-_TraceInput: TypeAlias = Union[
-    BaseTraceType, dict, Sequence[Union[BaseTraceType, dict]], None
-]
+_TraceInput: TypeAlias = BaseTraceType | dict | Sequence[BaseTraceType | dict] | None
 
 
 def _as_trace_list(traces: _TraceInput) -> list:
@@ -2925,7 +2929,7 @@ def add_subplot_panels(
     *,
     row_heights: Sequence[float],
     vertical_spacing: float = 0.05,
-    subplot_titles: Optional[Sequence[str]] = None,
+    subplot_titles: Sequence[str] | None = None,
     hide_new_panel_axes: bool = True,
 ) -> go.Figure:
     """Re-home a vidigi animation into the top row of a stacked subplot grid.
@@ -3014,7 +3018,7 @@ def add_synchronised_trace(
     *,
     static_traces: _TraceInput = None,
     initial_traces: _TraceInput = None,
-    redraw: Optional[bool] = None,
+    redraw: bool | None = None,
 ) -> go.Figure:
     """Add extra traces to an animation, kept in step with its frames.
 
@@ -3158,7 +3162,7 @@ def add_synchronised_trace_from_dataframe(
     match: Literal["index", "value"] = "index",
     accumulate: bool = False,
     static_traces: _TraceInput = None,
-    redraw: Optional[bool] = None,
+    redraw: bool | None = None,
 ) -> go.Figure:
     """Add a synchronised trace built from a long-form DataFrame.
 

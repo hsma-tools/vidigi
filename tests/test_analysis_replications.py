@@ -271,7 +271,7 @@ def test_k_equals_one_is_always_below_threshold_false():
     undefined deviation count as "below" it."""
     result = replication_precision([4.0], deviation_threshold=float("inf"))
 
-    assert result.loc[0, "stays_below_threshold"] == False  # noqa: E712
+    assert result.loc[0, "stays_below_threshold"] == False
 
 
 def test_stays_below_threshold_is_true_once_deviation_settles():
@@ -285,7 +285,14 @@ def test_stays_below_threshold_is_true_once_deviation_settles():
     result = replication_precision(values, deviation_threshold=0.5)
 
     assert result["stays_below_threshold"].tolist() == [
-        False, True, True, True, True, True, True, True,
+        False,
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
     ]
 
 
@@ -317,7 +324,7 @@ def test_deviation_is_nan_when_cumulative_mean_is_zero():
 
     assert result.loc[1, "cumulative_mean"] == 0.0
     assert np.isnan(result.loc[1, "deviation"])
-    assert result.loc[1, "stays_below_threshold"] == False  # noqa: E712
+    assert result.loc[1, "stays_below_threshold"] == False
 
 
 def test_deviation_is_non_negative_for_a_negative_cumulative_mean():

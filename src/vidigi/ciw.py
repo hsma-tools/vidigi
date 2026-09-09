@@ -1,5 +1,5 @@
-from collections.abc import Iterable
-from typing import Any, Iterator, Mapping, Optional, Sequence
+from collections.abc import Iterable, Iterator, Mapping, Sequence
+from typing import Any
 
 import pandas as pd
 
@@ -21,7 +21,7 @@ def _ciw_event_dicts(
     event. See :func:`event_log_from_ciw_recs` for the meaning of the
     parameters and the interpretation of the ciw record fields.
     """
-    entity_ids = list(set([log.id_number for log in ciw_recs_obj]))
+    entity_ids = list({log.id_number for log in ciw_recs_obj})
 
     for entity_id in entity_ids:
         entity_tuples = [log for log in ciw_recs_obj if log.id_number == entity_id]
@@ -46,7 +46,7 @@ def _ciw_event_dicts(
                 "entity_id": entity_id,
                 "pathway": "Model",
                 "event_type": "queue",
-                "event": f"{node_name_list[event.node-1]}_wait_begins",
+                "event": f"{node_name_list[event.node - 1]}_wait_begins",
                 "time": event.arrival_date,
             }
 
@@ -54,7 +54,7 @@ def _ciw_event_dicts(
                 "entity_id": entity_id,
                 "pathway": "Model",
                 "event_type": "resource_use",
-                "event": f"{node_name_list[event.node-1]}_begins",
+                "event": f"{node_name_list[event.node - 1]}_begins",
                 "time": event.service_start_date,
                 "resource_id": event.server_id,
             }
@@ -63,7 +63,7 @@ def _ciw_event_dicts(
                 "entity_id": entity_id,
                 "pathway": "Model",
                 "event_type": "resource_use_end",
-                "event": f"{node_name_list[event.node-1]}_ends",
+                "event": f"{node_name_list[event.node - 1]}_ends",
                 "time": event.service_end_date,
                 "resource_id": event.server_id,
             }
@@ -165,9 +165,9 @@ def event_logger_from_ciw_recs(
     ciw_recs_obj: Iterable[Mapping[str, Any]],
     node_name_list: Sequence[str],
     *,
-    run_number: Optional[int] = None,
+    run_number: int | None = None,
     scenario: Any = None,
-    label: Optional[str] = None,
+    label: str | None = None,
 ) -> EventLogger:
     """
     Build a vidigi `EventLogger` from a single `ciw.data_record` object.
@@ -241,9 +241,9 @@ def trial_logger_from_ciw_recs(
     ciw_recs_list: Sequence[Iterable[Mapping[str, Any]]],
     node_name_list: Sequence[str],
     *,
-    run_numbers: Optional[Sequence[int]] = None,
+    run_numbers: Sequence[int] | None = None,
     scenario: Any = None,
-    label: Optional[str] = None,
+    label: str | None = None,
 ) -> TrialLogger:
     """
     Build a vidigi `TrialLogger` from several ciw runs' records.

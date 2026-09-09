@@ -1,7 +1,8 @@
 import pandas as pd
 
+
 def results_summary(results_all, results_low, results_high):
-    '''
+    """
     Present model results as a summary data frame
 
     Params:
@@ -18,10 +19,14 @@ def results_summary(results_all, results_low, results_high):
     Returns:
     -------
         pd.DataFrame
-    '''
-    summary_frame = pd.concat([pd.DataFrame(results_all).describe(),
-                               pd.DataFrame(results_low).describe(),
-                               pd.DataFrame(results_high).describe()],
-                               axis=1)
-    summary_frame.columns = ['all', 'low_pri', 'high_pri']
+    """
+    summary_frame = pd.concat(
+        [
+            pd.DataFrame(results_all).describe(),
+            pd.DataFrame(results_low).describe(),
+            pd.DataFrame(results_high).describe(),
+        ],
+        axis=1,
+    )
+    summary_frame.columns = ["all", "low_pri", "high_pri"]
     return summary_frame

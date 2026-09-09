@@ -67,7 +67,9 @@ def _run_contention(store_class, request_kwargs):
 
 def test_filter_fn_none_is_identical_to_omitting_it(store_class):
     """Passing `filter_fn=None` explicitly must not perturb anything."""
-    assert _run_contention(store_class, {}) == _run_contention(store_class, {"filter_fn": None})
+    assert _run_contention(store_class, {}) == _run_contention(
+        store_class, {"filter_fn": None}
+    )
 
 
 # MARK: item selection

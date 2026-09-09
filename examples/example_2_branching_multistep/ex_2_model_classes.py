@@ -1,8 +1,10 @@
 import random
+
 import numpy as np
 import pandas as pd
 import simpy
-from sim_tools.distributions import Exponential, Lognormal, Uniform, Normal, Bernoulli
+from sim_tools.distributions import Bernoulli, Exponential, Lognormal, Normal, Uniform
+
 from vidigi.resources import VidigiStore
 
 TRACE = False
@@ -297,12 +299,12 @@ class Model:
         )
 
         # Non-trauma
-        self.exam_cubicles = VidigiStore(
-            self.env, num_resources=g.n_exam, label="exam"
-        )
+        self.exam_cubicles = VidigiStore(self.env, num_resources=g.n_exam, label="exam")
 
         self.non_trauma_treatment_cubicles = VidigiStore(
-            self.env, num_resources=g.n_cubicles_non_trauma_treat, label="non_trauma_treatment"
+            self.env,
+            num_resources=g.n_cubicles_non_trauma_treat,
+            label="non_trauma_treatment",
         )
 
         # Trauma

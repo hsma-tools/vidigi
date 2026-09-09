@@ -1,8 +1,10 @@
 import pandas as pd
-from sim_tools.distributions import Exponential, Lognormal
-from vidigi.resources import VidigiStore
-from vidigi.logging import EventLogger
 import simpy
+from sim_tools.distributions import Exponential, Lognormal
+
+from vidigi.logging import EventLogger
+from vidigi.resources import VidigiStore
+
 
 class g:
     # Simulation Duration Parameters (time units are hours)
@@ -26,29 +28,32 @@ class g:
 
 
 class Patient:
-    '''
+    """
     Class defining details for a patient entity
-    '''
+    """
+
     def __init__(self, p_id):
-        '''
+        """
         Constructor method
 
         Params:
         -----
         identifier: int
             a numeric identifier for the patient.
-        '''
+        """
         self.id = p_id
+
 
 # Class representing our model of the clinic.
 class Model:
-    '''
+    """
     Simulates the simplest minor treatment process for a patient
 
     1. Arrive
     2. Examined/treated by nurse when one available
     3. Discharged
-    '''
+    """
+
     # Constructor to set up the model for a run.  We pass in a run number when
     # we create a new model.
     def __init__(self, run_number):
@@ -76,24 +81,23 @@ class Model:
 
     def init_distributions(self):
         self.patient_inter_arrival_dist = Exponential(
-            mean = g.patient_inter_arrival_time,
-            random_seed = (abs(self.run_number) + 1)
-            )
+            mean=g.patient_inter_arrival_time, random_seed=(abs(self.run_number) + 1)
+        )
 
         self.treat_dist = Lognormal(
-            mean = g.mean_time_in_bed,
-            stdev = g.sd_time_in_bed,
-            random_seed = (abs(self.run_number) + 1)
-            )
+            mean=g.mean_time_in_bed,
+            stdev=g.sd_time_in_bed,
+            random_seed=(abs(self.run_number) + 1),
+        )
 
     def init_resources(self):
-        '''
+        """
         Init the number of resources
 
         Resource list:
             1. Nurses/treatment bays (same thing in this model)
 
-        '''
+        """
         self.beds = VidigiStore(self.env, num_resources=g.number_of_beds, label="bed")
 
     # A generator function that represents the DES generator for patient
@@ -131,43 +135,31 @@ class Model:
             # you like (just make sure you're consistent within the model)
             yield self.env.timeout(sampled_inter)
 
-   # A generator function that represents the pathway for a patient going
+    # A generator function that represents the pathway for a patient going
     # through the clinic.
     # The patient object is passed in to the generator function so we can
     # extract information from / record information to it
     def attend_ward(self, patient):
-        self.logger.log_arrival(
-            entity_id=patient.id
-            )
+        self.logger.log_arrival(entity_id=patient.id)
 
-        self.logger.log_queue(
-            entity_id=patient.id,
-            event="bed_wait_begins"
-            )
+        self.logger.log_queue(entity_id=patient.id, event="bed_wait_begins")
 
         with self.beds.request() as req:
-
             # Seize a treatment resource when available
             bed_resource = yield req
 
             self.logger.log_resource_use_start(
-                entity_id=patient.id,
-                event="stay_begins",
-                resource_id=bed_resource.id
-                )
+                entity_id=patient.id, event="stay_begins", resource_id=bed_resource.id
+            )
 
             # sample treatment duration
             yield self.env.timeout(self.treat_dist.sample())
 
             self.logger.log_resource_use_end(
-                entity_id=patient.id,
-                event="stay_complete",
-                resource_id=bed_resource.id
-                )
-
-        self.logger.log_departure(
-            entity_id=patient.id
+                entity_id=patient.id, event="stay_complete", resource_id=bed_resource.id
             )
+
+        self.logger.log_departure(entity_id=patient.id)
 
     # The run method starts up the DES entity generators, runs the simulation,
     # and in turns calls anything we need to generate results for the run
@@ -181,9 +173,8 @@ class Model:
         self.env.run(until=g.sim_duration)
 
 
-
 class Trial:
-    def  __init__(self):
+    def __init__(self):
         self.all_event_logs = []
         self.trial_results_df = pd.DataFrame()
 
@@ -205,4 +196,4 @@ class Trial:
 
         self.trial_results = pd.concat(
             [run_results.to_dataframe() for run_results in self.all_event_logs]
-            )
+        )

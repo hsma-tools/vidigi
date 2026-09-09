@@ -56,7 +56,9 @@ def _rows_for(logger, entity_id):
 
 def _holder(env, store, logger, hold=10):
     """Well-behaved entity - grabs the single unit at t=0 and holds it."""
-    with store.request(entity_id="holder", start_event="t_start", end_event="t_end") as req:
+    with store.request(
+        entity_id="holder", start_event="t_start", end_event="t_end"
+    ) as req:
         yield req
         yield env.timeout(hold)
     logger.log_departure(entity_id="holder")
@@ -113,7 +115,9 @@ def test_unawaited_request_logs_no_phantom_resource_use(store_class):
     with pytest.warns(UserWarning):
         env.run(until=30)
 
-    p2_events = [(e["event_type"], e["event"], e["time"]) for e in _rows_for(logger, "p2")]
+    p2_events = [
+        (e["event_type"], e["event"], e["time"]) for e in _rows_for(logger, "p2")
+    ]
     assert p2_events == [
         ("arrival_departure", "arrival", 1.0),
         ("queue", "wait", 1.0),
@@ -166,9 +170,7 @@ def test_unawaited_request_with_free_unit_returns_it_immediately(store_class):
 
     assert _units_available(store) == 1
     assert list(_pending_queue(store)) == []
-    assert not any(
-        e["event_type"].startswith("resource_use") for e in logger.get_log()
-    )
+    assert not any(e["event_type"].startswith("resource_use") for e in logger.get_log())
 
 
 def test_guard_also_fires_without_a_logger(store_class):

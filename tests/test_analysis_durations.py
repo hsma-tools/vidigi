@@ -243,9 +243,7 @@ def test_event_durations_matches_the_old_pivot_on_raw_logs(
     assert list(new["entity_id"]) == list(old["entity_id"])
     if run_col:
         assert list(new[run_col]) == list(old[run_col])
-    pd.testing.assert_series_equal(
-        new["duration"], old["duration"], check_names=False
-    )
+    pd.testing.assert_series_equal(new["duration"], old["duration"], check_names=False)
 
 
 def test_event_absent_from_the_whole_log_raises_clearly_on_both(no_departure_log):
@@ -271,7 +269,9 @@ def test_event_absent_from_the_whole_log_raises_clearly_on_both(no_departure_log
 
 
 def test_warm_up_default_is_a_verified_no_op():
-    log = _rows(("A", "start", 0), ("A", "end", 5), ("B", "start", 10), ("B", "end", 12))
+    log = _rows(
+        ("A", "start", 0), ("A", "end", 5), ("B", "start", 10), ("B", "end", 12)
+    )
 
     with_default = event_durations(log, "start", "end")
     explicit_zero = event_durations(log, "start", "end", warm_up=0)
@@ -321,7 +321,11 @@ def test_warm_up_does_not_exclude_a_pairing_with_no_first_time():
 def test_warm_up_combines_with_keep_incomplete_false():
     log = _rows(
         ("A", "start", 0),  # before warm_up - excluded regardless
-        ("B", "start", 10),  # after warm_up, never finishes - excluded by keep_incomplete
+        (
+            "B",
+            "start",
+            10,
+        ),  # after warm_up, never finishes - excluded by keep_incomplete
         ("C", "start", 20),
         ("C", "end", 25),
     )
@@ -338,7 +342,9 @@ def test_warm_up_filters_per_occurrence_not_per_entity(rework_loop_logger):
     filter applies per pairing, not by dropping the whole entity."""
     df = rework_loop_logger.to_dataframe()
 
-    result = event_durations(df, "assessment", "treated", match="occurrence", warm_up=10)
+    result = event_durations(
+        df, "assessment", "treated", match="occurrence", warm_up=10
+    )
 
     assert list(result["duration"]) == [10.0]
 

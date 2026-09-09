@@ -40,7 +40,11 @@ def return_methods(store):
 def queue_snapshot(store):
     """(items, get_queue, put_queue) as shallow copies, wherever the class keeps them."""
     if isinstance(store, VidigiStore):
-        return (list(store.items), list(store.store.get_queue), list(store.store.put_queue))
+        return (
+            list(store.items),
+            list(store.store.get_queue),
+            list(store.store.put_queue),
+        )
     return (list(store.items), list(store.get_queue), list(store.put_queue))
 
 

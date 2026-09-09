@@ -1,14 +1,14 @@
-import pandas as pd
-from pydantic import BaseModel, ValidationError
-from typing import List, Literal, Optional
-from collections.abc import Mapping
-import webcolors
-import warnings
-import numbers
 import inspect
+import numbers
 import re
+import warnings
+from collections.abc import Mapping
 from functools import wraps
+from typing import Literal
 
+import pandas as pd
+import webcolors
+from pydantic import BaseModel, ValidationError
 
 # Which way a queue (or row of resources) builds out from its anchor point.
 # ``"left"`` is the historic behaviour - the anchor is the front of the queue and
@@ -24,9 +24,7 @@ def _validate_queue_direction(value: str) -> str:
     """Normalise and check a queue-direction string, raising on anything else."""
     norm = str(value).strip().lower()
     if norm not in ("left", "right"):
-        raise ValueError(
-            f"`queue_direction` must be 'left' or 'right', got {value!r}."
-        )
+        raise ValueError(f"`queue_direction` must be 'left' or 'right', got {value!r}.")
     return norm
 
 
@@ -126,14 +124,14 @@ class EventPosition(BaseModel):
     x: int
     y: int
     label: str
-    resource: Optional[str] = None
-    direction: Optional[QueueDirection] = None
-    flip_icons: Optional[bool] = None
-    resource_icon: Optional[str] = None
+    resource: str | None = None
+    direction: QueueDirection | None = None
+    flip_icons: bool | None = None
+    resource_icon: str | None = None
 
 
 def create_event_position_df(
-    event_positions: List[EventPosition],
+    event_positions: list[EventPosition],
 ) -> pd.DataFrame:
     """
     Creates a DataFrame for event positions from a list of EventPosition objects.
@@ -156,7 +154,16 @@ def create_event_position_df(
 
         # Reorder columns to match the desired output
         df = df[
-            ["event", "x", "y", "label", "resource", "direction", "flip_icons", "resource_icon"]
+            [
+                "event",
+                "x",
+                "y",
+                "label",
+                "resource",
+                "direction",
+                "flip_icons",
+                "resource_icon",
+            ]
         ]
 
         _warn_on_duplicate_event_positions(
@@ -185,7 +192,7 @@ def create_event_position_df(
 # both use a leading backslash, and it is easy to end up with the wrong one
 # (`\200b` alone is a Python *octal* escape, not this character) without
 # actually catching the mistake anywhere until a browser is involved.
-ICON_FLIP_MARKER = "​"
+ICON_FLIP_MARKER = "\u200b"
 
 # Placeholder "icon" for phantom rows - the invisible lead rows
 # `step_snapshot_reveal_pop_in` and `spawn_in_from_arrival` insert so a point
@@ -198,7 +205,7 @@ PHANTOM_ICON = "﻿"
 
 ENTITY_ICON_FLIP_CSS = (
     "<style>\n"
-    ".js-plotly-plot text[data-unformatted^=\"" + ICON_FLIP_MARKER + "\"] {\n"
+    '.js-plotly-plot text[data-unformatted^="' + ICON_FLIP_MARKER + '"] {\n'
     "  transform-box: fill-box;\n"
     "  transform-origin: center;\n"
     "  transform: scaleX(-1);\n"
@@ -244,7 +251,7 @@ def _display_html(html: str) -> None:
     """
     try:
         from IPython import get_ipython
-        from IPython.display import display, HTML
+        from IPython.display import HTML, display
 
         # IPython is a transitive dependency (via ipywidgets) even in a plain
         # script, where there is no rich frontend to display anything - checking
@@ -326,7 +333,7 @@ ICON_FONT_PRESETS = {
 _STANDALONE_DIGIT_RE = re.compile(r"(?:^|\s)\d+(?:\s|$)")
 
 
-def _resolve_icon_font(font: str, weight: Optional[int] = None):
+def _resolve_icon_font(font: str, weight: int | None = None):
     """Resolve a preset name or a raw CSS family string to ``(family, weight)``.
 
     A preset name (one of `ICON_FONT_PRESETS`) resolves to its pre-aliased family,
@@ -353,7 +360,7 @@ def _resolve_icon_font(font: str, weight: Optional[int] = None):
     return font, weight
 
 
-def entity_icon_font_css(font: str, weight: Optional[int] = None) -> str:
+def entity_icon_font_css(font: str, weight: int | None = None) -> str:
     """
     Return the HTML needed to render entity icons in `font`.
 
@@ -425,7 +432,7 @@ def entity_icon_font_css(font: str, weight: Optional[int] = None) -> str:
     return head + "\n" + trigger
 
 
-def inject_icon_font_css(font: str, weight: Optional[int] = None) -> None:
+def inject_icon_font_css(font: str, weight: int | None = None) -> None:
     """
     Display the HTML from `entity_icon_font_css` in whichever environment this
     is called from - see `_display_html` for the dispatch, and
@@ -588,11 +595,11 @@ _SINGLE_RUN_GUIDANCE = (
     "      trial_logger.get_log_by_run(<run>, as_df=True)\n"
     "\n"
     "  If this column does not identify a replication, pass `run_col_name=None` to "
-    "disable this check, or `run_col_name=\"<your column>\"` to point it at the right one."
+    'disable this check, or `run_col_name="<your column>"` to point it at the right one.'
 )
 
 
-def _resolve_run_column(df: pd.DataFrame, run_col_name="auto") -> Optional[str]:
+def _resolve_run_column(df: pd.DataFrame, run_col_name="auto") -> str | None:
     """Work out which column - if any - identifies the replication.
 
     Parameters
@@ -666,9 +673,7 @@ def _check_single_run(
     if len(preview_values) > 5:
         shown += ", ..."
 
-    filter_example = (
-        f'{frame_arg}[{frame_arg}["{column}"] == {preview_values[0]!r}]'
-    )
+    filter_example = f'{frame_arg}[{frame_arg}["{column}"] == {preview_values[0]!r}]'
 
     raise ValueError(
         f"`{frame_arg}` spans {len(preview_values)} replications: column '{column}' "
@@ -682,7 +687,7 @@ def _check_one_arrival_per_entity(
     entity_col_name: str = "entity_id",
     event_type_col_name: str = "event_type",
     event_col_name: str = "event",
-    pathway_col_name: Optional[str] = None,
+    pathway_col_name: str | None = None,
     frame_arg: str = "event_log",
 ) -> None:
     """Raise if any entity arrives or departs more than once.
@@ -700,9 +705,7 @@ def _check_one_arrival_per_entity(
     if event_type_col_name not in event_log.columns:
         return
 
-    arrival_departure = event_log[
-        event_log[event_type_col_name] == "arrival_departure"
-    ]
+    arrival_departure = event_log[event_log[event_type_col_name] == "arrival_departure"]
     if arrival_departure.empty:
         return
 
@@ -953,12 +956,10 @@ def _warn_on_duplicate_event_positions(
         )
 
     if "x" in event_position_df.columns and "y" in event_position_df.columns:
-        distinct_events_here = event_position_df.groupby(
-            ["x", "y"], dropna=False
-        )[event_col_name].agg(lambda names: sorted(pd.unique(names).tolist()))
-        collisions = distinct_events_here[
-            distinct_events_here.map(len) > 1
-        ]
+        distinct_events_here = event_position_df.groupby(["x", "y"], dropna=False)[
+            event_col_name
+        ].agg(lambda names: sorted(pd.unique(names).tolist()))
+        collisions = distinct_events_here[distinct_events_here.map(len) > 1]
         if not collisions.empty:
             listed = "; ".join(
                 f"({x}, {y}): {', '.join(repr(n) for n in names)}"
@@ -979,8 +980,8 @@ def _warn_on_duplicate_event_positions(
 
 def _warn_on_event_positions_outside_range(
     event_position_df,
-    override_x_max: Optional[float] = None,
-    override_y_max: Optional[float] = None,
+    override_x_max: float | None = None,
+    override_y_max: float | None = None,
     event_col_name: str = "event",
     *,
     stacklevel: int = 3,
@@ -1088,9 +1089,7 @@ def _enforce_int_params(param_names, allow_none=()):
                 if name in bound.arguments:
                     if bound.arguments[name] is None and name in allow_none:
                         continue
-                    bound.arguments[name] = _ensure_int(
-                        bound.arguments[name], name
-                    )
+                    bound.arguments[name] = _ensure_int(bound.arguments[name], name)
 
             # call original function with validated arguments
             return func(*bound.args, **bound.kwargs)
