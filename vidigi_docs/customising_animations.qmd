@@ -333,21 +333,23 @@ See the [gauge-only animations example](/examples/feat_gauge_only_animations/fea
 
 ## Where entities enter and leave
 
-An exit already looks deliberate: give `event_position_df` a `depart` row and
-every entity is seen to move to that point before it disappears. Arrivals have no
-equivalent by default — a brand-new entity flies in from the plot's top-left
-corner (a Plotly quirk: a point new to a frame has no previous position to move
-from).
+An exit looks deliberate: give `event_position_df` a `depart` row and every entity
+is seen to move to that point before it disappears. Arrivals now behave the same
+way — a new entity glides in from the `arrival` anchor rather than flying in from
+the plot's top-left corner (a Plotly quirk: a point new to a frame has no previous
+position to move from).
 
 | Argument | Default | Effect |
 |---|---|---|
-| `spawn_in_from_arrival` | `False` | When `True`, a new entity glides in from the `EventPosition(event="arrival", …)` anchor instead of the top-left corner — the arrival-side mirror of `depart`. Needs an `"arrival"` row in `event_position_df`; put it off the edge of the plot for a "fly in from off-screen" look, or on a visible entrance. |
+| `spawn_in_from_arrival` | `True` | Slide a new entity in from the `EventPosition(event="arrival", …)` anchor — the arrival-side mirror of `depart`. Put that anchor off the edge of the plot for a "fly in from off-screen" look, or on a visible entrance. Pass `False` for the old top-left fly-in. |
 
-Only entities that arrive at least two snapshots (`2 × every_x_time_units`) after
-the animation starts are affected — an entity already in the system when the
-animation opens has no earlier frame to enter from and still flies in. This is
-independent of `step_snapshot_reveal_pop_in`, which does the same job for entities
-re-emerging from behind a `+ n more` label.
+The anchor is the `"arrival"` row you almost certainly already have; a layout that
+never positioned `"arrival"` is unaffected. Only entities that arrive at least two
+snapshots (`2 × every_x_time_units`) after the animation starts glide in — an
+entity already in the system when the animation opens has no earlier frame to
+enter from and still flies in from the corner. This is independent of
+`step_snapshot_reveal_pop_in`, which does the same job for entities re-emerging
+from behind a `+ n more` label.
 
 ## Setup mode
 

@@ -7,7 +7,7 @@ first frame it is drawn (the same Plotly `text`-trace behaviour that
 mirror of the synthetic `depart` step: the entity is given a visible row at the
 `event_position_df` `"arrival"` anchor one snapshot before its first real
 position (so Plotly animates it moving from there), plus an invisible
-zero-width-space phantom the snapshot before that (so the spawn row itself has
+placeholder-glyph phantom the snapshot before that (so the spawn row itself has
 nothing to fly in from).
 """
 
@@ -15,9 +15,7 @@ import pandas as pd
 import pytest
 
 from vidigi.prep import generate_animation_df, reshape_for_animations
-from vidigi.utils import EventPosition, create_event_position_df
-
-ZWSP = "​"
+from vidigi.utils import PHANTOM_ICON, EventPosition, create_event_position_df
 
 EVERY = 10
 
@@ -90,15 +88,24 @@ def _entity_rows(result, entity_id):
 
 
 # --------------------------------------------------------------------------- #
-# Default is a verified no-op
+# Default on; `False` restores the pre-feature behaviour
 # --------------------------------------------------------------------------- #
 
 
-def test_flag_off_is_byte_identical(spawn_log, spawn_positions):
+def test_default_spawns_in(spawn_log, spawn_positions):
+    """`spawn_in_from_arrival` defaults to True, so an eligible arrival gets its
+    synthetic spawn rows with no argument passed."""
     reshaped = _reshaped(spawn_log)
-    omitted = generate_animation_df(
-        reshaped.copy(), spawn_positions, step_snapshot_max=5, wrap_queues_at=None
+    result = generate_animation_df(
+        reshaped, spawn_positions, step_snapshot_max=5, wrap_queues_at=None
     )
+    rows = _entity_rows(result, 4.0)
+    assert (rows["event"] == "arrival").any()
+    assert rows["_phantom"].sum() == 1
+
+
+def test_explicit_false_restores_pre_feature_behaviour(spawn_log, spawn_positions):
+    reshaped = _reshaped(spawn_log)
     explicit_false = generate_animation_df(
         reshaped.copy(),
         spawn_positions,
@@ -106,33 +113,38 @@ def test_flag_off_is_byte_identical(spawn_log, spawn_positions):
         wrap_queues_at=None,
         spawn_in_from_arrival=False,
     )
-    assert omitted.equals(explicit_false)
     # No synthetic rows, and the column the phantom machinery adds is absent
     # unless something actually asked for it.
-    assert "_phantom" not in omitted.columns
-    assert not (omitted["event"] == "arrival").any()
+    assert "_phantom" not in explicit_false.columns
+    assert not (explicit_false["event"] == "arrival").any()
+
+    default_on = generate_animation_df(
+        reshaped.copy(), spawn_positions, step_snapshot_max=5, wrap_queues_at=None
+    )
+    # The default really did add rows the opt-out drops.
+    assert len(default_on) > len(explicit_false)
 
 
 def test_no_arrival_anchor_is_noop(spawn_log, no_arrival_positions):
     """With no `"arrival"` row in `event_position_df` there is no spawn point,
-    so the flag can do nothing - output must match the flag being off."""
+    so the default-on behaviour can do nothing - output must match opting out."""
     reshaped = _reshaped(spawn_log)
     off = generate_animation_df(
         reshaped.copy(),
         no_arrival_positions,
         step_snapshot_max=5,
         wrap_queues_at=None,
+        spawn_in_from_arrival=False,
     )
-    on = generate_animation_df(
+    default_on = generate_animation_df(
         reshaped.copy(),
         no_arrival_positions,
         step_snapshot_max=5,
         wrap_queues_at=None,
-        spawn_in_from_arrival=True,
     )
-    # `on` gains an all-False `_phantom` column but no rows.
-    assert on.drop(columns=["_phantom"], errors="ignore").equals(off)
-    assert not on.get("_phantom", pd.Series(dtype=bool)).any()
+    # `default_on` gains an all-False `_phantom` column but no rows.
+    assert default_on.drop(columns=["_phantom"], errors="ignore").equals(off)
+    assert not default_on.get("_phantom", pd.Series(dtype=bool)).any()
 
 
 # --------------------------------------------------------------------------- #
@@ -163,7 +175,7 @@ def test_new_arrival_gets_spawn_row_then_phantom(spawn_log, spawn_positions):
 
     assert len(rows[rows["_phantom"]]) == 1
     assert phantom["snapshot_time"] == 30
-    assert phantom["icon"] == ZWSP
+    assert phantom["icon"] == PHANTOM_ICON
     assert (phantom["x_final"], phantom["y_final"]) == (15, 300)
 
     assert spawn["snapshot_time"] == 40
@@ -221,7 +233,11 @@ def test_no_new_frames_created(spawn_log, spawn_positions):
     is unchanged."""
     reshaped = _reshaped(spawn_log)
     off = generate_animation_df(
-        reshaped.copy(), spawn_positions, step_snapshot_max=5, wrap_queues_at=None
+        reshaped.copy(),
+        spawn_positions,
+        step_snapshot_max=5,
+        wrap_queues_at=None,
+        spawn_in_from_arrival=False,
     )
     on = generate_animation_df(
         reshaped.copy(),

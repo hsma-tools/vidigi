@@ -11,6 +11,7 @@ from vidigi.prep import (
 )
 from vidigi.utils import (
     ICON_FLIP_MARKER,
+    PHANTOM_ICON,
     QueueDirection,
     _check_one_arrival_per_entity,
     _check_single_run,
@@ -1623,19 +1624,20 @@ def generate_animation(
         _entity_annotation_text = _annotation_df[entity_annotation_by].where(
             _not_overflow
         )
-        # A `step_snapshot_reveal_pop_in` phantom row (see `generate_animation_df`)
-        # is a real entity, not overflow, so the `.where` above leaves its real
-        # annotation text in place - unlike the icon trace, which is deliberately
-        # given an invisible zero-width-space `icon` on these rows. Blanked here to
-        # match: this is a second, independent `<text>` node with its own d3 join,
-        # so an unblanked real label would itself fly in at the reveal frame, one
-        # trace after the icon trace's own fly-in was just fixed. NaN would not
-        # do - a falsy `text` value gets its node removed by Plotly, which is
-        # exactly the failure mode this whole feature exists to avoid (see that
-        # docstring) - so this uses the same zero-width space the icon trace does.
+        # A phantom row (`step_snapshot_reveal_pop_in` / `spawn_in_from_arrival`,
+        # see `generate_animation_df`) is a real entity, not overflow, so the
+        # `.where` above leaves its real annotation text in place - unlike the icon
+        # trace, which is deliberately given an invisible `PHANTOM_ICON` on these
+        # rows. Blanked here to match: this is a second, independent `<text>` node
+        # with its own d3 join, so an unblanked real label would itself fly in at
+        # the reveal/spawn frame, one trace after the icon trace's own fly-in was
+        # just fixed. NaN would not do - a falsy `text` value gets its node removed
+        # by Plotly, which is exactly the failure mode this whole feature exists to
+        # avoid (see that docstring) - so this uses the same placeholder glyph the
+        # icon trace does.
         if "_phantom" in _annotation_df.columns:
             _entity_annotation_text = _entity_annotation_text.mask(
-                _annotation_df["_phantom"].fillna(False), "​"
+                _annotation_df["_phantom"].fillna(False), PHANTOM_ICON
             )
         _annotation_df["_entity_annotation_text"] = _entity_annotation_text
         _annotation_df["_entity_annotation_y"] = (
@@ -2095,7 +2097,7 @@ def animate_activity_log(
     gauge_segments: int = 10,
     gauge_max_override: Optional[int | float] = None,
     step_snapshot_reveal_pop_in: bool = False,
-    spawn_in_from_arrival: bool = False,
+    spawn_in_from_arrival: bool = True,
     run_number: Optional[int] = None,
     run_col_name: Optional[str] = "auto",
     warm_up: int = 0,
@@ -2407,16 +2409,17 @@ def animate_activity_log(
         `generate_animation_df`'s docstring for the full mechanism and cost.
         The default `False` is a verified no-op; **planned to change to `True`
         at the next major version (3.0)**.
-    spawn_in_from_arrival : bool, default=False
-        If True, a genuinely new entity glides into the animation from the
-        `event_position_df` anchor named `"arrival"` instead of flying in from
-        the plot's top-left corner - the arrival-side mirror of how the synthetic
-        `depart` step makes an exit land at a chosen anchor. Only affects entities
-        that arrive at least two snapshots after the animation window opens; an
-        entity already present when it opens keeps the top-left fly-in. Requires
-        an `"arrival"` row in `event_position_df`. Independent of
+    spawn_in_from_arrival : bool, default=True
+        When True (the default), a genuinely new entity glides into the animation
+        from the `event_position_df` anchor named `"arrival"` instead of flying in
+        from the plot's top-left corner - the arrival-side mirror of how the
+        synthetic `depart` step makes an exit land at a chosen anchor. Only
+        affects entities that arrive at least two snapshots after the animation
+        window opens; an entity already present when it opens keeps the top-left
+        fly-in, as does a layout with no `"arrival"` row in `event_position_df`.
+        Pass `False` to restore the pre-2.0.0 top-left fly-in. Independent of
         `step_snapshot_reveal_pop_in`. See `generate_animation_df`'s docstring for
-        the full mechanism. The default `False` is a verified no-op.
+        the full mechanism.
     run_number : int, optional
         Selects a single replication from a `TrialLogger` passed as `event_log`.
         Only valid with a `TrialLogger`: passing it alongside a DataFrame or an

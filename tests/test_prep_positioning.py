@@ -472,6 +472,11 @@ def test_each_entity_keeps_one_icon_throughout(
     )
     result = generate_animation_df(reshaped, basic_event_position_df)
     tracked = result[result["entity_id"].notnull()]
+    # `spawn_in_from_arrival` (default on) adds invisible phantom lead rows that
+    # carry a placeholder glyph, not the entity's icon - excluded here, this is
+    # about the visible icon.
+    if "_phantom" in tracked.columns:
+        tracked = tracked[~tracked["_phantom"].fillna(False)]
 
     icons_per_entity = tracked.groupby("entity_id")["icon"].nunique()
 
@@ -489,6 +494,10 @@ def test_custom_entity_icon_list_is_used_and_cycles(
         reshaped, basic_event_position_df, custom_entity_icon_list=["A", "B", "C"]
     )
     tracked = result[result["entity_id"].notnull()]
+    # Drop `spawn_in_from_arrival`'s invisible phantom lead rows - they carry a
+    # placeholder glyph, not an entry from the custom list.
+    if "_phantom" in tracked.columns:
+        tracked = tracked[~tracked["_phantom"].fillna(False)]
 
     assert set(tracked["icon"]) <= {"A", "B", "C"}
 

@@ -27,7 +27,12 @@ from vidigi.animation import (
     process_background_image_path,
 )
 from vidigi.prep import generate_animation_df, reshape_for_animations
-from vidigi.utils import EventPosition, ICON_FLIP_MARKER, create_event_position_df
+from vidigi.utils import (
+    EventPosition,
+    ICON_FLIP_MARKER,
+    PHANTOM_ICON,
+    create_event_position_df,
+)
 
 
 def frame_names(fig):
@@ -955,7 +960,9 @@ def test_entity_annotation_by_draws_the_column_text(
     for frame in fig.frames:
         annotation = next(t for t in frame.data if t.name == "_annotation")
         for x, text in zip(annotation.x, annotation.text):
-            if pd.notna(x) and text is not None:
+            # `spawn_in_from_arrival` (default on) adds phantom rows whose
+            # annotation text is deliberately blanked to `PHANTOM_ICON`.
+            if pd.notna(x) and text is not None and text != PHANTOM_ICON:
                 seen.add(text)
     assert seen == {"high", "low"}
 

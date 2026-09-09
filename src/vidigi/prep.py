@@ -6,6 +6,7 @@ import hashlib
 import warnings
 from typing import Literal, Optional, TypeAlias, Union
 from vidigi.utils import (
+    PHANTOM_ICON,
     QueueDirection,
     _check_one_arrival_per_entity,
     _check_single_run,
@@ -717,7 +718,7 @@ def generate_animation_df(
     gauge_segments: int = 10,
     gauge_max_override: Optional[Union[int, float]] = None,
     step_snapshot_reveal_pop_in: bool = False,
-    spawn_in_from_arrival: bool = False,
+    spawn_in_from_arrival: bool = True,
 ):
     """
     Generate a DataFrame for animation purposes by adding position information to entity data.
@@ -831,13 +832,14 @@ def generate_animation_df(
         next major version (3.0)**, since "pop in" is closer to correct than
         "fly in" for a reveal; pass it explicitly either way to pin your animation's
         behaviour across that release.
-    spawn_in_from_arrival : bool, default=False
-        If True, a genuinely new entity glides into the animation from the
-        `event_position_df` anchor named `"arrival"` instead of flying in from the
-        plot's top-left corner (the default Plotly behaviour for any point new to a
-        frame's `text` trace - see `step_snapshot_reveal_pop_in`). This is the
-        arrival-side mirror of how the synthetic `depart` step makes an exit land
-        at a chosen anchor.
+    spawn_in_from_arrival : bool, default=True
+        When True (the default), a genuinely new entity glides into the animation
+        from the `event_position_df` anchor named `"arrival"` instead of flying in
+        from the plot's top-left corner (the default Plotly behaviour for any point
+        new to a frame's `text` trace - see `step_snapshot_reveal_pop_in`). This is
+        the arrival-side mirror of how the synthetic `depart` step makes an exit
+        land at a chosen anchor. Pass `False` to restore the pre-2.0.0 top-left
+        fly-in.
 
         Works by inserting, for each such entity, a visible row at the arrival
         anchor one snapshot before its first real position (so Plotly animates it
@@ -856,11 +858,9 @@ def generate_animation_df(
 
         Requires an `event_position_df` row with `event == "arrival"` and
         `reshape_for_animations`'s `hidden_run_before` column; without either this
-        is a silent no-op. Independent of `step_snapshot_reveal_pop_in` - both may
-        be set. Express backend only.
-
-        The default `False` is a verified no-op - output is byte-identical to
-        omitting the argument.
+        is a silent no-op, so a layout that never positioned `"arrival"` is
+        unaffected. Independent of `step_snapshot_reveal_pop_in` - both may be set.
+        Express backend only (the `go` backend always behaves as `False`).
 
     Returns
     -------
@@ -1258,7 +1258,7 @@ def generate_animation_df(
     # `step_snapshot_reveal_pop_in`: give a reveal (an entity that was hidden by
     # `step_snapshot_max` and has just re-emerged as an individually-drawn icon) a
     # phantom row one snapshot earlier, at the same position, carrying an invisible
-    # zero-width-space icon. The point then already exists - just invisibly - when
+    # `PHANTOM_ICON`. The point then already exists - just invisibly - when
     # the real icon appears, so Plotly only has a content swap to do, not a position
     # transition, and the entity pops in rather than flying in from the plot's
     # top-left the way any point new to a frame's `text` trace otherwise would (see
@@ -1312,7 +1312,7 @@ def generate_animation_df(
                     _phantom_rows["snapshot_time"] = _grid[
                         (_reveal_grid_idx - 1).to_numpy()
                     ]
-                    _phantom_rows["icon"] = "​"
+                    _phantom_rows["icon"] = PHANTOM_ICON
                     _phantom_rows["_phantom"] = True
 
                     full_entity_df_plus_pos = pd.concat(
@@ -1325,9 +1325,9 @@ def generate_animation_df(
     # phantom above fixes). When this is on and `event_position_df` names an
     # `"arrival"` anchor, give each new entity a visible row at that anchor one
     # snapshot before its first real position - so Plotly animates it moving from
-    # there - plus a zero-width-space phantom the snapshot before that, so the
-    # spawn row itself has nothing to fly in from. Both land on existing snapshot
-    # slots, so no frames are added.
+    # there - plus an invisible `PHANTOM_ICON` phantom the snapshot before that, so
+    # the spawn row itself has nothing to fly in from. Both land on existing
+    # snapshot slots, so no frames are added.
     if spawn_in_from_arrival:
         if "_phantom" not in full_entity_df_plus_pos.columns:
             full_entity_df_plus_pos["_phantom"] = False
@@ -1399,21 +1399,22 @@ def generate_animation_df(
                     _spawn_rows["x_final"] = _x_arrival
                     _spawn_rows["y_final"] = _y_arrival
                     _spawn_rows["_phantom"] = False
-                    # Present the row as the arrival step it visually is, so hover
-                    # reads coherently at the anchor rather than showing the first
-                    # queue's name (and its "Queue Position") a snapshot early.
+                    # Present the row as the arrival step it visually is: sitting
+                    # at the arrival anchor, it should resolve its icon flip, hover
+                    # text and stage from `"arrival"` - not from the first queue it
+                    # was copied from (whose name, "Queue Position", and any
+                    # per-event `flip_icons` would otherwise leak onto it).
                     _spawn_rows[event_col_name] = "arrival"
                     _spawn_rows[event_type_col_name] = "arrival_departure"
                     if "label" in _arrival_anchor.columns:
                         _spawn_rows["label"] = _arrival_anchor["label"].iloc[0]
 
-                    _spawn_phantoms = _first_rows.copy()
+                    # The phantom is the spawn row one snapshot earlier, invisible.
+                    _spawn_phantoms = _spawn_rows.copy()
                     _spawn_phantoms["snapshot_time"] = _grid[
                         (_first_grid_idx - 2).to_numpy()
                     ]
-                    _spawn_phantoms["x_final"] = _x_arrival
-                    _spawn_phantoms["y_final"] = _y_arrival
-                    _spawn_phantoms["icon"] = "​"
+                    _spawn_phantoms["icon"] = PHANTOM_ICON
                     _spawn_phantoms["_phantom"] = True
 
                     full_entity_df_plus_pos = pd.concat(

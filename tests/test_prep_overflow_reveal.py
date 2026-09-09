@@ -15,8 +15,7 @@ import pandas as pd
 import pytest
 
 from vidigi.prep import generate_animation_df, reshape_for_animations
-
-ZWSP = "​"
+from vidigi.utils import PHANTOM_ICON
 
 
 def _rows(*specs):
@@ -198,8 +197,15 @@ def test_flag_off_is_a_byte_identical_noop(reveal_queue_log, reveal_positions):
         limit_duration=40,
         step_snapshot_max=5,
     )
+    # `spawn_in_from_arrival` defaults to True and would add its own phantom
+    # rows here (several of these entities arrive far enough into the window to
+    # qualify); pinned off so this isolates `step_snapshot_reveal_pop_in`.
     omitted = generate_animation_df(
-        reshaped, reveal_positions, step_snapshot_max=5, wrap_queues_at=None
+        reshaped,
+        reveal_positions,
+        step_snapshot_max=5,
+        wrap_queues_at=None,
+        spawn_in_from_arrival=False,
     )
     explicit_false = generate_animation_df(
         reshaped,
@@ -207,6 +213,7 @@ def test_flag_off_is_a_byte_identical_noop(reveal_queue_log, reveal_positions):
         step_snapshot_max=5,
         wrap_queues_at=None,
         step_snapshot_reveal_pop_in=False,
+        spawn_in_from_arrival=False,
     )
     assert omitted.equals(explicit_false)
     assert "_phantom" not in omitted.columns
@@ -242,7 +249,7 @@ def test_reveal_gets_exactly_one_phantom_row_before_it(
 
     # One grid step (every_x_time_units=1) before the reveal.
     assert phantom_row["snapshot_time"] == 19.0
-    assert phantom_row["icon"] == ZWSP
+    assert phantom_row["icon"] == PHANTOM_ICON
     # Same destination the entity will actually occupy - the whole point being
     # that there is nothing left for Plotly to interpolate at the reveal frame.
     assert phantom_row["x_final"] == reveal_row["x_final"]
@@ -274,7 +281,7 @@ def test_boundary_role_entity_becoming_individual_also_gets_a_phantom(
     entity_6_phantoms = phantoms[phantoms["entity_id"] == 6.0]
     assert len(entity_6_phantoms) == 1
     assert entity_6_phantoms.iloc[0]["snapshot_time"] == 19.0
-    assert entity_6_phantoms.iloc[0]["icon"] == ZWSP
+    assert entity_6_phantoms.iloc[0]["icon"] == PHANTOM_ICON
 
 
 def test_genuine_arrivals_get_no_phantom(reveal_queue_log, reveal_positions):
@@ -290,6 +297,9 @@ def test_genuine_arrivals_get_no_phantom(reveal_queue_log, reveal_positions):
         step_snapshot_max=5,
         wrap_queues_at=None,
         step_snapshot_reveal_pop_in=True,
+        # `spawn_in_from_arrival` (default True) gives genuine arrivals their own
+        # phantom by design - pinned off here so this is purely about pop-in.
+        spawn_in_from_arrival=False,
     )
 
     entity_1_rows = result[result["entity_id"] == 1.0]

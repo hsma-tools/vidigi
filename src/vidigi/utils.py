@@ -187,6 +187,15 @@ def create_event_position_df(
 # actually catching the mistake anywhere until a browser is involved.
 ICON_FLIP_MARKER = "​"
 
+# Placeholder "icon" for phantom rows - the invisible lead rows
+# `step_snapshot_reveal_pop_in` and `spawn_in_from_arrival` insert so a point
+# already exists in the frame before its real icon appears. A zero-width,
+# no-advance glyph, so it draws nothing and does not shift `text-anchor: middle`
+# centring - but deliberately NOT `ICON_FLIP_MARKER` (also zero-width): the
+# icon-flip CSS below matches on a `data-unformatted` prefix, so sharing the
+# character would apply the mirror transform to every phantom text node.
+PHANTOM_ICON = "﻿"
+
 ENTITY_ICON_FLIP_CSS = (
     "<style>\n"
     ".js-plotly-plot text[data-unformatted^=\"" + ICON_FLIP_MARKER + "\"] {\n"
