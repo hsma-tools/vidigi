@@ -130,4 +130,4 @@ Thanks goes to all of the following people ([emoji key](https://allcontributors.
 
 Vidigi is released under the MIT licence.
 
-{{< include ../LICENSE.md >}}
+{{< include LICENSE.md >}}
