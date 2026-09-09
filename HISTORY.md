@@ -190,6 +190,10 @@
     - `warm_up` passed to `generate_dfg` is applied to the occupancy calculation too, on the raw (pre-filter) log so arrival rows survive for `reshape_for_animations`
 - Added a `CITATION.cff` file, a Citation section in the README and a "Citing vidigi" documentation page, giving the *Journal of Simulation* paper (Rosser & Chalk, 2026, [doi:10.1080/17477778.2026.2663849](https://doi.org/10.1080/17477778.2026.2663849)) as the preferred citation, with the Zenodo archive for citing specific releases
     - The README Zenodo DOI badge now points at the all-versions (concept) DOI so it tracks the latest release rather than staying pinned to v1.3.1
+- New `animate_activity_log()` and `reshape_for_animations()` methods on `EventLogger` and `TrialLogger`, so a populated logger can go straight to an animation without importing the module function or calling `.to_dataframe()` first (`logger.animate_activity_log(event_position_df, ...)`)
+    - Both are thin wrappers over the existing `vidigi.animation.animate_activity_log` / `vidigi.prep.reshape_for_animations`, which already accepted a logger for `event_log` — this is the method-form sugar on top
+    - On `TrialLogger`, `run_number=` selects the replication to animate; a multi-run trial without it raises the same `ValueError` listing the runs. `TrialLogger.animate_activity_log` also falls back to the trial's attached `scenario` when none is passed, like the `plot_resource_utilisation` delegators
+    - `reshape_for_animations()` is the entry point to the manual three-step pipeline; `generate_animation_df` / `generate_animation` stay as functions since they act on the intermediate DataFrame, not the logger — the method docstring shows the full sequence
 
 ### New metrics
 
@@ -426,7 +430,7 @@
 
 ### Testing
 
-Test coverage grew from 31 to 1144 tests, concentrated on the parts of the pipeline where a
+Test coverage grew from 31 to 1159 tests, concentrated on the parts of the pipeline where a
 mistake changes what the animation *shows*, or what the reported numbers *say*, rather
 than raising an error.
 
@@ -438,6 +442,7 @@ than raising an error.
 - `EventLogger` gained its first dedicated coverage: the event shape each helper produces, time taken from both simpy-style and salabim-style environments, event validation and its warnings, timestamp parsing, retrieval, and export
 - `TrialLogger` gained its first dedicated coverage: construction, that statistics stay current as runs are added, and every duration statistic checked against hand-computed values including the served/unserved accounting
 - The single-replication guard is covered across all four animation entry points, including column-name detection, both independent checks, and — most importantly — that a valid single-run log carrying a run column is still accepted
+- The new `EventLogger` / `TrialLogger` `animate_activity_log` / `reshape_for_animations` methods are pinned by whole-frame equality against the module-function form (mutation-proven: a delegator that swallows `**kwargs` diverges), plus `run_number` forwarding and the multi-run rejection on `TrialLogger`
 - Warm-up handling is covered end to end: that `warm_up` shows the entities a truncated log loses, that the truncation trap itself is detected, that both snapshot alignments move frame times without changing who is in them, and that the defaults are a true no-op rather than merely a similar result
 - Every value advertised by a literal-typed argument is asserted to be accepted at runtime, so the annotations cannot drift from the checks they describe
 - `process_mapping` gained its first dedicated coverage: the new `warm_up` filter, and what it does and does not affect for a case that spans the cutoff versus one entirely inside it

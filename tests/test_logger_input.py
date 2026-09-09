@@ -79,6 +79,40 @@ def test_unsupported_type_is_rejected():
         reshape_for_animations([1, 2, 3], **RESHAPE_KW)
 
 
+# --- method forms: <logger>.reshape_for_animations() ------------------------
+
+
+def test_eventlogger_reshape_method_matches_the_function():
+    logger = _logger(run_number=1)
+    # Whole-frame equality: a method that dropped **kwargs would fall back to
+    # the function defaults (limit_duration in particular) and diverge.
+    assert_frame_equal(
+        logger.reshape_for_animations(**RESHAPE_KW),
+        reshape_for_animations(logger, **RESHAPE_KW),
+    )
+
+
+def test_eventlogger_reshape_method_rejects_run_number():
+    with pytest.raises(ValueError, match="run_number"):
+        _logger(run_number=1).reshape_for_animations(run_number=1, **RESHAPE_KW)
+
+
+def test_triallogger_reshape_method_forwards_run_number():
+    trial = TrialLogger([_logger(run_number=1), _logger(run_number=2, shift=3.0)])
+    assert_frame_equal(
+        trial.reshape_for_animations(run_number=2, **RESHAPE_KW),
+        reshape_for_animations(trial, run_number=2, **RESHAPE_KW),
+    )
+
+
+def test_triallogger_reshape_method_rejects_multi_run_without_run_number():
+    trial = TrialLogger([_logger(run_number=1), _logger(run_number=2)])
+    with pytest.raises(
+        ValueError, match=r"TrialLogger containing multiple runs \(\[1, 2\]\)"
+    ):
+        trial.reshape_for_animations(**RESHAPE_KW)
+
+
 # --- animate_activity_log ---------------------------------------------------
 
 
@@ -108,3 +142,34 @@ def test_animate_rejects_a_multi_run_triallogger_without_run_number(
         ValueError, match=r"TrialLogger containing multiple runs \(\[1, 2\]\)"
     ):
         animate_activity_log(trial, basic_event_position_df, **RESHAPE_KW)
+
+
+# --- method forms: <logger>.animate_activity_log() -------------------------
+
+
+def test_eventlogger_animate_method_matches_the_function(basic_event_position_df):
+    logger = _logger(run_number=1)
+    from_method = logger.animate_activity_log(basic_event_position_df, **RESHAPE_KW)
+    from_func = animate_activity_log(logger, basic_event_position_df, **RESHAPE_KW)
+    assert isinstance(from_method, go.Figure)
+    # Same reshaping reaches the animation - a dropped kwarg would change the
+    # snapshot grid and so the frame count.
+    assert len(from_method.frames) == len(from_func.frames)
+
+
+def test_triallogger_animate_method_forwards_run_number(basic_event_position_df):
+    trial = TrialLogger([_logger(run_number=1), _logger(run_number=2)])
+    fig = trial.animate_activity_log(
+        basic_event_position_df, run_number=1, **RESHAPE_KW
+    )
+    assert isinstance(fig, go.Figure)
+
+
+def test_triallogger_animate_method_rejects_multi_run_without_run_number(
+    basic_event_position_df,
+):
+    trial = TrialLogger([_logger(run_number=1), _logger(run_number=2)])
+    with pytest.raises(
+        ValueError, match=r"TrialLogger containing multiple runs \(\[1, 2\]\)"
+    ):
+        trial.animate_activity_log(basic_event_position_df, **RESHAPE_KW)

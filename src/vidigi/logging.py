@@ -31,6 +31,9 @@ from vidigi.analysis import (
     replication_precision,
     resource_utilisation,
 )
+from vidigi.animation import (
+    animate_activity_log as _animate_activity_log,
+)
 from vidigi.plots import (
     Across,
     DistributionKind,
@@ -63,6 +66,9 @@ from vidigi.plots import (
 )
 from vidigi.plots import (
     plot_warm_up_diagnostic as _plot_warm_up_diagnostic,
+)
+from vidigi.prep import (
+    reshape_for_animations as _reshape_for_animations,
 )
 from vidigi.process_mapping import (
     add_sim_timestamp,
@@ -857,6 +863,84 @@ class EventLogger:
                 f"Invalid output format passed. Valid formats are {DFGType}."
             )
 
+    def reshape_for_animations(self, **kwargs):
+        """
+        Reshape this event log into the per-snapshot frame the animation uses.
+
+        Thin wrapper over `vidigi.prep.reshape_for_animations`, called on this
+        logger directly (no `.to_dataframe()` step needed). See that function
+        for the full parameter list.
+
+        This is the first of the three steps `animate_activity_log` runs for
+        you. Call it yourself only when you want to inspect or tweak the
+        intermediate frame before continuing:
+
+        ```python
+        full_entity_df = logger.reshape_for_animations(every_x_time_units=5)
+        full_entity_df_plus_pos = generate_animation_df(
+            full_entity_df, event_position_df
+        )
+        fig = generate_animation(full_entity_df_plus_pos, event_position_df)
+        ```
+
+        `generate_animation_df` and `generate_animation` stay as functions in
+        `vidigi.prep` / `vidigi.animation` - they act on the intermediate
+        DataFrame, not on the logger.
+
+        Parameters
+        ----------
+        **kwargs
+            Keyword arguments forwarded to `vidigi.prep.reshape_for_animations`
+            (e.g. `every_x_time_units`, `limit_duration`, `step_snapshot_max`).
+
+        Returns
+        -------
+        pandas.DataFrame
+            One row per (entity, snapshot time) - the input to
+            `generate_animation_df`.
+
+        See Also
+        --------
+        vidigi.prep.reshape_for_animations : The underlying implementation.
+        animate_activity_log : Run all three steps in one call.
+        """
+        return _reshape_for_animations(self, **kwargs)
+
+    def animate_activity_log(self, event_position_df, *, scenario=None, **kwargs):
+        """
+        Build an animated visualisation of the entities in this event log.
+
+        Thin wrapper over `vidigi.animation.animate_activity_log`, called on
+        this logger directly (no `.to_dataframe()` step needed). See that
+        function for the full parameter list.
+
+        Parameters
+        ----------
+        event_position_df : pandas.DataFrame
+            The layout: an `x`/`y` position per event. Build it with
+            `vidigi.utils.create_event_position_df` / `EventPosition`.
+        scenario : object or dict, optional
+            The parameters object (or `{name: count}` dict) that produced the
+            run, used to draw one icon per available resource unit.
+        **kwargs
+            Additional keyword arguments forwarded to
+            `vidigi.animation.animate_activity_log` (e.g. `every_x_time_units`,
+            `limit_duration`, `plotly_height`, the appearance arguments).
+
+        Returns
+        -------
+        plotly.graph_objects.Figure
+
+        See Also
+        --------
+        vidigi.animation.animate_activity_log : The underlying implementation.
+        reshape_for_animations : The first step, if you want to run the
+            pipeline yourself.
+        """
+        return _animate_activity_log(
+            self, event_position_df, scenario=scenario, **kwargs
+        )
+
 
 class TrialLogger:
     """
@@ -883,6 +967,10 @@ class TrialLogger:
         Compute statistics on durations between two event types across runs.
     plot_duration_distribution(first_event, second_event, kind="hist", **kwargs)
         Plot the distribution of durations between two events, across every run.
+    reshape_for_animations(run_number=None, **kwargs)
+        Reshape one run into the per-snapshot frame the animation uses.
+    animate_activity_log(event_position_df, scenario=None, run_number=None, **kwargs)
+        Build an animated visualisation of one run in the trial.
 
     Parameters
     ----------
@@ -1446,6 +1534,77 @@ class TrialLogger:
                 resource_col_name, trial_dataframe
             ),
             **kwargs,
+        )
+
+    def reshape_for_animations(self, *, run_number=None, **kwargs):
+        """
+        Reshape one run's event log into the per-snapshot frame the animation uses.
+
+        Thin wrapper over `vidigi.prep.reshape_for_animations`, called on this
+        trial directly. See that function for the full parameter list.
+
+        Parameters
+        ----------
+        run_number : int or str, optional
+            Which replication to reshape. Required if the trial holds more than
+            one run - passing a multi-run trial without it raises `ValueError`.
+        **kwargs
+            Keyword arguments forwarded to `vidigi.prep.reshape_for_animations`
+            (e.g. `every_x_time_units`, `limit_duration`, `step_snapshot_max`).
+
+        Returns
+        -------
+        pandas.DataFrame
+            One row per (entity, snapshot time) - the input to
+            `generate_animation_df`.
+
+        See Also
+        --------
+        vidigi.prep.reshape_for_animations : The underlying implementation.
+        animate_activity_log : Run all three animation steps in one call.
+        """
+        return _reshape_for_animations(self, run_number=run_number, **kwargs)
+
+    def animate_activity_log(
+        self, event_position_df, *, scenario=None, run_number=None, **kwargs
+    ):
+        """
+        Build an animated visualisation of one run in this trial.
+
+        Thin wrapper over `vidigi.animation.animate_activity_log`, called on
+        this trial directly. See that function for the full parameter list.
+
+        Parameters
+        ----------
+        event_position_df : pandas.DataFrame
+            The layout: an `x`/`y` position per event. Build it with
+            `vidigi.utils.create_event_position_df` / `EventPosition`.
+        scenario : object or dict, optional
+            The parameters object (or `{name: count}` dict) that produced the
+            run, used to draw one icon per available resource unit. Falls back
+            to the trial's own `scenario` if not given.
+        run_number : int or str, optional
+            Which replication to animate. Required if the trial holds more than
+            one run - passing a multi-run trial without it raises `ValueError`.
+        **kwargs
+            Additional keyword arguments forwarded to
+            `vidigi.animation.animate_activity_log` (e.g. `every_x_time_units`,
+            `limit_duration`, `plotly_height`, the appearance arguments).
+
+        Returns
+        -------
+        plotly.graph_objects.Figure
+
+        See Also
+        --------
+        vidigi.animation.animate_activity_log : The underlying implementation.
+        reshape_for_animations : The first step, if you want to run the
+            pipeline yourself.
+        """
+        if scenario is None:
+            scenario = self.scenario
+        return _animate_activity_log(
+            self, event_position_df, scenario=scenario, run_number=run_number, **kwargs
         )
 
     def plot_duration_distribution(
