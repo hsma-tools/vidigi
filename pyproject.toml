@@ -93,4 +93,6 @@ dev = [
     "st-cytoscape>=0.0.5,<1.0.0",
     "streamlit>=1.52.2,<2.0.0",
     "tox>=4.25.0,<5.0.0",
+    "pre-commit",
+    "nbstripout"
 ]

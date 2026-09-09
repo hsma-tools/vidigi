@@ -1,1 +1,1 @@
-,index,patient,pathway,event_type,event,time,resource_id,run,rank,snapshot_time,additional,x,y,label,resource
+,index,patient,pathway,event_type,event,time,resource_id,run,rank,additional,snapshot_time,hidden_run_before,x,y,label,resource
