@@ -98,6 +98,14 @@ By leveraging Plotly, vidigi produces browser-ready animations that can be custo
 
 <br>
 
+## Citation
+
+If you use vidigi in your work, please cite the paper: Rosser, S., & Chalk, D. (2026). Vidigi: A Python library for interactive-animated visualisations of discrete event simulation models. *Journal of Simulation*. Advance online publication. <https://doi.org/10.1080/17477778.2026.2663849>
+
+See [Citing vidigi](vidigi_docs/citation.qmd) for BibTeX and for citing a specific software version.
+
+<br>
+
 ## Acknowledgements
 
 Thanks goes to all of the following people ([emoji key](https://allcontributors.org/docs/en/emoji-key)).

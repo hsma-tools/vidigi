@@ -1,0 +1,63 @@
+# Cite the paper (preferred-citation, below) for general use of vidigi.
+# The top-level metadata describes the software itself, so a specific release
+# can still be cited via its Zenodo archive.
+#
+# TODO: the paper is currently online-first with no volume/issue assigned. Once
+# it is placed in an issue, add `volume:`/`issue:` and update `start:`/`end:`
+# from the Taylor & Francis "Cite" export.
+cff-version: 1.2.0
+message: >-
+  If you use vidigi, please cite the paper (Rosser & Chalk, 2026). To cite a
+  specific release of the software, cite its Zenodo archive.
+title: vidigi
+abstract: >-
+  A Python library for creating interactive, animated visualisations of queues
+  and pathways from discrete event simulation models or historical data.
+type: software
+authors:
+  - given-names: Sammi
+    family-names: Rosser
+    orcid: "https://orcid.org/0000-0002-9552-8988"
+    affiliation: University of Exeter
+  - given-names: Amy
+    family-names: Heather
+    orcid: "https://orcid.org/0000-0002-6596-3479"
+    affiliation: University of Exeter
+  - given-names: Helena
+    family-names: Robinson
+repository-code: "https://github.com/hsma-tools/vidigi"
+url: "https://hsma-tools.github.io/vidigi/vidigi_docs/"
+license: MIT
+version: 1.3.1
+date-released: "2026-05-19"
+doi: 10.5281/zenodo.14635602
+keywords:
+  - discrete event simulation
+  - simulation
+  - visualisation
+  - animation
+  - healthcare
+  - python
+  - simpy
+  - ciw
+preferred-citation:
+  type: article
+  title: "Vidigi: a Python library for interactive-animated visualisations of discrete event simulation models"
+  authors:
+    - given-names: Sammi
+      family-names: Rosser
+      orcid: "https://orcid.org/0000-0002-9552-8988"
+      affiliation: University of Exeter
+    - given-names: Daniel
+      family-names: Chalk
+      orcid: "https://orcid.org/0000-0002-4165-4364"
+      affiliation: University of Exeter
+  year: 2026
+  journal: "Journal of Simulation"
+  publisher:
+    name: "Taylor & Francis"
+  doi: 10.1080/17477778.2026.2663849
+  issn: "1747-7778"
+  start: 1
+  end: 22
+  url: "https://www.tandfonline.com/doi/full/10.1080/17477778.2026.2663849"

@@ -48,6 +48,8 @@ website:
         text: "Changelog"
       - text: "Package Details"
         menu:
+          - href: vidigi_docs/citation.qmd
+            text: "Citing vidigi"
           - href: vidigi_docs/licence.qmd
             text: "Licence"
           - href: vidigi_docs/code_of_conduct.qmd

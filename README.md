@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| **Project info:** | ![Code licence](https://img.shields.io/badge/Licence-MIT-A6CE39?&labelColor=gray)  [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20291776.svg)](https://doi.org/10.5281/zenodo.20291776)   [![ORCID](https://img.shields.io/badge/ORCID_Sammi_Rosser-0000--0002--9552--8988-A6CE39?&logo=orcid&logoColor=white)](https://orcid.org/0000-0002-9552-8988)  [![All Contributors](https://img.shields.io/github/all-contributors/hsma-tools/vidigi?color=ee8449&style=flat-square)](#contributors)  |
+| **Project info:** | ![Code licence](https://img.shields.io/badge/Licence-MIT-A6CE39?&labelColor=gray)  [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14635602.svg)](https://doi.org/10.5281/zenodo.14635602)   [![ORCID](https://img.shields.io/badge/ORCID_Sammi_Rosser-0000--0002--9552--8988-A6CE39?&logo=orcid&logoColor=white)](https://orcid.org/0000-0002-9552-8988)  [![All Contributors](https://img.shields.io/github/all-contributors/hsma-tools/vidigi?color=ee8449&style=flat-square)](#contributors)  |
 | **Installation:** | [![PyPI](https://img.shields.io/pypi/v/vidigi?&labelColor=gray)](https://pypi.org/project/vidigi/)     [![Anaconda-Server Badge](https://anaconda.org/conda-forge/vidigi/badges/version.svg)](https://anaconda.org/conda-forge/vidigi) |
 | **Metrics:** | [![PyPI downloads all time](https://static.pepy.tech/badge/vidigi)](https://pepy.tech/project/vidigi)    [![PyPI downloads monthly](https://static.pepy.tech/badge/vidigi/month)](https://pepy.tech/project/vidigi)    [![PyPI downloads weekly](https://static.pepy.tech/badge/vidigi/week)](https://pepy.tech/project/vidigi)    ![Conda Downloads](https://img.shields.io/conda/d/conda-forge/vidigi)    ![GitHub Repo stars](https://img.shields.io/github/stars/hsma-tools/vidigi)     |
 | **Activity:** | ![GitHub forks](https://img.shields.io/github/forks/hsma-tools/vidigi)    ![GitHub last commit](https://img.shields.io/github/last-commit/hsma-tools/vidigi)    ![GitHub Release Date](https://img.shields.io/github/release-date/hsma-tools/vidigi) [![GitHub open-pull-requests](https://badgen.net/github/open-prs/hsma-tools/vidigi)](https://GitHub.com/hsma-tools/vidigi/pulls?q=is%3Aopen) |
@@ -95,6 +95,30 @@ Fancy helping out? Consider submitting a pull request with some tests! It's a gr
 ![](https://img.shields.io/badge/vidigi.utils.EventPosition-Not%20Covered-orange?style=for-the-badge&logo=pytest)
 ![](https://img.shields.io/badge/vidigi.utils.create__event__position__df()-Not%20Covered-orange?style=for-the-badge&logo=pytest)
 
+
+# Citation
+
+If you use vidigi in your work, please cite the paper:
+
+> Rosser, S., & Chalk, D. (2026). Vidigi: A Python library for interactive-animated visualisations of discrete event simulation models. *Journal of Simulation*. Advance online publication. https://doi.org/10.1080/17477778.2026.2663849
+
+<details>
+<summary>BibTeX</summary>
+
+```bibtex
+@article{rosser2026vidigi,
+  title     = {Vidigi: a Python library for interactive-animated visualisations of discrete event simulation models},
+  author    = {Rosser, Sammi and Chalk, Daniel},
+  journal   = {Journal of Simulation},
+  year      = {2026},
+  publisher = {Taylor \& Francis},
+  doi       = {10.1080/17477778.2026.2663849}
+}
+```
+
+</details>
+
+To cite a specific version of the software, use its Zenodo archive - the [all-versions DOI](https://doi.org/10.5281/zenodo.14635602) always resolves to the latest release. GitHub's **Cite this repository** button generates both citations from [`CITATION.cff`](CITATION.cff).
 
 # Acknowledgements
 

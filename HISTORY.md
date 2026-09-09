@@ -183,6 +183,8 @@
     - `generate_dfg(occupancy_metrics=True)` computes the figures with `vidigi.analysis.activity_occupancy_stats` (see New metrics) and merges them onto the node table; `occupancy_snapshot_interval=` sets the snapshot granularity. Off by default because the queue half runs `reshape_for_animations` once per run — the reason issue #176 asked for it to be optional
     - Each queue or resource node then gets an extra label line — `avg queued 3.2 (min 0.0, max 9.0)` / `avg in use ...` — across all four output formats. New `show_occupancy=` (default `True`) on `dfg_to_graphviz`, `process_nodes_and_edges_for_cytoscape`, `dfg_to_cytoscape` and `dfg_to_cytoscape_streamlit` suppresses it; on a node table without occupancy columns it is a no-op, so nothing changes for a caller who does not opt in
     - `warm_up` passed to `generate_dfg` is applied to the occupancy calculation too, on the raw (pre-filter) log so arrival rows survive for `reshape_for_animations`
+- Added a `CITATION.cff` file, a Citation section in the README and a "Citing vidigi" documentation page, giving the *Journal of Simulation* paper (Rosser & Chalk, 2026, [doi:10.1080/17477778.2026.2663849](https://doi.org/10.1080/17477778.2026.2663849)) as the preferred citation, with the Zenodo archive for citing specific releases
+    - The README Zenodo DOI badge now points at the all-versions (concept) DOI so it tracks the latest release rather than staying pinned to v1.3.1
 
 ### New metrics
 
