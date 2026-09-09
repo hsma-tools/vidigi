@@ -194,6 +194,17 @@ the same reason flipping doesn't. The CSS is injected automatically, the same
 way as `flip_entity_icons`'s; see `vidigi.utils.entity_icon_font_css()` /
 `inject_icon_font_css()` for embedding a figure another way.
 
+::: {.callout-note}
+### `entity_icon_font` / `resource_icon_font` need plotly ≥ 5.23.0
+
+An icon-font preset always resolves a numeric font weight (Font Awesome Solid
+is `900`), and numeric `textfont.weight` on scatter traces only arrived in
+plotly.js 2.33.0, bundled from plotly.py **5.23.0**. On an older plotly the
+call raises `ValueError: Invalid value ... received for the 'weight' property`.
+If you hit that, upgrade with `pip install -U plotly`. Emoji animations are
+unaffected — vidigi's overall minimum is still `plotly>=5.12.0`.
+:::
+
 `"material-symbols"` is a ligature font, so `custom_entity_icon_list` can use
 names instead of codepoints (`"directions_walk"` renders as the walking-person
 glyph directly). The `+ N more` / ASCII-gauge overflow icon always stays on the
