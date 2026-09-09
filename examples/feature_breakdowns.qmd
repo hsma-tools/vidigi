@@ -6,9 +6,15 @@ listing:
     contents:
       - "feat_*/*.ipynb"
       - "feat_*/*.qmd"
-      - "v2_release_additions/*.ipynb"
     exclude:
       title: "BupaR"
+    type: grid # A list style instead of a grid
+    sort: false
+    grid-columns: 3
+    template: ../vidigi_docs/listing.ejs
+  - id: release_showcase
+    contents:
+      - "v2_release_additions/*.ipynb"
     type: grid # A list style instead of a grid
     sort: false
     grid-columns: 3
@@ -20,4 +26,11 @@ listing:
 The examples below dive into a particular feature of the vidigi package.
 
 ::: {#feature_breakdowns}
+:::
+
+## Major Release Showcases
+
+The examples below showcase significant new features added as part of major releases.
+
+:::{#release_showcase}
 :::
