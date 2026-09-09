@@ -8,7 +8,7 @@ from typing import Literal
 
 import pandas as pd
 import webcolors
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, ValidationError, field_validator
 
 # Which way a queue (or row of resources) builds out from its anchor point.
 # ``"left"`` is the historic behaviour - the anchor is the front of the queue and
@@ -71,6 +71,18 @@ def _resolve_icon_flip(df: pd.DataFrame, default: bool) -> pd.Series:
     return raw.map(_validate_icon_flip).astype(bool)
 
 
+# The two ``event`` names every entity must log, both under an ``event_type`` of
+# ``ARRIVAL_DEPARTURE``. vidigi matches these by exact string equality (in
+# ``reshape_for_animations`` and the ``spawn_in_from_arrival`` anchor lookup), so
+# a typo in a hand-built event log or ``event_position_df`` fails - loudly for
+# ``arrival``, silently for ``depart``. Exposed here so callers building event
+# logs by hand, or ``EventPosition``s, do not have to remember the exact strings;
+# ``ArrivalPosition`` / ``ExitPosition`` below wrap them for the positioning case.
+ARRIVAL = "arrival"
+DEPART = "depart"
+ARRIVAL_DEPARTURE = "arrival_departure"
+
+
 class EventPosition(BaseModel):
     """
     Pydantic model for a single event position.
@@ -84,6 +96,8 @@ class EventPosition(BaseModel):
     ----------
     event : str
         The name of the event. Must match the event names as they appear in your event log.
+        For the two mandatory arrival/departure events, ``ArrivalPosition`` and
+        ``ExitPosition`` set this for you.
     x : int
         The x-coordinate for the event. With the default ``direction="left"`` this
         is the bottom-right corner of the queue or resource (the front of the
@@ -128,6 +142,69 @@ class EventPosition(BaseModel):
     direction: QueueDirection | None = None
     flip_icons: bool | None = None
     resource_icon: str | None = None
+
+
+class ArrivalPosition(EventPosition):
+    """
+    ``EventPosition`` for the mandatory ``"arrival"`` event.
+
+    A thin wrapper over ``EventPosition`` with ``event`` fixed to ``"arrival"`` -
+    the exact string vidigi matches on to decide when an entity first appears -
+    so you do not have to remember it. ``label`` defaults to ``"Arrival"`` (unlike
+    ``EventPosition``, where it is required); every other field behaves exactly as
+    on ``EventPosition``.
+
+    ``ArrivalPosition(x=50, y=450)`` is equivalent to
+    ``EventPosition(event="arrival", x=50, y=450, label="Arrival")``.
+
+    Passing a conflicting ``event=`` raises ``ValidationError``; use
+    ``EventPosition`` directly for any other event name.
+    """
+
+    event: Literal["arrival"] = ARRIVAL
+    label: str = "Arrival"
+
+    @field_validator("event", mode="before")
+    @classmethod
+    def _event_is_fixed(cls, value):
+        if value not in (None, ARRIVAL):
+            raise ValueError(
+                f"ArrivalPosition.event is fixed to '{ARRIVAL}'. "
+                "Use EventPosition(event=...) for a custom event name."
+            )
+        return value
+
+
+class ExitPosition(EventPosition):
+    """
+    ``EventPosition`` for the mandatory ``"depart"`` event.
+
+    A thin wrapper over ``EventPosition`` with ``event`` fixed to ``"depart"`` -
+    the exact string vidigi matches on to decide when an entity leaves - so you do
+    not have to remember it (note the event is ``"depart"``, not ``"departure"``
+    or ``"exit"``). ``label`` defaults to ``"Exit"`` (unlike ``EventPosition``,
+    where it is required); every other field behaves exactly as on
+    ``EventPosition``.
+
+    ``ExitPosition(x=270, y=70)`` is equivalent to
+    ``EventPosition(event="depart", x=270, y=70, label="Exit")``.
+
+    Passing a conflicting ``event=`` raises ``ValidationError``; use
+    ``EventPosition`` directly for any other event name.
+    """
+
+    event: Literal["depart"] = DEPART
+    label: str = "Exit"
+
+    @field_validator("event", mode="before")
+    @classmethod
+    def _event_is_fixed(cls, value):
+        if value not in (None, DEPART):
+            raise ValueError(
+                f"ExitPosition.event is fixed to '{DEPART}'. "
+                "Use EventPosition(event=...) for a custom event name."
+            )
+        return value
 
 
 def create_event_position_df(

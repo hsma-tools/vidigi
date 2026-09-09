@@ -13,8 +13,13 @@ import pytest
 from pydantic import ValidationError
 
 from vidigi.utils import (
+    ARRIVAL,
+    ARRIVAL_DEPARTURE,
+    DEPART,
     ICON_FONT_PRESETS,
+    ArrivalPosition,
     EventPosition,
+    ExitPosition,
     _is_image_source,
     _resolve_direction_sign,
     _resolve_icon_flip,
@@ -96,6 +101,108 @@ def test_create_event_position_df_always_has_a_flip_icons_column():
     )
     assert df.loc[df["event"] == "arrival", "flip_icons"].isna().all()
     assert df.loc[df["event"] == "waiting", "flip_icons"].iloc[0] is True
+
+
+# --------------------------------------------------------------------------- #
+# ArrivalPosition / ExitPosition helpers
+# --------------------------------------------------------------------------- #
+
+
+def test_event_name_constants_have_the_exact_values_vidigi_matches_on():
+    assert ARRIVAL == "arrival"
+    assert DEPART == "depart"
+    assert ARRIVAL_DEPARTURE == "arrival_departure"
+
+
+def test_helper_classes_are_eventposition_subclasses():
+    assert issubclass(ArrivalPosition, EventPosition)
+    assert issubclass(ExitPosition, EventPosition)
+
+
+def test_arrival_position_defaults_event_and_label():
+    pos = ArrivalPosition(x=1, y=2)
+    assert pos.event == ARRIVAL
+    assert pos.label == "Arrival"
+
+
+def test_exit_position_defaults_event_and_label():
+    pos = ExitPosition(x=1, y=2)
+    assert pos.event == DEPART
+    assert pos.label == "Exit"
+
+
+def test_arrival_position_dump_matches_explicit_eventposition():
+    assert (
+        ArrivalPosition(x=50, y=450).model_dump()
+        == EventPosition(event="arrival", x=50, y=450, label="Arrival").model_dump()
+    )
+
+
+def test_exit_position_dump_matches_explicit_eventposition():
+    assert (
+        ExitPosition(x=270, y=70).model_dump()
+        == EventPosition(event="depart", x=270, y=70, label="Exit").model_dump()
+    )
+
+
+def test_helper_classes_pass_inherited_fields_through_unchanged():
+    assert (
+        ArrivalPosition(x=1, y=2, direction="right", flip_icons=True).model_dump()
+        == EventPosition(
+            event="arrival",
+            x=1,
+            y=2,
+            label="Arrival",
+            direction="right",
+            flip_icons=True,
+        ).model_dump()
+    )
+
+
+def test_helper_classes_roundtrip_through_create_event_position_df():
+    from_helpers = create_event_position_df(
+        [
+            ArrivalPosition(x=50, y=450),
+            EventPosition(event="treatment", x=205, y=175, label="Being Treated"),
+            ExitPosition(x=270, y=70),
+        ]
+    )
+    from_explicit = create_event_position_df(
+        [
+            EventPosition(event="arrival", x=50, y=450, label="Arrival"),
+            EventPosition(event="treatment", x=205, y=175, label="Being Treated"),
+            EventPosition(event="depart", x=270, y=70, label="Exit"),
+        ]
+    )
+    assert list(from_helpers.columns) == [
+        "event",
+        "x",
+        "y",
+        "label",
+        "resource",
+        "direction",
+        "flip_icons",
+        "resource_icon",
+    ]
+    assert from_helpers["event"].tolist() == ["arrival", "treatment", "depart"]
+    assert from_helpers.to_dict(orient="records") == from_explicit.to_dict(
+        orient="records"
+    )
+
+
+def test_arrival_position_rejects_a_conflicting_event():
+    with pytest.raises(ValidationError):
+        ArrivalPosition(event="depart", x=1, y=2)
+
+
+def test_exit_position_rejects_a_conflicting_event():
+    with pytest.raises(ValidationError):
+        ExitPosition(event="arrival", x=1, y=2)
+
+
+def test_helper_rejection_message_points_at_eventposition():
+    with pytest.raises(ValidationError, match="EventPosition"):
+        ArrivalPosition(event="arrivals", x=1, y=2)
 
 
 # --------------------------------------------------------------------------- #

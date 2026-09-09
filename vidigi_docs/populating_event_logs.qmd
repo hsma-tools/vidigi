@@ -85,6 +85,10 @@ event_log.append(
 These are critical as they are used to determine when patients should first and last appear in the model.
 :::
 
+:::{.callout-tip}
+To avoid retyping these exact strings, current vidigi exposes `vidigi.utils.ARRIVAL`, `vidigi.utils.DEPART` and `vidigi.utils.ARRIVAL_DEPARTURE` for use in hand-built logs, and the `ArrivalPosition` / `ExitPosition` helpers for the matching rows of your event position DataFrame.
+:::
+
 :::{.callout-important}
 Forgetting to include a departure step for all types of patients can lead to slow model and animation performance as the size of the event logs for individual moments will continue to increase indefinitely.
 :::

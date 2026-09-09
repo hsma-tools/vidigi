@@ -17,6 +17,11 @@
 
 ### New features
 
+- New `ArrivalPosition` / `ExitPosition` helpers in `vidigi.utils` - `EventPosition` subclasses with `event` pre-set to the exact string vidigi matches on (`"arrival"` / `"depart"`), so building an `event_position_df` no longer means looking those two up (closes #192)
+    - `ArrivalPosition(x=50, y=450)` is exactly `EventPosition(event="arrival", x=50, y=450, label="Arrival")` - `model_dump()` and the `create_event_position_df` DataFrame are byte-identical, so nothing downstream changes
+    - `label` defaults to `"Arrival"` / `"Exit"` (still overridable); every other `EventPosition` field is inherited unchanged
+    - Passing a conflicting `event=` raises `ValidationError` naming the fixed value and pointing to `EventPosition` for a custom event name
+    - Also exposes `vidigi.utils.ARRIVAL` / `DEPART` / `ARRIVAL_DEPARTURE` string constants for hand-built event logs and direct `EventLogger.log_event` calls; existing inline string literals are untouched
 - New `queue_direction` argument on `animate_activity_log`, `generate_animation` and `generate_animation_df`, plus an optional per-event `direction` column on `EventPosition` / `event_position_df`, for building a queue left-to-right instead of the default right-to-left
     - Many entity emojis face a direction that reads better with the front of the queue at the bottom-left rather than the bottom-right; `queue_direction="right"` puts it there, and the queue (and its wrapped rows) mirror accordingly
     - Per-event `direction` (`EventPosition(..., direction="right")`, or a `direction` column on a hand-built / CSV `event_position_df`) overrides the animation-wide setting; an `event_position_df` with no `direction` column at all is unaffected

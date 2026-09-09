@@ -147,6 +147,8 @@ quartodoc:
       desc: ""
       contents:
         - utils.EventPosition
+        - utils.ArrivalPosition
+        - utils.ExitPosition
         - utils.create_event_position_df
     - title: Process Map-Style Outputs
       desc: ""

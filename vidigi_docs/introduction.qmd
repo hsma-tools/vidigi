@@ -112,18 +112,20 @@ You need to tell vidigi where each queue and resource should appear in the anima
 * `label`: Text label for the stage. This can be hidden at a later step if you opt to use a background image with labels built-in. Use `<br>` for line breaks.
 * `direction` (optional): `"left"` (the default) builds the queue out to the left of `x`; `"right"` builds it out to the right, mirroring the layout so the anchor becomes the bottom-left corner. Leave it unset to follow the animation-wide `queue_direction`.
 
-Vidigi provides helper classes and functions for setting this up. For SimPy or manually created logs, we need to make sure the `event` name matches the event log:
+Vidigi provides helper classes and functions for setting this up. For SimPy or manually created logs, we need to make sure the `event` name matches the event log. Every entity must log an `arrival` and a `depart` event (see [Populating Event Logs](populating_event_logs.qmd)); `ArrivalPosition` and `ExitPosition` are `EventPosition` subclasses that fill in those two names (and a default `label`) so you don't have to:
 
 ```{.python}
-from vidigi.utils import create_event_position_df, EventPosition
+from vidigi.utils import (
+    create_event_position_df, EventPosition, ArrivalPosition, ExitPosition
+)
 
 event_position_df = create_event_position_df([
-    EventPosition(event="arrival", x=50, y=450, label="Arrival"),
+    ArrivalPosition(x=50, y=450),
     EventPosition(event="treatment_wait_begins", x=205, y=275,
                   label="Waiting for Treatment"),
     EventPosition(event="treatment_begins", x=205, y=175,
                   label="Being Treated"),
-    EventPosition(event="depart", x=270, y=70, label="Exit"),
+    ExitPosition(x=270, y=70),
 ])
 ```
 
@@ -151,12 +153,12 @@ give that `EventPosition` its own `direction`:
 
 ```{.python}
 event_position_df = create_event_position_df([
-    EventPosition(event="arrival", x=50, y=450, label="Arrival"),
+    ArrivalPosition(x=50, y=450),
     EventPosition(event="treatment_wait_begins", x=205, y=275,
                   label="Waiting for Treatment", direction="right"),
     EventPosition(event="treatment_begins", x=205, y=175,
                   label="Being Treated"),
-    EventPosition(event="depart", x=270, y=70, label="Exit"),
+    ExitPosition(x=270, y=70),
 ])
 ```
 
@@ -322,16 +324,18 @@ If you record runs with an `EventLogger` / `TrialLogger`, you can attach this sa
 Here, we've added the 'resource' parameter to our `EventPosition` for `treatment_begins`.
 
 ```{.python}
-from vidigi.utils import create_event_position_df, EventPosition
+from vidigi.utils import (
+    create_event_position_df, EventPosition, ArrivalPosition, ExitPosition
+)
 
 event_position_df = create_event_position_df([
-    EventPosition(event="arrival", x=50, y=450, label="Arrival"),
+    ArrivalPosition(x=50, y=450),
     EventPosition(event="treatment_wait_begins", x=205, y=275,
                   label="Waiting for Treatment"),
     EventPosition(event="treatment_begins", x=205, y=175,
                   label="Being Treated",
                   resource="n_cubicles"),
-    EventPosition(event="depart", x=270, y=70, label="Exit"),
+    ExitPosition(x=270, y=70),
 ])
 ```
 
@@ -390,7 +394,7 @@ event_position_df = create_event_position_df([
     EventPosition(event="operator_begins", x=210, y=210, resource="n_operators", label="Speaking to Operator"),
     EventPosition(event="nurse_wait_begins", x=205, y=110, label="Waiting for Nurse"),
     EventPosition(event="nurse_begins", x=210, y=50, resource="n_nurses", label="Speaking to Nurse"),
-    EventPosition(event="depart", x=270, y=10, label="Exit"),
+    ExitPosition(x=270, y=10),
 ])
 ```
 
