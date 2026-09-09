@@ -225,6 +225,16 @@ def populate_store(num_resources, simpy_store, sim_env, label=None, extra_attrib
     """
     Populate a SimPy Store (or VidigiPriorityStore) with VidigiResource objects.
 
+    .. deprecated:: 2.0.0
+        ``populate_store()`` will be removed in vidigi 3.0. It predates being able to
+        build the pool through the store itself. Use
+        ``VidigiStore(env, num_resources=N, label=...)`` /
+        ``VidigiPriorityStore(env, num_resources=N, label=...)``, or
+        ``store.populate(N, label=...)`` to top one up. A plain ``simpy.Store`` filled
+        this way should become a ``VidigiStore`` - a drop-in replacement for
+        ``simpy.Resource`` that also enables the ``count`` / ``num_resources``
+        properties. ``populate_store()`` does not feed those properties.
+
     This function creates a specified number of VidigiResource objects and adds them to
     a SimPy Store, a VidigiStore, or VidigiPriorityStore.
 
@@ -281,6 +291,16 @@ def populate_store(num_resources, simpy_store, sim_env, label=None, extra_attrib
     >>> len(resource_store.items)  # The store now contains 5 VidigiResource objects
     5
     """
+    warnings.warn(
+        "populate_store() is deprecated and will be removed in vidigi 3.0. Build the "
+        "pool through the store instead: VidigiStore(env, num_resources=N, label=...) "
+        "or VidigiPriorityStore(env, num_resources=N, label=...), or "
+        "store.populate(N, label=...) to top up an existing one. A plain simpy.Store "
+        "filled this way should become a VidigiStore, which is a drop-in replacement "
+        "for simpy.Resource and also enables the .count / .num_resources properties.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     _check_extra_attributes(extra_attributes)
     _check_label_not_reused(sim_env, label, stacklevel=3)
     for i in range(num_resources):

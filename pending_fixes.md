@@ -195,7 +195,9 @@ tests, where a fixture shifted a second run's times beyond the requested window.
 ## 6. `VidigiStore`/`populate_store`/`VidigiPriorityStore` should require a `label` (3.0)
 
 **Where:** `src/vidigi/resources.py` — `VidigiStore.__init__`/`.populate()`,
-`populate_store()`, `VidigiPriorityStore.__init__`/`.populate()`.
+`VidigiPriorityStore.__init__`/`.populate()`. (`populate_store()` was the third call
+site, but is now deprecated wholesale as of 2.0.0 and removed at 3.0 — so it needs no
+`label`-mandatory change, it just goes.)
 
 **Current state (2.0.0):** each pool numbers its own units `1..capacity`
 independently. An optional `label=` (added in 2.0.0) lets a modeller opt into a
@@ -213,10 +215,10 @@ still exactly correct for its original purpose (animation icon positioning via
 to the gap. This needs a deprecation period, not an immediate forced change — and
 2.0.0 is the release that just introduced the warning, so it is not that period.
 
-**Planned for 3.0:** drop the `None` default, making `label` required on all three
-call sites. Needs a `**BREAKING:**` HISTORY.md bullet and `### ⚠️ Breaking changes`
-entry at that point, plus updating every example/test currently constructing these
-without a label.
+**Planned for 3.0:** drop the `None` default, making `label` required on both
+remaining call sites (`VidigiStore` / `VidigiPriorityStore` `__init__` / `.populate()`).
+Needs a `**BREAKING:**` HISTORY.md bullet and `### ⚠️ Breaking changes` entry at that
+point, plus updating every example/test currently constructing these without a label.
 
 **Pinned by:** the 2.0.0 no-op/deprecation-warning tests in
 `tests/test_resources_label.py` (asserting `label=None` still produces working,

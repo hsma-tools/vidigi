@@ -83,13 +83,23 @@ def test_label_none_warns_deprecation(build):
     [
         lambda env: VidigiStore(env, num_resources=1, label="triage"),
         lambda env: VidigiPriorityStore(env, num_resources=1, label="triage"),
-        lambda env: populate_store(1, simpy.Store(env), env, label="triage"),
+        # populate_store() is excluded: it is deprecated wholesale as of 2.0.0, so it
+        # now warns regardless of `label` - see test_populate_store_always_warns_deprecated.
     ],
 )
 def test_label_given_suppresses_the_deprecation_warning(build):
     with warnings.catch_warnings():
         warnings.simplefilter("error", DeprecationWarning)
         build(_make_env())  # must not raise
+
+
+def test_populate_store_always_warns_deprecated():
+    """`populate_store()` itself is deprecated (removal at 3.0), so it warns even
+    when `label` is given - unlike the store classes, where `label` suppresses the
+    (narrower) missing-`label` warning."""
+    env = _make_env()
+    with pytest.warns(DeprecationWarning, match="populate_store"):
+        populate_store(1, simpy.Store(env), env, label="triage")
 
 
 @pytest.mark.parametrize(

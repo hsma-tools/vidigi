@@ -243,7 +243,7 @@ nurses = VidigiStore(env, num_resources=5, label="nurse",
 # every resource in the pool now has `.staff_type == "nurse"`
 ```
 
-Your model code reads these back off the resource it is handed (`resource.staff_type`); vidigi itself ignores them. The same applies to `populate_store()` and `VidigiPriorityStore`.
+Your model code reads these back off the resource it is handed (`resource.staff_type`); vidigi itself ignores them. `VidigiPriorityStore` takes the same arguments.
 
 This becomes slightly more complex with conditional requesting (for example, where a resource request is made but if it cannot be fulfilled in time, the requester will renege). This is covered to some extent in some of the provided examples, but further demonstrations of this are planned.
 
