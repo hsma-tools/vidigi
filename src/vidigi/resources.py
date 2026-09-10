@@ -503,7 +503,7 @@ def _reject_over_capacity_return(store, *, available, waiting, enforce):
 
 
 def _handle_unawaited_request(
-    request, exc_type, *, method_name, store_name, return_item, cancel_get
+    request, exc_type, *, method_name, store_name, return_item, cancel_get, store_label
 ):
     """Common `__exit__` path for a `request()` context manager left without `yield req`.
 
@@ -526,7 +526,7 @@ def _handle_unawaited_request(
     """
     if exc_type is None:
         warnings.warn(
-            f"{store_name}.{method_name}() was used as a context manager but the request "
+            f"{store_name}.{method_name}() - labelled {store_label} - was used as a context manager but the request "
             f"was never awaited. Write "
             f"`with store.{method_name}(...) as req: resource = yield req` before using the "
             f"resource - otherwise the entity never waits for or holds it, and the pending "
@@ -1206,6 +1206,7 @@ class _StoreRequest:
                 store_name="VidigiStore",
                 return_item=self.store.store.put,
                 cancel_get=self.store.cancel_get,
+                store_label=self.store.label,
             )
         return False  # Don't suppress exceptions
 
@@ -2085,6 +2086,7 @@ class _OptimizedStoreRequest:
                 store_name="VidigiPriorityStore",
                 return_item=self.store._return_item_raw,
                 cancel_get=self.store.cancel_get,
+                store_label=self.store.label,
             )
         return False  # Don't suppress exceptions
 
