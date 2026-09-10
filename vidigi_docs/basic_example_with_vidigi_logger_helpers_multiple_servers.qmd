@@ -16,6 +16,21 @@ When dealing with multiple servers, we need to have a way to monitor which resou
 
 VidigiStore is designed to mimic the Resource class in Simpy - so you can continue to use the same patterns of resource requesting you are familiar with. It also exposes `store.count` (units currently in use), `store.capacity` / `store.num_resources` (pool size) and `store.n_waiting` (requests queued for a unit), mirroring `simpy.Resource.count` / `.capacity` / `.queue` for conditional model logic or manual logging. Returning more units than the pool holds raises `ValueError` (pass `strict_capacity=False` to opt out).
 
+
+::: {.callout-note}
+When setting up a VidigiStore, we use the parameters 'num_resources' and 'label'.
+
+'num_resources' is analogous to 'capacity' in a SimPy resource. It's worth noting that `capacity` means something different in a VidigiStore, so be careful to not mix them up!
+
+A label is optional but highly recommended.
+
+`servers = VidigiStore(env=env, num_resources=params.num_servers, label="server")`
+```
+
+```
+:::
+
+
 ## Step 1. Import required libraries
 
 * `vidigi`
@@ -27,7 +42,6 @@ VidigiStore is designed to mimic the Resource class in Simpy - so you can contin
 import simpy
 import pandas as pd
 import random
-from vidigi.animation import animate_activity_log
 from vidigi.logging import EventLogger
 from vidigi.utils import EventPosition, create_event_position_df
 from vidigi.resources import VidigiStore
@@ -53,13 +67,20 @@ On the right is how we incorporate `vidigi`.
 
 We set up a `logger` using the `EventLogger` class. This then gives us methods for recording arrivals, departures and queueing steps.
 
+
+::: {.callout-warning}
 Every entity must have a single arrival and a single departure event. If this isn't true, unexpected behaviour will occur in the animation.
+:::
 
 They may have as many queueing events as desired (and they don't have to just be what you're traditionally think of as a 'queue' - they can be any point where an individual is waiting for something or doing something).
 
 We can also record the points at which an entity starts using/blocking a resource/server, and when this ends. For this we also need to pass in an identifier that tracks which resource they are using. When using SimPy resources, it is not possible to track this information. However, if we instead use a `VidigiStore`, we get access to a resource ID, which can then be recorded and helps us visualise resource use clearly.
 
-We also need to create a parameter class to store the number of resources/servers available at different steps. We create the resource name - which we choose ourselves - as an attribute of this class.
+We also need to pass in the resource/server counts as a dictionary or as a class. If passing as a dictionary, we will pass the resource name - which we choose ourselves - as the key, and the count of that resource as the value. If passing as a class, we create the resource name - which we again choose ourselves - as an attribute of this class. If you already have a class in which you store your scenario, it is recommended to use this class, as demonstrated in the [HSMA structured example](adding_vidigi_to_a_simple_simpy_model_hsma_structure.qmd).
+
+
+### Option 1: Manually Logging Resource Use Start and End
+
 
 :::: {.columns}
 
@@ -172,18 +193,24 @@ def run_simulation():
     # Run simulation
     env.run(until=SIM_DURATION)
 
-    return logger.to_dataframe() #<<
+    return logger #<<
 ```
 
 :::
 
 ::::
 
-## Step 3b. An alternative: automatic resource-use logging {#automatic-resource-use-logging}
+### Option 2: An alternative - automatic resource-use logging {#automatic-resource-use-logging}
 
 Calling `log_resource_use_start` and `log_resource_use_end` by hand around every resource request works, but it's easy to get wrong - forgetting the closing call, or passing the wrong `resource_id`.
 
 If you pass a `logger` to `VidigiStore` (or `VidigiPriorityStore`) when you create it, and pass `entity_id` when you request a resource, both events are logged for you automatically - no manual `log_resource_use_start`/`log_resource_use_end` calls needed. This is entirely opt-in: a store built without `logger=` behaves exactly as before, and you can still log some steps manually while auto-logging others.
+
+::: {.callout-tip}
+If you have passed both a label and logger, your `resource_use_start` and `resource_use_end` events will be generated automatically with the label you provided plus the suffix `_start` or `_end`.
+
+So for the example above, you'd have `nurse_examination_start` and `nurse_examination_end`.
+:::
 
 ```{python}
 def patient_generator_auto(env, servers, logger):
@@ -243,7 +270,7 @@ auto_event_log_df.head()
 
 The two versions above are run with independent random draws, so their event *timings* won't match - but the logged event shape (`resource_use`/`resource_use_end` rows carrying `entity_id`, `resource_id`, `event` and `time`, one matched pair per patient) is identical either way. vidigi's own test suite pins this more rigorously: the same scenario run once with manual `log_resource_use_start`/`log_resource_use_end` calls and once with `logger=`/`entity_id=` auto-logging (and no manual calls at all) is asserted to produce byte-identical event logs.
 
-### Recording extra entity-level fields {#recording-extra-entity-level-fields}
+#### Recording extra entity-level fields with automatic logging {#recording-extra-entity-level-fields}
 
 When you log resource use by hand, you can pass any number of extra keyword arguments to `log_resource_use_start`/`log_resource_use_end` (for example `acuity=3`, `arrival_mode="ambulance"`) and they become extra columns in the event log, ready for downstream analysis. Auto-logging keeps this: any keyword argument you pass to `request()`/`get()` that vidigi doesn't recognise is forwarded straight through to **both** the `resource_use` and the `resource_use_end` event.
 
@@ -293,11 +320,11 @@ def run_simulation_auto_extra_fields():
     env.process(generator(env, servers, logger))
     env.run(until=SIM_DURATION)
 
-    return logger.to_dataframe()
+    return logger
 ```
 
 ```{python}
-extra_fields_log_df = run_simulation_auto_extra_fields()
+extra_fields_log_df = run_simulation_auto_extra_fields().to_dataframe()
 # priority_score and arrival_mode now appear on the resource_use / resource_use_end rows
 extra_fields_log_df[
     extra_fields_log_df["event_type"].isin(["resource_use", "resource_use_end"])
@@ -342,8 +369,8 @@ with servers.request(auto_log=False) as request:   # keep auto-return, log manua
 
 ```{python}
 # Run simulation and get event log
-event_log_df = run_simulation()
-print(f"Generated {len(event_log_df)} events")
+event_log = run_simulation()
+print(f"Generated {len(event_log.to_dataframe())} events")
 ```
 
 ## Step 5. Create event positions dataframe
@@ -369,10 +396,21 @@ event_positions = create_event_position_df([
 
 We pass our Params() class in so that vidigi knows the number of resource icons it needs to generate.
 
+
+::: {.callout-tip}
+There are three main ways to call `animate_activity_log`
+
+-  (not covered here) Via `TrialLogger.animate_activity_log()`
+- Via `EventLogger.animate_activity_log()` - demonstrated here
+-  (not covered here) Called directly via `from vidigi.animation import animate_activity_log` and then call the function as `animate_activity_log(event_log=...)` where event_log is either
+    - a TrialLogger (passing in `run_number` as well)
+    - an EventLogger
+    - a dataframe representing the event log
+:::
+
 ```{python}
 # Create animation
-animate_activity_log(
-    event_log=event_log_df,
+event_log.animate_activity_log(
     event_position_df=event_positions,
     scenario=Params(),
     every_x_time_units=1,

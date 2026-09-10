@@ -28,7 +28,6 @@ If you're working with ciw, you may find it more useful to look at [this cafe ex
 import simpy
 import pandas as pd
 import random
-from vidigi.animation import animate_activity_log
 from vidigi.logging import EventLogger
 from vidigi.utils import EventPosition, create_event_position_df
 ```
@@ -53,7 +52,9 @@ On the right is how we incorporate `vidigi`.
 
 We set up a `logger` using the `EventLogger` class. This then gives us methods for recording arrivals, departures and queueing steps.
 
-Every entity must have a single arrival and a single departure event. If this isn't true, unexpected behaviour will occur in the animation.
+::: {.callout-warning}
+Every entity must have a **single** arrival and a single departure event. If this isn't true, unexpected behaviour will occur in the animation.
+:::
 
 They may have as many queueing events as desired (and they don't have to just be what you're traditionally think of as a 'queue' - they can be any point where an individual is waiting for something or doing something).
 
@@ -165,7 +166,7 @@ def run_simulation():
     # Run simulation
     env.run(until=SIM_DURATION)
 
-    return logger.to_dataframe() #<<
+    return logger #<<
 ```
 
 :::
@@ -176,8 +177,17 @@ def run_simulation():
 
 ```{python}
 # Run simulation and get event log
-event_log_df = run_simulation()
-print(f"Generated {len(event_log_df)} events")
+event_log = run_simulation()
+```
+
+We can take a look at the dataframe created with the `.to_dataframe` method.
+
+```{python}
+event_log.to_dataframe().head()
+```
+
+```{python}
+print(f"Generated {len(event_log.to_dataframe())} events")
 ```
 
 ## Step 5. Create event positions dataframe
@@ -206,6 +216,23 @@ Finally, we create our animation.
 * `setup_mode` turns on and off the gridlines and coordinate grid values, which are useful when setting up the animation but may not be wanted once you are ready to share the animation
 * `every_x_time_units` defines how often the animation will poll the position of each entity - so e.g. a value of 10 would mean that the animation would progress in jumps of 10 minutes (or whatever the relevant time unit of your simulation is)
 
+
+::: {.callout-tip}
+There are three main ways to call `animate_activity_log`
+
+- Via `TrialLogger.animate_activity_log()` (not covered here)
+- Via `EventLogger.animate_activity_log()`
+- Called directly via `from vidigi.animation import animate_activity_log` and then call the function as `animate_activity_log(event_log=...)` where event_log is either
+    - a TrialLogger (passing in `run_number` as well)
+    - an EventLogger
+    - a dataframe representing the event log
+:::
+
+:::: {.columns}
+
+::: {.column width='50%'}
+### Calling as a method of the EventLogger
+
 ```{python}
 # Create animation
 animate_activity_log(
@@ -217,3 +244,24 @@ animate_activity_log(
     limit_duration=SIM_DURATION
 )
 ```
+:::
+
+::: {.column width='50%'}
+### Calling direct
+
+```{python}
+from vidigi.animation import animate_activity_log
+
+# Create animation
+animate_activity_log(
+    event_log=event_log_df,
+    event_position_df=event_positions,
+    every_x_time_units=1,
+    plotly_height=600,
+    override_x_max=360,
+    limit_duration=SIM_DURATION
+)
+```
+:::
+
+::::
