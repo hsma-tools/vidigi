@@ -11,7 +11,6 @@ listing:
       - "adding_vidigi_to_a_simple_simpy_model_hsma_structure.qmd"
       - "example_1_simplest_case/*.ipynb"
       - "example_2_branching_multistep/*.ipynb"
-      - "example_6_simplest_case_storewrapper/*.ipynb"
       - "example_7_simplest_case_priority_resource_storewrapper/*.ipynb"
       - "example_14_carwash/*.ipynb"
     type: grid
@@ -65,7 +64,9 @@ listing:
   - id: legacy-examples
     contents:
       - "../vidigi_docs/adding_vidigi_to_a_simple_simpy_model_hsma_structure_old.qmd"
+      - "../vidigi_docs/adding_vidigi_to_a_simple_simpy_model_hsma_structure_1_0_0_1_3_1.qmd
       - "../vidigi_docs/populating_event_logs.qmd"
+      - "example_6_simplest_case_storewrapper/*.ipynb"
     type: grid # A list style instead of a grid
     sort: false
     grid-columns: 3

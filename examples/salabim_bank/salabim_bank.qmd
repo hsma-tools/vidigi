@@ -15,6 +15,8 @@ filters:
 # pylint: disable=too-few-public-methods,function-redefined
 ```
 
+{{< include ../vidigi_2_0_0_example_warning.md >}}
+
 Using a Salabim model with vidigi follows the same process as a SimPy model. To demonstrate how it is set-up, we will use an example model from the [Salabim documentation](https://www.salabim.org/manual/Modelling.html#a-bank-example). Salabim is licensed under MIT.
 
 It is a model of a bank with three clerks. Customers arrival following a uniform distribution, wait in a first in first out (FIFO) queue, and then are served by a clerk which has a fixed time of 30.
