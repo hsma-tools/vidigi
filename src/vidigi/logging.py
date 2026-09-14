@@ -409,6 +409,24 @@ class BaseEvent(BaseModel):
 
 
 class EventLogger:
+    """
+    Records simulation events for later reshaping into animations and statistics.
+
+    Parameters
+    ----------
+    env : optional
+        A simulation environment with a `.now` attribute or method (e.g. a
+        simpy or salabim `Environment`). When given, every `log_*` call below
+        may omit `time` - it is read from `env.now` at call time. Without an
+        `env`, `time` becomes a required argument on every `log_*` call, and
+        omitting it raises `ValueError`.
+    run_number : int, optional
+        Run/replication number to stamp on every event by default. When
+        given, every `log_*` call below may omit `run_number` - it is filled
+        in from this value. Without it, `run_number` is left off events
+        unless supplied per-call.
+    """
+
     def __init__(
         self,
         event_model=BaseEvent,
@@ -478,6 +496,15 @@ class EventLogger:
         `entity_id` must be unique per arrival/departure within a run - logging a second
         arrival under the same `entity_id` raises a `ValueError` when the log is reshaped
         for animation.
+
+        Parameters
+        ----------
+        time : float, optional
+            Simulation time of the event. Defaults to `env.now` if `env` was
+            passed to `EventLogger(...)`; required otherwise.
+        run_number : int, optional
+            Run/replication number. Defaults to the `run_number` passed to
+            `EventLogger(...)`, if any.
         """
         event_data = {
             "entity_id": entity_id,
@@ -505,6 +532,15 @@ class EventLogger:
         `entity_id` must be unique per arrival/departure within a run - logging a second
         departure under the same `entity_id` raises a `ValueError` when the log is reshaped
         for animation.
+
+        Parameters
+        ----------
+        time : float, optional
+            Simulation time of the event. Defaults to `env.now` if `env` was
+            passed to `EventLogger(...)`; required otherwise.
+        run_number : int, optional
+            Run/replication number. Defaults to the `run_number` passed to
+            `EventLogger(...)`, if any.
         """
         event_data = {
             "entity_id": entity_id,
@@ -529,6 +565,15 @@ class EventLogger:
     ):
         """
         Log a queue event. The 'event' here can be any string describing the queue event.
+
+        Parameters
+        ----------
+        time : float, optional
+            Simulation time of the event. Defaults to `env.now` if `env` was
+            passed to `EventLogger(...)`; required otherwise.
+        run_number : int, optional
+            Run/replication number. Defaults to the `run_number` passed to
+            `EventLogger(...)`, if any.
         """
         event_data = {
             "entity_id": entity_id,
@@ -564,6 +609,12 @@ class EventLogger:
             `vidigi.analysis.resource_use_intervals`/`resource_utilisation`
             report them separately rather than pooling every resource
             together under one name.
+        time : float, optional
+            Simulation time of the event. Defaults to `env.now` if `env` was
+            passed to `EventLogger(...)`; required otherwise.
+        run_number : int, optional
+            Run/replication number. Defaults to the `run_number` passed to
+            `EventLogger(...)`, if any.
         **extra_fields
             Any further keyword arguments are recorded on the event as extra
             columns in the log, e.g. `acuity=3`, `arrival_mode="ambulance"`,
@@ -613,6 +664,12 @@ class EventLogger:
             label by `vidigi.analysis.resource_use_intervals` - grouping uses
             the matching `log_resource_use_start` call's `event` instead - but
             still worth naming distinctly for readability.
+        time : float, optional
+            Simulation time of the event. Defaults to `env.now` if `env` was
+            passed to `EventLogger(...)`; required otherwise.
+        run_number : int, optional
+            Run/replication number. Defaults to the `run_number` passed to
+            `EventLogger(...)`, if any.
         **extra_fields
             Any further keyword arguments are recorded on the event as extra
             columns in the log, e.g. an `outcome=...` known only once the
@@ -654,6 +711,15 @@ class EventLogger:
         """
         Log a custom event. The 'event' here can be any string describing the queue event.
         An 'event_type' must also be passed, but can be any string of the user's choosing.
+
+        Parameters
+        ----------
+        time : float, optional
+            Simulation time of the event. Defaults to `env.now` if `env` was
+            passed to `EventLogger(...)`; required otherwise.
+        run_number : int, optional
+            Run/replication number. Defaults to the `run_number` passed to
+            `EventLogger(...)`, if any.
         """
         event_data = {
             "entity_id": entity_id,
