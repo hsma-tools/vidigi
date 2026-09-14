@@ -1907,7 +1907,7 @@ def generate_animation(
                     ],
                     mode="markers",
                     # Define what the marker will look like
-                    marker=dict(color="LightSkyBlue", size=15),
+                    marker=dict(color="LightSkyBlue", size=resource_icon_size),
                     opacity=resource_opacity,
                     hoverinfo="none",
                 )

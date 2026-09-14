@@ -1394,6 +1394,34 @@ def test_entity_resource_offset_y_shifts_the_default_dot(
     assert list(fig.data[-1].y) == [_TREATMENT_Y + 20] * len(fig.data[-1].y)
 
 
+def test_resource_icon_size_sets_the_default_dot_marker_size(
+    positioned_with_resources, basic_event_position_df, scenario_with_resources
+):
+    fig = generate_animation(
+        positioned_with_resources,
+        basic_event_position_df,
+        scenario=scenario_with_resources,
+        resource_icon_size=24,
+    )
+    resource_trace = fig.data[-1]
+    assert resource_trace.mode == "markers"
+    assert resource_trace.marker.size == 24
+
+
+def test_resource_icon_size_overrides_the_default_dot_marker_size(
+    positioned_with_resources, basic_event_position_df, scenario_with_resources
+):
+    fig = generate_animation(
+        positioned_with_resources,
+        basic_event_position_df,
+        scenario=scenario_with_resources,
+        resource_icon_size=50,
+    )
+    resource_trace = fig.data[-1]
+    assert resource_trace.mode == "markers"
+    assert resource_trace.marker.size == 50
+
+
 def test_entity_resource_offset_y_shifts_an_image_resource_icon(
     positioned_with_resources, basic_event_position_df, scenario_with_resources
 ):

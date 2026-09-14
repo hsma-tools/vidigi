@@ -14,6 +14,7 @@
 - New entities now glide into the animation from the `event_position_df` `"arrival"` anchor (`spawn_in_from_arrival`, default `True`) instead of flying in from the plot's top-left corner. Any animation whose layout gives `"arrival"` a position now looks different for those entities; a layout that never positioned `"arrival"` is unchanged. Pass `spawn_in_from_arrival=False` to `animate_activity_log` / `generate_animation_df` for the old fly-in.
 - `VidigiStore` / `VidigiPriorityStore` `.capacity` now returns the pool size for a pool built with `num_resources=` / `populate()` (was `float("inf")`), so it mirrors `simpy.Resource.capacity` — equal to `num_resources`. A store built with an explicit `capacity=`, and a bare `VidigiStore(env)`, are unchanged. Closes #87.
 - Returning more units to such a pool than it holds now raises `ValueError` at the call site (a unit returned twice, or one from another pool, previously grew the pool silently and only surfaced later as the `.count` `RuntimeError`). Pass the new `strict_capacity=False` constructor argument to allow the pool to grow via a raw `put()`.
+- The default resource dot (no `custom_resource_icon` and no per-event `EventPosition.resource_icon` glyph override) now honours `resource_icon_size` instead of a hardcoded `size=15` marker. Since `resource_icon_size` defaults to `24`, any animation that never set it will now show a larger default dot. Closes #120.
 
 ### New features
 
@@ -439,6 +440,10 @@
     - Exiting the `with` block with the request unprocessed — impossible under correct use — now emits a `UserWarning` naming the fix (unless an exception is already propagating), detaches the pending start-of-use log callback, and releases the abandoned request (returning the unit if one was already in hand, otherwise dropping the queued get)
     - For a model that was already misusing the pattern this changes the event log: the phantom post-departure `resource_use` rows disappear and the unit is no longer leaked. Only code that was already producing a broken animation is affected, so this is a correction rather than a `**BREAKING:**` change
     - Not caught: a lone entity with a free unit whose spurious `env.timeout` outlasts the immediate grant, since by its block exit the request has been processed — that case does not produce the visible "skips to the exit" symptom
+- **BREAKING:** The default resource marker now honours `resource_icon_size`
+    - With no `custom_resource_icon` and no per-event `EventPosition.resource_icon` override, vidigi draws a plain dot for each resource - the fallback every animation without a custom icon uses. Its `go.Scatter` marker `size` was hardcoded to `15`, so `resource_icon_size` only took effect once a custom icon (image or glyph) was supplied, exactly as the issue reporter found: "works if custom icon passed"
+    - The image-icon path (`add_layout_image`'s `sizex`/`sizey`) and the glyph-icon path (`textfont.size`) already treated `resource_icon_size` as a literal pixel value; the default dot's marker `size` now matches both
+    - `resource_icon_size` defaults to `24`, so an animation that never set it will see its default resource dot grow from 15px to 24px. Pass `resource_icon_size=15` to keep the old size. Closes #120
 
 ### Deprecations
 
