@@ -244,6 +244,7 @@ def _overflow_margin_updates(
     display_stage_labels: bool,
     queue_direction: QueueDirection = "left",
     entity_resource_offset_y: float = -10,
+    stage_label_offset: float = 10,
 ) -> dict:
     """Figure-margin overrides that keep auto-positioned content on-canvas.
 
@@ -262,8 +263,8 @@ def _overflow_margin_updates(
     # Stage labels are drawn just past the anchor - to the right of a
     # left-building queue, to the left of a right-building one. Reserve room for
     # the longest label on whichever side(s) it actually falls. ~0.55 em per
-    # character for a proportional font, plus the 10-unit trace offset and a
-    # little breathing room.
+    # character for a proportional font, plus the label offset and a little
+    # breathing room.
     if display_stage_labels and "label" in getattr(event_position_df, "columns", []):
         label_sign = _resolve_direction_sign(event_position_df, queue_direction)
         left_lens = [
@@ -277,9 +278,11 @@ def _overflow_margin_updates(
             if sign <= 0
         ]
         if right_lens:
-            need["r"] = max(right_lens) * 0.55 * text_size + 20
+            need["r"] = max(right_lens) * 0.55 * text_size + stage_label_offset + 10
         if left_lens:
-            need["l"] = max(need["l"], max(left_lens) * 0.55 * text_size + 20)
+            need["l"] = max(
+                need["l"], max(left_lens) * 0.55 * text_size + stage_label_offset + 10
+            )
 
     # Top: a label vertically centred on the topmost anchor overhangs upwards
     # by about half its height.
@@ -413,6 +416,7 @@ def generate_animation(
     background_image_opacity: float = 0.5,
     overflow_text_color: str = "black",
     stage_label_text_colour: str = "black",
+    stage_label_offset: float = 10,
     plot_bgcolor: str | None = None,
     paper_bgcolor: str | None = None,
     backend: AnimationBackend = "express",
@@ -697,6 +701,11 @@ def generate_animation(
     stage_label_text_colour : str, optional
         Color of the stage label text added next to each event position when
         display_stage_labels is True (default is black).
+    stage_label_offset : float, optional
+        Gap, in data units, between a stage label and the front of its
+        queue/resources (the event anchor point) when display_stage_labels is
+        True (default is 10). Increase this for larger icon sizes so labels
+        don't crowd the icons.
     plot_bgcolor : str, optional
         Background colour of the plotting area (inside the axes), passed
         straight to ``fig.update_layout(plot_bgcolor=...)``. Accepts any CSS
@@ -1709,7 +1718,7 @@ def generate_animation(
         # own clear side.
         label_sign = _resolve_direction_sign(event_position_df, queue_direction)
         label_x = [
-            pos - 10 if s > 0 else pos + 10
+            pos - stage_label_offset if s > 0 else pos + stage_label_offset
             for pos, s in zip(event_position_df["x"].to_list(), label_sign)
         ]
         label_pos = ["middle left" if s > 0 else "middle right" for s in label_sign]
@@ -2003,6 +2012,7 @@ def generate_animation(
         display_stage_labels=display_stage_labels,
         queue_direction=queue_direction,
         entity_resource_offset_y=entity_resource_offset_y,
+        stage_label_offset=stage_label_offset,
     )
     if margin_updates:
         fig.update_layout(margin=margin_updates)
@@ -2097,6 +2107,7 @@ def animate_activity_log(
     background_image_opacity: float = 0.5,
     overflow_text_color: str = "black",
     stage_label_text_colour: str = "black",
+    stage_label_offset: float = 10,
     plot_bgcolor: str | None = None,
     paper_bgcolor: str | None = None,
     backend: AnimationBackend = "express",
@@ -2391,6 +2402,11 @@ def animate_activity_log(
     stage_label_text_colour : str, optional
         Color of the stage label text added next to each event position when
         display_stage_labels is True (default is black).
+    stage_label_offset : float, optional
+        Gap, in data units, between a stage label and the front of its
+        queue/resources (the event anchor point) when display_stage_labels is
+        True (default is 10). Increase this for larger icon sizes so labels
+        don't crowd the icons.
     plot_bgcolor : str, optional
         Background colour of the plotting area (inside the axes), passed
         straight to ``fig.update_layout(plot_bgcolor=...)``. Accepts any CSS
@@ -2626,6 +2642,7 @@ def animate_activity_log(
         background_image_opacity=background_image_opacity,
         overflow_text_color=overflow_text_color,
         stage_label_text_colour=stage_label_text_colour,
+        stage_label_offset=stage_label_offset,
         plot_bgcolor=plot_bgcolor,
         paper_bgcolor=paper_bgcolor,
         backend=backend,

@@ -527,6 +527,29 @@ def test_left_building_queue_keeps_label_on_the_right(
     assert set(label_trace.textposition) == {"middle right"}
 
 
+def test_stage_label_offset_controls_gap_from_anchor(
+    positioned, basic_event_position_df
+):
+    """A custom `stage_label_offset` replaces the default 10-unit gap, on
+    either side of the anchor depending on `queue_direction`."""
+    anchors = basic_event_position_df["x"].to_list()
+
+    left_building = generate_animation(
+        positioned, basic_event_position_df, stage_label_offset=30
+    )
+    left_label_trace = [t for t in left_building.data if t.mode == "text"][-1]
+    assert list(left_label_trace.x) == [a + 30 for a in anchors]
+
+    right_building = generate_animation(
+        positioned,
+        basic_event_position_df,
+        queue_direction="right",
+        stage_label_offset=30,
+    )
+    right_label_trace = [t for t in right_building.data if t.mode == "text"][-1]
+    assert list(right_label_trace.x) == [a - 30 for a in anchors]
+
+
 def test_resource_markers_follow_queue_direction(
     positioned_with_resources, basic_event_position_df, scenario_with_resources
 ):

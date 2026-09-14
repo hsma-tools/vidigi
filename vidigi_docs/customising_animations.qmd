@@ -311,6 +311,7 @@ has a worked example combining all three.
 | `gap_between_entities` | `10` | Horizontal gap between entities in a queue, in pixels (`animate_activity_log` only). |
 | `gap_between_queue_rows` | `30` | Vertical gap between wrapped queue rows (`animate_activity_log` only). |
 | `gap_between_resources` | `10` | Horizontal gap between resource icons. |
+| `stage_label_offset` | `10` | Gap, in data units, between a stage label and the front of its queue/resources. Increase for larger icon sizes so labels don't crowd the icons. |
 | `gap_between_resource_rows` | `30` | Vertical gap between wrapped resource rows. |
 | `wrap_queues_at` | `20` | Entities per row before a queue wraps onto a new line (`animate_activity_log` only). |
 | `wrap_resources_at` | `20` | Resource icons per row before wrapping. Keep this equal to `wrap_queues_at` so the icons line up with the entities using them. |

@@ -17,6 +17,9 @@
 
 ### New features
 
+- New `stage_label_offset` argument on `animate_activity_log` and `generate_animation`, controlling the gap between an auto-generated stage label (`display_stage_labels=True`) and the front of its queue/resources - previously a hardcoded `10` data units, which could look squashed against larger icon sizes (closes #122)
+    - Default `10` matches the previous hardcoded value exactly, so existing animations are unaffected
+    - The auto-expanding figure margin (added to keep long labels from being clipped) accounts for this offset too, so increasing it doesn't reintroduce clipping
 - New `ArrivalPosition` / `ExitPosition` helpers in `vidigi.utils` - `EventPosition` subclasses with `event` pre-set to the exact string vidigi matches on (`"arrival"` / `"depart"`), so building an `event_position_df` no longer means looking those two up (closes #192)
     - `ArrivalPosition(x=50, y=450)` is exactly `EventPosition(event="arrival", x=50, y=450, label="Arrival")` - `model_dump()` and the `create_event_position_df` DataFrame are byte-identical, so nothing downstream changes
     - `label` defaults to `"Arrival"` / `"Exit"` (still overridable); every other `EventPosition` field is inherited unchanged
