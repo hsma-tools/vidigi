@@ -31,3 +31,5 @@ package.json
 package-lock.json
 
 _environment
+
+.coverage.*

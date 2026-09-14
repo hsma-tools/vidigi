@@ -4747,7 +4747,7 @@ requires-dist = [
     { name = "ipycytoscape", specifier = ">=1.2.0,<2.0.0" },
     { name = "ipywidgets", specifier = ">=8.0.0" },
     { name = "numpy", specifier = ">=1.24.0,<3.0.0" },
-    { name = "pandas", specifier = ">=1.5.3,<3.0.0" },
+    { name = "pandas", specifier = ">=1.5.3,<4.0.0" },
     { name = "plotly", specifier = ">=5.12.0,<7.0.0" },
     { name = "pydantic", specifier = ">=2.0.0,<3.0.0" },
     { name = "scipy", marker = "extra == 'stats'", specifier = ">=1.10" },

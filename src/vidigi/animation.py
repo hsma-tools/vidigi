@@ -792,17 +792,17 @@ def generate_animation(
         elif simulation_time_unit in ("hour", "hours"):
             unit = "h"
         elif simulation_time_unit in ("day", "days"):
-            unit = "d"
+            unit = "D"
         elif simulation_time_unit in ("week", "weeks"):
-            unit = "w"
+            unit = "W"
         elif simulation_time_unit in ("month", "months"):
             # Approximate 1 month as 30 days
             full_entity_df_plus_pos_copy["snapshot_time"] *= 30
-            unit = "d"
+            unit = "D"
         elif simulation_time_unit in ("year", "years"):
             # Approximate 1 year as 365 days
             full_entity_df_plus_pos_copy["snapshot_time"] *= 365
-            unit = "d"
+            unit = "D"
         else:
             raise ValueError(
                 f"Invalid `simulation_time_unit` '{simulation_time_unit}'. Valid options "

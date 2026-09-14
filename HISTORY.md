@@ -211,6 +211,10 @@
     - In practice this only widens the resolver's choices on Python 3.10 and 3.11; on 3.12+ pip already picks a newer pandas/numpy that ships wheels for that interpreter, regardless of this floor
     - Verified once against the floor (`pandas==1.5.3`, `numpy==1.24.0`) with the full test suite; a continuous minimum-version CI job is still to be added, so the `tox` `min-versions` / `min-numpy-pandas-simpy` environments (updated to match) are the check until then
     - Dropped the `packaging` dependency, which was no longer imported anywhere — it had been added for a pandas-2.2 version gate that was later replaced with a version-agnostic approach
+- Raised the maximum `pandas` to `<4.0.0` (was `<3.0.0`), so vidigi installs alongside pandas 3.x
+    - Pandas 3.0 (released 2026-01-21) changes several defaults library code can be sensitive to — string columns now infer to `str` dtype instead of `object`, Copy-on-Write is the only mode (chained assignment like `df[...][...] = x` stops working), and datetime resolution is inferred rather than always nanosecond. An audit found no object-dtype branching and no chained assignment anywhere in `src/vidigi` — all setitem already goes through `.loc[mask, col] = ...` / `.assign(...)`, which is CoW-safe
+    - Fixed two lowercase `pd.to_timedelta` unit strings (`"d"`, `"w"`) in `generate_animation_df`'s day/week/month/year handling that pandas 3.x warns are deprecated in favour of `"D"`/`"W"`
+    - Verified with the full test suite against a new `tox` `max-versions` environment (`pandas>=3.0,<4.0.0`, unpinned otherwise)
 
 ### New metrics
 
