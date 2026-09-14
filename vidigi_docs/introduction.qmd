@@ -89,6 +89,20 @@ This will create an event log in the required format for vidigi's animation func
 | 12      | resource_use_end  | post_surgery_stay_ends   | 1.9  | 4           |
 | 15      | resource_use      | post_survery_stay_begins | 1.9  | 4           |
 
+::: {.callout-warning}
+Each entity needs exactly one `arrival` and one `depart` event per run. Reusing an
+`entity_id` for a second arrival or departure - for example logging a recurring thing like a
+staff break under the same shared ID each time it happens - doesn't just mean "the last one
+wins". `reshape_for_animations` pivots the arrival/departure rows to work out when each
+entity was present, and duplicates are *averaged together*, giving the entity a time it was
+never actually at.
+
+vidigi raises a `ValueError` naming the offending `entity_id` when this happens, so it fails
+loudly rather than quietly producing a wrong animation. If you need to log something that
+recurs, give each occurrence its own unique ID, or log it as a queue/resource-use event
+instead of an arrival/departure.
+:::
+
 :::
 
 

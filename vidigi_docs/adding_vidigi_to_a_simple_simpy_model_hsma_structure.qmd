@@ -582,7 +582,7 @@ These are all of the key steps you are likely to need to log in a standard model
 
 You can have multiple instances of queues and resource use within your logs per entity.
 
-**However, each entity should have only one arrival and one departure.**
+**However, each entity should have only one arrival and one departure.** Reusing an entity ID for a second arrival or departure averages the duplicate times together instead of keeping either one; vidigi now raises a `ValueError` naming the offending entity ID when this happens, rather than silently producing a wrong animation.
 
 For arrivals and departures, only the entity ID - our patient ID, in this case - needs to be passed in.
 

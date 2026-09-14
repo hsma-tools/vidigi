@@ -474,6 +474,10 @@ class EventLogger:
     ):
         """
         Helper to log an arrival event with the correct event_type and event fields.
+
+        `entity_id` must be unique per arrival/departure within a run - logging a second
+        arrival under the same `entity_id` raises a `ValueError` when the log is reshaped
+        for animation.
         """
         event_data = {
             "entity_id": entity_id,
@@ -497,6 +501,10 @@ class EventLogger:
     ):
         """
         Helper to log a departure event with the correct event_type and event fields.
+
+        `entity_id` must be unique per arrival/departure within a run - logging a second
+        departure under the same `entity_id` raises a `ValueError` when the log is reshaped
+        for animation.
         """
         event_data = {
             "entity_id": entity_id,

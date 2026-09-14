@@ -69,7 +69,7 @@ We set up a `logger` using the `EventLogger` class. This then gives us methods f
 
 
 ::: {.callout-warning}
-Every entity must have a single arrival and a single departure event. If this isn't true, unexpected behaviour will occur in the animation.
+Every entity must have a single arrival and a single departure event. Reusing an entity ID for a second arrival or departure - rather than every entity having its own unique ID - averages the duplicate times together instead of keeping either one. vidigi now raises a `ValueError` naming the offending entity ID when this happens, rather than silently producing a wrong animation.
 :::
 
 They may have as many queueing events as desired (and they don't have to just be what you're traditionally think of as a 'queue' - they can be any point where an individual is waiting for something or doing something).
