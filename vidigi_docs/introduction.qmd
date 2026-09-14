@@ -103,9 +103,6 @@ recurs, give each occurrence its own unique ID, or log it as a queue/resource-us
 instead of an arrival/departure.
 :::
 
-:::
-
-
 
 ::: {.callout-tip}
 If you are adding vidigi to an existing model, you may have already created some form of logging for your animation.
