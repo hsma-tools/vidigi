@@ -246,6 +246,8 @@ from vidigi.resources import VidigiStore
 nurses = VidigiStore(env, num_resources=5, label="nurse")
 ```
 
+Note that `capacity` on `VidigiStore` doesn't mean the same thing it did on `simpy.Resource` - it isn't the pool size (that's `num_resources`). It bounds the underlying store container instead, and you normally don't need to pass it: left unset, `.capacity` automatically mirrors `num_resources`, matching `simpy.Resource.capacity`'s behaviour. Only pass `capacity` explicitly if you deliberately want a bounded container for other items alongside the resources - doing so also disables the built-in guard against accidentally returning a resource twice (`strict_capacity`).
+
 Always pass a `label` that is unique to this pool of resources. Each `VidigiStore` numbers its own resources `1, 2, 3, ...`, so if your model has more than one pool (for example `nurses` and `treatment_cubicles`), two different physical resources can end up sharing the same `resource_id`. `label` gives each resource a `.unique_id` (e.g. `"nurse_1"`; also available as `.unique_id_attribute`) that stays distinct across pools, which matters if you want to analyse individual resource utilisation later with `vidigi.analysis.resource_utilisation(by="resource")`. Omitting `label` still works today but emits a `DeprecationWarning` - it is expected to become mandatory in a future major version.
 
 If your model needs each resource to carry extra information - a staff type for break scheduling, a skill grade, a home location - pass `extra_attributes`:
