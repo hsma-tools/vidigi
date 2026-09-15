@@ -228,3 +228,42 @@ point, plus updating every example/test currently constructing these without a l
 `tests/test_resources_label.py` (asserting `label=None` still produces working,
 unchanged resources plus a warning) — when `label` becomes mandatory at 3.0, those
 tests are replaced by a missing-required-argument (`TypeError`) assertion instead.
+
+---
+
+## 7. `plot_metric_bar()`/`TrialLogger.plot_metric_bar` planned removal at 3.0
+
+**Where:** `src/vidigi/plots.py` — `plot_metric_bar`; `src/vidigi/logging.py` —
+`TrialLogger.plot_metric_bar`.
+
+**Current state (2.0.0):** both still work completely unchanged — same
+computation, same output, same `**kwargs` (plotly-passthrough to
+`plotly.express.bar`, e.g. `title=`/`width=`). Calling either now emits a
+`DeprecationWarning` naming the replacement, `plot_metric(kind="bar", ...)`.
+
+**Why deprecated rather than extended in place:** `plot_metric_bar`'s
+`**kwargs` is a documented, preserved contract — plotly-passthrough, not
+column-name passthrough like every other `vidigi.plots` function added since.
+The new "boxplot of per-replication metrics" feature (closing the last open
+item from #153) needed a `kind="box"`/`"violin"` mode built on
+`plotly.graph_objects`, and bolting that onto `plot_metric_bar` directly would
+have silently changed what `**kwargs` means whenever `kind != "bar"` — a
+quiet breaking change for exactly the callers (e.g. the committed example
+notebook) already relying on `title=`/`width=` reaching `plotly.express.bar`.
+A new function sidesteps that entirely; `plot_metric_bar` is deprecated
+instead of touched.
+
+**Planned for 3.0:** delete `plot_metric_bar`/`TrialLogger.plot_metric_bar`
+outright. `plot_metric(kind="bar", ...)` is a drop-in replacement for every
+argument `plot_metric_bar` accepts except `**kwargs`'s plotly-passthrough
+meaning — callers restyle the returned figure with `fig.update_layout(...)`
+instead.
+
+**Pinned by:** `tests/test_plots_metric_bar_ci.py`'s
+`test_calling_it_emits_exactly_one_deprecation_warning` and
+`tests/test_logging_triallogger.py`'s `test_plot_metric_bar_warns_deprecated`
+(the warning propagates through the `TrialLogger` delegator); every other
+existing test in both files is otherwise unchanged, confirming the warning is
+the only new behaviour. `tests/test_plots_metric.py` proves `plot_metric`'s
+`kind="bar"` output matches `plot_metric_bar`'s directly, so the "drop-in
+replacement" claim above is checked, not just asserted.
