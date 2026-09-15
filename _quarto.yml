@@ -132,6 +132,9 @@ quartodoc:
         - analysis.resource_occupancy_over_time
         - analysis.activity_occupancy_stats
         - analysis.welch_moving_average
+        - analysis.compare_replication_values
+        - analysis.flag_outlier_runs
+        - analysis.event_occurrence_rate
     - title: Analysis Plots
       desc: "go.Figure-returning charts, each a thin wrapper over the matching function in Analysis Functions above."
       contents:
@@ -143,6 +146,7 @@ quartodoc:
         - plots.plot_warm_up_diagnostic
         - plots.plot_replication_analysis
         - plots.plot_metric_vs_arrival_time
+        - plots.plot_scenario_comparison
     - title: Event Positioning Utility Functions and Classes
       desc: ""
       contents:

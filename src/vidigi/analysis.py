@@ -608,6 +608,130 @@ def _summarise_durations(
     return round(result, dp)
 
 
+ProportionEstimate = namedtuple(
+    "ProportionEstimate",
+    ["proportion", "lower", "upper", "n_runs", "n_occurred", "ci_level", "method"],
+)
+
+
+def event_occurrence_rate(
+    event_log: pd.DataFrame,
+    event_name: str,
+    *,
+    event_col_name: str = "event",
+    n_runs: int | None = None,
+    ci_level: float = 0.95,
+    run_col_name: str | None = "auto",
+) -> ProportionEstimate:
+    """
+    Proportion of replications in which an event occurs at least once.
+
+    A per-*run* rate - "in what fraction of runs did this happen at all" -
+    distinct from `_summarise_durations`'s `"unserved_rate"`/`"served_rate"`,
+    which are per-*entity* rates within one event pair. Useful for a rare
+    condition that either happens or doesn't in a given run (e.g. a capacity
+    breach, a specific alarm event), rather than a duration between two
+    events.
+
+    Parameters
+    ----------
+    event_log : pandas.DataFrame
+        Long-format event log, e.g. the output of `TrialLogger.to_dataframe()`.
+    event_name : str
+        The event to check for, matched against `event_col_name`. Occurring
+        for *any* entity, one or more times, counts a run as an occurrence.
+        Unlike `event_durations`, a name that matches nothing in the log is
+        **not** an error here - a rare event legitimately occurring zero
+        times in the runs available is exactly the `proportion=0.0` case
+        this function exists to report, so it is not distinguished from a
+        typo. Check `event_log[event_col_name].unique()` if unsure a name is
+        spelled correctly.
+    event_col_name : str, default="event"
+        Column holding the event name.
+    n_runs : int, optional
+        The number of runs to use as the denominator. If `None` (default),
+        falls back to the number of distinct values in the resolved run
+        column across the *whole* `event_log` - which still misses a run
+        that logs no rows at all. Passing `n_runs` explicitly (e.g.
+        `len(trial_logger._event_logs)`) is the reliable route whenever the
+        true number of runs is known - see `TrialLogger.get_event_occurrence_rate`.
+    ci_level : float, default=0.95
+        Confidence level for the interval.
+    run_col_name : str or None, default="auto"
+        Column identifying which run each row belongs to, used to count how
+        many runs the event occurred in, and (when `n_runs` is not given) to
+        infer the denominator. See `vidigi.analysis.event_durations`'s same
+        parameter.
+
+    Returns
+    -------
+    ProportionEstimate
+        Named tuple `(proportion, lower, upper, n_runs, n_occurred, ci_level,
+        method)`. `lower`/`upper` come from a Wilson score interval, which -
+        unlike a Student-t interval - stays within `[0, 1]` and is well
+        behaved near `0` or `1`, exactly where a rare-event rate typically
+        sits. Unlike `ConfidenceInterval`, there is no `half_width`: a Wilson
+        interval is asymmetric around `proportion` near the boundaries, so a
+        single half-width would misrepresent it.
+
+    Raises
+    ------
+    ValueError
+        If the resolved `n_runs` is `0` or less, or if `ci_level` is not in
+        `(0, 1)`.
+    ImportError
+        If `scipy` is not installed - see `mean_confidence_interval`.
+
+    See Also
+    --------
+    _summarise_durations : The per-entity, per-event-pair analogue (`unserved_rate`/`served_rate`).
+
+    Notes
+    -----
+    Unlike `mean_confidence_interval`, there is no low-`n` warning: the
+    Wilson interval is well-defined for any `n_runs >= 1`, including
+    `n_occurred` of `0` or `n_runs` - a mean's confidence interval needs at
+    least 2 points to estimate a spread, but a proportion's does not.
+    """
+    if not 0 < ci_level < 1:
+        raise ValueError(
+            f"`ci_level` must be between 0 and 1 (exclusive); got {ci_level}."
+        )
+
+    run_col = _resolve_run_column(event_log, run_col_name)
+    matched = event_log[event_log[event_col_name] == event_name]
+
+    if n_runs is None:
+        n_runs = event_log[run_col].nunique() if run_col is not None else 1
+    if n_runs <= 0:
+        raise ValueError(f"`n_runs` must be positive; got {n_runs}.")
+
+    n_occurred = (
+        matched[run_col].nunique()
+        if run_col is not None
+        else (1 if len(matched) else 0)
+    )
+
+    stats = _require_scipy()
+    z = stats.norm.ppf(1 - (1 - ci_level) / 2)
+    p_hat = n_occurred / n_runs
+    denom = 1 + z**2 / n_runs
+    centre = (p_hat + z**2 / (2 * n_runs)) / denom
+    half_span = (
+        z * np.sqrt(p_hat * (1 - p_hat) / n_runs + z**2 / (4 * n_runs**2))
+    ) / denom
+
+    return ProportionEstimate(
+        proportion=p_hat,
+        lower=max(0.0, centre - half_span),
+        upper=min(1.0, centre + half_span),
+        n_runs=n_runs,
+        n_occurred=n_occurred,
+        ci_level=ci_level,
+        method="wilson",
+    )
+
+
 def replication_means(
     durations: pd.DataFrame,
     *,
@@ -920,6 +1044,208 @@ def replication_precision(
     suffix_max = result["deviation"][::-1].cummax()[::-1]
     result["stays_below_threshold"] = result["deviation"].notna() & (
         suffix_max <= deviation_threshold
+    )
+    return result
+
+
+ScenarioComparison = namedtuple(
+    "ScenarioComparison",
+    [
+        "label_a",
+        "label_b",
+        "mean_a",
+        "mean_b",
+        "delta",
+        "delta_pct",
+        "ci_a",
+        "ci_b",
+        "ci_overlap",
+        "ci_level",
+        "p_value",
+        "n_a",
+        "n_b",
+    ],
+)
+
+
+def compare_replication_values(
+    values_a,
+    values_b,
+    *,
+    label_a: str = "A",
+    label_b: str = "B",
+    ci_level: float = 0.95,
+) -> ScenarioComparison:
+    """
+    Compare two independent samples of per-replication values.
+
+    Computes a confidence interval on each side independently (never a
+    pooled or paired calculation - the two samples are two different
+    scenarios' replications, not before/after pairs of the same run), plus a
+    Welch's t-test p-value as a more rigorous companion figure. Typically
+    called on two `replication_means(...)["value"]` series, or two
+    `resource_utilisation(by="run")` columns, for the same metric under two
+    different scenarios.
+
+    Parameters
+    ----------
+    values_a, values_b : array-like
+        Per-replication values for each scenario - one value per
+        replication, never one value per entity. See
+        `mean_confidence_interval`'s *Notes* for why pooling per-entity
+        observations here would understate the interval.
+    label_a, label_b : str, default="A", "B"
+        Human-readable names for each scenario, carried through to the
+        output.
+    ci_level : float, default=0.95
+        Confidence level for each side's interval and for the significance
+        test.
+
+    Returns
+    -------
+    ScenarioComparison
+        Named tuple `(label_a, label_b, mean_a, mean_b, delta, delta_pct,
+        ci_a, ci_b, ci_overlap, ci_level, p_value, n_a, n_b)`.
+
+        - ``delta`` : `mean_b - mean_a`.
+        - ``delta_pct`` : `delta` as a percentage of `mean_a`; `NaN` if
+          `mean_a` is `0`.
+        - ``ci_a``, ``ci_b`` : each side's `ConfidenceInterval`, from
+          `mean_confidence_interval`.
+        - ``ci_overlap`` : `True`/`False` if both intervals are defined,
+          else `None` if either side has fewer than 2 replications.
+        - ``p_value`` : two-sided p-value from Welch's t-test
+          (`scipy.stats.ttest_ind(..., equal_var=False)`, which does not
+          assume the two samples share a variance); `NaN` if either side has
+          fewer than 2 replications.
+
+    Raises
+    ------
+    ImportError
+        If `scipy` is not installed - see `mean_confidence_interval`.
+
+    See Also
+    --------
+    mean_confidence_interval : The confidence interval computed independently on each side.
+    replication_means : Produces the per-replication values this function compares.
+    resource_utilisation : Also produces one value per run, via `by="run"`.
+
+    Notes
+    -----
+    `ci_overlap=False` is a safe "these two scenarios differ" signal: two
+    independent confidence intervals failing to overlap is a *stricter*
+    condition than a two-sample significance test at the same `ci_level`.
+    `ci_overlap=True` does not prove "these are the same" - only "not
+    conclusively different by this simple check" - `p_value` is the more
+    rigorous figure to read alongside it, not a replacement for looking at
+    both `delta` and the two intervals.
+    """
+    series_a = pd.Series(values_a).dropna()
+    series_b = pd.Series(values_b).dropna()
+
+    ci_a = mean_confidence_interval(series_a, ci_level=ci_level)
+    ci_b = mean_confidence_interval(series_b, ci_level=ci_level)
+
+    delta = ci_b.mean - ci_a.mean
+    delta_pct = delta / ci_a.mean * 100 if ci_a.mean != 0 else float("nan")
+
+    if np.isnan(ci_a.half_width) or np.isnan(ci_b.half_width):
+        ci_overlap = None
+    else:
+        ci_overlap = not (ci_a.upper < ci_b.lower or ci_b.upper < ci_a.lower)
+
+    if len(series_a) < 2 or len(series_b) < 2:
+        p_value = float("nan")
+    else:
+        stats = _require_scipy()
+        p_value = stats.ttest_ind(series_a, series_b, equal_var=False).pvalue
+
+    return ScenarioComparison(
+        label_a=label_a,
+        label_b=label_b,
+        mean_a=ci_a.mean,
+        mean_b=ci_b.mean,
+        delta=delta,
+        delta_pct=delta_pct,
+        ci_a=ci_a,
+        ci_b=ci_b,
+        ci_overlap=ci_overlap,
+        ci_level=ci_level,
+        p_value=p_value,
+        n_a=len(series_a),
+        n_b=len(series_b),
+    )
+
+
+def flag_outlier_runs(
+    replication_values: pd.DataFrame,
+    *,
+    value_col: str = "value",
+    iqr_multiplier: float = 1.5,
+) -> pd.DataFrame:
+    """
+    Flag replications whose value is a statistical outlier relative to the rest.
+
+    Uses Tukey's fence: a value below `Q1 - iqr_multiplier * IQR` or above
+    `Q3 + iqr_multiplier * IQR` is flagged, where `IQR = Q3 - Q1` - the same
+    convention `error_bars="iqr"` on `plot_metric_bar`/`plot_resource_utilisation`
+    already uses, just applied as a threshold rather than drawn as an error
+    bar.
+
+    Parameters
+    ----------
+    replication_values : pandas.DataFrame
+        One row per replication, e.g. the output of `replication_means`, or
+        a single group's rows from `resource_utilisation(by="run")`.
+    value_col : str, default="value"
+        Column holding the per-replication value to check.
+    iqr_multiplier : float, default=1.5
+        Fence width in IQRs. `1.5` is Tukey's standard "outlier" fence;
+        `3.0` is the wider "far out" fence sometimes used to flag only
+        extreme cases.
+
+    Returns
+    -------
+    pandas.DataFrame
+        `replication_values` with `lower_fence`, `upper_fence` and
+        `is_outlier` columns added, so a caller sees why each run was (or
+        was not) flagged, not just which ones were.
+
+    Raises
+    ------
+    ValueError
+        If `iqr_multiplier` is negative.
+
+    Notes
+    -----
+    Quartiles computed from fewer than 4 replications are not very
+    meaningful - a warning is raised in that case, though a result is still
+    returned.
+    """
+    if iqr_multiplier < 0:
+        raise ValueError(
+            f"`iqr_multiplier` must be non-negative; got {iqr_multiplier}."
+        )
+
+    n = len(replication_values)
+    if n < 4:
+        warnings.warn(
+            f"Flagging outliers from {n} replication(s) - quartiles are not "
+            f"very meaningful with fewer than 4. Returning a result anyway.",
+            UserWarning,
+            stacklevel=2,
+        )
+
+    result = replication_values.copy()
+    q1, q3 = result[value_col].quantile([0.25, 0.75])
+    iqr = q3 - q1
+    lower_fence = q1 - iqr_multiplier * iqr
+    upper_fence = q3 + iqr_multiplier * iqr
+
+    result["lower_fence"] = lower_fence
+    result["upper_fence"] = upper_fence
+    result["is_outlier"] = (result[value_col] < lower_fence) | (
+        result[value_col] > upper_fence
     )
     return result
 

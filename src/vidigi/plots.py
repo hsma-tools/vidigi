@@ -41,6 +41,7 @@ from vidigi.analysis import (
     _rolling_mean_by_count,
     _rolling_mean_by_time,
     _summarise_durations,
+    compare_replication_values,
     entity_metric_by_arrival,
     event_durations,
     mean_confidence_interval,
@@ -1875,6 +1876,131 @@ def plot_replication_analysis(
         f"{len(run_values)} replications available"
     )
     fig.update_layout(title=subtitle)
+
+    return fig
+
+
+def plot_scenario_comparison(
+    event_log_a: pd.DataFrame,
+    event_log_b: pd.DataFrame,
+    first_event: str,
+    second_event: str,
+    *,
+    what: DurationStat = "mean",
+    ci_level: float = 0.95,
+    match: MatchMode = "first",
+    warm_up: float = 0,
+    label_a: str = "A",
+    label_b: str = "B",
+    **col_kwargs,
+) -> go.Figure:
+    """
+    Bar chart comparing a duration statistic between two scenarios.
+
+    Turns `vidigi.analysis.compare_replication_values` into a two-bar chart
+    with CI error bars, and a title stating whether the two intervals
+    overlap and the Welch's-t p-value - the "highlight differences" view of
+    two scenarios' event-duration metrics, the counterpart to
+    `plot_replication_analysis` for comparing *between* scenarios rather
+    than tracking stability *within* one.
+
+    Parameters
+    ----------
+    event_log_a, event_log_b : pandas.DataFrame
+        Long-format event logs, one per scenario, e.g. from
+        `TrialLogger.to_dataframe()`.
+    first_event, second_event : str
+        The two events to pair - see `vidigi.analysis.event_durations`.
+    what : str, default="mean"
+        The per-replication statistic to compute. See
+        `vidigi.analysis.replication_means`.
+    ci_level : float, default=0.95
+        Confidence level for each scenario's interval and for the
+        significance test.
+    match : {"first", "last", "occurrence"}, default="first"
+        How repeated occurrences of the two events are paired.
+    warm_up : float, default=0
+        Pairings whose `first_time` is before `warm_up` are excluded.
+    label_a, label_b : str, default="A", "B"
+        Names for each scenario, used as bar labels.
+    **col_kwargs : dict
+        Column-name keyword arguments forwarded to
+        `vidigi.analysis.event_durations`, e.g. `run_col_name=`.
+
+    Returns
+    -------
+    plotly.graph_objects.Figure
+
+    Raises
+    ------
+    ValueError
+        If no complete pairs are found in any run of either scenario.
+    ImportError
+        If `scipy` is not installed - see `vidigi.analysis.mean_confidence_interval`.
+
+    See Also
+    --------
+    vidigi.analysis.compare_replication_values : The underlying implementation.
+    plot_replication_analysis : Tracks one scenario's stability across replications.
+
+    Examples
+    --------
+    >>> plot_scenario_comparison(baseline.to_dataframe(), extra_staff.to_dataframe(),
+    ...     "start", "end", label_a="baseline", label_b="extra staff")
+    <plotly.graph_objs._figure.Figure>
+    """
+    durations_a = event_durations(
+        event_log_a,
+        first_event,
+        second_event,
+        match=match,
+        warm_up=warm_up,
+        keep_incomplete=False,
+        **col_kwargs,
+    )
+    durations_b = event_durations(
+        event_log_b,
+        first_event,
+        second_event,
+        match=match,
+        warm_up=warm_up,
+        keep_incomplete=False,
+        **col_kwargs,
+    )
+    values_a = replication_means(durations_a, what=what)["value"]
+    values_b = replication_means(durations_b, what=what)["value"]
+    if values_a.empty or values_b.empty:
+        raise ValueError(
+            f"No complete '{first_event}' -> '{second_event}' pairs were "
+            f"found in any run of one or both scenarios."
+        )
+
+    comparison = compare_replication_values(
+        values_a, values_b, label_a=label_a, label_b=label_b, ci_level=ci_level
+    )
+
+    fig = go.Figure(
+        go.Bar(
+            x=[label_a, label_b],
+            y=[comparison.mean_a, comparison.mean_b],
+            error_y=dict(
+                type="data",
+                array=[comparison.ci_a.half_width, comparison.ci_b.half_width],
+            ),
+        )
+    )
+    fig.update_yaxes(title_text=f"{what} ({first_event} -> {second_event})")
+
+    if comparison.ci_overlap is None:
+        verdict = "not enough replications to assess overlap"
+    elif comparison.ci_overlap:
+        verdict = f"{int(ci_level * 100)}% CIs overlap - not conclusively different"
+    else:
+        verdict = f"{int(ci_level * 100)}% CIs do not overlap"
+    p_value_text = (
+        f"p={comparison.p_value:.3g}" if not np.isnan(comparison.p_value) else "p=n/a"
+    )
+    fig.update_layout(title=f"{verdict} ({p_value_text}, Welch's t-test)")
 
     return fig
 

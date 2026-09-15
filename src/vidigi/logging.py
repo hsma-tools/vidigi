@@ -24,8 +24,11 @@ from vidigi.analysis import (
     UnclosedResourceUse,
     _summarise_durations,
     activity_occupancy_stats,
+    compare_replication_values,
     entity_metric_by_arrival,
     event_durations,
+    event_occurrence_rate,
+    flag_outlier_runs,
     mean_confidence_interval,
     replication_means,
     replication_precision,
@@ -63,6 +66,9 @@ from vidigi.plots import (
 )
 from vidigi.plots import (
     plot_resource_utilisation_over_time as _plot_resource_utilisation_over_time,
+)
+from vidigi.plots import (
+    plot_scenario_comparison as _plot_scenario_comparison,
 )
 from vidigi.plots import (
     plot_warm_up_diagnostic as _plot_warm_up_diagnostic,
@@ -1640,6 +1646,60 @@ class TrialLogger:
             )
         return mean_confidence_interval(run_values, ci_level=ci_level)
 
+    def get_event_occurrence_rate(
+        self,
+        event_name,
+        *,
+        ci_level: float = 0.95,
+        event_col_name: str = "event",
+    ):
+        """
+        Proportion of runs in which an event occurs at least once.
+
+        Thin wrapper over `vidigi.analysis.event_occurrence_rate`, called on
+        this trial's combined dataframe, with `n_runs` always set to the
+        true number of runs in the trial (`len(self._event_logs)`) - not
+        inferred from which runs happened to log the event, so a run where
+        the event never occurred is still correctly counted in the
+        denominator.
+
+        Parameters
+        ----------
+        event_name : str
+            The event to check for. Occurring for any entity, one or more
+            times, counts a run as an occurrence.
+        ci_level : float, default=0.95
+            Confidence level for the interval.
+        event_col_name : str, default="event"
+            Column holding the event name.
+
+        Returns
+        -------
+        vidigi.analysis.ProportionEstimate
+            Named tuple `(proportion, lower, upper, n_runs, n_occurred,
+            ci_level, method)` - see `vidigi.analysis.event_occurrence_rate`.
+
+        Raises
+        ------
+        ValueError
+            If `event_name` is not present in the trial's log.
+        ImportError
+            If `scipy` is not installed - see
+            `vidigi.analysis.mean_confidence_interval`.
+
+        See Also
+        --------
+        vidigi.analysis.event_occurrence_rate : The underlying implementation.
+        get_event_duration_stat : Entity-level `"unserved_rate"`/`"served_rate"` within one event pair.
+        """
+        return event_occurrence_rate(
+            self._trial_dataframe,
+            event_name,
+            event_col_name=event_col_name,
+            n_runs=len(self._event_logs),
+            ci_level=ci_level,
+        )
+
     def _resolve_resource_col_name(
         self, resource_col_name: str | None, trial_dataframe: pd.DataFrame
     ) -> str:
@@ -2527,6 +2587,70 @@ class TrialLogger:
             **kwargs,
         )
 
+    def get_outlier_runs(
+        self,
+        first_event,
+        second_event,
+        *,
+        what: DurationStat = "mean",
+        match: MatchMode = "first",
+        warm_up: float = 0,
+        iqr_multiplier: float = 1.5,
+        **kwargs,
+    ):
+        """
+        Flag replications whose duration statistic is a statistical outlier.
+
+        Thin wrapper over `vidigi.analysis.event_durations`,
+        `replication_means` and `vidigi.analysis.flag_outlier_runs`, called
+        on this trial's combined dataframe.
+
+        Parameters
+        ----------
+        first_event, second_event : str
+            The two events to pair. See `vidigi.analysis.event_durations`.
+        what : str, default="mean"
+            The per-replication statistic to compute. See
+            `vidigi.analysis.replication_means`.
+        match : {"first", "last", "occurrence"}, default="first"
+            How repeated occurrences of the two events are paired.
+        warm_up : float, default=0
+            Pairings whose `first_time` is before `warm_up` are excluded.
+            See `vidigi.analysis.event_durations`'s same parameter.
+        iqr_multiplier : float, default=1.5
+            Fence width in IQRs. See `vidigi.analysis.flag_outlier_runs`.
+        **kwargs : dict
+            Additional keyword arguments passed to the chosen statistic,
+            e.g. `q=0.9` for `what="quantile"`.
+
+        Returns
+        -------
+        pandas.DataFrame
+            One row per run, with `value`, `lower_fence`, `upper_fence` and
+            `is_outlier` columns - see `vidigi.analysis.flag_outlier_runs`.
+
+        Raises
+        ------
+        ValueError
+            If no complete pairs are found in any run, or `iqr_multiplier`
+            is negative.
+
+        See Also
+        --------
+        vidigi.analysis.flag_outlier_runs : The underlying implementation.
+        get_replication_precision : A different per-replication diagnostic (precision, not outliers).
+        """
+        durations = self.get_event_durations(
+            first_event, second_event, match=match, warm_up=warm_up
+        )
+        run_values = replication_means(durations, what=what, **kwargs)
+        if run_values.empty:
+            raise ValueError(
+                f"No complete '{first_event}' -> '{second_event}' pairs were "
+                f"found in any run to compute a per-replication statistic from."
+            )
+        return flag_outlier_runs(run_values, iqr_multiplier=iqr_multiplier)
+
     def get_replication_precision(
         self,
         first_event,
@@ -2658,6 +2782,224 @@ class TrialLogger:
             show_deviation=show_deviation,
             match=match,
             **kwargs,
+        )
+
+    def _check_other_is_trial_logger(self, other) -> None:
+        if not isinstance(other, TrialLogger):
+            raise TypeError(
+                f"`other` must be a TrialLogger; got {type(other).__name__}."
+            )
+
+    def compare_event_duration_stat(
+        self,
+        other: "TrialLogger",
+        first_event,
+        second_event,
+        *,
+        what: DurationStat = "mean",
+        ci_level: float = 0.95,
+        match: MatchMode = "first",
+        warm_up: float = 0,
+        label_a: str | None = None,
+        label_b: str | None = None,
+        **kwargs,
+    ):
+        """
+        Compare a duration statistic between this trial and another scenario.
+
+        Thin wrapper over `vidigi.analysis.compare_replication_values`,
+        computing each trial's per-replication values via
+        `get_event_durations` + `replication_means`, then comparing them - a
+        two-independent-sample confidence-interval-overlap check plus a
+        Welch's t-test, the "scenario comparison highlighter" for
+        event-duration metrics.
+
+        Parameters
+        ----------
+        other : TrialLogger
+            The trial to compare against.
+        first_event, second_event : str
+            The two events to pair. See `vidigi.analysis.event_durations`.
+        what : str, default="mean"
+            The per-replication statistic to compute. See
+            `vidigi.analysis.replication_means`.
+        ci_level : float, default=0.95
+            Confidence level for each side's interval and the significance
+            test.
+        match : {"first", "last", "occurrence"}, default="first"
+            How repeated occurrences of the two events are paired.
+        warm_up : float, default=0
+            Pairings whose `first_time` is before `warm_up` are excluded.
+        label_a, label_b : str, optional
+            Names for each scenario. Default to this trial's and `other`'s
+            `.label`, falling back to `"A"`/`"B"` if neither has one.
+        **kwargs : dict
+            Additional keyword arguments passed to the chosen statistic,
+            e.g. `q=0.9` for `what="quantile"`.
+
+        Returns
+        -------
+        vidigi.analysis.ScenarioComparison
+
+        Raises
+        ------
+        TypeError
+            If `other` is not a `TrialLogger`.
+        ValueError
+            If no complete pairs are found in any run of either trial.
+        ImportError
+            If `scipy` is not installed.
+
+        See Also
+        --------
+        vidigi.analysis.compare_replication_values : The underlying implementation.
+        plot_event_duration_comparison : Plots this comparison.
+        compare_resource_utilisation : The resource-utilisation analogue.
+        """
+        self._check_other_is_trial_logger(other)
+        label_a = label_a or self.label or "A"
+        label_b = label_b or other.label or "B"
+
+        durations_a = self.get_event_durations(
+            first_event, second_event, match=match, warm_up=warm_up
+        )
+        durations_b = other.get_event_durations(
+            first_event, second_event, match=match, warm_up=warm_up
+        )
+        values_a = replication_means(durations_a, what=what, **kwargs)["value"]
+        values_b = replication_means(durations_b, what=what, **kwargs)["value"]
+        if values_a.empty or values_b.empty:
+            raise ValueError(
+                f"No complete '{first_event}' -> '{second_event}' pairs were "
+                f"found in any run of one or both trials."
+            )
+        return compare_replication_values(
+            values_a, values_b, label_a=label_a, label_b=label_b, ci_level=ci_level
+        )
+
+    def plot_event_duration_comparison(
+        self, other: "TrialLogger", first_event, second_event, **kwargs
+    ):
+        """
+        Plot a bar chart comparing a duration statistic between this trial and another.
+
+        Thin wrapper over `vidigi.plots.plot_scenario_comparison`, called on
+        this trial's and `other`'s combined dataframes. See that function
+        for the full parameter list.
+
+        Parameters
+        ----------
+        other : TrialLogger
+            The trial to compare against.
+        first_event, second_event : str
+            The two events to pair. See `vidigi.analysis.event_durations`.
+        **kwargs : dict
+            Additional keyword arguments forwarded to
+            `vidigi.plots.plot_scenario_comparison` (e.g. `what=`,
+            `ci_level=`, `label_a=`, `label_b=`).
+
+        Returns
+        -------
+        plotly.graph_objects.Figure
+
+        Raises
+        ------
+        TypeError
+            If `other` is not a `TrialLogger`.
+
+        See Also
+        --------
+        vidigi.plots.plot_scenario_comparison : The underlying implementation.
+        compare_event_duration_stat : The underlying numbers.
+        """
+        self._check_other_is_trial_logger(other)
+        kwargs.setdefault("label_a", self.label or "A")
+        kwargs.setdefault("label_b", other.label or "B")
+        return _plot_scenario_comparison(
+            self._trial_dataframe,
+            other._trial_dataframe,
+            first_event,
+            second_event,
+            **kwargs,
+        )
+
+    def compare_resource_utilisation(
+        self,
+        other: "TrialLogger",
+        *,
+        metric: ResourceMetric = "utilisation",
+        ci_level: float = 0.95,
+        label_a: str | None = None,
+        label_b: str | None = None,
+        **kwargs,
+    ):
+        """
+        Compare a resource utilisation metric between this trial and another scenario.
+
+        Thin wrapper over `vidigi.analysis.compare_replication_values`,
+        computing each trial's per-run `metric` via
+        `get_resource_utilisation(by="run")`, then comparing them - the
+        resource-utilisation analogue of `compare_event_duration_stat`.
+        Always pools every step/resource together into one blended per-run
+        figure (`by="run"`, see `vidigi.analysis.resource_utilisation`); to
+        compare one specific step or resource instead, call
+        `get_resource_utilisation(by=...)` on each trial and pass the
+        `metric` column straight into
+        `vidigi.analysis.compare_replication_values`.
+
+        Parameters
+        ----------
+        other : TrialLogger
+            The trial to compare against.
+        metric : {"utilisation", "busy_time", "mean_in_use"}, default="utilisation"
+            Which `vidigi.analysis.resource_utilisation` column to compare.
+        ci_level : float, default=0.95
+            Confidence level for each side's interval and the significance
+            test.
+        label_a, label_b : str, optional
+            Names for each scenario. Default to this trial's and `other`'s
+            `.label`, falling back to `"A"`/`"B"` if neither has one.
+        **kwargs : dict
+            Additional keyword arguments forwarded to
+            `get_resource_utilisation` on both trials (e.g. `scenario=`,
+            `warm_up=`).
+
+        Returns
+        -------
+        vidigi.analysis.ScenarioComparison
+
+        Raises
+        ------
+        TypeError
+            If `other` is not a `TrialLogger`.
+        ValueError
+            If `metric` is not a resource-utilisation column, or either
+            trial has no runs to compare.
+        ImportError
+            If `scipy` is not installed.
+
+        See Also
+        --------
+        vidigi.analysis.compare_replication_values : The underlying implementation.
+        compare_event_duration_stat : The event-duration analogue.
+        """
+        self._check_other_is_trial_logger(other)
+        if metric not in ("utilisation", "busy_time", "mean_in_use"):
+            raise ValueError(
+                f"`metric` must be one of 'utilisation', 'busy_time', "
+                f"'mean_in_use'; got {metric!r}."
+            )
+        label_a = label_a or self.label or "A"
+        label_b = label_b or other.label or "B"
+
+        values_a = self.get_resource_utilisation(by="run", **kwargs)[metric]
+        values_b = other.get_resource_utilisation(by="run", **kwargs)[metric]
+        if values_a.empty or values_b.empty:
+            raise ValueError(
+                "One or both trials have no runs to compare resource utilisation for."
+            )
+        return compare_replication_values(
+            values_a, values_b, label_a=label_a, label_b=label_b, ci_level=ci_level
         )
 
     def get_entity_metric_by_arrival(
