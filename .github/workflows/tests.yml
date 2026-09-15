@@ -5,7 +5,7 @@ on:
   push:
     branches: [main]
     paths:
-        - vidigi/**
+        - src/vidigi/**
         - dev_environment/**
         - tests/**
         - pyproject.toml
@@ -50,22 +50,52 @@ jobs:
         include:
           - os: ubuntu-latest
             python-version: '3.10'
+            tox-env: py310-plotly5
+          - os: ubuntu-latest
+            python-version: '3.10'
+            tox-env: py310-plotly6
           - os: ubuntu-latest
             python-version: '3.11'
+            tox-env: py311-plotly5
+          - os: ubuntu-latest
+            python-version: '3.11'
+            tox-env: py311-plotly6
           - os: ubuntu-latest
             python-version: '3.12'
+            tox-env: py312-plotly5
+          - os: ubuntu-latest
+            python-version: '3.12'
+            tox-env: py312-plotly6
           - os: ubuntu-latest
             python-version: '3.13'
+            tox-env: py313-plotly5
+          - os: ubuntu-latest
+            python-version: '3.13'
+            tox-env: py313-plotly6
           - os: ubuntu-latest
             python-version: '3.14'
+            tox-env: py314-plotly5
+          - os: ubuntu-latest
+            python-version: '3.14'
+            tox-env: py314-plotly6
           - os: macos-latest
             python-version: '3.10'
+            tox-env: py310-plotly6
           - os: macos-latest
             python-version: '3.14'
+            tox-env: py314-plotly6
           - os: windows-latest
             python-version: '3.10'
+            tox-env: py310-plotly6
           - os: windows-latest
             python-version: '3.14'
+            tox-env: py314-plotly6
+          - os: ubuntu-latest
+            python-version: '3.10'
+            tox-env: min-versions
+          - os: ubuntu-latest
+            python-version: '3.14'
+            tox-env: max-versions
 
     steps:
       - name: Decide if this combo should run
@@ -97,17 +127,15 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
+          cache-dependency-path: |
+            pyproject.toml
+            tox.ini
+            tests/requirements.txt
 
-      - name: Install dependencies
+      - name: Install tox
         if: steps.should_run.outputs.run == 'true'
-        run: |
-          pip install -r dev_environment/requirements.txt
-
-      - name: Install package
-        if: steps.should_run.outputs.run == 'true'
-        run: pip install -e .
+        run: python -m pip install "tox>=4.25,<5"
 
       - name: Run tests
         if: steps.should_run.outputs.run == 'true'
-        run: |
-          python -m pytest --verbose --tb=short
+        run: python -m tox -e ${{ matrix.tox-env }}

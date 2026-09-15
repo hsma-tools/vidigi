@@ -1591,7 +1591,7 @@ def generate_animation(
             trace.textfont.color = trace.marker.color
             if trace.name != "_overflow" and _resolved_family is not None:
                 trace.textfont.family = _resolved_family
-                if _resolved_weight is not None:
+                if _resolved_weight is not None and hasattr(trace.textfont, "weight"):
                     trace.textfont.weight = _resolved_weight
         else:
             trace.textfont.color = overflow_text_color
@@ -1926,7 +1926,9 @@ def generate_animation(
         # `resource_icon` was split off above and is untouched.
         if _resource_resolved_family is not None:
             fig.data[-1].textfont.family = _resource_resolved_family
-            if _resource_resolved_weight is not None:
+            if _resource_resolved_weight is not None and hasattr(
+                fig.data[-1].textfont, "weight"
+            ):
                 fig.data[-1].textfont.weight = _resource_resolved_weight
 
     #############################################

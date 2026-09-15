@@ -776,7 +776,8 @@ def test_entity_icon_font_applies_to_non_overflow_icons(
         positioned, basic_event_position_df, entity_icon_font="font-awesome"
     )
     assert fig.data[0].textfont.family == "VidigiFontAwesomeSolid"
-    assert fig.data[0].textfont.weight == 900
+    if hasattr(fig.data[0].textfont, "weight"):
+        assert fig.data[0].textfont.weight == 900
 
 
 def test_entity_icon_font_weight_override(positioned, basic_event_position_df):
@@ -786,7 +787,8 @@ def test_entity_icon_font_weight_override(positioned, basic_event_position_df):
         entity_icon_font="font-awesome",
         entity_icon_font_weight=400,
     )
-    assert fig.data[0].textfont.weight == 400
+    if hasattr(fig.data[0].textfont, "weight"):
+        assert fig.data[0].textfont.weight == 400
 
 
 def test_overflow_icons_never_get_the_icon_font(
@@ -1242,7 +1244,8 @@ def test_resource_icon_font_applies_to_the_resource_glyph_trace(
     )
     resource_trace = fig.data[-1]
     assert resource_trace.textfont.family == "VidigiFontAwesomeSolid"
-    assert resource_trace.textfont.weight == 900
+    if hasattr(resource_trace.textfont, "weight"):
+        assert resource_trace.textfont.weight == 900
 
 
 def test_resource_icon_font_applies_to_a_per_event_glyph_override(
@@ -1273,7 +1276,8 @@ def test_resource_icon_font_weight_override(
         resource_icon_font="font-awesome",
         resource_icon_font_weight=400,
     )
-    assert fig.data[-1].textfont.weight == 400
+    if hasattr(fig.data[-1].textfont, "weight"):
+        assert fig.data[-1].textfont.weight == 400
 
 
 def test_resource_icon_font_defaults_to_unset(
