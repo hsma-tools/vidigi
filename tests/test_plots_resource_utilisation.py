@@ -355,3 +355,51 @@ def test_as_proportion_raises_if_capacity_is_missing(resource_use_loggers):
 def test_over_time_no_resource_use_events_raises(two_run_loggers):
     with pytest.raises(ValueError, match="No resource_use/resource_use_end pairs"):
         plot_resource_utilisation_over_time(_trial_df(two_run_loggers))
+
+
+def _two_step_resource_log():
+    """One run, one entity using two distinct resource steps in sequence."""
+    logger = EventLogger(run_number=1)
+    logger.log_resource_use_start(
+        entity_id=1, resource_id=1, time=0.0, event="step_a_begins"
+    )
+    logger.log_resource_use_end(
+        entity_id=1, resource_id=1, time=5.0, event="step_a_ends"
+    )
+    logger.log_resource_use_start(
+        entity_id=1, resource_id=1, time=5.0, event="step_b_begins"
+    )
+    logger.log_resource_use_end(
+        entity_id=1, resource_id=1, time=10.0, event="step_b_ends"
+    )
+    return TrialLogger([logger]).to_dataframe()
+
+
+def test_over_time_highlight_bands_adds_shapes(resource_use_loggers):
+    fig = plot_resource_utilisation_over_time(
+        _trial_df(resource_use_loggers),
+        every_x_time_units=5,
+        limit_duration=20,
+        highlight_bands=[{"upper": 1, "colour": "green", "label": "quiet"}],
+    )
+    assert len(fig.layout.shapes) == 2  # hrect + one boundary hline
+    assert any(t.name == "quiet" for t in fig.data)
+
+
+def test_over_time_no_highlight_bands_adds_no_shapes(resource_use_loggers):
+    fig = plot_resource_utilisation_over_time(
+        _trial_df(resource_use_loggers), every_x_time_units=5, limit_duration=20
+    )
+    assert fig.layout.shapes == ()
+
+
+def test_over_time_highlight_bands_spans_every_facet():
+    fig = plot_resource_utilisation_over_time(
+        _two_step_resource_log(),
+        every_x_time_units=5,
+        limit_duration=10,
+        highlight_bands=[{"upper": 1, "colour": "green"}],
+    )
+    rects = [s for s in fig.layout.shapes if s.type == "rect"]
+    assert len(rects) == 2
+    assert {r.yref for r in rects} == {"y", "y2"}

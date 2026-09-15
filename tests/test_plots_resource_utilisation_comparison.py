@@ -133,3 +133,25 @@ def test_a_log_with_no_resource_use_at_all_compares_as_zero_not_an_error(
         limit_duration=20,
     )
     assert fig.data[0].y[1] == pytest.approx(0.0)
+
+
+def test_highlight_bands_adds_shapes(resource_use_loggers):
+    fig = plot_resource_utilisation_comparison(
+        _trial_df(resource_use_loggers),
+        _trial_df(resource_use_loggers),
+        resource_capacities={"treatment_begins": 3},
+        limit_duration=20,
+        highlight_bands=[{"upper": 0.1, "colour": "green", "label": "idle"}],
+    )
+    assert len(fig.layout.shapes) == 2  # hrect + one boundary hline
+    assert any(t.name == "idle" for t in fig.data)
+
+
+def test_no_highlight_bands_adds_no_shapes(resource_use_loggers):
+    fig = plot_resource_utilisation_comparison(
+        _trial_df(resource_use_loggers),
+        _trial_df(resource_use_loggers),
+        resource_capacities={"treatment_begins": 3},
+        limit_duration=20,
+    )
+    assert fig.layout.shapes == ()

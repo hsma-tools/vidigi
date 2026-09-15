@@ -237,3 +237,31 @@ def test_marker_size_and_line_width_reach_the_traces(unequal_run_loggers):
     trend = [t for t in fig.data if t.name == "rolling mean"][0]
     assert scatter.marker.size == 2
     assert trend.line.width == 1
+
+
+def test_highlight_bands_adds_shapes(unequal_run_loggers):
+    fig = plot_metric_vs_arrival_time(
+        _trial_df(unequal_run_loggers),
+        "arrival",
+        "depart",
+        highlight_bands=[{"upper": 4, "colour": "green", "label": "fast"}],
+    )
+    assert len(fig.layout.shapes) == 2  # hrect + one boundary hline
+    assert any(t.name == "fast" for t in fig.data)
+
+
+def test_no_highlight_bands_adds_no_shapes(unequal_run_loggers):
+    fig = plot_metric_vs_arrival_time(
+        _trial_df(unequal_run_loggers), "arrival", "depart"
+    )
+    assert fig.layout.shapes == ()
+
+
+def test_highlight_bands_invalid_band_raises(unequal_run_loggers):
+    with pytest.raises(ValueError, match="lower.*upper"):
+        plot_metric_vs_arrival_time(
+            _trial_df(unequal_run_loggers),
+            "arrival",
+            "depart",
+            highlight_bands=[{"lower": 5, "upper": 2}],
+        )

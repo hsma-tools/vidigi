@@ -103,6 +103,22 @@ def test_plot_event_duration_comparison_raises_typeerror_for_a_non_triallogger(
         trial_a.plot_event_duration_comparison("not a trial", "arrival", "depart")
 
 
+def test_plot_event_duration_comparison_highlight_bands_is_passed_through(
+    unequal_run_loggers, two_run_loggers
+):
+    trial_a = TrialLogger(unequal_run_loggers)
+    trial_b = TrialLogger(two_run_loggers)
+
+    fig = trial_a.plot_event_duration_comparison(
+        trial_b,
+        "arrival",
+        "depart",
+        highlight_bands=[{"upper": 4, "colour": "green", "label": "target"}],
+    )
+
+    assert any(t.name == "target" for t in fig.data)
+
+
 def test_compare_resource_utilisation_identical_scenario_overlaps_with_itself(
     resource_use_loggers,
 ):
@@ -190,3 +206,19 @@ def test_plot_resource_utilisation_comparison_raises_typeerror_for_a_non_triallo
 
     with pytest.raises(TypeError, match="TrialLogger"):
         trial_a.plot_resource_utilisation_comparison(EventLogger(run_number=1))
+
+
+def test_plot_resource_utilisation_comparison_highlight_bands_is_passed_through(
+    resource_use_loggers,
+):
+    trial_a = TrialLogger(resource_use_loggers)
+    trial_b = TrialLogger(resource_use_loggers)
+
+    fig = trial_a.plot_resource_utilisation_comparison(
+        trial_b,
+        resource_capacities={"treatment_begins": 3},
+        limit_duration=20,
+        highlight_bands=[{"upper": 0.1, "colour": "green", "label": "idle"}],
+    )
+
+    assert any(t.name == "idle" for t in fig.data)

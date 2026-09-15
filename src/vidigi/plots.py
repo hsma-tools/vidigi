@@ -100,6 +100,7 @@ def plot_queue_size(
     warm_up: int = 0,
     show_all_runs: bool = True,
     shared_y_axis: bool = True,
+    highlight_bands: list[dict] | None = None,
     backend: PlotBackend = "express",
     run_col_name: str | None = "auto",
     entity_col_name: str = "entity_id",
@@ -138,6 +139,11 @@ def plot_queue_size(
     shared_y_axis : bool, default=True
         If True (and more than one event is plotted), every facet shares a y-axis
         range. If False, each is scaled independently.
+    highlight_bands : list of dict, optional
+        Shaded threshold zones drawn behind the chart - see
+        `plot_duration_distribution`'s parameter of the same name for the
+        dict shape. Spans every facet when more than one event is plotted;
+        applies with either `backend`.
     backend : {"express", "go"}, default="express"
         Which plotly API builds the figure. `"express"` (several spellings
         accepted, see `vidigi.animation.AnimationBackend` for the equivalent on
@@ -161,6 +167,12 @@ def plot_queue_size(
     Returns
     -------
     plotly.graph_objects.Figure
+
+    Raises
+    ------
+    ValueError
+        If a `highlight_bands` entry has neither `lower` nor `upper` set, or
+        `lower >= upper`.
 
     Notes
     -----
@@ -209,20 +221,32 @@ def plot_queue_size(
     ].mean()
 
     if resolved_backend == "express":
-        return _plot_queue_size_express(
+        fig = _plot_queue_size_express(
             event_counts, mean_df, event_list, show_all_runs, shared_y_axis, **kwargs
         )
-
-    if kwargs:
-        warnings.warn(
-            f"backend='go' does not use **kwargs (got {sorted(kwargs)}); they are "
-            f"ignored. Style the returned figure directly instead.",
-            UserWarning,
-            stacklevel=2,
+    else:
+        if kwargs:
+            warnings.warn(
+                f"backend='go' does not use **kwargs (got {sorted(kwargs)}); they are "
+                f"ignored. Style the returned figure directly instead.",
+                UserWarning,
+                stacklevel=2,
+            )
+        fig = _plot_queue_size_go(
+            event_counts, mean_df, event_list, show_all_runs, shared_y_axis
         )
-    return _plot_queue_size_go(
-        event_counts, mean_df, event_list, show_all_runs, shared_y_axis
-    )
+
+    if highlight_bands:
+        plotted = event_counts["count"] if show_all_runs else mean_df["count"]
+        _add_highlight_bands(
+            fig,
+            orientation="y",
+            bands=highlight_bands,
+            value_min=plotted.min(),
+            value_max=plotted.max(),
+        )
+
+    return fig
 
 
 def _plot_queue_size_express(
@@ -404,10 +428,18 @@ def _add_highlight_bands(
 ) -> None:
     """Draw one or more user-supplied shaded threshold zones on `fig`'s value axis.
 
-    `orientation="y"` draws horizontal bands (a bar/box/violin chart with
-    categories on x, value on y - every current caller). `orientation="x"`
+    `orientation="y"` draws horizontal bands (a bar/box/violin chart, or a
+    time series, with the metric on y - every current caller). `orientation="x"`
     draws vertical bands (a value-on-x chart, e.g. a beeswarm); kept
     symmetric for a future caller, not wired up to anything yet.
+
+    Every shape is drawn with `row="all", col="all"`, so a band spans every
+    facet on a `make_subplots`/faceted `px` figure (e.g.
+    `plot_resource_utilisation_over_time`/`plot_queue_size` with more than
+    one step/queue) - `add_hrect`/`add_vrect` otherwise only draw on the
+    first subplot by default. Identical to omitting `row=`/`col=` entirely on
+    a figure with no subplots, so this is a no-op for every non-faceted
+    caller.
 
     Each entry in `bands` is a dict: `lower`/`upper` (float or None - a
     missing bound extends to the plotted data's range, margin-padded, the
@@ -463,11 +495,17 @@ def _add_highlight_bands(
                 fillcolor=colour,
                 opacity=opacity,
                 line_width=0,
+                row="all",
+                col="all",
             )
             if lower is not None:
-                fig.add_hline(y=lower, line_dash="dash", line_color=colour)
+                fig.add_hline(
+                    y=lower, line_dash="dash", line_color=colour, row="all", col="all"
+                )
             if upper is not None:
-                fig.add_hline(y=upper, line_dash="dash", line_color=colour)
+                fig.add_hline(
+                    y=upper, line_dash="dash", line_color=colour, row="all", col="all"
+                )
         else:
             fig.add_vrect(
                 x0=band_lower,
@@ -475,11 +513,17 @@ def _add_highlight_bands(
                 fillcolor=colour,
                 opacity=opacity,
                 line_width=0,
+                row="all",
+                col="all",
             )
             if lower is not None:
-                fig.add_vline(x=lower, line_dash="dash", line_color=colour)
+                fig.add_vline(
+                    x=lower, line_dash="dash", line_color=colour, row="all", col="all"
+                )
             if upper is not None:
-                fig.add_vline(x=upper, line_dash="dash", line_color=colour)
+                fig.add_vline(
+                    x=upper, line_dash="dash", line_color=colour, row="all", col="all"
+                )
 
         if label is not None:
             fig.add_trace(
@@ -1653,6 +1697,7 @@ def plot_resource_utilisation_over_time(
     as_proportion: bool = False,
     show_all_runs: bool = True,
     shared_y_axis: bool = True,
+    highlight_bands: list[dict] | None = None,
     scenario=None,
     resource_map: dict | None = None,
     event_position_df: pd.DataFrame | None = None,
@@ -1698,6 +1743,10 @@ def plot_resource_utilisation_over_time(
     shared_y_axis : bool, default=True
         If True (and more than one step is plotted), every facet shares a
         y-axis range. If False, each is scaled independently.
+    highlight_bands : list of dict, optional
+        Shaded threshold zones drawn behind the chart - see
+        `plot_duration_distribution`'s parameter of the same name for the
+        dict shape. Spans every facet when more than one step is plotted.
     scenario, resource_map, event_position_df, resource_capacities, capacity :
         Capacity resolution, used only when `as_proportion=True` - see
         `vidigi.analysis._resolve_resource_capacities` for the four routes.
@@ -1712,9 +1761,10 @@ def plot_resource_utilisation_over_time(
     Raises
     ------
     ValueError
-        If no resource_use/resource_use_end pairs were found to plot; or (with
-        `as_proportion=True`) if a step being plotted has no resolvable
-        capacity.
+        If no resource_use/resource_use_end pairs were found to plot; if
+        (with `as_proportion=True`) a step being plotted has no resolvable
+        capacity; or if a `highlight_bands` entry has neither `lower` nor
+        `upper` set, or `lower >= upper`.
 
     Notes
     -----
@@ -1855,6 +1905,16 @@ def plot_resource_utilisation_over_time(
 
     fig.update_xaxes(title_text="snapshot_time")
     fig.update_yaxes(title_text=y_title)
+
+    if highlight_bands:
+        plotted = occupancy[y_col] if show_all_runs else mean_df[y_col]
+        _add_highlight_bands(
+            fig,
+            orientation="y",
+            bands=highlight_bands,
+            value_min=plotted.min(),
+            value_max=plotted.max(),
+        )
 
     return fig
 
@@ -2591,7 +2651,11 @@ def plot_outlier_runs(
 
 
 def _comparison_bar_figure(
-    comparison: ScenarioComparison, *, ci_level: float, y_title: str
+    comparison: ScenarioComparison,
+    *,
+    ci_level: float,
+    y_title: str,
+    highlight_bands: list[dict] | None = None,
 ) -> go.Figure:
     """Two-bar chart with CI error bars and an overlap/p-value verdict title.
 
@@ -2622,6 +2686,23 @@ def _comparison_bar_figure(
     )
     fig.update_layout(title=f"{verdict} ({p_value_text}, Welch's t-test)")
 
+    if highlight_bands:
+        plotted_values = [comparison.mean_a, comparison.mean_b]
+        for mean, ci in (
+            (comparison.mean_a, comparison.ci_a),
+            (comparison.mean_b, comparison.ci_b),
+        ):
+            if pd.notna(ci.half_width):
+                plotted_values.append(mean + ci.half_width)
+                plotted_values.append(mean - ci.half_width)
+        _add_highlight_bands(
+            fig,
+            orientation="y",
+            bands=highlight_bands,
+            value_min=min(plotted_values),
+            value_max=max(plotted_values),
+        )
+
     return fig
 
 
@@ -2637,6 +2718,7 @@ def plot_scenario_comparison(
     warm_up: float = 0,
     label_a: str = "A",
     label_b: str = "B",
+    highlight_bands: list[dict] | None = None,
     **col_kwargs,
 ) -> go.Figure:
     """
@@ -2668,6 +2750,10 @@ def plot_scenario_comparison(
         Pairings whose `first_time` is before `warm_up` are excluded.
     label_a, label_b : str, default="A", "B"
         Names for each scenario, used as bar labels.
+    highlight_bands : list of dict, optional
+        Shaded threshold zones drawn behind the chart - see
+        `plot_duration_distribution`'s parameter of the same name for the
+        dict shape.
     **col_kwargs : dict
         Column-name keyword arguments forwarded to
         `vidigi.analysis.event_durations`, e.g. `run_col_name=`.
@@ -2679,7 +2765,9 @@ def plot_scenario_comparison(
     Raises
     ------
     ValueError
-        If no complete pairs are found in any run of either scenario.
+        If no complete pairs are found in any run of either scenario, or a
+        `highlight_bands` entry has neither `lower` nor `upper` set, or
+        `lower >= upper`.
     ImportError
         If `scipy` is not installed - see `vidigi.analysis.mean_confidence_interval`.
 
@@ -2727,6 +2815,7 @@ def plot_scenario_comparison(
         comparison,
         ci_level=ci_level,
         y_title=f"{what} ({first_event} -> {second_event})",
+        highlight_bands=highlight_bands,
     )
 
 
@@ -2740,6 +2829,7 @@ def plot_resource_utilisation_comparison(
     label_b: str = "B",
     scenario_a=None,
     scenario_b=None,
+    highlight_bands: list[dict] | None = None,
     **kwargs,
 ) -> go.Figure:
     """
@@ -2771,6 +2861,10 @@ def plot_resource_utilisation_comparison(
         `vidigi.analysis._resolve_resource_capacities`. Distinct from
         `label_a`/`label_b`, since the two scenarios being compared usually
         differ in exactly this (e.g. a different resource count).
+    highlight_bands : list of dict, optional
+        Shaded threshold zones drawn behind the chart - see
+        `plot_duration_distribution`'s parameter of the same name for the
+        dict shape.
     **kwargs : dict
         Additional keyword arguments forwarded to
         `vidigi.analysis.resource_utilisation` for *both* logs (e.g.
@@ -2784,7 +2878,9 @@ def plot_resource_utilisation_comparison(
     Raises
     ------
     ValueError
-        If `metric` is not a resource-utilisation column.
+        If `metric` is not a resource-utilisation column, or a
+        `highlight_bands` entry has neither `lower` nor `upper` set, or
+        `lower >= upper`.
     ImportError
         If `scipy` is not installed - see `vidigi.analysis.mean_confidence_interval`.
 
@@ -2818,7 +2914,9 @@ def plot_resource_utilisation_comparison(
     comparison = compare_replication_values(
         values_a, values_b, label_a=label_a, label_b=label_b, ci_level=ci_level
     )
-    return _comparison_bar_figure(comparison, ci_level=ci_level, y_title=metric)
+    return _comparison_bar_figure(
+        comparison, ci_level=ci_level, y_title=metric, highlight_bands=highlight_bands
+    )
 
 
 def plot_metric_vs_arrival_time(
@@ -2834,6 +2932,7 @@ def plot_metric_vs_arrival_time(
     match: MatchMode = "first",
     marker_size: float = 6,
     line_width: float = 3,
+    highlight_bands: list[dict] | None = None,
     title: str | None = None,
     **col_kwargs,
 ) -> go.Figure:
@@ -2889,6 +2988,10 @@ def plot_metric_vs_arrival_time(
         Marker size for the scatter points.
     line_width : float, default=3
         Line width for the rolling-mean trend line, when drawn.
+    highlight_bands : list of dict, optional
+        Shaded threshold zones drawn behind the chart - see
+        `plot_duration_distribution`'s parameter of the same name for the
+        dict shape.
     title : str, optional
         Figure title.
     **col_kwargs : dict
@@ -2905,9 +3008,10 @@ def plot_metric_vs_arrival_time(
         If `colour_by` is not one of the supported values; if both
         `rolling_window` and `rolling_time` are given; if either is given but
         not a positive number; if `warm_up` is negative; if `colour_by` is set
-        but the corresponding column is entirely missing; or if no points
+        but the corresponding column is entirely missing; if no points
         remain to plot after excluding incomplete pairs, missing arrival
-        times, and `warm_up`.
+        times, and `warm_up`; or if a `highlight_bands` entry has neither
+        `lower` nor `upper` set, or `lower >= upper`.
 
     See Also
     --------
@@ -3016,5 +3120,14 @@ def plot_metric_vs_arrival_time(
     fig.update_yaxes(title_text=axis_label)
     if title is not None:
         fig.update_layout(title=title)
+
+    if highlight_bands:
+        _add_highlight_bands(
+            fig,
+            orientation="y",
+            bands=highlight_bands,
+            value_min=df["duration"].min(),
+            value_max=df["duration"].max(),
+        )
 
     return fig

@@ -86,3 +86,22 @@ def test_no_complete_pairs_in_one_scenario_raises(unequal_run_loggers):
 
     with pytest.raises(ValueError, match="No complete"):
         plot_scenario_comparison(_trial_df(unequal_run_loggers), log_b, "arrival", "depart")
+
+
+def test_highlight_bands_adds_shapes(unequal_run_loggers, two_run_loggers):
+    fig = plot_scenario_comparison(
+        _trial_df(unequal_run_loggers),
+        _trial_df(two_run_loggers),
+        "arrival",
+        "depart",
+        highlight_bands=[{"upper": 4, "colour": "green", "label": "target"}],
+    )
+    assert len(fig.layout.shapes) == 2  # hrect + one boundary hline
+    assert any(t.name == "target" for t in fig.data)
+
+
+def test_no_highlight_bands_adds_no_shapes(unequal_run_loggers, two_run_loggers):
+    fig = plot_scenario_comparison(
+        _trial_df(unequal_run_loggers), _trial_df(two_run_loggers), "arrival", "depart"
+    )
+    assert fig.layout.shapes == ()

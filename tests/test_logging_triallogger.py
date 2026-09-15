@@ -963,6 +963,18 @@ def test_plot_queue_size_mean_only(two_run_loggers):
     assert isinstance(fig, go.Figure)
 
 
+def test_plot_queue_size_highlight_bands_is_passed_through(two_run_loggers):
+    trial = TrialLogger(two_run_loggers)
+
+    fig = trial.plot_queue_size(
+        event_list=["waiting"],
+        limit_duration=20,
+        highlight_bands=[{"upper": 1, "colour": "green", "label": "quiet"}],
+    )
+
+    assert any(t.name == "quiet" for t in fig.data)
+
+
 def test_plot_queue_size_backend_go_is_passed_through(long_queue_logger):
     """`backend="go"` reaches vidigi.plots.plot_queue_size, and reports the same
     queue length as the default express backend does.
@@ -1205,6 +1217,20 @@ def test_plot_resource_utilisation_over_time_is_passed_through(resource_use_logg
     assert list(run_traces["1"].y) == [2, 1, 0, 0, 0]
     assert list(run_traces["2"].y) == [1, 2, 2, 1, 0]
     assert all(trace.line.shape == "hv" for trace in fig.data)
+
+
+def test_plot_resource_utilisation_over_time_highlight_bands_is_passed_through(
+    resource_use_loggers,
+):
+    trial = TrialLogger(resource_use_loggers)
+
+    fig = trial.plot_resource_utilisation_over_time(
+        every_x_time_units=5,
+        limit_duration=20,
+        highlight_bands=[{"upper": 1, "colour": "green", "label": "quiet"}],
+    )
+
+    assert any(t.name == "quiet" for t in fig.data)
 
 
 def test_plot_resource_utilisation_over_time_resource_col_name_is_passed_through():
@@ -1587,6 +1613,20 @@ def test_plot_metric_vs_arrival_time_is_passed_through(unequal_run_loggers):
     # decides order: entity 1's three runs (4, 5, 9), then entity 2's (4, 5,
     # 9), then run 2's extra entities 3 and 4 (5, 5).
     assert list(fig.data[0].y) == pytest.approx([4, 5, 9, 4, 5, 9, 5, 5])
+
+
+def test_plot_metric_vs_arrival_time_highlight_bands_is_passed_through(
+    unequal_run_loggers,
+):
+    trial = TrialLogger(unequal_run_loggers)
+
+    fig = trial.plot_metric_vs_arrival_time(
+        "arrival",
+        "depart",
+        highlight_bands=[{"upper": 4, "colour": "green", "label": "fast"}],
+    )
+
+    assert any(t.name == "fast" for t in fig.data)
 
 
 def test_plot_metric_vs_arrival_time_colour_by_is_passed_through(unequal_run_loggers):

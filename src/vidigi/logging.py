@@ -2345,6 +2345,7 @@ class TrialLogger:
         interactive=True,
         show_all_runs=True,
         shared_y_axis=True,
+        highlight_bands: list[dict] | None = None,
         warm_up: int = 0,
         backend: PlotBackend = "express",
         **kwargs,
@@ -2371,6 +2372,9 @@ class TrialLogger:
         show_all_runs : bool, default=True
             If True, plots all runs with semi-transparent lines and overlays
             the mean trajectory. If False, only the mean trajectory is plotted.
+        highlight_bands : list of dict, optional
+            Shaded threshold zones drawn behind the chart - see
+            `vidigi.plots.plot_duration_distribution` for the dict shape.
         warm_up : int, default=0
             Time at which the plotted window begins. Snapshots run from `warm_up`
             to `limit_duration`. See `vidigi.prep.reshape_for_animations` for why
@@ -2433,6 +2437,7 @@ class TrialLogger:
             warm_up=warm_up,
             show_all_runs=show_all_runs,
             shared_y_axis=shared_y_axis,
+            highlight_bands=highlight_bands,
             backend=backend,
             **kwargs,
         )
@@ -2564,6 +2569,7 @@ class TrialLogger:
         as_proportion: bool = False,
         show_all_runs: bool = True,
         shared_y_axis: bool = True,
+        highlight_bands: list[dict] | None = None,
         scenario=None,
         resource_map: dict | None = None,
         event_position_df: pd.DataFrame | None = None,
@@ -2598,6 +2604,10 @@ class TrialLogger:
         shared_y_axis : bool, default=True
             If True (and more than one step is plotted), every facet shares a
             y-axis range.
+        highlight_bands : list of dict, optional
+            Shaded threshold zones drawn behind the chart - see
+            `vidigi.plots.plot_duration_distribution` for the dict shape.
+            Spans every facet when more than one step is plotted.
         scenario, resource_map, event_position_df, resource_capacities, capacity :
             Capacity resolution, used only when `as_proportion=True`. `scenario`
             defaults to the one attached to this `TrialLogger` (if any) when not
@@ -2639,6 +2649,7 @@ class TrialLogger:
             as_proportion=as_proportion,
             show_all_runs=show_all_runs,
             shared_y_axis=shared_y_axis,
+            highlight_bands=highlight_bands,
             scenario=scenario,
             resource_map=resource_map,
             event_position_df=event_position_df,
@@ -3080,7 +3091,7 @@ class TrialLogger:
         **kwargs : dict
             Additional keyword arguments forwarded to
             `vidigi.plots.plot_scenario_comparison` (e.g. `what=`,
-            `ci_level=`, `label_a=`, `label_b=`).
+            `ci_level=`, `label_a=`, `label_b=`, `highlight_bands=`).
 
         Returns
         -------
@@ -3191,6 +3202,7 @@ class TrialLogger:
         label_b: str | None = None,
         scenario_a=None,
         scenario_b=None,
+        highlight_bands: list[dict] | None = None,
         **kwargs,
     ):
         """
@@ -3218,6 +3230,9 @@ class TrialLogger:
             `vidigi.analysis._resolve_resource_capacities`. Default to this
             trial's and `other`'s own attached `.scenario`, exactly as
             `get_resource_utilisation` defaults `scenario=self.scenario`.
+        highlight_bands : list of dict, optional
+            Shaded threshold zones drawn behind the chart - see
+            `vidigi.plots.plot_duration_distribution` for the dict shape.
         **kwargs : dict
             Additional keyword arguments forwarded to
             `vidigi.plots.plot_resource_utilisation_comparison` for both
@@ -3258,6 +3273,7 @@ class TrialLogger:
             label_b=label_b,
             scenario_a=scenario_a,
             scenario_b=scenario_b,
+            highlight_bands=highlight_bands,
             **kwargs,
         )
 
@@ -3320,6 +3336,7 @@ class TrialLogger:
         match: MatchMode = "first",
         marker_size: float = 6,
         line_width: float = 3,
+        highlight_bands: list[dict] | None = None,
         title: str | None = None,
         **kwargs,
     ):
@@ -3353,6 +3370,9 @@ class TrialLogger:
             Marker size for the scatter points.
         line_width : float, default=3
             Line width for the rolling-mean trend line, when drawn.
+        highlight_bands : list of dict, optional
+            Shaded threshold zones drawn behind the chart - see
+            `vidigi.plots.plot_duration_distribution` for the dict shape.
         title : str, optional
             Figure title.
         **kwargs : dict
@@ -3380,6 +3400,7 @@ class TrialLogger:
             match=match,
             marker_size=marker_size,
             line_width=line_width,
+            highlight_bands=highlight_bands,
             title=title,
             **kwargs,
         )

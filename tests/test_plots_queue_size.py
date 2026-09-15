@@ -203,3 +203,44 @@ def test_go_backend_warns_and_ignores_px_kwargs(two_run_loggers):
         )
 
     assert fig.layout.title.text is None
+
+
+# --------------------------------------------------------------------------- #
+# highlight_bands
+# --------------------------------------------------------------------------- #
+
+
+@pytest.mark.parametrize("backend", ["express", "go"])
+def test_highlight_bands_adds_shapes(two_run_loggers, backend):
+    fig = plot_queue_size(
+        _trial_df(two_run_loggers),
+        ["waiting"],
+        limit_duration=20,
+        backend=backend,
+        highlight_bands=[{"upper": 1, "colour": "green", "label": "quiet"}],
+    )
+    assert len(fig.layout.shapes) == 2  # hrect + one boundary hline
+    assert any(t.name == "quiet" for t in fig.data)
+
+
+@pytest.mark.parametrize("backend", ["express", "go"])
+def test_no_highlight_bands_adds_no_shapes(two_run_loggers, backend):
+    fig = plot_queue_size(
+        _trial_df(two_run_loggers), ["waiting"], limit_duration=20, backend=backend
+    )
+    assert fig.layout.shapes == ()
+
+
+@pytest.mark.parametrize("backend", ["express", "go"])
+def test_highlight_bands_spans_every_facet(backend):
+    fig = plot_queue_size(
+        _two_event_log(),
+        ["waiting", "triage"],
+        limit_duration=10,
+        every_x_time_units=10,
+        backend=backend,
+        highlight_bands=[{"upper": 1, "colour": "green"}],
+    )
+    rects = [s for s in fig.layout.shapes if s.type == "rect"]
+    assert len(rects) == 2
+    assert {r.yref for r in rects} == {"y", "y2"}
