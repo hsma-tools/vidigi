@@ -1,10 +1,12 @@
 """Tests for `TrialLogger.compare_event_duration_stat`,
-`.plot_event_duration_comparison` and `.compare_resource_utilisation`.
+`.plot_event_duration_comparison`, `.compare_resource_utilisation` and
+`.plot_resource_utilisation_comparison`.
 
-These are thin delegators - `test_analysis_scenario_comparison.py` and
-`test_plots_scenario_comparison.py` cover the underlying comparison logic in
-depth; this file checks the delegation itself: argument forwarding, label
-defaulting, and the `TypeError` guard on `other`.
+These are thin delegators - `test_analysis_scenario_comparison.py`,
+`test_plots_scenario_comparison.py` and
+`test_plots_resource_utilisation_comparison.py` cover the underlying
+comparison logic in depth; this file checks the delegation itself: argument
+forwarding, label/scenario defaulting, and the `TypeError` guard on `other`.
 """
 
 import plotly.graph_objects as go
@@ -148,3 +150,42 @@ def test_compare_resource_utilisation_raises_typeerror_for_a_non_triallogger(
 
     with pytest.raises(TypeError, match="TrialLogger"):
         trial_a.compare_resource_utilisation(EventLogger(run_number=1))
+
+
+def test_plot_resource_utilisation_comparison_returns_a_figure(resource_use_loggers):
+    trial_a = TrialLogger(resource_use_loggers)
+    trial_b = TrialLogger(resource_use_loggers)
+
+    fig = trial_a.plot_resource_utilisation_comparison(
+        trial_b, resource_capacities={"treatment_begins": 3}, limit_duration=20
+    )
+
+    assert isinstance(fig, go.Figure)
+    assert list(fig.data[0].x) == ["A", "B"]
+
+
+def test_plot_resource_utilisation_comparison_defaults_scenario_from_each_trial(
+    resource_use_loggers, scenario_with_resources, scenario_with_resources_dict
+):
+    """`scenario_a`/`scenario_b` default to each trial's own `.scenario`,
+    exactly as `get_resource_utilisation` defaults `scenario=self.scenario` -
+    so passing only `resource_map` still resolves capacity correctly."""
+    trial_a = TrialLogger(resource_use_loggers, scenario=scenario_with_resources)
+    trial_b = TrialLogger(resource_use_loggers, scenario=scenario_with_resources_dict)
+
+    fig = trial_a.plot_resource_utilisation_comparison(
+        trial_b,
+        resource_map={"treatment_begins": "n_cubicles"},
+        limit_duration=20,
+    )
+
+    assert list(fig.data[0].y) == pytest.approx([0.375, 0.375])
+
+
+def test_plot_resource_utilisation_comparison_raises_typeerror_for_a_non_triallogger(
+    resource_use_loggers,
+):
+    trial_a = TrialLogger(resource_use_loggers)
+
+    with pytest.raises(TypeError, match="TrialLogger"):
+        trial_a.plot_resource_utilisation_comparison(EventLogger(run_number=1))

@@ -33,6 +33,7 @@ from vidigi.analysis import (
     DurationStat,
     MatchMode,
     ResourceUtilisationBy,
+    ScenarioComparison,
     UnclosedResourceUse,
     WarmUpMethod,
     _ensemble_mean,
@@ -44,6 +45,7 @@ from vidigi.analysis import (
     compare_replication_values,
     entity_metric_by_arrival,
     event_durations,
+    flag_outlier_runs,
     mean_confidence_interval,
     queue_size_over_time,
     replication_means,
@@ -1880,6 +1882,239 @@ def plot_replication_analysis(
     return fig
 
 
+def _beeswarm_row_candidates():
+    """`0, 1, -1, 2, -2, 3, -3, ...` - the row-placement order `_beeswarm_offsets`
+    tries a value at, closest to the centre line first."""
+    yield 0
+    k = 1
+    while True:
+        yield k
+        yield -k
+        k += 1
+
+
+def _beeswarm_offsets(values: np.ndarray, *, spacing: float) -> np.ndarray:
+    """Row offset for each value so that values within `spacing` of each
+    other, in the order given, don't share a row - a simple greedy
+    approximation of a beeswarm layout.
+
+    Not pixel-aware: `spacing` is in the same units as `values`, not
+    rendered distance, so what counts as "close enough to need a new row"
+    depends on the figure size the caller ultimately draws at.
+
+    Parameters
+    ----------
+    values : numpy.ndarray
+        The values to place, in the order rows are assigned. Callers that
+        want the tightest packing should pass ascending-sorted values; this
+        function does not sort them itself, so a caller can also preserve a
+        specific draw order (e.g. run order) if that matters more.
+    spacing : float
+        Minimum x-distance required between two values before they may
+        share a row.
+
+    Returns
+    -------
+    numpy.ndarray
+        One integer offset per value, in the same order as `values`.
+    """
+    offsets = np.zeros(len(values))
+    last_in_row: dict[int, float] = {}
+
+    for i, v in enumerate(values):
+        for row in _beeswarm_row_candidates():
+            if row not in last_in_row or (v - last_in_row[row]) >= spacing:
+                offsets[i] = row
+                last_in_row[row] = v
+                break
+
+    return offsets
+
+
+def plot_outlier_runs(
+    event_log: pd.DataFrame,
+    first_event: str,
+    second_event: str,
+    *,
+    what: DurationStat = "mean",
+    match: MatchMode = "first",
+    warm_up: float = 0,
+    iqr_multiplier: float = 1.5,
+    marker_size: float = 10,
+    spacing: float | None = None,
+    **col_kwargs,
+) -> go.Figure:
+    """
+    Horizontal beeswarm of per-replication values, flagging outlier runs.
+
+    Visualises `vidigi.analysis.flag_outlier_runs`: each run's per-replication
+    value is drawn as a point, spread vertically into a beeswarm layout so
+    close-together values stay individually visible rather than overlapping
+    on one line, coloured (and shaped, for a colourblind-safe second cue) by
+    whether Tukey's fence flags it as an outlier. Shaded red bands, with a
+    dashed boundary line, mark the region beyond each fence.
+
+    Parameters
+    ----------
+    event_log : pandas.DataFrame
+        Long-format event log spanning one or more runs.
+    first_event, second_event : str
+        The two events to pair - see `vidigi.analysis.event_durations`.
+    what : str, default="mean"
+        The per-replication statistic to compute - see
+        `vidigi.analysis.replication_means`.
+    match : {"first", "last", "occurrence"}, default="first"
+        How repeated occurrences of the two events are paired.
+    warm_up : float, default=0
+        Pairings whose `first_time` is before `warm_up` are excluded.
+    iqr_multiplier : float, default=1.5
+        Fence width in IQRs - see `vidigi.analysis.flag_outlier_runs`.
+    marker_size : float, default=10
+        Marker size for each run's point.
+    spacing : float, optional
+        Minimum x-distance (in the same units as the plotted statistic)
+        between two points before the beeswarm pushes one onto another row.
+        `None` (default) uses a twentieth of the value range - a reasonable
+        default at a normal figure size, not a pixel-exact computation
+        (this function has no way to know the rendered figure size), so a
+        much wider or narrower `width=`/`height=` than usual may want an
+        explicit value.
+    **col_kwargs : dict
+        Column-name keyword arguments forwarded to
+        `vidigi.analysis.event_durations`, e.g. `run_col_name=`.
+
+    Returns
+    -------
+    plotly.graph_objects.Figure
+
+    Raises
+    ------
+    ValueError
+        If no complete pairs are found in any run, or `iqr_multiplier` is
+        negative.
+
+    See Also
+    --------
+    vidigi.analysis.flag_outlier_runs : The underlying implementation.
+    plot_replication_analysis : A different per-replication diagnostic (precision, not outliers).
+
+    Examples
+    --------
+    >>> plot_outlier_runs(trial.to_dataframe(), "start", "end")
+    <plotly.graph_objs._figure.Figure>
+    """
+    durations = event_durations(
+        event_log,
+        first_event,
+        second_event,
+        match=match,
+        warm_up=warm_up,
+        keep_incomplete=False,
+        **col_kwargs,
+    )
+    run_values = replication_means(durations, what=what)
+    if run_values.empty:
+        raise ValueError(
+            f"No complete '{first_event}' -> '{second_event}' pairs were "
+            f"found in any run to compute a per-replication statistic from."
+        )
+    flagged = flag_outlier_runs(run_values, iqr_multiplier=iqr_multiplier)
+
+    values = flagged["value"].to_numpy()
+    value_min, value_max = values.min(), values.max()
+    value_range = value_max - value_min
+    if spacing is None:
+        spacing = value_range / 20 if value_range > 0 else 1.0
+    # Sorted ascending for the tightest packing - _beeswarm_offsets places
+    # values in the order given, and a beeswarm packs tightest sorted.
+    order = np.argsort(values, kind="stable")
+    offsets = np.empty_like(values)
+    offsets[order] = _beeswarm_offsets(values[order], spacing=spacing)
+
+    lower_fence = flagged["lower_fence"].iloc[0]
+    upper_fence = flagged["upper_fence"].iloc[0]
+    margin = max(value_range, spacing) * 0.15
+
+    x_min = min(value_min, lower_fence) - margin
+    x_max = max(value_max, upper_fence) + margin
+
+    fig = go.Figure()
+    fig.add_vrect(x0=x_min, x1=lower_fence, fillcolor="red", opacity=0.08, line_width=0)
+    fig.add_vrect(x0=upper_fence, x1=x_max, fillcolor="red", opacity=0.08, line_width=0)
+    fig.add_vline(x=lower_fence, line_dash="dash", line_color="red")
+    fig.add_vline(x=upper_fence, line_dash="dash", line_color="red")
+
+    is_outlier = flagged["is_outlier"].to_numpy()
+    for flag, name, color, symbol in (
+        (False, "run", "steelblue", "circle"),
+        (True, "outlier run", "crimson", "diamond"),
+    ):
+        mask = is_outlier == flag
+        if not mask.any():
+            continue
+        subset = flagged[mask]
+        fig.add_trace(
+            go.Scatter(
+                x=subset["value"],
+                y=offsets[mask],
+                mode="markers",
+                marker=dict(size=marker_size, color=color, symbol=symbol),
+                name=name,
+                text=[f"run {r}" for r in subset["run_number"]],
+                hovertemplate="%{text}<br>value=%{x:.3g}<extra></extra>",
+            )
+        )
+
+    fig.update_xaxes(
+        title_text=f"{what} ({first_event} -> {second_event})", range=[x_min, x_max]
+    )
+    fig.update_yaxes(showticklabels=False, title_text="", zeroline=False)
+    n_outliers = int(is_outlier.sum())
+    fig.update_layout(
+        title=(
+            f"{n_outliers} of {len(flagged)} runs flagged (Tukey {iqr_multiplier}x "
+            f"IQR fence: {lower_fence:.3g} to {upper_fence:.3g})"
+        )
+    )
+
+    return fig
+
+
+def _comparison_bar_figure(
+    comparison: ScenarioComparison, *, ci_level: float, y_title: str
+) -> go.Figure:
+    """Two-bar chart with CI error bars and an overlap/p-value verdict title.
+
+    Shared by `plot_scenario_comparison` and
+    `plot_resource_utilisation_comparison` - both turn a `ScenarioComparison`
+    into the same picture, differing only in what the y-axis represents.
+    """
+    fig = go.Figure(
+        go.Bar(
+            x=[comparison.label_a, comparison.label_b],
+            y=[comparison.mean_a, comparison.mean_b],
+            error_y=dict(
+                type="data",
+                array=[comparison.ci_a.half_width, comparison.ci_b.half_width],
+            ),
+        )
+    )
+    fig.update_yaxes(title_text=y_title)
+
+    if comparison.ci_overlap is None:
+        verdict = "not enough replications to assess overlap"
+    elif comparison.ci_overlap:
+        verdict = f"{int(ci_level * 100)}% CIs overlap - not conclusively different"
+    else:
+        verdict = f"{int(ci_level * 100)}% CIs do not overlap"
+    p_value_text = (
+        f"p={comparison.p_value:.3g}" if not np.isnan(comparison.p_value) else "p=n/a"
+    )
+    fig.update_layout(title=f"{verdict} ({p_value_text}, Welch's t-test)")
+
+    return fig
+
+
 def plot_scenario_comparison(
     event_log_a: pd.DataFrame,
     event_log_b: pd.DataFrame,
@@ -1978,31 +2213,102 @@ def plot_scenario_comparison(
     comparison = compare_replication_values(
         values_a, values_b, label_a=label_a, label_b=label_b, ci_level=ci_level
     )
+    return _comparison_bar_figure(
+        comparison,
+        ci_level=ci_level,
+        y_title=f"{what} ({first_event} -> {second_event})",
+    )
 
-    fig = go.Figure(
-        go.Bar(
-            x=[label_a, label_b],
-            y=[comparison.mean_a, comparison.mean_b],
-            error_y=dict(
-                type="data",
-                array=[comparison.ci_a.half_width, comparison.ci_b.half_width],
-            ),
+
+def plot_resource_utilisation_comparison(
+    event_log_a: pd.DataFrame,
+    event_log_b: pd.DataFrame,
+    *,
+    metric: ResourceMetric = "utilisation",
+    ci_level: float = 0.95,
+    label_a: str = "A",
+    label_b: str = "B",
+    scenario_a=None,
+    scenario_b=None,
+    **kwargs,
+) -> go.Figure:
+    """
+    Bar chart comparing a resource utilisation metric between two scenarios.
+
+    The resource-utilisation counterpart to `plot_scenario_comparison`: turns
+    `vidigi.analysis.compare_replication_values` into the same two-bar chart
+    with CI error bars, built here from `vidigi.analysis.resource_utilisation`
+    instead of `event_durations`. Always pools every step/resource together
+    into one blended per-run figure (`by="run"`, see
+    `vidigi.analysis.resource_utilisation`); to compare one specific step or
+    resource instead, call `resource_utilisation(by=...)` on each log
+    directly and pass the `metric` column into `compare_replication_values`.
+
+    Parameters
+    ----------
+    event_log_a, event_log_b : pandas.DataFrame
+        Long-format event logs, one per scenario, e.g. from
+        `TrialLogger.to_dataframe()`.
+    metric : {"utilisation", "busy_time", "mean_in_use"}, default="utilisation"
+        Which `vidigi.analysis.resource_utilisation` column to compare.
+    ci_level : float, default=0.95
+        Confidence level for each scenario's interval and for the
+        significance test.
+    label_a, label_b : str, default="A", "B"
+        Names for each scenario, used as bar labels.
+    scenario_a, scenario_b : object or dict, optional
+        Capacity-resolution `scenario` for each log - see
+        `vidigi.analysis._resolve_resource_capacities`. Distinct from
+        `label_a`/`label_b`, since the two scenarios being compared usually
+        differ in exactly this (e.g. a different resource count).
+    **kwargs : dict
+        Additional keyword arguments forwarded to
+        `vidigi.analysis.resource_utilisation` for *both* logs (e.g.
+        `resource_map=`, `event_position_df=`, `resource_capacities=`,
+        `capacity=`, `warm_up=`, `limit_duration=`, `unclosed=`).
+
+    Returns
+    -------
+    plotly.graph_objects.Figure
+
+    Raises
+    ------
+    ValueError
+        If `metric` is not a resource-utilisation column.
+    ImportError
+        If `scipy` is not installed - see `vidigi.analysis.mean_confidence_interval`.
+
+    See Also
+    --------
+    vidigi.analysis.compare_replication_values : The underlying implementation.
+    plot_scenario_comparison : The event-duration analogue.
+
+    Examples
+    --------
+    >>> plot_resource_utilisation_comparison(
+    ...     baseline.to_dataframe(), extra_staff.to_dataframe(),
+    ...     scenario_a=baseline_params, scenario_b=extra_staff_params,
+    ...     resource_map={"treatment_begins": "n_cubicles"},
+    ...     label_a="baseline", label_b="extra staff",
+    ... )
+    <plotly.graph_objs._figure.Figure>
+    """
+    if metric not in ("utilisation", "busy_time", "mean_in_use"):
+        raise ValueError(
+            f"`metric` must be one of 'utilisation', 'busy_time', "
+            f"'mean_in_use'; got {metric!r}."
         )
-    )
-    fig.update_yaxes(title_text=f"{what} ({first_event} -> {second_event})")
 
-    if comparison.ci_overlap is None:
-        verdict = "not enough replications to assess overlap"
-    elif comparison.ci_overlap:
-        verdict = f"{int(ci_level * 100)}% CIs overlap - not conclusively different"
-    else:
-        verdict = f"{int(ci_level * 100)}% CIs do not overlap"
-    p_value_text = (
-        f"p={comparison.p_value:.3g}" if not np.isnan(comparison.p_value) else "p=n/a"
+    values_a = resource_utilisation(
+        event_log_a, by="run", scenario=scenario_a, **kwargs
+    )[metric]
+    values_b = resource_utilisation(
+        event_log_b, by="run", scenario=scenario_b, **kwargs
+    )[metric]
+    comparison = compare_replication_values(
+        values_a, values_b, label_a=label_a, label_b=label_b, ci_level=ci_level
     )
-    fig.update_layout(title=f"{verdict} ({p_value_text}, Welch's t-test)")
-
-    return fig
+    return _comparison_bar_figure(comparison, ci_level=ci_level, y_title=metric)
 
 
 def plot_metric_vs_arrival_time(

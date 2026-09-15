@@ -56,6 +56,9 @@ from vidigi.plots import (
     plot_metric_vs_arrival_time as _plot_metric_vs_arrival_time,
 )
 from vidigi.plots import (
+    plot_outlier_runs as _plot_outlier_runs,
+)
+from vidigi.plots import (
     plot_queue_size as _plot_queue_size,
 )
 from vidigi.plots import (
@@ -63,6 +66,9 @@ from vidigi.plots import (
 )
 from vidigi.plots import (
     plot_resource_utilisation as _plot_resource_utilisation,
+)
+from vidigi.plots import (
+    plot_resource_utilisation_comparison as _plot_resource_utilisation_comparison,
 )
 from vidigi.plots import (
     plot_resource_utilisation_over_time as _plot_resource_utilisation_over_time,
@@ -2651,6 +2657,50 @@ class TrialLogger:
             )
         return flag_outlier_runs(run_values, iqr_multiplier=iqr_multiplier)
 
+    def plot_outlier_runs(
+        self,
+        first_event,
+        second_event,
+        **kwargs,
+    ):
+        """
+        Plot a horizontal beeswarm of per-replication values, flagging outliers.
+
+        Thin wrapper over `vidigi.plots.plot_outlier_runs`, called on this
+        trial's combined dataframe. See that function for the full
+        parameter list.
+
+        Parameters
+        ----------
+        first_event, second_event : str
+            The two events to pair. See `vidigi.analysis.event_durations`.
+        **kwargs : dict
+            Additional keyword arguments forwarded to
+            `vidigi.plots.plot_outlier_runs` (e.g. `what=`, `iqr_multiplier=`,
+            `marker_size=`, `spacing=`).
+
+        Returns
+        -------
+        plotly.graph_objects.Figure
+
+        Raises
+        ------
+        ValueError
+            If no complete pairs are found in any run, or `iqr_multiplier`
+            is negative.
+
+        See Also
+        --------
+        vidigi.plots.plot_outlier_runs : The underlying implementation.
+        get_outlier_runs : The underlying per-run table.
+        """
+        return _plot_outlier_runs(
+            self._trial_dataframe,
+            first_event,
+            second_event,
+            **kwargs,
+        )
+
     def get_replication_precision(
         self,
         first_event,
@@ -2973,8 +3023,7 @@ class TrialLogger:
         TypeError
             If `other` is not a `TrialLogger`.
         ValueError
-            If `metric` is not a resource-utilisation column, or either
-            trial has no runs to compare.
+            If `metric` is not a resource-utilisation column.
         ImportError
             If `scipy` is not installed.
 
@@ -2994,12 +3043,88 @@ class TrialLogger:
 
         values_a = self.get_resource_utilisation(by="run", **kwargs)[metric]
         values_b = other.get_resource_utilisation(by="run", **kwargs)[metric]
-        if values_a.empty or values_b.empty:
-            raise ValueError(
-                "One or both trials have no runs to compare resource utilisation for."
-            )
         return compare_replication_values(
             values_a, values_b, label_a=label_a, label_b=label_b, ci_level=ci_level
+        )
+
+    def plot_resource_utilisation_comparison(
+        self,
+        other: "TrialLogger",
+        *,
+        metric: ResourceMetric = "utilisation",
+        ci_level: float = 0.95,
+        label_a: str | None = None,
+        label_b: str | None = None,
+        scenario_a=None,
+        scenario_b=None,
+        **kwargs,
+    ):
+        """
+        Plot a bar chart comparing a resource utilisation metric between two trials.
+
+        Thin wrapper over `vidigi.plots.plot_resource_utilisation_comparison`,
+        called on this trial's and `other`'s combined dataframes - the plot
+        counterpart to `compare_resource_utilisation`, as
+        `plot_event_duration_comparison` is to `compare_event_duration_stat`.
+
+        Parameters
+        ----------
+        other : TrialLogger
+            The trial to compare against.
+        metric : {"utilisation", "busy_time", "mean_in_use"}, default="utilisation"
+            Which `vidigi.analysis.resource_utilisation` column to compare.
+        ci_level : float, default=0.95
+            Confidence level for each side's interval and the significance
+            test.
+        label_a, label_b : str, optional
+            Names for each scenario. Default to this trial's and `other`'s
+            `.label`, falling back to `"A"`/`"B"` if neither has one.
+        scenario_a, scenario_b : object or dict, optional
+            Capacity-resolution `scenario` for each trial - see
+            `vidigi.analysis._resolve_resource_capacities`. Default to this
+            trial's and `other`'s own attached `.scenario`, exactly as
+            `get_resource_utilisation` defaults `scenario=self.scenario`.
+        **kwargs : dict
+            Additional keyword arguments forwarded to
+            `vidigi.plots.plot_resource_utilisation_comparison` for both
+            trials (e.g. `resource_map=`, `warm_up=`).
+
+        Returns
+        -------
+        plotly.graph_objects.Figure
+
+        Raises
+        ------
+        TypeError
+            If `other` is not a `TrialLogger`.
+        ValueError
+            If `metric` is not a resource-utilisation column, or either
+            trial has no runs to compare.
+        ImportError
+            If `scipy` is not installed.
+
+        See Also
+        --------
+        vidigi.plots.plot_resource_utilisation_comparison : The underlying implementation.
+        compare_resource_utilisation : The underlying numbers.
+        """
+        self._check_other_is_trial_logger(other)
+        label_a = label_a or self.label or "A"
+        label_b = label_b or other.label or "B"
+        if scenario_a is None:
+            scenario_a = self.scenario
+        if scenario_b is None:
+            scenario_b = other.scenario
+        return _plot_resource_utilisation_comparison(
+            self._trial_dataframe,
+            other._trial_dataframe,
+            metric=metric,
+            ci_level=ci_level,
+            label_a=label_a,
+            label_b=label_b,
+            scenario_a=scenario_a,
+            scenario_b=scenario_b,
+            **kwargs,
         )
 
     def get_entity_metric_by_arrival(

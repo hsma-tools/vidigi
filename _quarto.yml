@@ -145,8 +145,10 @@ quartodoc:
         - plots.plot_resource_utilisation_over_time
         - plots.plot_warm_up_diagnostic
         - plots.plot_replication_analysis
+        - plots.plot_outlier_runs
         - plots.plot_metric_vs_arrival_time
         - plots.plot_scenario_comparison
+        - plots.plot_resource_utilisation_comparison
     - title: Event Positioning Utility Functions and Classes
       desc: ""
       contents:

@@ -1,10 +1,12 @@
-"""Tests for `TrialLogger.get_outlier_runs`.
+"""Tests for `TrialLogger.get_outlier_runs` and `.plot_outlier_runs`.
 
-A thin delegator over `vidigi.analysis.flag_outlier_runs` -
-`test_analysis_outliers.py` covers the fencing logic itself; this file
+Thin delegators over `vidigi.analysis.flag_outlier_runs` and
+`vidigi.plots.plot_outlier_runs` - `test_analysis_outliers.py` and
+`test_plots_outlier_runs.py` cover the underlying logic itself; this file
 checks the delegation: argument forwarding and the empty-result error.
 """
 
+import plotly.graph_objects as go
 import pytest
 
 from vidigi.logging import EventLogger, TrialLogger
@@ -61,3 +63,20 @@ def test_no_complete_pairs_raises():
 
     with pytest.raises(ValueError, match="No complete"):
         trial.get_outlier_runs("arrival", "depart")
+
+
+def test_plot_outlier_runs_returns_a_figure(six_run_loggers_with_one_outlier):
+    trial = TrialLogger(six_run_loggers_with_one_outlier)
+
+    fig = trial.plot_outlier_runs("arrival", "depart")
+
+    assert isinstance(fig, go.Figure)
+
+
+def test_plot_outlier_runs_forwards_iqr_multiplier(six_run_loggers_with_one_outlier):
+    trial = TrialLogger(six_run_loggers_with_one_outlier)
+
+    fig = trial.plot_outlier_runs("arrival", "depart", iqr_multiplier=3.0)
+
+    names = [t.name for t in fig.data]
+    assert "outlier run" not in names
