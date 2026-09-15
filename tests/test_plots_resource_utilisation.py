@@ -190,6 +190,108 @@ def test_bar_chart_no_resource_use_events_raises(two_run_loggers):
 
 
 # --------------------------------------------------------------------------- #
+# plot_resource_utilisation: kind="box"/"violin", highlight_bands
+# --------------------------------------------------------------------------- #
+
+
+@pytest.mark.parametrize("kind", ["box", "violin"])
+def test_box_and_violin_carry_the_hand_computed_per_run_utilisation(
+    resource_use_loggers, kind
+):
+    """`resource_use_loggers`'s own docstring hand-computes utilisation 0.25
+    (run 1) and 0.5 (run 2) for `by="run"` with this capacity."""
+    fig = plot_resource_utilisation(
+        _trial_df(resource_use_loggers),
+        by="run",
+        kind=kind,
+        error_bars=None,
+        resource_capacities={"treatment_begins": 3},
+        limit_duration=20,
+    )
+    assert sorted(fig.data[0].y) == pytest.approx([0.25, 0.5])
+
+
+def test_box_kind_uses_a_go_box_trace(resource_use_loggers):
+    fig = plot_resource_utilisation(
+        _trial_df(resource_use_loggers),
+        by="run",
+        kind="box",
+        error_bars=None,
+        resource_capacities={"treatment_begins": 3},
+        limit_duration=20,
+    )
+    assert isinstance(fig.data[0], go.Box)
+
+
+def test_error_bars_with_box_kind_raises(resource_use_loggers):
+    with pytest.raises(ValueError, match="error_bars"):
+        plot_resource_utilisation(
+            _trial_df(resource_use_loggers),
+            by="run",
+            kind="box",
+            resource_capacities={"treatment_begins": 3},
+            limit_duration=20,
+        )
+
+
+def test_show_runs_sets_boxpoints_all_for_box(resource_use_loggers):
+    fig = plot_resource_utilisation(
+        _trial_df(resource_use_loggers),
+        by="run",
+        kind="box",
+        error_bars=None,
+        show_runs=True,
+        resource_capacities={"treatment_begins": 3},
+        limit_duration=20,
+    )
+    assert fig.data[0].boxpoints == "all"
+
+
+def test_show_runs_false_leaves_boxpoints_unset_for_box(resource_use_loggers):
+    fig = plot_resource_utilisation(
+        _trial_df(resource_use_loggers),
+        by="run",
+        kind="box",
+        error_bars=None,
+        show_runs=False,
+        resource_capacities={"treatment_begins": 3},
+        limit_duration=20,
+    )
+    assert fig.data[0].boxpoints != "all"
+
+
+def test_invalid_kind_raises(resource_use_loggers):
+    with pytest.raises(ValueError, match="`kind`"):
+        plot_resource_utilisation(
+            _trial_df(resource_use_loggers),
+            kind="nonsense",
+            resource_capacities={"treatment_begins": 3},
+            limit_duration=20,
+        )
+
+
+def test_highlight_bands_adds_shapes_to_a_bar_chart(resource_use_loggers):
+    fig = plot_resource_utilisation(
+        _trial_df(resource_use_loggers),
+        resource_capacities={"treatment_begins": 3},
+        limit_duration=20,
+        highlight_bands=[{"upper": 0.3, "colour": "green", "label": "idle"}],
+    )
+    assert len(fig.layout.shapes) >= 2  # hrect + boundary hline (+ the y=1.0 hline)
+    assert any(t.name == "idle" for t in fig.data)
+
+
+def test_no_highlight_bands_adds_no_extra_shapes(resource_use_loggers):
+    fig = plot_resource_utilisation(
+        _trial_df(resource_use_loggers),
+        by="run",
+        resource_capacities={"treatment_begins": 3},
+        limit_duration=20,
+    )
+    assert len(fig.layout.shapes) == 1  # just the y=1.0 utilisation hline
+
+
+# --------------------------------------------------------------------------- #
 # plot_resource_utilisation_over_time
 # --------------------------------------------------------------------------- #
 

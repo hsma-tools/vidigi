@@ -108,6 +108,83 @@ def test_warm_up_reaches_event_durations_via_kwargs():
 
 
 # --------------------------------------------------------------------------- #
+# highlight_bands
+# --------------------------------------------------------------------------- #
+
+
+def test_highlight_bands_requires_box_or_violin():
+    with pytest.raises(ValueError, match="highlight_bands"):
+        plot_duration_distribution(
+            _basic_event_log(),
+            "arrival",
+            "depart",
+            kind="hist",
+            highlight_bands=[{"upper": 3, "colour": "green"}],
+        )
+
+
+@pytest.mark.parametrize("kind", ["box", "violin"])
+def test_highlight_bands_adds_shapes_and_pins_the_y_axis_range(kind):
+    fig = plot_duration_distribution(
+        _basic_event_log(),
+        "arrival",
+        "depart",
+        kind=kind,
+        highlight_bands=[{"lower": 2, "upper": 4, "colour": "orange"}],
+    )
+    assert len(fig.layout.shapes) == 3  # hrect + 2 boundary hlines
+    assert fig.layout.yaxis.range[0] < 1.0
+    assert fig.layout.yaxis.range[1] > 10.0
+
+
+def test_highlight_bands_labelled_band_adds_a_legend_proxy_trace():
+    fig = plot_duration_distribution(
+        _basic_event_log(),
+        "arrival",
+        "depart",
+        kind="box",
+        highlight_bands=[{"upper": 3, "colour": "green", "label": "target"}],
+    )
+    proxy_traces = [t for t in fig.data if t.name == "target"]
+    assert len(proxy_traces) == 1
+    assert proxy_traces[0].x == (None,)
+    assert proxy_traces[0].showlegend is True
+
+
+def test_highlight_bands_unlabelled_band_adds_no_legend_proxy_trace():
+    fig = plot_duration_distribution(
+        _basic_event_log(),
+        "arrival",
+        "depart",
+        kind="box",
+        highlight_bands=[{"upper": 3, "colour": "green"}],
+    )
+    assert len(fig.data) == 1  # just the box trace, no proxy
+
+
+def test_highlight_bands_rejects_a_band_with_neither_bound_set():
+    with pytest.raises(ValueError, match="lower.*upper"):
+        plot_duration_distribution(
+            _basic_event_log(),
+            "arrival",
+            "depart",
+            kind="box",
+            highlight_bands=[{"colour": "green"}],
+        )
+
+
+def test_highlight_bands_rejects_lower_gte_upper():
+    with pytest.raises(ValueError, match="lower.*upper"):
+        plot_duration_distribution(
+            _basic_event_log(),
+            "arrival",
+            "depart",
+            kind="box",
+            highlight_bands=[{"lower": 5, "upper": 2}],
+        )
+
+
+# --------------------------------------------------------------------------- #
 # kind="ecdf"
 # --------------------------------------------------------------------------- #
 
@@ -388,3 +465,16 @@ def test_trial_logger_delegates_to_plots_plot_duration_distribution():
     fig = trial.plot_duration_distribution("arrival", "depart", kind="box")
 
     assert sorted(fig.data[0].y) == [float(d) for d in DURATIONS]
+
+
+def test_trial_logger_highlight_bands_is_passed_through():
+    trial = TrialLogger([_logger_with_durations(DURATIONS)])
+
+    fig = trial.plot_duration_distribution(
+        "arrival",
+        "depart",
+        kind="box",
+        highlight_bands=[{"upper": 3, "colour": "green", "label": "target"}],
+    )
+
+    assert any(t.name == "target" for t in fig.data)

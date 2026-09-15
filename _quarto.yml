@@ -69,7 +69,7 @@ website:
       match-path: "reference/*" # Matches the quartodoc output dir
       contents:
         - _sidebar.yml # Include the file quartodoc generates
-      style: floating
+      style: docked
 
 
 # 3. QUARTODOC CONFIGURATION (Purely for API)
@@ -81,7 +81,7 @@ quartodoc:
   # Write the API structure to this file
   sidebar:
     file: "_sidebar.yml"
-    style: floating
+    style: docked
     collapse-level: 3
     # ONLY include the placeholder here. We moved the manual stuff up to `website`
     contents:
@@ -141,6 +141,7 @@ quartodoc:
         - plots.plot_queue_size
         - plots.plot_duration_distribution
         - plots.plot_metric_bar
+        - plots.plot_metric
         - plots.plot_resource_utilisation
         - plots.plot_resource_utilisation_over_time
         - plots.plot_warm_up_diagnostic

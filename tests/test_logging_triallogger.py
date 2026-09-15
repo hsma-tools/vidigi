@@ -717,6 +717,62 @@ def test_plot_metric_bar_warm_up_is_passed_through():
     assert fig.data[0].y == pytest.approx((6.0,))
 
 
+def test_plot_metric_bar_warns_deprecated(two_run_loggers):
+    """The `DeprecationWarning` `vidigi.plots.plot_metric_bar` raises must
+    propagate up through this delegator, not be swallowed on the way."""
+    trial = TrialLogger(two_run_loggers)
+
+    with pytest.warns(DeprecationWarning, match="plot_metric"):
+        trial.plot_metric_bar(
+            [{"label": "A", "first_event": "arrival", "second_event": "depart"}]
+        )
+
+
+def test_plot_metric_returns_a_figure(two_run_loggers):
+    trial = TrialLogger(two_run_loggers)
+
+    fig = trial.plot_metric(
+        [{"label": "A", "first_event": "arrival", "second_event": "depart"}]
+    )
+
+    assert isinstance(fig, go.Figure)
+
+
+def test_plot_metric_emits_no_deprecation_warning(two_run_loggers):
+    trial = TrialLogger(two_run_loggers)
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        trial.plot_metric(
+            [{"label": "A", "first_event": "arrival", "second_event": "depart"}]
+        )
+    assert not any(issubclass(w.category, DeprecationWarning) for w in caught)
+
+
+def test_plot_metric_kind_box_matches_the_hand_computed_run_means(unequal_run_loggers):
+    """Run means for this fixture are [4, 5, 9] - see its own docstring."""
+    trial = TrialLogger(unequal_run_loggers)
+
+    fig = trial.plot_metric(
+        [{"label": "A", "first_event": "arrival", "second_event": "depart"}],
+        kind="box",
+        across="runs",
+    )
+
+    assert sorted(fig.data[0].y) == pytest.approx([4.0, 5.0, 9.0])
+
+
+def test_plot_metric_highlight_bands_is_passed_through(two_run_loggers):
+    trial = TrialLogger(two_run_loggers)
+
+    fig = trial.plot_metric(
+        [{"label": "A", "first_event": "arrival", "second_event": "depart"}],
+        highlight_bands=[{"upper": 3, "colour": "green"}],
+    )
+
+    assert len(fig.layout.shapes) == 2
+
+
 def test_get_resource_utilisation_is_passed_through(resource_use_loggers):
     """`get_resource_utilisation` reaches `vidigi.analysis.resource_utilisation`,
     and reproduces the hand-computed values from that fixture's docstring
@@ -1048,6 +1104,34 @@ def test_plot_resource_utilisation_is_passed_through(resource_use_loggers):
 
     assert fig.data[0].x == ("treatment_begins",)
     assert fig.data[0].y == pytest.approx((0.375,))
+
+
+def test_plot_resource_utilisation_kind_box_is_passed_through(resource_use_loggers):
+    trial = TrialLogger(resource_use_loggers)
+
+    fig = trial.plot_resource_utilisation(
+        by="run",
+        kind="box",
+        error_bars=None,
+        resource_capacities={"treatment_begins": 3},
+        limit_duration=20,
+    )
+
+    assert sorted(fig.data[0].y) == pytest.approx([0.25, 0.5])
+
+
+def test_plot_resource_utilisation_highlight_bands_is_passed_through(
+    resource_use_loggers,
+):
+    trial = TrialLogger(resource_use_loggers)
+
+    fig = trial.plot_resource_utilisation(
+        resource_capacities={"treatment_begins": 3},
+        limit_duration=20,
+        highlight_bands=[{"upper": 0.1, "colour": "green", "label": "idle"}],
+    )
+
+    assert any(t.name == "idle" for t in fig.data)
 
 
 def _two_units_sharing_a_resource_id_logger():

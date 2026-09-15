@@ -23,8 +23,14 @@ def _trial_df(loggers):
 
 
 def test_returns_a_figure(two_run_loggers):
-    fig = plot_metric_bar(_trial_df(two_run_loggers), _PAIRS)
+    with pytest.warns(DeprecationWarning):
+        fig = plot_metric_bar(_trial_df(two_run_loggers), _PAIRS)
     assert isinstance(fig, go.Figure)
+
+
+def test_calling_it_emits_exactly_one_deprecation_warning(two_run_loggers):
+    with pytest.warns(DeprecationWarning, match="plot_metric"):
+        plot_metric_bar(_trial_df(two_run_loggers), _PAIRS)
 
 
 def test_one_bar_per_pair(two_run_loggers):

@@ -11,12 +11,17 @@ docstring says which:
   respectively - that meaning is kept, so no existing caller's styling kwargs
   silently start doing something else (the committed example notebook relies on
   exactly this for `plot_metric_bar`'s `title=`/`width=`). Column names are
-  separate, explicitly named parameters on both instead.
-- On every function new in 2.0.0+ (e.g. `plot_duration_distribution`),
-  `**kwargs` is column-name passthrough to the underlying `vidigi.analysis`
-  function instead - there is no single plotly call to forward general styling
-  to, since `go` builds several traces by hand. Style the returned figure
-  directly.
+  separate, explicitly named parameters on both instead. `plot_metric_bar` is
+  deprecated (removal at 3.0) in favour of `plot_metric`, precisely to get out
+  from under this plotly-passthrough quirk - `plot_metric` has no `**kwargs`
+  at all.
+- On every function new in 2.0.0+ that takes `**kwargs` (e.g.
+  `plot_duration_distribution`), it is column-name passthrough to the
+  underlying `vidigi.analysis` function instead - there is no single plotly
+  call to forward general styling to, since `go` builds several traces by
+  hand. Style the returned figure directly. `plot_metric` takes no `**kwargs`
+  at all (every column name is an explicit parameter) - same "style the
+  figure yourself" rule applies.
 """
 
 import warnings
@@ -389,6 +394,112 @@ SplitBy: TypeAlias = Literal["run", "pathway"]
 _SPLIT_BY_COLUMNS = {"run": "run_number", "pathway": "pathway"}
 
 
+def _add_highlight_bands(
+    fig: go.Figure,
+    *,
+    orientation: Literal["x", "y"],
+    bands: Sequence[dict] | None,
+    value_min: float,
+    value_max: float,
+) -> None:
+    """Draw one or more user-supplied shaded threshold zones on `fig`'s value axis.
+
+    `orientation="y"` draws horizontal bands (a bar/box/violin chart with
+    categories on x, value on y - every current caller). `orientation="x"`
+    draws vertical bands (a value-on-x chart, e.g. a beeswarm); kept
+    symmetric for a future caller, not wired up to anything yet.
+
+    Each entry in `bands` is a dict: `lower`/`upper` (float or None - a
+    missing bound extends to the plotted data's range, margin-padded, the
+    same convention `plot_outlier_runs` uses for its fence - at least one
+    must be given), `colour` (default `"red"`), `label` (default `None` - no
+    legend entry) and `opacity` (default `0.12`). `add_hrect`/`add_vrect`
+    have no native legend support, so a labelled band gets an invisible
+    proxy marker trace purely for its legend swatch.
+
+    Mutates `fig` in place - adds shapes (and, for a labelled band, a proxy
+    trace) and pins the value axis range, so an open-ended band's margin
+    does not itself blow out plotly's autorange.
+    """
+    if not bands:
+        return
+
+    for band in bands:
+        lower, upper = band.get("lower"), band.get("upper")
+        if lower is None and upper is None:
+            raise ValueError(
+                f"A highlight band needs at least one of `lower`/`upper` set - got {band!r}."
+            )
+        if lower is not None and upper is not None and lower >= upper:
+            raise ValueError(
+                "A highlight band's `lower` must be less than its `upper` - got "
+                f"lower={lower!r}, upper={upper!r}."
+            )
+
+    explicit_bounds = [
+        bound
+        for band in bands
+        for bound in (band.get("lower"), band.get("upper"))
+        if bound is not None
+    ]
+    raw_min = min(value_min, *explicit_bounds) if explicit_bounds else value_min
+    raw_max = max(value_max, *explicit_bounds) if explicit_bounds else value_max
+    value_range = raw_max - raw_min
+    margin = value_range * 0.15 if value_range > 0 else max(abs(raw_max), 1.0) * 0.15
+    axis_min, axis_max = raw_min - margin, raw_max + margin
+
+    for band in bands:
+        lower, upper = band.get("lower"), band.get("upper")
+        colour = band.get("colour", "red")
+        label = band.get("label")
+        opacity = band.get("opacity", 0.12)
+        band_lower = lower if lower is not None else axis_min
+        band_upper = upper if upper is not None else axis_max
+
+        if orientation == "y":
+            fig.add_hrect(
+                y0=band_lower,
+                y1=band_upper,
+                fillcolor=colour,
+                opacity=opacity,
+                line_width=0,
+            )
+            if lower is not None:
+                fig.add_hline(y=lower, line_dash="dash", line_color=colour)
+            if upper is not None:
+                fig.add_hline(y=upper, line_dash="dash", line_color=colour)
+        else:
+            fig.add_vrect(
+                x0=band_lower,
+                x1=band_upper,
+                fillcolor=colour,
+                opacity=opacity,
+                line_width=0,
+            )
+            if lower is not None:
+                fig.add_vline(x=lower, line_dash="dash", line_color=colour)
+            if upper is not None:
+                fig.add_vline(x=upper, line_dash="dash", line_color=colour)
+
+        if label is not None:
+            fig.add_trace(
+                go.Scatter(
+                    x=[None],
+                    y=[None],
+                    mode="markers",
+                    marker=dict(symbol="square", size=12, color=colour),
+                    name=label,
+                    showlegend=True,
+                    hoverinfo="skip",
+                )
+            )
+
+    if orientation == "y":
+        fig.update_yaxes(range=[axis_min, axis_max])
+    else:
+        fig.update_xaxes(range=[axis_min, axis_max])
+
+
 def plot_duration_distribution(
     event_log: pd.DataFrame,
     first_event: str,
@@ -399,6 +510,7 @@ def plot_duration_distribution(
     bins: int | list | np.ndarray | None = None,
     match: MatchMode = "first",
     normalise: bool = False,
+    highlight_bands: list[dict] | None = None,
     title: str | None = None,
     **kwargs,
 ) -> go.Figure:
@@ -457,6 +569,15 @@ def plot_duration_distribution(
         counts. Ignored for other kinds - `"ridgeline"` always uses density
         (see above), and the y-axis of `"box"`/`"violin"`/`"ecdf"` is either
         the raw durations or already a proportion.
+    highlight_bands : list of dict, optional
+        Shaded threshold zones drawn behind the chart, valid only for
+        `kind="box"` or `kind="violin"`. Each dict: `lower`/`upper` (float or
+        None - a missing bound extends to the plotted data's range; at least
+        one must be given), `colour` (default `"red"`), `label` (default
+        `None` - adds a legend entry when given) and `opacity` (default
+        `0.12`). E.g. a green "target" zone plus a red "breach" zone:
+        `[{"upper": 30, "colour": "green", "label": "target"},
+        {"lower": 60, "colour": "red", "label": "breach"}]`.
     title : str, optional
         Figure title. There is no general plotly-kwargs passthrough on this
         function - style the returned figure directly.
@@ -475,12 +596,15 @@ def plot_duration_distribution(
         If `kind` or `split_by` is not one of the supported values; if `kind`
         is `"ridgeline"` or `"heatmap"` and `split_by` is not set; if no
         complete pairs are found to plot; if `split_by` is set but the
-        corresponding column is entirely missing from the durations; or if
-        `warm_up` is negative.
+        corresponding column is entirely missing from the durations; if
+        `highlight_bands` is set for a `kind` other than `"box"`/`"violin"`,
+        or a band has neither `lower` nor `upper` set, or `lower >= upper`;
+        or if `warm_up` is negative.
 
     See Also
     --------
     vidigi.analysis.event_durations : The underlying per-entity durations.
+    plot_metric : A box/violin of *per-replication* summary values, not raw per-entity durations.
 
     Notes
     -----
@@ -501,6 +625,11 @@ def plot_duration_distribution(
             f"per group, so needs more than one group to compare - pass "
             f"`split_by='run'` or `split_by='pathway'`. Use `kind='hist'` for a "
             f"single distribution."
+        )
+    if highlight_bands is not None and kind not in ("box", "violin"):
+        raise ValueError(
+            f"`highlight_bands` is only valid for kind='box' or 'violin'; got "
+            f"kind={kind!r}."
         )
 
     durations = event_durations(
@@ -570,6 +699,14 @@ def plot_duration_distribution(
                 trace_cls(y=group_df["duration"], name=_trace_name(group_value))
             )
         fig.update_yaxes(title_text=axis_label)
+        if highlight_bands:
+            _add_highlight_bands(
+                fig,
+                orientation="y",
+                bands=highlight_bands,
+                value_min=durations["duration"].min(),
+                value_max=durations["duration"].max(),
+            )
 
     elif kind == "ecdf":
         for group_value, group_df in groups:
@@ -716,6 +853,15 @@ def plot_metric_bar(
     """
     Plot a bar chart of event duration statistics for a list of event pairs.
 
+    .. deprecated:: 2.0.0
+        ``plot_metric_bar()`` will be removed in vidigi 3.0. Use
+        ``plot_metric(kind="bar", ...)`` instead - the same computation, built on
+        ``plotly.graph_objects`` rather than ``plotly.express``, plus ``kind="box"``/
+        ``"violin"`` for a per-replication distribution and ``highlight_bands`` for
+        threshold shading. ``**kwargs`` on this function is plotly-passthrough
+        (``title=``, ``width=``, ...); ``plot_metric`` has no such passthrough -
+        style the returned figure directly with ``fig.update_layout(...)``.
+
     Thin wrapper over `vidigi.analysis.event_durations`, `replication_means` and
     `mean_confidence_interval`: this function only aggregates their output into
     one bar per pair and builds the figure.
@@ -795,6 +941,7 @@ def plot_metric_bar(
 
     See Also
     --------
+    plot_metric : The replacement for this function - same computation, `go`-based, plus `kind="box"`/`"violin"` and `highlight_bands`.
     plot_duration_distribution : The full distribution behind one of these bars.
     vidigi.analysis.event_durations : The underlying per-entity durations.
     vidigi.analysis.replication_means : The underlying per-run statistics used by `across="runs"`.
@@ -809,6 +956,13 @@ def plot_metric_bar(
     ... )
     <plotly.graph_objs._figure.Figure>
     """
+    warnings.warn(
+        "plot_metric_bar() is deprecated and will be removed in vidigi 3.0. Use "
+        "plot_metric(kind='bar', ...) instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
     if across not in ("entities", "runs"):
         raise ValueError(f"`across` must be 'entities' or 'runs'; got {across!r}.")
 
@@ -915,6 +1069,306 @@ def plot_metric_bar(
     return fig
 
 
+_METRIC_KINDS = ("bar", "box", "violin")
+
+
+def plot_metric(
+    event_log: pd.DataFrame,
+    event_pair_list: list,
+    *,
+    kind: Literal["bar", "box", "violin"] = "bar",
+    what: DurationStat = "mean",
+    exclude_incomplete: bool = True,
+    across: Across = "entities",
+    error_bars: ErrorBars | None = None,
+    ci_level: float = 0.95,
+    show_runs: bool = False,
+    highlight_bands: list[dict] | None = None,
+    match: MatchMode = "first",
+    warm_up: float = 0,
+    entity_col_name: str = "entity_id",
+    time_col_name: str = "time",
+    event_col_name: str = "event",
+    run_col_name: str | None = "auto",
+    pathway_col_name: str | None = "pathway",
+) -> go.Figure:
+    """
+    Plot event duration statistics for a list of event pairs, as a bar, box or violin.
+
+    Thin wrapper over `vidigi.analysis.event_durations`, `replication_means` and
+    `mean_confidence_interval`: this function only aggregates their output into
+    one bar/box/violin per pair and builds the figure. The `kind="bar"`
+    replacement for the deprecated `plot_metric_bar`.
+
+    Parameters
+    ----------
+    event_log : pandas.DataFrame
+        Long-format event log, e.g. the output of `TrialLogger.to_dataframe()`.
+    event_pair_list : list of dict
+        A list of dictionaries, each containing:
+
+        - ``"label"`` (str): A label for the event pair.
+        - ``"first_event"`` (str): The name of the first event.
+        - ``"second_event"`` (str): The name of the second event.
+    kind : {"bar", "box", "violin"}, default="bar"
+        Chart type. `"bar"` draws one bar per pair, exactly as
+        `plot_metric_bar` does. `"box"`/`"violin"` draw the full distribution
+        of per-replication values instead of collapsing it to a mean - one
+        trace per pair - and require `across="runs"` (there is only ever one
+        value per pair to show when `across="entities"`, nothing to draw a
+        distribution from). For a box/violin of *raw per-entity* durations
+        instead, use `plot_duration_distribution`.
+    what : str, default="mean"
+        The statistic to compute. See `vidigi.analysis.event_durations`'s
+        module for the full set. When `across="runs"`, only a genuine
+        per-replication statistic is accepted - `"mean"`, `"median"`, `"max"`,
+        `"min"`, `"quantile"`, `"std"`, `"var"`, `"sum"` - see
+        `vidigi.analysis.replication_means`.
+    exclude_incomplete : bool, default=True
+        If True, incomplete pairings (where the second event is missing) are
+        excluded from the calculation. Must be True when `across="runs"` - a
+        missing duration cannot contribute to a per-replication statistic.
+    across : {"entities", "runs"}, default="entities"
+        Whether each bar is a statistic pooled over every entity (matching
+        `plot_metric_bar`'s default), or the mean of a per-replication
+        statistic computed separately for each run. `error_bars`,
+        `show_runs` and `kind="box"`/`"violin"` all require `across="runs"` -
+        see *Notes*.
+    error_bars : {"ci", "sd", "se", "range", "iqr"} or None, default=None
+        The spread drawn as an error bar around each bar, computed over the
+        per-run values. Only valid with `kind="bar"` - a box/violin already
+        shows the full spread. See `plot_metric_bar` for the meaning of each
+        option.
+    ci_level : float, default=0.95
+        Confidence level used when `error_bars="ci"`.
+    show_runs : bool, default=False
+        If True, overlays each replication's individual value. For
+        `kind="bar"`, a semi-transparent point on top of the bar; for
+        `kind="box"`/`"violin"`, the trace's own points (`boxpoints="all"`/
+        `points="all"`) alongside the box/violin shape. Requires
+        `across="runs"`.
+    highlight_bands : list of dict, optional
+        Shaded threshold zones drawn behind the chart - see
+        `plot_duration_distribution`'s parameter of the same name for the
+        dict shape. Valid with any `kind`.
+    match : {"first", "last", "occurrence"}, default="first"
+        How repeated occurrences of the two events are paired. See
+        `vidigi.analysis.event_durations`.
+    warm_up : float, default=0
+        Pairings whose `first_time` is before `warm_up` are excluded from
+        every bar/box/violin. See `vidigi.analysis.event_durations`'s same
+        parameter.
+    entity_col_name, time_col_name, event_col_name, run_col_name,
+    pathway_col_name : str or None
+        Column names forwarded to `vidigi.analysis.event_durations`.
+
+    Returns
+    -------
+    plotly.graph_objects.Figure
+
+    Raises
+    ------
+    ValueError
+        If `kind`, `across` or `error_bars` is not one of the supported
+        values; if `kind` is `"box"`/`"violin"` and `across != "runs"`; if
+        `error_bars` is set with `kind != "bar"`; if `error_bars` or
+        `show_runs=True` is requested without `across="runs"`; if
+        `exclude_incomplete=False` is combined with `across="runs"`; if a
+        `highlight_bands` entry has neither `lower` nor `upper` set, or
+        `lower >= upper`; or if `what` is not a valid per-replication
+        statistic when `across="runs"`.
+
+    Notes
+    -----
+    `error_bars` requires `across="runs"` by design: an interval computed over
+    replication means attached to a bar height pooled over entities would be
+    internally inconsistent, since entities within a run are correlated and
+    runs are the independent unit - see
+    `vidigi.analysis.mean_confidence_interval`'s *Notes*.
+
+    Unlike `plot_metric_bar`, there is no general plotly-kwargs passthrough on
+    this function - style the returned figure directly with
+    `fig.update_layout(...)`.
+
+    See Also
+    --------
+    plot_metric_bar : Deprecated - the `kind="bar"`-only predecessor to this function.
+    plot_duration_distribution : A box/violin of raw per-entity durations for a single pair.
+    vidigi.analysis.event_durations : The underlying per-entity durations.
+    vidigi.analysis.replication_means : The underlying per-run statistics used by `across="runs"`.
+
+    Examples
+    --------
+    >>> event_pairs = [
+    ...     {"label": "Start to End", "first_event": "start", "second_event": "end"},
+    ... ]
+    >>> plot_metric(
+    ...     trial.to_dataframe(), event_pairs, kind="box", across="runs"
+    ... )
+    <plotly.graph_objs._figure.Figure>
+    """
+    if kind not in _METRIC_KINDS:
+        raise ValueError(f"`kind` must be one of {_METRIC_KINDS}; got {kind!r}.")
+
+    if across not in ("entities", "runs"):
+        raise ValueError(f"`across` must be 'entities' or 'runs'; got {across!r}.")
+
+    if kind != "bar" and across != "runs":
+        raise ValueError(
+            f'`kind={kind!r}` requires `across="runs"` - a {kind} needs '
+            "multiple per-run values to draw a distribution; there is only "
+            'ever one value per pair when `across="entities"`. For a '
+            "box/violin of raw per-entity durations pooled across every run, "
+            "use `plot_duration_distribution` instead."
+        )
+
+    if error_bars is not None and error_bars not in _ERROR_BAR_KINDS:
+        raise ValueError(
+            f"`error_bars` must be one of {_ERROR_BAR_KINDS} or None; got "
+            f"{error_bars!r}."
+        )
+
+    if error_bars is not None and across != "runs":
+        raise ValueError(
+            '`error_bars` requires `across="runs"`. An interval computed over '
+            "replication means attached to a bar height pooled over entities "
+            "would be internally inconsistent - entities within a run are "
+            'correlated, runs are the independent unit. Pass `across="runs"`, '
+            "or drop `error_bars` for a plain pooled bar."
+        )
+
+    if error_bars is not None and kind != "bar":
+        raise ValueError(
+            f"`error_bars` is not valid with `kind={kind!r}` - the {kind} "
+            "already shows the full spread of per-run values. Drop "
+            '`error_bars`, or use `kind="bar"` for a single bar with an '
+            "error bar instead."
+        )
+
+    if show_runs and across != "runs":
+        raise ValueError(
+            '`show_runs=True` requires `across="runs"` - there is one point '
+            "per run to overlay only when the bar/box/violin itself is "
+            "computed across runs."
+        )
+
+    if across == "runs" and not exclude_incomplete:
+        raise ValueError(
+            '`exclude_incomplete=False` is not supported with `across="runs"`: '
+            "a per-replication statistic cannot include an incomplete (NaN) "
+            'duration. Use `across="entities"` for `exclude_incomplete=False` '
+            "semantics."
+        )
+
+    run_col = _resolve_run_column(event_log, run_col_name)
+    n_runs = event_log[run_col].nunique() if run_col else 1
+
+    labels, values, error_plus, error_minus = [], [], [], []
+    run_points = {}
+
+    for event_pair in event_pair_list:
+        label = event_pair["label"]
+        durations = event_durations(
+            event_log,
+            event_pair["first_event"],
+            event_pair["second_event"],
+            match=match,
+            warm_up=warm_up,
+            entity_col_name=entity_col_name,
+            time_col_name=time_col_name,
+            event_col_name=event_col_name,
+            run_col_name=run_col_name,
+            pathway_col_name=pathway_col_name,
+        )
+
+        if across == "entities":
+            value = _summarise_durations(
+                durations["duration"], what, exclude_incomplete, n_runs
+            )
+            labels.append(label)
+            values.append(value)
+            error_plus.append(None)
+            error_minus.append(None)
+            continue
+
+        run_values = replication_means(durations, what=what)["value"]
+        if run_values.empty:
+            raise ValueError(
+                f"No complete '{event_pair['first_event']}' -> "
+                f"'{event_pair['second_event']}' pairs were found in any run to "
+                f"compute a per-replication statistic from."
+            )
+        value = run_values.mean()
+        labels.append(label)
+        values.append(value)
+        run_points[label] = run_values.to_numpy()
+
+        if error_bars is not None:
+            plus, minus = _error_bar_bounds(run_values, error_bars, ci_level, value)
+        else:
+            plus, minus = None, None
+        error_plus.append(plus)
+        error_minus.append(minus)
+
+    fig = go.Figure()
+
+    if kind == "bar":
+        bar_kwargs = dict(x=labels, y=values)
+        if error_bars is not None:
+            bar_kwargs["error_y"] = dict(
+                type="data", array=error_plus, arrayminus=error_minus
+            )
+        fig.add_trace(go.Bar(**bar_kwargs))
+
+        if show_runs:
+            first_label = labels[0]
+            for label, values_arr in run_points.items():
+                fig.add_trace(
+                    go.Scatter(
+                        x=[label] * len(values_arr),
+                        y=values_arr,
+                        mode="markers",
+                        marker=dict(color="black", opacity=0.4, size=6),
+                        name="Runs",
+                        legendgroup="runs",
+                        showlegend=(label == first_label),
+                    )
+                )
+    else:
+        trace_cls = go.Box if kind == "box" else go.Violin
+        points_kwarg = {"boxpoints": "all"} if kind == "box" else {"points": "all"}
+        for label in labels:
+            trace_kwargs = dict(y=run_points[label], name=label)
+            if show_runs:
+                trace_kwargs.update(points_kwarg)
+            fig.add_trace(trace_cls(**trace_kwargs))
+
+    fig.update_yaxes(title_text=what)
+
+    if highlight_bands:
+        plotted_values = list(values)
+        if kind == "bar":
+            for value, plus, minus in zip(values, error_plus, error_minus):
+                if plus is not None:
+                    plotted_values.append(value + plus)
+                if minus is not None:
+                    plotted_values.append(value - minus)
+            if show_runs:
+                for arr in run_points.values():
+                    plotted_values.extend(arr.tolist())
+        else:
+            plotted_values = [v for arr in run_points.values() for v in arr.tolist()]
+        _add_highlight_bands(
+            fig,
+            orientation="y",
+            bands=highlight_bands,
+            value_min=min(plotted_values),
+            value_max=max(plotted_values),
+        )
+
+    return fig
+
+
 # What `plot_resource_utilisation` draws as a bar height.
 ResourceMetric: TypeAlias = Literal["busy_time", "mean_in_use", "utilisation"]
 _RESOURCE_METRICS = ("busy_time", "mean_in_use", "utilisation")
@@ -925,9 +1379,11 @@ def plot_resource_utilisation(
     *,
     by: ResourceUtilisationBy = "step",
     metric: ResourceMetric = "utilisation",
+    kind: Literal["bar", "box", "violin"] = "bar",
     error_bars: ErrorBars | None = "ci",
     ci_level: float = 0.95,
     show_runs: bool = True,
+    highlight_bands: list[dict] | None = None,
     sort_by: Literal["value"] | None = None,
     scenario=None,
     resource_map: dict | None = None,
@@ -965,16 +1421,27 @@ def plot_resource_utilisation(
         any group (every value `NaN`), this falls back to `"mean_in_use"`
         instead - which needs no capacity - with a warning and a note in the
         title, rather than drawing an all-`NaN` chart.
+    kind : {"bar", "box", "violin"}, default="bar"
+        Chart type. `"bar"` draws one bar per group (the default, unchanged).
+        `"box"`/`"violin"` draw the full per-run distribution for each group
+        instead of collapsing it to a mean - `error_bars` is not valid with
+        either (the box/violin already shows the spread).
     error_bars : {"ci", "sd", "se", "range", "iqr"} or None, default="ci"
         The spread drawn as an error bar around each bar, computed over the
-        per-run values for that group. See `vidigi.plots.plot_metric_bar` for
-        the full explanation of each. `"ci"` requires the optional `scipy`
-        dependency (`pip install vidigi[stats]`).
+        per-run values for that group. Only valid with `kind="bar"`. See
+        `vidigi.plots.plot_metric_bar` for the full explanation of each.
+        `"ci"` requires the optional `scipy` dependency
+        (`pip install vidigi[stats]`).
     ci_level : float, default=0.95
         Confidence level used when `error_bars="ci"`.
     show_runs : bool, default=True
-        If True, overlays each run's individual value as a semi-transparent
-        point on top of its bar.
+        If True, overlays each run's individual value. For `kind="bar"`, a
+        semi-transparent point on top of the bar; for `kind="box"`/`"violin"`,
+        the trace's own points (`boxpoints="all"`/`points="all"`).
+    highlight_bands : list of dict, optional
+        Shaded threshold zones drawn behind the chart - see
+        `vidigi.plots.plot_duration_distribution`'s parameter of the same
+        name for the dict shape. Valid with any `kind`.
     sort_by : {"value"} or None, default=None
         If `"value"`, bars are ordered by descending metric value (`NaN` last)
         rather than by group value.
@@ -993,9 +1460,11 @@ def plot_resource_utilisation(
     Raises
     ------
     ValueError
-        If `by`, `metric`, `error_bars` or `sort_by` is not one of the
-        supported values; or if no resource_use/resource_use_end pairs were
-        found to plot.
+        If `by`, `metric`, `kind`, `error_bars` or `sort_by` is not one of the
+        supported values; if `error_bars` is set with `kind != "bar"`; if no
+        resource_use/resource_use_end pairs were found to plot; or if a
+        `highlight_bands` entry has neither `lower` nor `upper` set, or
+        `lower >= upper`.
 
     Notes
     -----
@@ -1022,10 +1491,19 @@ def plot_resource_utilisation(
         raise ValueError(
             f"`metric` must be one of {_RESOURCE_METRICS}; got {metric!r}."
         )
+    if kind not in _METRIC_KINDS:
+        raise ValueError(f"`kind` must be one of {_METRIC_KINDS}; got {kind!r}.")
     if error_bars is not None and error_bars not in _ERROR_BAR_KINDS:
         raise ValueError(
             f"`error_bars` must be one of {_ERROR_BAR_KINDS} or None; got "
             f"{error_bars!r}."
+        )
+    if error_bars is not None and kind != "bar":
+        raise ValueError(
+            f"`error_bars` is not valid with `kind={kind!r}` - the {kind} "
+            "already shows the full spread of per-run values. Drop "
+            '`error_bars`, or use `kind="bar"` for a single bar with an '
+            "error bar instead."
         )
     if sort_by is not None and sort_by != "value":
         raise ValueError(f"`sort_by` must be 'value' or None; got {sort_by!r}.")
@@ -1100,26 +1578,35 @@ def plot_resource_utilisation(
     error_minus = [error_minus[i] for i in order]
 
     fig = go.Figure()
-    bar_kwargs = dict(x=labels, y=values, name=effective_metric)
-    if error_bars is not None:
-        bar_kwargs["error_y"] = dict(
-            type="data", array=error_plus, arrayminus=error_minus
-        )
-    fig.add_trace(go.Bar(**bar_kwargs))
-
-    if show_runs:
-        for i, (label, run_values) in enumerate(zip(labels, run_arrays)):
-            fig.add_trace(
-                go.Scatter(
-                    x=[label] * len(run_values),
-                    y=run_values,
-                    mode="markers",
-                    marker=dict(color="black", opacity=0.4, size=6),
-                    name="Runs",
-                    legendgroup="runs",
-                    showlegend=(i == 0),
-                )
+    if kind == "bar":
+        bar_kwargs = dict(x=labels, y=values, name=effective_metric)
+        if error_bars is not None:
+            bar_kwargs["error_y"] = dict(
+                type="data", array=error_plus, arrayminus=error_minus
             )
+        fig.add_trace(go.Bar(**bar_kwargs))
+
+        if show_runs:
+            for i, (label, run_values) in enumerate(zip(labels, run_arrays)):
+                fig.add_trace(
+                    go.Scatter(
+                        x=[label] * len(run_values),
+                        y=run_values,
+                        mode="markers",
+                        marker=dict(color="black", opacity=0.4, size=6),
+                        name="Runs",
+                        legendgroup="runs",
+                        showlegend=(i == 0),
+                    )
+                )
+    else:
+        trace_cls = go.Box if kind == "box" else go.Violin
+        points_kwarg = {"boxpoints": "all"} if kind == "box" else {"points": "all"}
+        for label, run_values in zip(labels, run_arrays):
+            trace_kwargs = dict(y=run_values, name=label)
+            if show_runs:
+                trace_kwargs.update(points_kwarg)
+            fig.add_trace(trace_cls(**trace_kwargs))
 
     if effective_metric == "utilisation":
         fig.add_hline(y=1.0, line_dash="dash", line_color="red")
@@ -1130,6 +1617,29 @@ def plot_resource_utilisation(
     fig.update_layout(title=title)
     fig.update_xaxes(title_text=by)
     fig.update_yaxes(title_text=effective_metric)
+
+    if highlight_bands:
+        plotted_values = [v for v in values if pd.notna(v)]
+        if kind == "bar":
+            for value, plus, minus in zip(values, error_plus, error_minus):
+                if pd.isna(value):
+                    continue
+                if plus is not None:
+                    plotted_values.append(value + plus)
+                if minus is not None:
+                    plotted_values.append(value - minus)
+            if show_runs:
+                for arr in run_arrays:
+                    plotted_values.extend(v for v in arr if pd.notna(v))
+        else:
+            plotted_values = [v for arr in run_arrays for v in arr if pd.notna(v)]
+        _add_highlight_bands(
+            fig,
+            orientation="y",
+            bands=highlight_bands,
+            value_min=min(plotted_values),
+            value_max=max(plotted_values),
+        )
 
     return fig
 

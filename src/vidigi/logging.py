@@ -50,6 +50,9 @@ from vidigi.plots import (
     plot_duration_distribution as _plot_duration_distribution,
 )
 from vidigi.plots import (
+    plot_metric as _plot_metric,
+)
+from vidigi.plots import (
     plot_metric_bar as _plot_metric_bar,
 )
 from vidigi.plots import (
@@ -2056,6 +2059,7 @@ class TrialLogger:
         bins=None,
         match: MatchMode = "first",
         normalise: bool = False,
+        highlight_bands: list[dict] | None = None,
         title: str | None = None,
         **kwargs,
     ):
@@ -2086,6 +2090,10 @@ class TrialLogger:
             For `kind="hist"` or `kind="heatmap"`: heights/cells as a
             probability density rather than raw counts. `"ridgeline"` always
             uses density, regardless of this argument.
+        highlight_bands : list of dict, optional
+            Shaded threshold zones drawn behind the chart, valid only for
+            `kind="box"` or `kind="violin"` - see
+            `vidigi.plots.plot_duration_distribution` for the dict shape.
         title : str, optional
             Figure title.
         **kwargs : dict
@@ -2110,6 +2118,7 @@ class TrialLogger:
             bins=bins,
             match=match,
             normalise=normalise,
+            highlight_bands=highlight_bands,
             title=title,
             **kwargs,
         )
@@ -2130,6 +2139,11 @@ class TrialLogger:
     ):
         """
         Plot a bar chart of event duration statistics for a list of event pairs.
+
+        .. deprecated:: 2.0.0
+            ``plot_metric_bar()`` will be removed in vidigi 3.0. Use
+            ``plot_metric(event_pair_list, kind="bar", ...)`` instead - see
+            `vidigi.plots.plot_metric` for why.
 
         Thin wrapper over `vidigi.plots.plot_metric_bar`, called on this trial's
         combined dataframe. See that function for the full parameter list.
@@ -2210,6 +2224,114 @@ class TrialLogger:
             error_bars=error_bars,
             ci_level=ci_level,
             show_runs=show_runs,
+            match=match,
+            warm_up=warm_up,
+            **kwargs,
+        )
+
+    def plot_metric(
+        self,
+        event_pair_list: list[dict],
+        *,
+        kind: Literal["bar", "box", "violin"] = "bar",
+        what: DurationStat = "mean",
+        exclude_incomplete: bool = True,
+        across: Across = "entities",
+        error_bars: ErrorBars | None = None,
+        ci_level: float = 0.95,
+        show_runs: bool = False,
+        highlight_bands: list[dict] | None = None,
+        match: MatchMode = "first",
+        warm_up: float = 0,
+        **kwargs,
+    ):
+        """
+        Plot event duration statistics for a list of event pairs, as a bar, box or violin.
+
+        Thin wrapper over `vidigi.plots.plot_metric`, called on this trial's
+        combined dataframe. See that function for the full parameter list.
+        The `kind="bar"` replacement for the deprecated `plot_metric_bar`.
+
+        Parameters
+        ----------
+        event_pair_list : list of dict
+            A list of dictionaries, each containing:
+
+            - ``"label"`` (str): A label for the event pair.
+            - ``"first_event"`` (str): The name of the first event.
+            - ``"second_event"`` (str): The name of the second event.
+        kind : {"bar", "box", "violin"}, default="bar"
+            Chart type. `"box"`/`"violin"` draw the full per-replication
+            distribution for each pair instead of a bar, and require
+            `across="runs"`.
+        what : str, default="mean"
+            The statistic to compute on event durations. See
+            `vidigi.analysis.event_durations`'s module for the full set. When
+            `across="runs"`, only a genuine per-replication statistic is
+            accepted - see `vidigi.analysis.replication_means`.
+        exclude_incomplete : bool, default=True
+            If True, incomplete event durations (where the second event is missing)
+            are excluded from the calculation. Must be True when `across="runs"`.
+        across : {"entities", "runs"}, default="entities"
+            Whether each bar/box/violin is a statistic pooled over every
+            entity, or built from a per-replication statistic computed
+            separately for each run. `error_bars`, `show_runs` and
+            `kind="box"`/`"violin"` all require `across="runs"`.
+        error_bars : {"ci", "sd", "se", "range", "iqr"} or None, default=None
+            The spread drawn as an error bar around each bar. Only valid with
+            `kind="bar"`. `"ci"` requires the optional `scipy` dependency
+            (`pip install vidigi[stats]`). See `vidigi.plots.plot_metric_bar`
+            for the full explanation of each.
+        ci_level : float, default=0.95
+            Confidence level used when `error_bars="ci"`.
+        show_runs : bool, default=False
+            If True, overlays each replication's individual value - a
+            semi-transparent point for `kind="bar"`, the trace's own points
+            (`boxpoints="all"`/`points="all"`) for `kind="box"`/`"violin"`.
+        highlight_bands : list of dict, optional
+            Shaded threshold zones drawn behind the chart - see
+            `vidigi.plots.plot_duration_distribution` for the dict shape.
+        match : {"first", "last", "occurrence"}, default="first"
+            How repeated occurrences of the two events are paired. See
+            `vidigi.analysis.event_durations`.
+        warm_up : float, default=0
+            Pairings whose `first_time` is before `warm_up` are excluded from
+            every bar/box/violin. See `vidigi.analysis.event_durations`'s
+            same parameter.
+        **kwargs : dict
+            Additional keyword arguments forwarded to
+            `vidigi.analysis.event_durations` (e.g. `entity_col_name`,
+            `run_col_name`).
+
+        Returns
+        -------
+        plotly.graph_objects.Figure
+
+        See Also
+        --------
+        plot_metric_bar : Deprecated - the `kind="bar"`-only predecessor to this method.
+        plot_duration_distribution : A box/violin of raw per-entity durations for a single pair.
+        vidigi.plots.plot_metric : The underlying implementation.
+
+        Examples
+        --------
+        >>> event_pairs = [
+        ...     {"label": "Start to End", "first_event": "start", "second_event": "end"},
+        ... ]
+        >>> fig = obj.plot_metric(event_pairs, kind="box", across="runs")
+        >>> fig.show()
+        """
+        return _plot_metric(
+            self._trial_dataframe,
+            event_pair_list,
+            kind=kind,
+            what=what,
+            exclude_incomplete=exclude_incomplete,
+            across=across,
+            error_bars=error_bars,
+            ci_level=ci_level,
+            show_runs=show_runs,
+            highlight_bands=highlight_bands,
             match=match,
             warm_up=warm_up,
             **kwargs,
@@ -2320,9 +2442,11 @@ class TrialLogger:
         *,
         by: ResourceUtilisationBy = "step",
         metric: ResourceMetric = "utilisation",
+        kind: Literal["bar", "box", "violin"] = "bar",
         error_bars: ErrorBars | None = "ci",
         ci_level: float = 0.95,
         show_runs: bool = True,
+        highlight_bands: list[dict] | None = None,
         sort_by: Literal["value"] | None = None,
         scenario=None,
         resource_map: dict | None = None,
@@ -2349,15 +2473,23 @@ class TrialLogger:
         metric : {"busy_time", "mean_in_use", "utilisation"}, default="utilisation"
             Which quantity is the bar height. Falls back to `"mean_in_use"`,
             with a warning, if no capacity was resolved for any group.
+        kind : {"bar", "box", "violin"}, default="bar"
+            Chart type. `"box"`/`"violin"` draw the full per-run distribution
+            for each group instead of a bar - `error_bars` is not valid with
+            either.
         error_bars : {"ci", "sd", "se", "range", "iqr"} or None, default="ci"
             The spread drawn as an error bar around each bar, computed over
-            the per-run values. `"ci"` requires the optional `scipy`
-            dependency (`pip install vidigi[stats]`).
+            the per-run values. Only valid with `kind="bar"`. `"ci"` requires
+            the optional `scipy` dependency (`pip install vidigi[stats]`).
         ci_level : float, default=0.95
             Confidence level used when `error_bars="ci"`.
         show_runs : bool, default=True
-            If True, overlays each run's individual value as a
-            semi-transparent point on top of its bar.
+            If True, overlays each run's individual value - a
+            semi-transparent point for `kind="bar"`, the trace's own points
+            (`boxpoints="all"`/`points="all"`) for `kind="box"`/`"violin"`.
+        highlight_bands : list of dict, optional
+            Shaded threshold zones drawn behind the chart - see
+            `vidigi.plots.plot_duration_distribution` for the dict shape.
         sort_by : {"value"} or None, default=None
             If `"value"`, bars are ordered by descending metric value.
         scenario, resource_map, event_position_df, resource_capacities, capacity :
@@ -2403,9 +2535,11 @@ class TrialLogger:
             trial_dataframe,
             by=by,
             metric=metric,
+            kind=kind,
             error_bars=error_bars,
             ci_level=ci_level,
             show_runs=show_runs,
+            highlight_bands=highlight_bands,
             sort_by=sort_by,
             scenario=scenario,
             resource_map=resource_map,
