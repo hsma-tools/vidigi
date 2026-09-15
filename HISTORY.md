@@ -479,10 +479,11 @@
 
 ### Testing
 
-Test coverage grew from 31 to 1262 tests, concentrated on the parts of the pipeline where a
+Test coverage grew from 31 to 1263 tests, concentrated on the parts of the pipeline where a
 mistake changes what the animation *shows*, or what the reported numbers *say*, rather
 than raising an error.
 
+- Backend aliases must return complete animation timelines; resource comparisons use different scenario capacities; and Welch's test is checked against an independently calculated p-value for unequal sample sizes and variances. These assertions catch failures that previously passed unnoticed.
 - `reshape_for_animations` is now asserted by value rather than by shape: which entities are present at each snapshot, which event each is shown at, queue ordering, exit step timing, and the `step_snapshot_max` cap
 - `generate_animation_df` gained its first dedicated coverage: entity and resource positions, queue wrapping, icon assignment, and the overflow placeholder
 - The new unpositioned-rendered-event warning is covered by value, not just by trigger/no-trigger: an event always superseded by its successor (mutation-proven not to warn for the wrong reason - a naive check that skipped the "was it actually rendered" filter did warn, and was reverted), the row/entity counts and event names in the message for a genuinely rendered gap, multiple gaps collapsing into one warning, a hand-built (not `create_event_position_df`-built) frame, and the `step_snapshot_max` overflow row not double-counting

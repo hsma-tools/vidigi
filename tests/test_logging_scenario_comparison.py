@@ -165,13 +165,13 @@ def test_plot_resource_utilisation_comparison_returns_a_figure(resource_use_logg
 
 
 def test_plot_resource_utilisation_comparison_defaults_scenario_from_each_trial(
-    resource_use_loggers, scenario_with_resources, scenario_with_resources_dict
+    resource_use_loggers, scenario_with_resources
 ):
     """`scenario_a`/`scenario_b` default to each trial's own `.scenario`,
     exactly as `get_resource_utilisation` defaults `scenario=self.scenario` -
     so passing only `resource_map` still resolves capacity correctly."""
     trial_a = TrialLogger(resource_use_loggers, scenario=scenario_with_resources)
-    trial_b = TrialLogger(resource_use_loggers, scenario=scenario_with_resources_dict)
+    trial_b = TrialLogger(resource_use_loggers, scenario={"n_cubicles": 6})
 
     fig = trial_a.plot_resource_utilisation_comparison(
         trial_b,
@@ -179,7 +179,8 @@ def test_plot_resource_utilisation_comparison_defaults_scenario_from_each_trial(
         limit_duration=20,
     )
 
-    assert list(fig.data[0].y) == pytest.approx([0.375, 0.375])
+    # Same busy time, twice the capacity in B: its utilisation must halve.
+    assert list(fig.data[0].y) == pytest.approx([0.375, 0.1875])
 
 
 def test_plot_resource_utilisation_comparison_raises_typeerror_for_a_non_triallogger(

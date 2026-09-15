@@ -1678,18 +1678,11 @@ def test_raw_simulation_time_used_when_no_display_units(
 def test_every_backend_literal_is_a_recognised_option(
     backend, positioned, basic_event_position_df
 ):
-    """The annotation must not advertise a spelling the runtime check rejects.
+    """Every advertised spelling must produce a usable animation."""
+    fig = generate_animation(positioned, basic_event_position_df, backend=backend)
 
-    Deliberately does not assert that a figure comes back. The 'go' spellings
-    reach the graph-objects branch and fail there for a separate, pre-existing
-    reason - a numpy int64 handed to plotly as a trace name - which is out of
-    scope here. What is pinned is the claim the annotation actually makes: that
-    every advertised spelling is accepted *as a backend*.
-    """
-    try:
-        generate_animation(positioned, basic_event_position_df, backend=backend)
-    except ValueError as exc:
-        assert "Invalid backend passed" not in str(exc)
+    assert isinstance(fig, go.Figure)
+    assert frame_names(fig) == ["0", "10", "20", "30", "40", "50"]
 
 
 @pytest.mark.parametrize("backend", ["EXPRESS", "Plotly Express", "GO", "Plotly Go"])
@@ -1702,10 +1695,10 @@ def test_backend_matching_is_case_insensitive(
     not, so 'EXPRESS' was accepted while 'GO' was rejected as an invalid
     backend - a difference with no reason behind it.
     """
-    try:
-        generate_animation(positioned, basic_event_position_df, backend=backend)
-    except ValueError as exc:
-        assert "Invalid backend passed" not in str(exc)
+    fig = generate_animation(positioned, basic_event_position_df, backend=backend)
+
+    assert isinstance(fig, go.Figure)
+    assert frame_names(fig) == ["0", "10", "20", "30", "40", "50"]
 
 
 @pytest.mark.parametrize("unit", typing.get_args(SimulationTimeUnit))

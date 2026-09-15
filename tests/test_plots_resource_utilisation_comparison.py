@@ -96,7 +96,7 @@ def test_bar_labels_use_label_a_and_label_b(resource_use_loggers):
 
 
 def test_scenario_a_and_scenario_b_resolve_capacity_independently(
-    resource_use_loggers, scenario_with_resources, scenario_with_resources_dict
+    resource_use_loggers, scenario_with_resources
 ):
     """`scenario_a`/`scenario_b`, combined with a shared `resource_map`, let
     each side resolve capacity from its own scenario object - the free-
@@ -109,12 +109,12 @@ def test_scenario_a_and_scenario_b_resolve_capacity_independently(
         log,
         resource_map=resource_map,
         scenario_a=scenario_with_resources,
-        scenario_b=scenario_with_resources_dict,
+        scenario_b={"n_cubicles": 6},
         limit_duration=20,
     )
-    # Both scenario fixtures carry n_cubicles=3, so this matches the explicit
-    # resource_capacities case above.
-    assert list(fig.data[0].y) == pytest.approx([0.375, 0.375])
+    # Mean busy time is 22.5 over 20 time units: divide by each capacity,
+    # 3 and 6. Reusing either scenario for both sides must change the result.
+    assert list(fig.data[0].y) == pytest.approx([0.375, 0.1875])
 
 
 def test_a_log_with_no_resource_use_at_all_compares_as_zero_not_an_error(
