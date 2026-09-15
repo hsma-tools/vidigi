@@ -2,30 +2,97 @@
 title: "Feature Breakdowns"
 subtitle: "Take a deep dive into key Vidigi Features"
 listing:
-  - id: feature_breakdowns
+  - id: logging_plotting_helpers
     contents:
-      - "feat_*/*.ipynb"
-      - "feat_*/*.qmd"
+      - "feat_event_logger/*.ipynb"
+      - "feat_trial_logger/*.ipynb"
+      - "feat_metric_vs_arrival_time/*.ipynb"
+      - "feat_process_maps/*.ipynb"
+      - "../vidigi_docs/choosing_how_to_average.qmd"
     exclude:
       title: "BupaR"
     type: grid # A list style instead of a grid
     sort: false
     grid-columns: 3
     template: ../vidigi_docs/listing.ejs
-  - id: release_showcase
+
+  - id: modelling_helpers
     contents:
-      - "v2_release_additions/*.ipynb"
+      - "feat_replication_analysis/*.ipynb"
+      - "feat_warm_up/*.ipynb"
+    exclude:
+      title: "BupaR"
     type: grid # A list style instead of a grid
     sort: false
     grid-columns: 3
     template: ../vidigi_docs/listing.ejs
+
+  - id: advanced_vidigi_resource_class_use
+    contents:
+      - "feat_filtered_resource_requests/*.ipynb"
+    exclude:
+      title: "BupaR"
+    type: grid # A list style instead of a grid
+    sort: false
+    grid-columns: 3
+    template: ../vidigi_docs/listing.ejs
+
+
+  - id: advanced_animation_tweaks
+    contents:
+      - "feat_animation_warm_up/*.ipynb"
+      - "feat_changing_sim_time/*.ipynb"
+      - "feat_custom_icons/*.ipynb"
+      - "feat_frame_speed_post_hoc/*.ipynb"
+      - "feat_gauge_only_animations/*.ipynb"
+      - "feat_queue_direction/*.ipynb"
+      - "feat_repeating_overlay/*.ipynb"
+      - "feat_synchronised_traces/*.ipynb"
+    exclude:
+      title: "BupaR"
+    type: grid # A list style instead of a grid
+    sort: false
+    grid-columns: 3
+    template: ../vidigi_docs/listing.ejs
+
+
+  # - id: feature_breakdowns
+  #   contents:
+  #     - "feat_*/*.ipynb"
+  #     - "feat_*/*.qmd"
+  #   exclude:
+  #     title: "BupaR"
+  #   type: grid # A list style instead of a grid
+  #   sort: false
+  #   grid-columns: 3
+  #   template: ../vidigi_docs/listing.ejs
+  # - id: release_showcase
+  #   contents:
+  #     - "v2_release_additions/*.ipynb"
+  #   type: grid # A list style instead of a grid
+  #   sort: false
+  #   grid-columns: 3
+  #   template: ../vidigi_docs/listing.ejs
 ---
 
-## Feature Breakdowns
+## Logging and Plotting Helpers
 
-The examples below dive into a particular feature of the vidigi package.
+::: {#logging_plotting_helpers}
+:::
 
-::: {#feature_breakdowns}
+## Modelling Helpers
+
+::: {#modelling_helpers}
+:::
+
+## Advanced Vidigi Resource Class Features
+
+::: {#advanced_vidigi_resource_class_use}
+:::
+
+## Advanced Animation Techniques and Helpers
+
+::: {#advanced_animation_tweaks}
 :::
 
 ## Major Release Showcases

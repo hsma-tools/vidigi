@@ -11,9 +11,7 @@ adjustable after the fact. Most of the common tweaks, though, are already
 exposed as keyword arguments so you don't have to reach into the figure by
 hand.
 
-This page groups those arguments by what they change. Every one is optional and
-every default is a no-op in the sense that omitting the argument reproduces the
-previous behaviour.
+This page groups those arguments by what they change.
 
 ::: {.callout-note}
 ### Two functions, mostly the same arguments
@@ -124,7 +122,7 @@ The figure margin auto-expands to fit long stage labels, so you rarely need
 |---|---|---|
 | `entity_icon_size` | `24` | Size of the entity (patient / customer / …) icons. |
 | `resource_icon_size` | `24` | Size of the resource-availability icons. |
-| `overflow_text_color` | `"black"` | Colour of the text drawn *on top of* entity icons. |
+| `overflow_text_color` | `"black"` | Colour of the text drawn to represent any additional entities that exceed `step_snapshot_max`. |
 | `resource_opacity` | `0.8` | Opacity of the resource icons. |
 | `custom_resource_icon` | `None` | Emoji or short string used for every resource icon in place of the default. |
 | `resource_icon` (per event) | `None` | Field on `EventPosition` (or a column on `event_position_df`) overriding `custom_resource_icon` for one event, so resource stages can each have their own icon — a glyph, or an image (a URL, local path, or `data:` URI). See below. |
@@ -143,6 +141,9 @@ The figure margin auto-expands to fit long stage labels, so you rarely need
 | `entity_annotation_offset_y` | `-15` | Vertical offset, in data units, of `entity_annotation_by` text below (negative) or above (positive) each entity's icon. |
 | `resource_image_size` | `None` | Size, in data units, of an image `resource_icon` (see below). Defaults to `resource_icon_size`, kept independent of `gap_between_resources` so widening the spacing between resources doesn't also inflate the image. |
 | `entity_resource_offset_y` | `-10` | Vertical offset, in data units, of each resource icon relative to the entity using it — negative below (the default), positive above. Applies to the dot, a glyph `custom_resource_icon`/`resource_icon`, and an image `resource_icon` alike. Handy for lifting an entity clear of a large `resource_image_size`. |
+
+
+::: {.callout-tip}
 
 Flipping is a CSS mirror, not a different icon, so it needs a small `<style>`
 block to reach the page — `vidigi` injects it automatically in a notebook or
@@ -170,6 +171,11 @@ st.plotly_chart(fig)
 
 This does not affect a static export via `fig.write_image()`, which renders in
 its own page rather than the browser tab the CSS would otherwise reach.
+
+
+:::
+
+
 
 ### Beyond emoji: icon fonts, per-entity colour, and per-resource icons
 
@@ -242,7 +248,7 @@ into `custom_resource_icon` / `resource_icon`; there is no list argument like
 `custom_entity_icon_list`. It is animation-wide — every glyph resource stage
 shares it — and does nothing to an image `resource_icon`.
 
-[feat_custom_icons.ipynb](/examples/feat_custom_icons/feat_custom_icons.ipynb)
+[The custom icons feature breakdown notebook](/examples/feat_custom_icons/feat_custom_icons.ipynb)
 walks through all three together.
 
 ### Annotating an icon with extra text

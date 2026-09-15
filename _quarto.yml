@@ -28,25 +28,21 @@ website:
   navbar:
     search: true
     left:
-      - text: "Home"
-        href: index.qmd
       - text: "Getting Started"
         href: vidigi_docs/getting_started.qmd
       - text: "Customising Animations"
         href: vidigi_docs/customising_animations.qmd
-      - text: "Examples"
-        href: examples/examples.qmd
       - text: "Feature Breakdowns"
         href: examples/feature_breakdowns.qmd
       - text: "API Reference"
         href: reference/index.qmd
-      - text: "Additional Documentation"
-        menu:
-          - text: "Choosing how to calculate averages"
-          - href: vidigi_docs/choosing_how_to_average.qmd
+      - text: "Example Models"
+        href: examples/examples.qmd
+      - href: vidigi_docs/migrating_to_2_0_0.qmd
+        text: "Migrating to 2.0.0"
       - href: vidigi_docs/changelog.qmd
         text: "Changelog"
-      - text: "Package Details"
+      - text: "About"
         menu:
           - href: vidigi_docs/citation.qmd
             text: "Citing vidigi"
@@ -55,6 +51,9 @@ website:
           - href: vidigi_docs/code_of_conduct.qmd
             text: "Code of Conduct"
           - href: vidigi_docs/attribution_for_examples.qmd
+            text: "Attribution for Models used as Examples"
+          - href: vidigi_docs/contributing.qmd
+            text: Contributing to Vidigi
     right:
       - icon: github
         href: https://github.com/hsma-tools/vidigi

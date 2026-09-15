@@ -392,6 +392,7 @@
     - Also demonstrates `snapshot_alignment="warm_up"` vs `"run_start"` producing different first-frame times when `warm_up` isn't a multiple of `every_x_time_units`
 - `examples/feat_process_maps/process_maps.ipynb` gains a short demonstration of `generate_dfg`'s `warm_up=`, with real before/after node counts (`arrival` drops from 132 to 113 once the first 100 time units are excluded) and a note on how this `warm_up=` differs from the animation functions' - a plain time-based row filter, not presence-aware trimming, which is fine here since `discover_dfg` builds each case's edges from its own consecutive rows rather than reconstructing presence from arrival/departure rows the way the animation functions do
 - New *Customising Animations* page in the site navbar (`vidigi_docs/customising_animations.qmd`), a single reference for every appearance argument to `animate_activity_log` / `generate_animation` grouped by what it changes (background colour and image, stage labels, icons, spacing and wrapping, playback, crowded-step gauges, setup mode), plus the "the figure is just Plotly, edit it directly" escape hatch. These were only discoverable by reading the full parameter list in the docstrings before
+- New *Migrating to 2.0.0* page in the site navbar (`vidigi_docs/migrating_to_2_0_0.qmd`), an action-oriented checklist of this release's breaking changes and deprecations with before/after code, separate from the full changelog
 
 ### Fixes
 

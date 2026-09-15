@@ -1,0 +1,8 @@
+---
+format:
+    html:
+        toc: true
+        toc-expand: 3
+---
+
+{{< include /CONTRIBUTING.md >}}

@@ -166,8 +166,6 @@ First, we set up a series of attributes.
 
 Next, we make sure to initialise our resources. We are using a simple simpy resource with a capacity of a given number of slots - defined in our `g` class.
 
-We will also pass in our event logger, which will allow resource use start and end to be written.
-
 ```{python}
     def init_resources(self):
         '''
@@ -479,9 +477,12 @@ Vidigi needs to know *which* resource a user made use of so that we can ensure i
 
 The standard simpy Resource does not have a way of tracking that, so we need to use a special store type provided by Vidigi that allows us to track resource IDs - without having to change our code as much as we would with a standard Simpy store.
 
-If you are using priority resources, this step will be a little different - see [Example 3 in the documents](../examples/example_3_simplest_case_priority_resource/ex_3_simplest_case_priority_resource.ipynb) if you need to use Resources that prioritise some entities over others. Vidigi also provides a class for that - the `VidigiPriorityStore`.
 
-We are also going to pass in the logger to this resource, which will allow logs to automatically be added in.
+::: {.callout-note}
+If you are using priority resources, this step will be a little different - see [Example 3 in the documents](../examples/example_3_simplest_case_priority_resource/ex_3_simplest_case_priority_resource.ipynb) if you need to use Resources that prioritise some entities over others. Vidigi also provides a class for that - the `VidigiPriorityStore`.
+:::
+
+We are also going to pass in the logger to this resource, which will allow logs to automatically be added in when entities begin using resources, and when they finish, automatically capturing the relevant ID of the resource.
 
 :::: {.columns}
 
@@ -513,7 +514,7 @@ def init_resources(self):
         self.env, #<<
         num_resources=g.n_cubicles, #<<
         label="treatment_cubicle" #<<,
-        logger=self.event_logger #<<,
+        logger=self.logger #<<,
         ) #<<
 ```
 
@@ -790,13 +791,7 @@ def run_trial(self):
         # For each run, we add the log to the TrialLogger object    #<<
         self.trial_log.add_log(my_model.logger) #<<
 
-    # At the end, we create one large pandas     #<<
-    #  dataframe of the results from every run    #<<
-    self.all_event_logs_df = pd.concat(  #<<
-        [run_results.to_dataframe()   #<<
-        for run_results   #<<
-        in self.all_event_logs]  #<<
-        )  #<<
+    return self.df_trial_results
 ```
 
 :::
@@ -1031,6 +1026,15 @@ class Model:
         # to look at later
         self.patients = []
 
+        # By passing in the env we've created, the logger will default to the simulation  #<<
+        # time when populating the time column of our event logs  #<<
+        # Passing the run number also ensures we can separate out different runs  #<<
+        # of the simulation in our later calculations #<<
+        self.logger = EventLogger( #<<
+            env=self.env,  #<<
+            run_number=self.run_number #<<
+            ) #<<
+
         # Create our resources
         self.init_resources()
 
@@ -1049,21 +1053,14 @@ class Model:
             random_seed=(self.run_number + 1) * g.random_number_set
         )
 
-        # By passing in the env we've created, the logger will default to the simulation  #<<
-        # time when populating the time column of our event logs  #<<
-        # Passing the run number also ensures we can separate out different runs  #<<
-        # of the simulation in our later calculations #<<
-        self.logger = EventLogger( #<<
-            env=self.env,  #<<
-            run_number=self.run_number #<<
-            ) #<<
+
 
     def init_resources(self):
         self.treatment_cubicles = VidigiStore( #<<
             self.env, #<<
             num_resources=g.n_cubicles, #<<
             label="treatment_cubicle", #<<
-            logger=self.event_logger #<<
+            logger=self.logger #<<
             ) #<<
 
     # A generator function that represents the DES generator for patient
@@ -1186,7 +1183,7 @@ class Trial:
 
             # For each run, we append the logger object (which is of class  #<<
             # EventLogger) to our list all_event_logs, which started out empty  #<<
-            self.trial_log.add_log(my_model.event_log)
+            self.trial_log.add_log(my_model.logger)
 
 ```
 
@@ -1204,7 +1201,7 @@ Let's have a look at what our generated event logs look like.
 
 ```{python}
 #| eval: true
-my_trial.trial_log.get_log_by_run(run_number=1, as_df=True).head(10)
+my_trial.trial_log.get_log_by_run(run=1, as_df=True).head(10)
 ```
 
 And finally, let's see what the animation looks like!
@@ -1277,8 +1274,7 @@ When you have finished tweaking the layout, you can further enhance your output.
 
 ```{python}
 #| eval: true
-animate_activity_log(
-    event_log=trial_log,
+my_trial.trial_log.animate_activity_log(
     run_number=1,
     event_position_df=event_position_df,
     scenario=g(),
@@ -1321,6 +1317,7 @@ my_trial = Trial()
 my_trial.run_trial()
 
 my_trial.trial_log.animate_activity_log(
+    run_number=1,
     event_position_df=event_position_df,
     scenario=g(),
     limit_duration=g.sim_duration,

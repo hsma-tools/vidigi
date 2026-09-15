@@ -235,8 +235,7 @@ There are three main ways to call `animate_activity_log`
 
 ```{python}
 # Create animation
-animate_activity_log(
-    event_log=event_log_df,
+event_log.animate_activity_log(
     event_position_df=event_positions,
     every_x_time_units=1,
     plotly_height=600,
@@ -254,7 +253,7 @@ from vidigi.animation import animate_activity_log
 
 # Create animation
 animate_activity_log(
-    event_log=event_log_df,
+    event_log=event_log,
     event_position_df=event_positions,
     every_x_time_units=1,
     plotly_height=600,
