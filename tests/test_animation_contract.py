@@ -20,6 +20,7 @@ import pytest
 from vidigi.animation import (
     AnimationBackend,
     SimulationTimeUnit,
+    _validate_strftime_format,
     add_repeating_overlay,
     animate_activity_log,
     generate_animation,
@@ -1740,6 +1741,57 @@ def test_invalid_time_display_units_raises_valueerror(
         generate_animation(
             positioned, basic_event_position_df, time_display_units="%Q%Q"
         )
+
+
+def test_valid_custom_time_display_units_is_accepted(basic_event_position_df):
+    """A genuine custom strftime format, as the error message's own example
+    suggests, must still work - the portable directive check must not be
+    stricter than plain `strftime` itself.
+    """
+    positioned = _positioned_at_interval(basic_event_position_df, interval=60)
+
+    fig = generate_animation(
+        positioned,
+        basic_event_position_df,
+        time_display_units="%Y-%m-%d %H",
+        start_date="2020-01-01",
+    )
+
+    assert isinstance(fig, go.Figure)
+    assert any("2020-01-01" in name for name in frame_names(fig))
+
+
+@pytest.mark.parametrize(
+    "fmt",
+    [
+        "%Q%Q",
+        "%",
+        "%Y-%m-%d %Q",
+    ],
+)
+def test_validate_strftime_format_rejects_unknown_directives(fmt):
+    """Directive validation must not depend on the platform's C library.
+
+    `datetime.strftime` raises for an unrecognised directive on Windows
+    (msvcrt validates them) but glibc/macOS libc silently pass one through
+    unrendered instead, so relying on `strftime` alone to catch a typo'd
+    `time_display_units` only worked on some platforms.
+    """
+    with pytest.raises(ValueError, match="Invalid time_display_units"):
+        _validate_strftime_format(fmt)
+
+
+@pytest.mark.parametrize(
+    "fmt",
+    [
+        "%Y-%m-%d %H",
+        "%d %B %Y %H:%M:%S",
+        "%%",
+        "no directives at all",
+    ],
+)
+def test_validate_strftime_format_accepts_valid_formats(fmt):
+    _validate_strftime_format(fmt)  # Must not raise.
 
 
 def test_unknown_simulation_time_unit_raises_valueerror(

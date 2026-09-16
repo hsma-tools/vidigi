@@ -215,6 +215,37 @@ def _disable_axis_clipping(fig: go.Figure) -> None:
                     pass
 
 
+# Single-character strftime directives Python's datetime.strftime supports -
+# see https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes
+_VALID_STRFTIME_DIRECTIVES = set("aAwdbBmyYHIpMSfzZjUWcxXG%uV")
+
+
+def _validate_strftime_format(fmt: str) -> None:
+    """Raise ``ValueError`` if ``fmt`` contains an unrecognised strftime directive.
+
+    ``datetime.strftime`` delegates directive validation to the platform's C
+    library, which is not portable: an unrecognised directive like ``%Q``
+    raises on Windows (msvcrt) but is silently passed through unrendered by
+    glibc/macOS libc, so relying on ``strftime`` itself to catch a typo'd
+    ``time_display_units`` only works on some platforms. This checks the
+    format string directly instead, so behaviour is identical everywhere.
+    """
+    i = 0
+    while i < len(fmt):
+        if fmt[i] == "%":
+            if i + 1 >= len(fmt) or fmt[i + 1] not in _VALID_STRFTIME_DIRECTIVES:
+                raise ValueError(
+                    f"Invalid time_display_units option provided: "
+                    f"'{fmt}'. Valid options are: dhms, dhm, dh, d, m, y. "
+                    f"Alternatively, you can provide your own valid strftime format "
+                    f"(e.g. '%Y-%m-%d %H'). See the strftime documentation for more "
+                    f"details: https://strftime.org/"
+                )
+            i += 2
+        else:
+            i += 1
+
+
 def _series_min(df: pd.DataFrame | None, col: str) -> float | None:
     """Smallest finite value in ``df[col]``, or ``None`` if unavailable."""
     if df is None or col not in getattr(df, "columns", []) or not len(df):
@@ -980,6 +1011,7 @@ def generate_animation(
                 )
             )
         else:
+            _validate_strftime_format(time_display_units)
             try:
                 full_entity_df_plus_pos_copy["snapshot_time_display"] = (
                     full_entity_df_plus_pos_copy["snapshot_time"].apply(
