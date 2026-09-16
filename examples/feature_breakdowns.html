@@ -189,6 +189,34 @@ ul.task-list li input[type="checkbox"] {
       window['quarto-listing-loaded']();
     }
   })
+  
+
+  window.document.addEventListener("DOMContentLoaded", function (_event) {
+    const listingTargetEl = window.document.querySelector('#listing-release_showcase .list');
+    if (!listingTargetEl) {
+      // No listing discovered, do not attach.
+      return; 
+    }
+
+    const options = {
+      valueNames: ['listing-project','listing-website','listing-quartodoc','listing-format','listing-engines','listing-language','listing-toc','listing-image','listing-pub-info','listing-execute','listing-title','listing-path','listing-outputHref','listing-author','listing-description','listing-filename','listing-file-modified','listing-reading-time','listing-word-count',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-file-modified-sort'] },{ data: ['listing-reading-time-sort'] },{ data: ['listing-word-count-sort'] }],
+      
+      searchColumns: ["listing-project","listing-website","listing-quartodoc","listing-format","listing-engines","listing-language","listing-toc","listing-image","listing-pub-info","listing-execute","listing-title","listing-path","listing-outputHref","listing-author","listing-description","listing-filename","listing-file-modified","listing-reading-time","listing-word-count"],
+    };
+
+    window['quarto-listings'] = window['quarto-listings'] || {};
+    window['quarto-listings']['listing-release_showcase'] = new List('listing-release_showcase', options);
+
+    if (window['quarto-listing-loaded']) {
+      window['quarto-listing-loaded']();
+    }
+  });
+
+  window.addEventListener('hashchange',() => {
+    if (window['quarto-listing-loaded']) {
+      window['quarto-listing-loaded']();
+    }
+  })
   </script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
@@ -512,7 +540,7 @@ window.Quarto = {
 <div class="list grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 450px)); gap: 20px;">
 
   
-    <div class="custom-grid-card border-2 rounded-3" data-index="0" data-listing-file-modified-sort="1789551972358" data-listing-reading-time-sort="5" data-listing-word-count-sort="967">
+    <div class="custom-grid-card border-2 rounded-3" data-index="0" data-listing-file-modified-sort="1789571843052" data-listing-reading-time-sort="5" data-listing-word-count-sort="967">
           <div class="main-card-content">
             
               <a href="../examples/feat_event_logger/feat_event_logger.html">
@@ -540,7 +568,7 @@ event logs vidigi needs for animation.
               </div>
 
             
-    <div class="custom-grid-card border-2 rounded-3" data-index="1" data-listing-file-modified-sort="1789551972411" data-listing-reading-time-sort="14" data-listing-word-count-sort="2641">
+    <div class="custom-grid-card border-2 rounded-3" data-index="1" data-listing-file-modified-sort="1789571843106" data-listing-reading-time-sort="14" data-listing-word-count-sort="2641">
           <div class="main-card-content">
             
 
@@ -565,7 +593,7 @@ of vidigi's non-animation plotting lives here.
               </div>
 
             
-    <div class="custom-grid-card border-2 rounded-3" data-index="2" data-listing-file-modified-sort="1789551972361" data-listing-reading-time-sort="5" data-listing-word-count-sort="993">
+    <div class="custom-grid-card border-2 rounded-3" data-index="2" data-listing-file-modified-sort="1789571843056" data-listing-reading-time-sort="5" data-listing-word-count-sort="993">
           <div class="main-card-content">
             
               <a href="../examples/feat_metric_vs_arrival_time/feat_metric_vs_arrival_time.html">
@@ -596,7 +624,7 @@ count or time-in-system, to make that visible.
               </div>
 
             
-    <div class="custom-grid-card border-2 rounded-3" data-index="3" data-listing-file-modified-sort="1789551972397" data-listing-reading-time-sort="9" data-listing-word-count-sort="1779">
+    <div class="custom-grid-card border-2 rounded-3" data-index="3" data-listing-file-modified-sort="1789571843092" data-listing-reading-time-sort="9" data-listing-word-count-sort="1779">
           <div class="main-card-content">
             
               <a href="../examples/feat_process_maps/process_maps.html">
@@ -626,7 +654,7 @@ model's logic.
               </div>
 
             
-    <div class="custom-grid-card border-2 rounded-3" data-index="4" data-listing-file-modified-sort="1789551972442" data-listing-reading-time-sort="5" data-listing-word-count-sort="814">
+    <div class="custom-grid-card border-2 rounded-3" data-index="4" data-listing-file-modified-sort="1789571843139" data-listing-reading-time-sort="5" data-listing-word-count-sort="814">
           <div class="main-card-content">
             
 
@@ -656,7 +684,7 @@ model's logic.
 <div class="list grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 450px)); gap: 20px;">
 
   
-    <div class="custom-grid-card border-2 rounded-3" data-index="0" data-listing-file-modified-sort="1789551972406" data-listing-reading-time-sort="9" data-listing-word-count-sort="1604">
+    <div class="custom-grid-card border-2 rounded-3" data-index="0" data-listing-file-modified-sort="1789571843101" data-listing-reading-time-sort="9" data-listing-word-count-sort="1604">
           <div class="main-card-content">
             
               <a href="../examples/feat_replication_analysis/feat_replication_analysis.html">
@@ -686,7 +714,7 @@ replications?" with a number, rather than a guess. This walks through
               </div>
 
             
-    <div class="custom-grid-card border-2 rounded-3" data-index="1" data-listing-file-modified-sort="1789551972411" data-listing-reading-time-sort="8" data-listing-word-count-sort="1579">
+    <div class="custom-grid-card border-2 rounded-3" data-index="1" data-listing-file-modified-sort="1789571843106" data-listing-reading-time-sort="8" data-listing-word-count-sort="1579">
           <div class="main-card-content">
             
               <a href="../examples/feat_warm_up/feat_warm_up.html">
@@ -728,7 +756,7 @@ the length you read off back into `event_durations`, `resource_utilisation` and
 <div class="list grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 450px)); gap: 20px;">
 
   
-    <div class="custom-grid-card border-2 rounded-3" data-index="0" data-listing-file-modified-sort="1789551972359" data-listing-reading-time-sort="5" data-listing-word-count-sort="885">
+    <div class="custom-grid-card border-2 rounded-3" data-index="0" data-listing-file-modified-sort="1789571843053" data-listing-reading-time-sort="5" data-listing-word-count-sort="885">
           <div class="main-card-content">
             
               <a href="../examples/feat_filtered_resource_requests/index.html">
@@ -770,7 +798,7 @@ it combines with `priority=` on VidigiPriorityStore.
 <div class="list grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 450px)); gap: 20px;">
 
   
-    <div class="custom-grid-card border-2 rounded-3" data-index="0" data-listing-file-modified-sort="1789551972356" data-listing-reading-time-sort="3" data-listing-word-count-sort="509">
+    <div class="custom-grid-card border-2 rounded-3" data-index="0" data-listing-file-modified-sort="1789571843050" data-listing-reading-time-sort="3" data-listing-word-count-sort="509">
           <div class="main-card-content">
             
               <a href="../examples/feat_animation_warm_up/feat_animation_warm_up.html">
@@ -804,7 +832,7 @@ the log, so that history stays intact.
               </div>
 
             
-    <div class="custom-grid-card border-2 rounded-3" data-index="1" data-listing-file-modified-sort="1789551972357" data-listing-reading-time-sort="3" data-listing-word-count-sort="446">
+    <div class="custom-grid-card border-2 rounded-3" data-index="1" data-listing-file-modified-sort="1789571843051" data-listing-reading-time-sort="3" data-listing-word-count-sort="446">
           <div class="main-card-content">
             
               <a href="../examples/feat_changing_sim_time/feat_changing_sim_time.html">
@@ -833,7 +861,7 @@ displays a realistic calendar and time-of-day rather than a raw elapsed-time cou
               </div>
 
             
-    <div class="custom-grid-card border-2 rounded-3" data-index="2" data-listing-file-modified-sort="1789551972357" data-listing-reading-time-sort="8" data-listing-word-count-sort="1585">
+    <div class="custom-grid-card border-2 rounded-3" data-index="2" data-listing-file-modified-sort="1789571843051" data-listing-reading-time-sort="8" data-listing-word-count-sort="1585">
           <div class="main-card-content">
             
               <a href="../examples/feat_custom_icons/feat_custom_icons.html">
@@ -869,7 +897,7 @@ icon font, independently of `entity_icon_font`).
               </div>
 
             
-    <div class="custom-grid-card border-2 rounded-3" data-index="3" data-listing-file-modified-sort="1789551972361" data-listing-reading-time-sort="6" data-listing-word-count-sort="1036">
+    <div class="custom-grid-card border-2 rounded-3" data-index="3" data-listing-file-modified-sort="1789571843055" data-listing-reading-time-sort="6" data-listing-word-count-sort="1036">
           <div class="main-card-content">
             
               <a href="../examples/feat_gauge_only_animations/feat_gauge_only_animations.html">
@@ -899,7 +927,7 @@ displays that stay readable at much higher entity volumes.
               </div>
 
             
-    <div class="custom-grid-card border-2 rounded-3" data-index="4" data-listing-file-modified-sort="1789551972402" data-listing-reading-time-sort="3" data-listing-word-count-sort="408">
+    <div class="custom-grid-card border-2 rounded-3" data-index="4" data-listing-file-modified-sort="1789571843097" data-listing-reading-time-sort="3" data-listing-word-count-sort="408">
           <div class="main-card-content">
             
               <a href="../examples/feat_queue_direction/feat_queue_direction.html">
@@ -930,7 +958,7 @@ walks through `queue_direction`, which flips a whole animation, and the per-even
               </div>
 
             
-    <div class="custom-grid-card border-2 rounded-3" data-index="5" data-listing-file-modified-sort="1789551972405" data-listing-reading-time-sort="1" data-listing-word-count-sort="47">
+    <div class="custom-grid-card border-2 rounded-3" data-index="5" data-listing-file-modified-sort="1789571843099" data-listing-reading-time-sort="1" data-listing-word-count-sort="47">
           <div class="main-card-content">
             
               <a href="../examples/feat_repeating_overlay/feat_repeating_overlay.html">
@@ -959,7 +987,7 @@ those recurring periods automatically as the viewer scrubs through the timeline.
               </div>
 
             
-    <div class="custom-grid-card border-2 rounded-3" data-index="6" data-listing-file-modified-sort="1789551972410" data-listing-reading-time-sort="4" data-listing-word-count-sort="713">
+    <div class="custom-grid-card border-2 rounded-3" data-index="6" data-listing-file-modified-sort="1789571843105" data-listing-reading-time-sort="4" data-listing-word-count-sort="713">
           <div class="main-card-content">
             
               <a href="../examples/feat_synchronised_traces/index.html">
@@ -998,8 +1026,48 @@ or resource icons. `add_subplot_panels`, `add_synchronised_trace` and
 <section id="major-release-showcases" class="level2">
 <h2 class="anchored" data-anchor-id="major-release-showcases">Major Release Showcases</h2>
 <p>The examples below showcase significant new features added as part of major releases.</p>
-<div id="release_showcase">
+<div id="listing-release_showcase" class="quarto-listing quarto-listing-container-custom">
+<div class="list grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 450px)); gap: 20px;">
 
+  
+    <div class="custom-grid-card border-2 rounded-3" data-index="0" data-listing-file-modified-sort="1789571843114" data-listing-reading-time-sort="27" data-listing-word-count-sort="5311">
+          <div class="main-card-content">
+            
+              <a href="../examples/v2_release_additions/v2_release_additions.html">
+                <img class="card-img" src="../examples/v2_release_additions/example.png" alt="Feature Example: A Tour of vidigi 2.0.0's Analytics &amp; Plotting Additions">
+              </a>
+              
+
+              <div class="listing-title">
+                <h5 class="no-anchor card-title listing-title">Feature Example: A Tour of vidigi 2.0.0's Analytics &amp; Plotting Additions</h5>
+            </div>
+
+            
+              <p class="listing-abstract">vidigi 2.0.0 adds a whole numbers-in/DataFrames-out analysis layer
+(`vidigi.analysis`) and a matching plotting layer (`vidigi.plots`), reachable
+either as free functions on any event log or as `TrialLogger`/`EventLogger`
+methods. This tours all of it: duration extraction, distributions, resource
+utilisation, warm-up and replication diagnostics, metric-vs-arrival-time,
+outlier and rare-event diagnostics, two-scenario comparison, and a few smaller
+additions elsewhere in the logging, animation and resource APIs. Some of
+these already have their own deep-dive notebook - this gives each just enough
+room to be useful on its own, and links out for the rest of the story.
+</p>
+
+                
+
+              </div>
+
+                <div class="details-listing">
+                  <button class="link-listing-button"><a href="../examples/v2_release_additions/v2_release_additions.html"><i class="fa fa-info-circle"></i> Details </a></button>
+                </div>
+
+              </div>
+
+            
+          </div>
+
+<div class="listing-no-matching d-none">No matching items</div>
 </div>
 
 
