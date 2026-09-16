@@ -6,7 +6,7 @@
 
 **vidigi** is designed to work easily with Python packages like SimPy, Ciw and Streamlit. Use it to see the impact of changes to simulation parameters in real time, in healthcare simulations and beyond.
 
-{{< video videos/vidigi.mp4 >}}
+{{< video vidigi_docs/videos/vidigi.mp4 >}}
 
 <br>
 

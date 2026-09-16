@@ -66,13 +66,14 @@ listing:
   #   sort: false
   #   grid-columns: 3
   #   template: ../vidigi_docs/listing.ejs
-  # - id: release_showcase
-  #   contents:
-  #     - "v2_release_additions/*.ipynb"
-  #   type: grid # A list style instead of a grid
-  #   sort: false
-  #   grid-columns: 3
-  #   template: ../vidigi_docs/listing.ejs
+
+  - id: release_showcase
+    contents:
+      - "v2_release_additions/*.ipynb"
+    type: grid # A list style instead of a grid
+    sort: false
+    grid-columns: 3
+    template: ../vidigi_docs/listing.ejs
 ---
 
 ## Logging and Plotting Helpers
