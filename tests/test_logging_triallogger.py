@@ -7,6 +7,7 @@ waits one time unit, and departs five time units after arriving.
 """
 
 import io
+import pickle
 import typing
 import warnings
 
@@ -1839,7 +1840,13 @@ def test_read_pickle_rejects_the_wrong_type(single_run_logger, tmp_path):
 def test_to_pickle_with_an_unpicklable_scenario_names_the_scenario(two_run_loggers):
     trial = TrialLogger(two_run_loggers, scenario={"f": lambda x: x})
 
-    with pytest.raises((TypeError, AttributeError), match="scenario"):
+    # Pickling an unpicklable local lambda raises AttributeError on Python <=
+    # 3.13 and pickle.PicklingError on Python 3.14+ - a CPython pickle change,
+    # not a vidigi one. Either way, _pickle_to's wrapper re-raises `type(e)`
+    # with a message naming "scenario", which `match` below checks for.
+    with pytest.raises(
+        (TypeError, AttributeError, pickle.PicklingError), match="scenario"
+    ):
         trial.to_pickle(io.BytesIO())
 
 
