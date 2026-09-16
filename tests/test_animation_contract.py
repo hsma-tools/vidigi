@@ -940,6 +940,38 @@ def test_entity_colour_by_unknown_column_raises(positioned, basic_event_position
         )
 
 
+def test_entity_colour_by_numeric_column_with_missing_values(
+    positioned_with_resources, basic_event_position_df
+):
+    """Regression test: `entity_colour_by` on a genuinely numeric column (e.g.
+    `resource_id`) that is real `NaN` for an entity not currently holding a
+    resource, rather than a string category like `priority`.
+
+    Under pandas >=3.0, `Series.astype(str)` leaves a missing value as a raw
+    `float('nan')` instead of stringifying it to `"nan"` (pandas <3.0 always
+    produced the string). Such an entity is real, not an overflow placeholder,
+    so `_not_overflow` is True for its row and `.where(...)` keeps that float
+    rather than replacing it - `sorted(...unique())` then crashes comparing it
+    against every other category's `str`.
+
+    This does not reproduce on pandas 2.x, the environment this test normally
+    runs under - it is exercised for real by tox's `max-versions` environment
+    (`pandas>=3.0,<4.0.0`, see `tox.ini`). Confirmed there directly: reverting
+    the fix (`.map(str)` back to `.astype(str)`) makes this test fail with the
+    exact reported `TypeError: '<' not supported between instances of 'float'
+    and 'str'`; restoring it passes again.
+    """
+    fig = generate_animation(
+        positioned_with_resources,
+        basic_event_position_df,
+        entity_colour_by="resource_id",
+    )
+    names = sorted(t.name for t in _entity_traces(fig))
+    assert "nan" in names
+    assert "1.0" in names
+    assert "2.0" in names
+
+
 # --------------------------------------------------------------------------- #
 # entity_annotation_by: a second, independently-styled text trace
 # --------------------------------------------------------------------------- #

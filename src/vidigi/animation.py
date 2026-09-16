@@ -1262,7 +1262,17 @@ def generate_animation(
                     f"This is usually a column carried straight through from your "
                     f"event log (e.g. 'priority', 'pathway')."
                 )
-            _base_group = full_entity_df_plus_pos_copy[entity_colour_by].astype(str)
+            # `.map(str)` rather than `.astype(str)` - under pandas >=3.0, `astype(str)`
+            # resolves to the new default `str` dtype, which leaves a missing value as
+            # a genuine `float('nan')` instead of stringifying it (pandas <3.0 always
+            # produced the string "nan" here). A raw NaN reaching `_not_overflow=True`
+            # rows below - a real entity simply absent from this colour-by column, e.g.
+            # not currently holding a resource - then survives into `_icon_group_values`
+            # and crashes `sorted()` comparing a float against every other category's
+            # str. `.map(str)` calls Python's own `str()` per element, sidestepping
+            # `astype`'s pandas-3-only special-casing, on every pandas version this
+            # library supports.
+            _base_group = full_entity_df_plus_pos_copy[entity_colour_by].map(str)
         else:
             # No real category - one synthetic bucket, so every non-overflow entity
             # still lands in its own trace, separate from the overflow row's.

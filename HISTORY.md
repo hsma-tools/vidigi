@@ -481,6 +481,9 @@
     - With no `custom_resource_icon` and no per-event `EventPosition.resource_icon` override, vidigi draws a plain dot for each resource - the fallback every animation without a custom icon uses. Its `go.Scatter` marker `size` was hardcoded to `15`, so `resource_icon_size` only took effect once a custom icon (image or glyph) was supplied, exactly as the issue reporter found: "works if custom icon passed"
     - The image-icon path (`add_layout_image`'s `sizex`/`sizey`) and the glyph-icon path (`textfont.size`) already treated `resource_icon_size` as a literal pixel value; the default dot's marker `size` now matches both
     - `resource_icon_size` defaults to `24`, so an animation that never set it will see its default resource dot grow from 15px to 24px. Pass `resource_icon_size=15` to keep the old size. Closes #120
+- `entity_colour_by` no longer crashes on pandas >=3.0 when colouring by a numeric column (e.g. `resource_id`) that is genuinely missing for some entities (not currently holding a resource)
+    - Under pandas <3.0, converting that column with `.astype(str)` turned a missing value into the literal string `"nan"`. Pandas 3.0's new default `str` dtype instead leaves it as a raw `float('nan')`, which then crashed `sorted()` comparing it against every other category's `str`
+    - Fixed by converting with `.map(str)` instead, which calls Python's own `str()` per value rather than going through `astype`'s pandas-3-specific special-casing, giving the same `"nan"` string on every supported pandas version
 
 ### Deprecations
 
