@@ -1,13 +1,15 @@
-import streamlit as st
 import sys
 from pathlib import Path
+
+import streamlit as st
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.append(str(ROOT))
 
-from ex_2_model_classes import g, Trial
-from vidigi.utils import EventPosition, create_event_position_df
+from ex_2_model_classes import Trial, g
+
 from vidigi.animation import animate_activity_log
+from vidigi.utils import EventPosition, create_event_position_df
 
 st.set_page_config(layout="wide")
 

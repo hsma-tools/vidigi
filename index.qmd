@@ -1,0 +1,141 @@
+<h1 style="text-align: center;">vidigi</h1>
+
+<p style="text-align: center; font-size: 22px;">
+  Transform simulation event logs into engaging and flexible animations.
+</p>
+
+**vidigi** is designed to work easily with Python packages like SimPy, Ciw and Streamlit. Use it to see the impact of changes to simulation parameters in real time, in healthcare simulations and beyond.
+
+{{< video videos/vidigi.mp4 >}}
+
+<br>
+
+:::: {.columns}
+
+::: {.column width='20%'}
+
+:::
+
+::: {.column width='60%'}
+
+<p style="text-align: center; font-size: 24px; font-weight: bold">
+  Install with a single command
+</p>
+
+```{.bash}
+pip install vidigi
+```
+
+<p style="text-align: center;;">
+  or
+</p>
+
+```{.bash}
+conda install vidigi
+```
+
+:::
+
+::: {.column width='20%'}
+
+:::
+
+::::
+
+<br>
+
+```{=html}
+<div class="value-grid-2" style="justify-content:center; text-align:center;">
+  <a href="https://hsma-tools.github.io/vidigi/vidigi_docs/getting_started.html" class="value-box bg-green">
+    <div class="icon"><i class="fa-solid fa-circle-play"></i></div>
+    <div class="value">Getting Started</div>
+    <div class="details">Get an overview of how vidigi works</div>
+  </a>
+    <a href="https://hsma-tools.github.io/vidigi/examples/examples.html" class="value-box bg-green">
+    <div class="icon"><i class="fa-solid fa-lightbulb"></i></div>
+    <div class="value">Examples</div>
+    <div class="details">Take a look at our wide range of example animations using SimPy and Ciw</div>
+  </a>
+</div>
+```
+
+```{=html}
+<div class="value-grid-2" style="justify-content:center; text-align:center;">
+  <a href="https://hsma-tools.github.io/vidigi/examples/feature_breakdowns.html" class="value-box bg-green">
+    <div class="icon"><i class="bi bi-tools"></i></div>
+    <div class="value">Feature Breakdowns</div>
+    <div class="details">View detailed walkthroughs of some vidigi features</div>
+  </a>
+    <a href="https://hsma-tools.github.io/vidigi/reference/" class="value-box bg-green">
+    <div class="icon"><i class="fa-solid fa-book-atlas"></i></div>
+    <div class="value">API Reference</div>
+    <div class="details">Browse the full list of vidigi classes and functions</div>
+  </a>
+</div>
+```
+
+<br>
+
+## Why did we develop vidigi?
+
+Visual displays of the outputs of discrete event simulations in SimPy have often been highlighted as a limitation, especially when compared with commercial DES tools or GUI-based FOSS alternatives such as JaamSim.
+
+> "When compared to commercial DES software packages that are commonly used in health research, such as Simul8, or AnyLogic, a limitation of our approach is that we do not display a dynamic patient pathway or queuing network that updates as the model runs a single replication. This is termed Visual Interactive Simulation (VIS) and can help users understand where process problems and delays occur in a patient pathway; albeit with the caveat that single replications can be outliers. A potential FOSS solution compatible with a browser-based app could use a Python package that can represent a queuing network, such as NetworkX, and displaying results via matplotlib. If sophisticated VIS is essential for a FOSS model then researchers may need to look outside of web apps; for example, salabim provides a powerful FOSS solution for custom animation of DES models."
+>
+> *Monks T and Harper A. Improving the usability of open health service delivery simulation models using Python and web apps [version 2; peer review: 3 approved]. NIHR Open Res 2023, 3:48 (https://doi.org/10.3310/nihropenres.13467.2)*
+
+The **vidigi** package was created to close this gap by providing visually appealing, flexible animations of how entities move through a pathway, using information already present in event logs from discrete event simulations.
+
+It is primarily tested with SimPy models, and has also been used with Ciw, but the underlying design is general enough to work with other DES packages - such as simmer or Salabim - provided that suitably detailed logs are available.
+
+By leveraging Plotly, vidigi produces browser-ready animations that can be customised, extended, and embedded into web frameworks like Streamlit, Dash, or Shiny for Python.
+
+<br>
+
+## What does the name mean?
+
+**vidigi** is the [Esperanto](https://en.wikipedia.org/wiki/Esperanto) ![](Flag_of_Esperanto.svg.png){height=30px} word for "to show". It can also be read as the backronym: "Visual Interactive Dynamics and Integrated Graphical Insights" - whichever floats your boat.
+
+<br>
+
+## Citation
+
+If you use vidigi in your work, please cite the paper: Rosser, S., & Chalk, D. (2026). Vidigi: A Python library for interactive-animated visualisations of discrete event simulation models. *Journal of Simulation*. Advance online publication. <https://doi.org/10.1080/17477778.2026.2663849>
+
+See [Citing vidigi](vidigi_docs/citation.qmd) for BibTeX and for citing a specific software version.
+
+<br>
+
+## Acknowledgements
+
+Thanks goes to all of the following people ([emoji key](https://allcontributors.org/docs/en/emoji-key)).
+
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://www.linkedin.com/in/amyheather"><img src="https://avatars.githubusercontent.com/u/92166537?v=4?s=100" width="100px;" alt="Amy Heather"/><br /><sub><b>Amy Heather</b></sub></a><br /><a href="https://github.com/hsma-tools/vidigi/issues?q=author%3Aamyheather" title="Bug reports">🐛</a> <a href="https://github.com/hsma-tools/vidigi/commits?author=amyheather" title="Documentation">📖</a> <a href="#example-amyheather" title="Examples">💡</a> <a href="#ideas-amyheather" title="Ideas, Planning, & Feedback">🤔</a> <a href="#infra-amyheather" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="#maintenance-amyheather" title="Maintenance">🚧</a> <a href="https://github.com/hsma-tools/vidigi/commits?author=amyheather" title="Tests">⚠️</a> <a href="#tutorial-amyheather" title="Tutorials">✅</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="http://hsma.co.uk"><img src="https://avatars.githubusercontent.com/u/29951987?v=4?s=100" width="100px;" alt="Sammi Rosser"/><br /><sub><b>Sammi Rosser</b></sub></a><br /><a href="https://github.com/hsma-tools/vidigi/commits?author=Bergam0t" title="Code">💻</a> <a href="https://github.com/hsma-tools/vidigi/commits?author=Bergam0t" title="Documentation">📖</a> <a href="https://github.com/hsma-tools/vidigi/commits?author=Bergam0t" title="Tests">⚠️</a> <a href="https://github.com/hsma-tools/vidigi/issues?q=author%3ABergam0t" title="Bug reports">🐛</a> <a href="#content-Bergam0t" title="Content">🖋</a> <a href="#design-Bergam0t" title="Design">🎨</a> <a href="#example-Bergam0t" title="Examples">💡</a> <a href="#ideas-Bergam0t" title="Ideas, Planning, & Feedback">🤔</a> <a href="#infra-Bergam0t" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="#maintenance-Bergam0t" title="Maintenance">🚧</a> <a href="#projectManagement-Bergam0t" title="Project Management">📆</a> <a href="#promotion-Bergam0t" title="Promotion">📣</a> <a href="#research-Bergam0t" title="Research">🔬</a> <a href="#talk-Bergam0t" title="Talks">📢</a> <a href="#tutorial-Bergam0t" title="Tutorials">✅</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/helenajr"><img src="https://avatars.githubusercontent.com/u/63923671?v=4?s=100" width="100px;" alt="Helena Robinson"/><br /><sub><b>Helena Robinson</b></sub></a><br /><a href="https://github.com/hsma-tools/vidigi/issues?q=author%3Ahelenajr" title="Bug reports">🐛</a> <a href="#ideas-helenajr" title="Ideas, Planning, & Feedback">🤔</a> <a href="#userTesting-helenajr" title="User Testing">📓</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://sites.google.com/nihr.ac.uk/hsma"><img src="https://avatars.githubusercontent.com/u/43324262?v=4?s=100" width="100px;" alt="Dr Daniel Chalk"/><br /><sub><b>Dr Daniel Chalk</b></sub></a><br /><a href="#mentoring-hsma-chief-elf" title="Mentoring">🧑‍🏫</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://experts.exeter.ac.uk/19244-thomas-monks"><img src="https://avatars.githubusercontent.com/u/881493?v=4?s=100" width="100px;" alt="Tom Monks"/><br /><sub><b>Tom Monks</b></sub></a><br /><a href="#mentoring-TomMonks" title="Mentoring">🧑‍🏫</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/ReyTan8"><img src="https://avatars.githubusercontent.com/u/167853430?v=4?s=100" width="100px;" alt="ReyTan8"/><br /><sub><b>ReyTan8</b></sub></a><br /><a href="https://github.com/hsma-tools/vidigi/issues?q=author%3AReyTan8" title="Bug reports">🐛</a> <a href="#ideas-ReyTan8" title="Ideas, Planning, & Feedback">🤔</a> <a href="#userTesting-ReyTan8" title="User Testing">📓</a></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+
+<br>
+
+## Licence
+
+Vidigi is released under the MIT licence.
+
+{{< include LICENSE.md >}}

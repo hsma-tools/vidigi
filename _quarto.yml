@@ -5,6 +5,8 @@ project:
     - "**/*.qmd"
     - "examples/**/*.ipynb"
     - "!examples/r_simmer/"
+    - "!examples/ARCHIVE_vidigi_vs_bupar/"
+    - "!notes.qmd"
 
 # tell quarto to read the generated sidebar
 metadata-files:
@@ -26,25 +28,32 @@ website:
   navbar:
     search: true
     left:
-      - text: "Home"
-        href: vidigi_docs/index.qmd
       - text: "Getting Started"
         href: vidigi_docs/getting_started.qmd
-      - text: "Examples"
-        href: examples/examples.qmd
+      - text: "Customising Animations"
+        href: vidigi_docs/customising_animations.qmd
       - text: "Feature Breakdowns"
         href: examples/feature_breakdowns.qmd
       - text: "API Reference"
         href: reference/index.qmd
+      - text: "Example Models"
+        href: examples/examples.qmd
+      - href: vidigi_docs/migrating_to_2_0_0.qmd
+        text: "Migrating to 2.0.0"
       - href: vidigi_docs/changelog.qmd
         text: "Changelog"
-      - text: "Package Details"
+      - text: "About"
         menu:
+          - href: vidigi_docs/citation.qmd
+            text: "Citing vidigi"
           - href: vidigi_docs/licence.qmd
             text: "Licence"
           - href: vidigi_docs/code_of_conduct.qmd
             text: "Code of Conduct"
           - href: vidigi_docs/attribution_for_examples.qmd
+            text: "Attribution for Models used as Examples"
+          - href: vidigi_docs/contributing.qmd
+            text: Contributing to Vidigi
     right:
       - icon: github
         href: https://github.com/hsma-tools/vidigi
@@ -59,7 +68,7 @@ website:
       match-path: "reference/*" # Matches the quartodoc output dir
       contents:
         - _sidebar.yml # Include the file quartodoc generates
-      style: floating
+      style: docked
 
 
 # 3. QUARTODOC CONFIGURATION (Purely for API)
@@ -71,7 +80,7 @@ quartodoc:
   # Write the API structure to this file
   sidebar:
     file: "_sidebar.yml"
-    style: floating
+    style: docked
     collapse-level: 3
     # ONLY include the placeholder here. We moved the manual stuff up to `website`
     contents:
@@ -93,6 +102,9 @@ quartodoc:
       desc: ""
       contents:
         - animation.add_repeating_overlay
+        - animation.add_subplot_panels
+        - animation.add_synchronised_trace
+        - animation.add_synchronised_trace_from_dataframe
     - title: Simpy Resource Classes
       desc: ""
       contents:
@@ -105,10 +117,44 @@ quartodoc:
       contents:
         - logging.EventLogger
         - logging.TrialLogger
+    - title: Analysis Functions
+      desc: "Numbers-in, DataFrames-out - the compute twin behind every function in Analysis Plots below."
+      contents:
+        - analysis.event_durations
+        - analysis.entity_metric_by_arrival
+        - analysis.replication_means
+        - analysis.mean_confidence_interval
+        - analysis.replication_precision
+        - analysis.queue_size_over_time
+        - analysis.resource_use_intervals
+        - analysis.resource_utilisation
+        - analysis.resource_occupancy_over_time
+        - analysis.activity_occupancy_stats
+        - analysis.welch_moving_average
+        - analysis.compare_replication_values
+        - analysis.flag_outlier_runs
+        - analysis.event_occurrence_rate
+    - title: Analysis Plots
+      desc: "go.Figure-returning charts, each a thin wrapper over the matching function in Analysis Functions above."
+      contents:
+        - plots.plot_queue_size
+        - plots.plot_duration_distribution
+        - plots.plot_metric_bar
+        - plots.plot_metric
+        - plots.plot_resource_utilisation
+        - plots.plot_resource_utilisation_over_time
+        - plots.plot_warm_up_diagnostic
+        - plots.plot_replication_analysis
+        - plots.plot_outlier_runs
+        - plots.plot_metric_vs_arrival_time
+        - plots.plot_scenario_comparison
+        - plots.plot_resource_utilisation_comparison
     - title: Event Positioning Utility Functions and Classes
       desc: ""
       contents:
         - utils.EventPosition
+        - utils.ArrivalPosition
+        - utils.ExitPosition
         - utils.create_event_position_df
     - title: Process Map-Style Outputs
       desc: ""
@@ -127,6 +173,8 @@ quartodoc:
       desc: ""
       contents:
         - ciw.event_log_from_ciw_recs
+        - ciw.event_logger_from_ciw_recs
+        - ciw.trial_logger_from_ciw_recs
     - title: legacy Functions
       desc: ""
       contents:

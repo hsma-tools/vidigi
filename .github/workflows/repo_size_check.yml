@@ -1,0 +1,64 @@
+name: Repo Size Check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  size-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine changed files
+        id: changed
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            base="${{ github.event.pull_request.base.sha }}"
+            head="${{ github.event.pull_request.head.sha }}"
+          else
+            base="${{ github.event.before }}"
+            head="${{ github.sha }}"
+          fi
+
+          if [ -z "$base" ] || [ "$base" = "0000000000000000000000000000000000000000" ]; then
+            echo "No previous commit to diff against; skipping size check."
+            echo "files=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          files=$(git diff --name-only --diff-filter=ACMR "$base" "$head")
+          echo "files<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$files" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+      - name: Check file sizes against per-extension limits
+        run: |
+          declare -A LIMITS=(
+            [mp4]=10485760
+            [gif]=10485760
+            [csv]=10485760
+          )
+          DEFAULT_LIMIT=5242880
+          fail=0
+
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            [ -f "$f" ] || continue  # skip deleted files
+
+            size=$(stat -c%s "$f")
+            ext="${f##*.}"
+            ext="${ext,,}"
+            limit=${LIMITS[$ext]:-$DEFAULT_LIMIT}
+
+            if [ "$size" -gt "$limit" ]; then
+              fail=1
+              echo "::error file=$f::File is ${size} bytes, exceeding the ${limit}-byte limit for .$ext files. If this is a Jupyter notebook with a large embedded Plotly animation output, set pio.renderers.default = \"iframe\" instead of \"notebook\" before re-executing (writes the heavy HTML to a gitignored iframe_figures/ file instead of embedding it inline)."
+            fi
+          done <<< "${{ steps.changed.outputs.files }}"
+
+          exit $fail

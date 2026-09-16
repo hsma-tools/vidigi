@@ -1,0 +1,28 @@
+---
+title: "Citing vidigi"
+---
+
+<!-- Keep this page in sync with the "Citation" section of README.md. -->
+
+If you use vidigi in your work, please cite the paper:
+
+> Rosser, S., & Chalk, D. (2026). Vidigi: A Python library for interactive-animated visualisations of discrete event simulation models. *Journal of Simulation*. Advance online publication. <https://doi.org/10.1080/17477778.2026.2663849>
+
+## BibTeX
+
+```bibtex
+@article{rosser2026vidigi,
+  title     = {Vidigi: a Python library for interactive-animated visualisations of discrete event simulation models},
+  author    = {Rosser, Sammi and Chalk, Daniel},
+  journal   = {Journal of Simulation},
+  year      = {2026},
+  publisher = {Taylor \& Francis},
+  doi       = {10.1080/17477778.2026.2663849}
+}
+```
+
+## Citing a specific version
+
+To cite a specific release of the software, use its Zenodo archive. The [all-versions DOI](https://doi.org/10.5281/zenodo.14635602) always resolves to the latest release; each release also has its own version-specific DOI on the [Zenodo record](https://doi.org/10.5281/zenodo.14635602).
+
+GitHub's **Cite this repository** button generates both the paper and software citations from the [`CITATION.cff`](https://github.com/hsma-tools/vidigi/blob/main/CITATION.cff) file in the repository root.

@@ -3,6 +3,11 @@ filters:
   - quarto
   - line-highlight
 image: basic_example_minimal_required_vidigi_functions.png
+pub-info:
+    abstract: |
+        Not everyone wants to use vidigi's EventLogger helper class. This example strips things back
+        to show the minimal set of columns and events vidigi actually needs, so you can build and
+        populate your own event log by hand if that fits your model better.
 ---
 
 # A very simple example with one server - avoiding the vidigi logger class

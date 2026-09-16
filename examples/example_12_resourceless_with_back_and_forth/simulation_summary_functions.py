@@ -1,7 +1,8 @@
 import pandas as pd
 
+
 def results_summary(results_all, results_low, results_high):
-    '''
+    """
     Present model results as a summary data frame
 
     Params:
@@ -18,7 +19,7 @@ def results_summary(results_all, results_low, results_high):
     Returns:
     -------
         pd.DataFrame
-    '''
+    """
     dfs = []
     column_names = []
 
@@ -35,8 +36,7 @@ def results_summary(results_all, results_low, results_high):
         dfs.append(results_high_described)
         column_names.append("High Priority")
 
-    summary_frame = pd.concat(dfs,
-                               axis=1)
+    summary_frame = pd.concat(dfs, axis=1)
 
     summary_frame.columns = column_names
 

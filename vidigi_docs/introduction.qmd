@@ -1,7 +1,7 @@
 
 ## Step-by-step guide for SimPy
 
-### Step 1. Back up your model
+### Step 1. Back up your existing model!
 
 Before adding Vidigi to your model, make sure to **back up your current version first**.
 
@@ -9,42 +9,62 @@ While vidigi has been tested to ensure that it's special resource classes work t
 
 Therefore, it's highly advisable to **check the key output metrics from your model before and after incorporating vidigi**!
 
-### Step 2. Replace your resources
+Even better, consider writing some formal [backtests]() with pytest or your preferred testing framework.
 
-SimPy resources need to be replaced with SimPy stores containing a custom `.id_attribute`, so that vidigi can track which specific resource each entity uses. This can have wider benefits for monitoring individual resource utilisation within your model as well.
 
-Vidigi provides two helper classes to support with this: `VidigiStore` and `VidigiPriorityStore`.
+### Step 2. Log arrivals, queues, and departures
 
-**Replace this:**
+At its simplest, vidigi needs to know three things about each entity to be able to create an animation:
 
-```{.python}
-nurses = simpy.Resource(env, capacity=5)
-```
+- when they arrived
+- when they started an event
+- when they left
 
-**With this:**
+Vidigi has support for two key event types: queues, and resource use.
 
-```{.python}
-from vidigi.resources import VidigiStore
+:::: {.columns}
 
-nurses = VidigiStore(env, num_resources=5)
-```
+::: {.column width='50%'}
+### Queues
 
-This becomes slightly more complex with conditional requesting (for example, where a resource request is made but if it cannot be fulfilled in time, the requester will renege). This is covered to some extent in some of the provided examples, but further demonstrations of this are planned.
+In a queue, entities will move from left to right across the screen as the people in front of them leave the event. This is the default; passing `queue_direction="right"` (or setting it per event) mirrors the queue so it builds out to the *right* of its anchor instead, which reads better with entity emojis that face right — see [Step 3](#step-3-determining-event-positioning-in-the-animation).
 
-### Step 3. Log events
+![](assets/Photos_vyBrApu62l.gif)
 
-Use the `EventLogger` class to record key moments:
+:::
+
+::: {.column width='50%'}
+### Resource Use
+
+When resource use event types are added, entities will go to a particular resource and stay in that position until the event completes, as well as displaying an icon for each individual resource at all times throughout the simulation. This makes it easier to see how long that resource is busy with that entity, and how many resources are in use or idle at each stage
+
+![](assets/Photos_TtlkAx9wcB.gif)
+
+:::
+
+::::
+
+
+
+::: {.callout-tip}
+
+When setting up your first animation, we would recommend just using queues to begin with.
+
+This allows you to create a basic animation quickly and easily, with minimal changes to your code.
+
+You can then easily swap out queues for resource use once you have the core model layout and structure implemented.
+
+
+:::
+
+
+We would recommend using the `EventLogger` class to record key moments.
 
 ```{.python}
 from vidigi.logging import EventLogger
 
 logger = EventLogger(env=env, run_number=1)
 ```
-
-You must always log **arrivals** and **departures**, and you must also log when entities **wait** somewhere. You can choose whether to represent time in service using only `queue` events, or by adding explicit `resource_use` and `resource_use_end` events.
-
-* With only queues, entities "move through" each stage, and you see when they join each queue and when they leave it.
-* With resource_use events, an entity stays visibly attached to the same resource for the whole time it is being used, which makes it easier to see how long that resource is busy with that entity, and how many resources are in use or idle at each stage
 
 For arrivals and departures you only need the entity ID; for queues you also provide an event name; for resource use (start and end) you provide an event name and a resource identifier so vidigi can track which specific resource is in use. These arrival and departure events are used to decide when entities first appear and finally leave the animation; missing departures will slow things down as the log grows indefinitely.
 
@@ -60,187 +80,101 @@ You can capture these using `EventLogger`:
 
 This will create an event log in the required format for vidigi's animation functions - for example:
 
-| patient | pathway  | event_type        | event                    | time | resource_id |
-|---------|----------|-------------------|--------------------------|------|-------------|
-| 15      | Primary  | arrival_departure | arrival                  | 1.22 |             |
-| 15      | Primary  | queue             | enter_queue_for_bed      | 1.35 |             |
-| 27      | Revision | arrival_departure | arrival                  | 1.47 |             |
-| 27      | Revision | queue             | enter_queue_for_bed      | 1.58 |             |
-| 12      | Primary  | resource_use_end  | post_surgery_stay_ends   | 1.9  | 4           |
-| 15      | Revision | resource_use      | post_survery_stay_begins | 1.9  | 4           |
+| patient | event_type        | event                    | time | resource_id |
+|---------|-------------------|--------------------------|------|-------------|
+| 15      | arrival_departure | arrival                  | 1.22 |             |
+| 15      | queue             | enter_queue_for_bed      | 1.35 |             |
+| 27      | arrival_departure | arrival                  | 1.47 |             |
+| 27      | queue             | enter_queue_for_bed      | 1.58 |             |
+| 12      | resource_use_end  | post_surgery_stay_ends   | 1.9  | 4           |
+| 15      | resource_use      | post_survery_stay_begins | 1.9  | 4           |
 
-::: {.callout title="Click to see an alternative to EventLogger: using dictionaries" collapse="true"}
+::: {.callout-warning}
+Each entity needs exactly one `arrival` and one `depart` event per run. Reusing an
+`entity_id` for a second arrival or departure - for example logging a recurring thing like a
+staff break under the same shared ID each time it happens - doesn't just mean "the last one
+wins". `reshape_for_animations` pivots the arrival/departure rows to work out when each
+entity was present, and duplicates are *averaged together*, giving the entity a time it was
+never actually at.
 
-You can instead achieve this is by appending dictionaries to a list at each important point in the process. For example:
-
-```{.python}
-event_log = []
-...
-...
-event_log.append(
-    {
-        "patient": id,
-        "pathway": "Revision",
-        "event_type": "resource_use",
-        "event": "post_surgery_stay_begins",
-        "time": simpy_environment.now,
-        "resource_id": bed.id_attribute
-    }
-)
-```
-
-The list of dictionaries could then be converted to a pandas DataFrame using:
-
-```{.python}
-pd.DataFrame(event_log)
-```
-
-And passed to the animation function where required. You can add extra keys to each log row if you want to reuse the event log for other analyses; vidigi will ignore columns it does not need.
-
+vidigi raises a `ValueError` naming the offending `entity_id` when this happens, so it fails
+loudly rather than quietly producing a wrong animation. If you need to log something that
+recurs, give each occurrence its own unique ID, or log it as a queue/resource-use event
+instead of an arrival/departure.
 :::
 
-**Example in your simulation:**
 
-```{.python}
-# Patient arrives
-logger.log_arrival(entity_id=patient.identifier)
+::: {.callout-tip}
+If you are adding vidigi to an existing model, you may have already created some form of logging for your animation.
 
-# Patient waits for treatment
-logger.log_queue(entity_id=patient.identifier, event="treatment_wait_begins")
+`animate_activity_log()` and `reshape_for_animations()` accept a vidigi `EventLogger` or `TrialLogger` directly, or a plain `pandas` DataFrame. If you keep your own logging, you don't have to switch to `EventLogger` - reshape your records into a DataFrame with the columns shown above (`entity_id`, `event_type`, `event`, `time`, plus `resource_id` for resource-use steps) and pass that instead.
 
-# Patient receives treatment
-with treatment_cubicles.request() as req:
-    treatment_cubicle = yield req
-    logger.log_resource_use_start(
-        entity_id=patient.identifier,
-        event="treatment_begins",
-        resource_id=treatment_cubicle.id_attribute
-    )
-    
-    yield env.timeout(treatment_time)
-    
-    logger.log_resource_use_end(
-        entity_id=patient.identifier,
-        event="treatment_complete",
-        resource_id=treatment_cubicle.id_attribute
-    )
-
-# Patient leaves
-logger.log_departure(entity_id=patient.identifier)
-```
-
-::: {.callout title="Click to see how we'd do this with a dictionary instead" collapse="true"}
-
-```{.python}
-# Patient arrives
-event_log.append(
-    {
-        "patient": patient.identifier,
-        "pathway": "Treatment",
-        "event_type": "arrival_departure",
-        "event": "arrival",
-        "time": env.now,
-    }
-)
-
-# Patient waits for treatment
-event_log.append(
-    {
-        "patient": patient.identifier,
-        "pathway": "Treatment",
-        "event_type": "queue",
-        "event": "treatment_wait_begins",
-        "time": env.now,
-    }
-)
-
-# Patient receives treatment
-with treatment_cubicles.request() as req:
-    # Make sure we assign the result of the yield to a variable. Assuming we
-    # are using a VidigiStore or VidigiPriorityStore, this will allow us to
-    # access the useful ID attribute of the returned resource
-    treatment_cubicle = yield req
-
-    event_log.append(
-        {
-            "patient": patient.identifier,
-            "pathway": "Treatment",
-            "event_type": "resource_use",
-            "event": "treatment_begins",
-            "time": env.now,
-            "resource_id": treatment_cubicle.id_attribute,
-        }
-    )
-
-    yield env.timeout(treatment_time)
-
-    event_log.append(
-        {
-            "patient": patient.identifier,
-            "pathway": "Treatment",
-            "event_type": "resource_use_end",
-            "event": "treatment_complete",
-            "time": env.now,
-            "resource_id": treatment_cubicle.id_attribute,
-        }
-    )
-
-# Patient leaves
-event_log.append(
-    {
-        "patient": patient.identifier,
-        "pathway": "Treatment",
-        "event_type": "arrival_departure",
-        "event": "depart",
-        "time": env.now,
-    }
-)
-```
-
-You can again include any extra fields you find useful for downstream analysis; vidigi only relies on the core columns shown above.
-
+Passing a `TrialLogger`? Add `run_number=` to pick the replication to animate - vidigi animates one run at a time.
 :::
 
-### Step 4. Ensure you have a class with resource counts
 
-When you later define event positions for `resource_use` steps, you will also need to provide an identifier for the resource (for example a parameter such as `n_treatment_cubicles`) so vidigi knows how many resources to draw at that step. This, in turn, requires a small class or object to hold your resource counts that you can pass into the animation function.
+### Step 3. Determining event positioning in the animation
 
-If you are following the [HSMA SimPy structure](https://des.hsma.co.uk/), this object will usually be your `g` class. Otherwise, you can create a simple parameters class to hold your resource counts and pass it to the animation function:
+You need to tell vidigi where each queue and resource should appear in the animation. The easiest way is to create a DataFrame with one row per event position. The minimum required columns are:
 
-```{.python}
-class ModelParams:
-    def __init__(self):
-        self.n_triage_resources = 3
-        self.n_treatment_cubicles = 5
-
-
-params = ModelParams()
-```
-
-### Step 5. Determining event positioning in the animation
-
-You need to tell vidigi where each queue and resource should appear in the animation. The easiest way is to create a DataFrame with one row per event position. The required columns are:
-
-* `event`: Must match the event name used in the event log.
-* `x`: X co-ordinate of the event for the animation. This will correspond to the bottom-right hand corner of a queue, or the rightmost resource.
+* `event`: Must match the event name used in the event log. Each event must appear on exactly one row — a repeated event name places every entity at that step in several positions at once, so they appear to jump between them at random. `create_event_position_df` and `generate_animation_df` warn if they spot this (or two different events sharing the same `x`/`y`).
+* `x`: X co-ordinate of the event for the animation. This will correspond to the bottom-right hand corner of a queue, or the rightmost resource (or the bottom-*left* corner / leftmost resource when that event builds to the right — see `direction` below).
 * `y`: Y co-ordinate of the event for the animation. This will correspond to the lowest row of a queue, or the central point of the resources.
 * `label`: Text label for the stage. This can be hidden at a later step if you opt to use a background image with labels built-in. Use `<br>` for line breaks.
-* `resource` (optional): Only needed if the step is a `resource_use` step. This should match an attribute name on the `scenario` object passed to `animate_activity_log()` and give the number of resources at that step.
+* `direction` (optional): `"left"` (the default) builds the queue out to the left of `x`; `"right"` builds it out to the right, mirroring the layout so the anchor becomes the bottom-left corner. Leave it unset to follow the animation-wide `queue_direction`.
 
-Vidigi provides helper classes and functions for setting this up. For SimPy or manually created logs, we need to make sure the `event` name matches the event log:
+Vidigi provides helper classes and functions for setting this up. For SimPy or manually created logs, we need to make sure the `event` name matches the event log. Every entity must log an `arrival` and a `depart` event (see [Populating Event Logs](populating_event_logs.qmd)); `ArrivalPosition` and `ExitPosition` are `EventPosition` subclasses that fill in those two names (and a default `label`) so you don't have to:
 
 ```{.python}
-from vidigi.utils import create_event_position_df, EventPosition
+from vidigi.utils import (
+    create_event_position_df, EventPosition, ArrivalPosition, ExitPosition
+)
 
 event_position_df = create_event_position_df([
-    EventPosition(event="arrival", x=50, y=450, label="Arrival"),
+    ArrivalPosition(x=50, y=450),
     EventPosition(event="treatment_wait_begins", x=205, y=275,
                   label="Waiting for Treatment"),
     EventPosition(event="treatment_begins", x=205, y=175,
-                  label="Being Treated", resource="n_cubicles"),
-    EventPosition(event="depart", x=270, y=70, label="Exit"),
+                  label="Being Treated"),
+    ExitPosition(x=270, y=70),
 ])
 ```
+
+::: {.callout-warning}
+Every event name your log can produce needs a row here, or entities using it vanish from
+the animation rather than moving to it. `generate_animation_df` looks up each snapshot's
+coordinates by merging on `event`; an event with no match gets no coordinates, and Plotly
+drops it from that frame instead of drawing it somewhere sensible — the entity just
+disappears, then flies in from the top-left corner once a positioned event takes over
+again.
+
+It's easy to miss because some events are safe to leave out in practice: if a step is
+always logged at the exact same instant as the very next one (a common pattern for
+`resource_use_end`), it's never actually selected as an entity's current state, so it's
+never rendered. That's a coincidence of how your model logs events, though, not something
+vidigi guarantees — when in doubt, give every event a position. `generate_animation_df`
+now warns automatically whenever a gap like this is actually rendered, so you don't need
+to check for it by hand.
+:::
+
+By default every queue builds out to the left of its anchor. To flip the whole
+animation, pass `queue_direction="right"` to `animate_activity_log()` (or
+`generate_animation_df()` / `generate_animation()`). To flip just one stage,
+give that `EventPosition` its own `direction`:
+
+```{.python}
+event_position_df = create_event_position_df([
+    ArrivalPosition(x=50, y=450),
+    EventPosition(event="treatment_wait_begins", x=205, y=275,
+                  label="Waiting for Treatment", direction="right"),
+    EventPosition(event="treatment_begins", x=205, y=175,
+                  label="Being Treated"),
+    ExitPosition(x=270, y=70),
+])
+```
+
+A per-event `direction` always wins over the animation-wide `queue_direction`.
+Stage labels automatically move to the clear side of a right-building queue.
 
 :::{.callout-note collapse="true"}
 ### Click to see how we'd do this with a dictionary instead
@@ -272,7 +206,7 @@ event_position_df = pd.DataFrame([
 ```
 :::
 
-### Step 6. Create the animation
+### Step 4. Create the animation
 
 There are two main ways to create the animation:
 
@@ -282,14 +216,150 @@ There are two main ways to create the animation:
 * Use `reshape_for_animations()`, `generate_animation_df()` and `generate_animation()` separately, passing the output of each to the next step. This allows more customisation (for example different icons for different patient classes).
     See [this priority queueing example](../examples/example_3_simplest_case_priority_resource/ex_3_simplest_case_priority_resource.ipynb) for a demonstration of this.
 
+Both functions take the same set of appearance arguments - background colour and image, icon sizes, stage labels, spacing, playback speed and more. See [Customising the animation](/vidigi_docs/customising_animations.qmd) for the full list grouped by what each one changes.
+
+`animate_activity_log()` and `reshape_for_animations()` accept your event log as a `pandas` DataFrame, a vidigi [`EventLogger`](/reference/logging.EventLogger.qmd), or a [`TrialLogger`](/reference/logging.TrialLogger.qmd) - a logger is converted with `.to_dataframe()` for you. With a `TrialLogger`, pass `run_number=` to choose which replication to animate; passing one with more than one run and no `run_number` raises an error that lists the runs available.
+
+
+
+
+## Adding details of resource use
+
+
+### Step 5. Replace your resources
+
+SimPy resources need to be replaced with SimPy stores containing resources that carry a custom `.id` (also available under its older name `.id_attribute`), so that vidigi can track which specific resource each entity uses. This can have wider benefits for monitoring individual resource utilisation within your model as well.
+
+Vidigi provides two helper classes to support with this: `VidigiStore` and `VidigiPriorityStore`.
+
+**Replace this:**
+
+```{.python}
+nurses = simpy.Resource(env, capacity=5)
+```
+
+**With this:**
+
+```{.python}
+from vidigi.resources import VidigiStore
+
+nurses = VidigiStore(env, num_resources=5, label="nurse")
+```
+
+Note that `capacity` on `VidigiStore` doesn't mean the same thing it did on `simpy.Resource` - it isn't the pool size (that's `num_resources`). It bounds the underlying store container instead, and you normally don't need to pass it: left unset, `.capacity` automatically mirrors `num_resources`, matching `simpy.Resource.capacity`'s behaviour. Only pass `capacity` explicitly if you deliberately want a bounded container for other items alongside the resources - doing so also disables the built-in guard against accidentally returning a resource twice (`strict_capacity`).
+
+Always pass a `label` that is unique to this pool of resources. Each `VidigiStore` numbers its own resources `1, 2, 3, ...`, so if your model has more than one pool (for example `nurses` and `treatment_cubicles`), two different physical resources can end up sharing the same `resource_id`. `label` gives each resource a `.unique_id` (e.g. `"nurse_1"`; also available as `.unique_id_attribute`) that stays distinct across pools, which matters if you want to analyse individual resource utilisation later with `vidigi.analysis.resource_utilisation(by="resource")`. Omitting `label` still works today but emits a `DeprecationWarning` - it is expected to become mandatory in a future major version.
+
+If your model needs each resource to carry extra information - a staff type for break scheduling, a skill grade, a home location - pass `extra_attributes`:
+
+```{.python}
+nurses = VidigiStore(env, num_resources=5, label="nurse",
+                     extra_attributes={"staff_type": "nurse"})
+# every resource in the pool now has `.staff_type == "nurse"`
+```
+
+Your model code reads these back off the resource it is handed (`resource.staff_type`); vidigi itself ignores them. `VidigiPriorityStore` takes the same arguments.
+
+This becomes slightly more complex with conditional requesting (for example, where a resource request is made but if it cannot be fulfilled in time, the requester will renege). This is covered to some extent in some of the provided examples, but further demonstrations of this are planned.
+
+
+
+
+### Step 6. Log resource use
+
+
+We can now swap
+
+| When | Method |
+| - | - |
+| Starts using resource | `logger.log_resource_use_start(entity_id, event="nurse_begins", resource_id)` |
+| Finishes using resource | `logger.log_resource_use_end(entity_id, event="nurse_ends", resource_id)` |
+
+This will create an event log in the required format for vidigi's animation functions - for example:
+
+| patient | event_type        | event                    | time | resource_id |
+|---------|-------------------|--------------------------|------|-------------|
+| 15      | arrival_departure | arrival                  | 1.22 |             |
+| 15      | queue             | enter_queue_for_bed      | 1.35 |             |
+| 27      | arrival_departure | arrival                  | 1.47 |             |
+| 27      | queue             | enter_queue_for_bed      | 1.58 |             |
+| 12      | resource_use_end  | post_surgery_stay_ends   | 1.9  | 4           |
+| 15      | resource_use      | post_survery_stay_begins | 1.9  | 4           |
+
+::: {.callout-tip}
+## A simpler way to log resource use
+
+If you're using `VidigiStore` or `VidigiPriorityStore`, you don't have to call `log_resource_use_start`/`log_resource_use_end` by hand as shown above. Pass `logger=` when you create the store, then `entity_id=` when you request a resource, and both events are logged for you automatically. See [Automatic resource-use logging](basic_example_with_vidigi_logger_helpers_multiple_servers.qmd#automatic-resource-use-logging) for a worked example.
+:::
+
+
+### Step 7. Ensure you have somewhere to hold your resource counts
+
+When you later define event positions for `resource_use` steps, you will also need to provide an identifier for the resource (for example a name such as `n_cubicles`) so vidigi knows how many resources to draw at that step. This means you need something to hold your resource counts to pass into the animation function as `scenario`. A plain dictionary is enough:
+
+```{.python}
+scenario = {"n_cubicles": 5}
+```
+
+A small class or object works just as well, so an existing parameters object can be reused directly:
+
+```{.python}
+class ModelParams:
+    def __init__(self):
+        self.n_cubicles = 5
+
+
+scenario = ModelParams()
+```
+
+Whichever you use, the names (`n_cubicles` here) must match the `resource` values you give your `EventPosition`s in the next step.
+
+
+::: {.callout-tip}
+If you are following the [HSMA SimPy structure](https://des.hsma.co.uk/), this will usually be your `g` class.
+
+If you are following the [DES RAP Book structure](https://pythonhealthdatascience.github.io/des_rap_book/), this will usually be your `Params` class.
+
+Otherwise, a dictionary or a small parameters class like the one above is all you need.
+:::
+
+::: {.callout-tip}
+If you record runs with an `EventLogger` / `TrialLogger`, you can attach this same object when you build the logger — `TrialLogger(event_logs, scenario=g(), label="base case")` (or pass `scenario=` to `EventLogger`). The `TrialLogger` resource-utilisation helpers (`get_resource_utilisation`, `plot_resource_utilisation`, `plot_resource_utilisation_over_time`) then use it automatically, so you don't have to pass `scenario=` again on every call, and the parameters travel with the logger when you `to_pickle()` it.
+:::
+
+
+
+### Step 8. Update your event position dataframe
+
+
+* `resource` (optional): Only needed if the step is a `resource_use` step. This should match an attribute name (or dictionary key) on the `scenario` passed to `animate_activity_log()` and give the number of resources at that step.
+
+Here, we've added the 'resource' parameter to our `EventPosition` for `treatment_begins`.
+
+```{.python}
+from vidigi.utils import (
+    create_event_position_df, EventPosition, ArrivalPosition, ExitPosition
+)
+
+event_position_df = create_event_position_df([
+    ArrivalPosition(x=50, y=450),
+    EventPosition(event="treatment_wait_begins", x=205, y=275,
+                  label="Waiting for Treatment"),
+    EventPosition(event="treatment_begins", x=205, y=175,
+                  label="Being Treated",
+                  resource="n_cubicles"),
+    ExitPosition(x=270, y=70),
+])
+```
+
 ## Usage Instructions with Ciw
 
 ### Event logging with Ciw
 
-With Ciw, you do not need to manually add log statements. Instead, use the `event_log_from_ciw_recs` helper function from `vidigi.utils` to reshape Ciw's logs into the format vidigi requires.
+With Ciw, you do not need to manually add log statements. Instead, use the `event_log_from_ciw_recs` helper function from `vidigi.ciw` to reshape Ciw's logs into the format vidigi requires.
 
 ```{.python}
-from vidigi.utils import event_log_from_ciw_recs
+from vidigi.ciw import event_log_from_ciw_recs
 
 event_log_test = event_log_from_ciw_recs(
     logs_run_1,
@@ -298,6 +368,13 @@ event_log_test = event_log_from_ciw_recs(
 ```
 
 For each node, we provide a name (e.g., `operator`, `nurse`). Vidigi uses these to generate event names (adding `_begins` and `_ends`), to infer arrivals and departures, and to create resource IDs so it can show utilisation correctly.
+
+`event_log_from_ciw_recs` returns a plain `pandas` DataFrame. If you also want vidigi's post-run analysis tools, two sibling helpers in `vidigi.ciw` do the same conversion but return logging objects instead:
+
+- `event_logger_from_ciw_recs(recs, node_name_list=...)` returns an [`EventLogger`](/reference/logging.EventLogger.qmd) for one run - adding event querying, JSON/CSV export, `plot_entity_timeline` and `generate_dfg`.
+- `trial_logger_from_ciw_recs(list_of_recs, node_name_list=...)` returns a [`TrialLogger`](/reference/logging.TrialLogger.qmd) built from several runs' records, for multi-run duration, resource-utilisation, queue-size and replication analysis.
+
+Both feed the animation functions the same way via `.to_dataframe()`.
 
 We then just need to create a suitable class to pass in the resource counts to the animation function.
 
@@ -330,7 +407,7 @@ event_position_df = create_event_position_df([
     EventPosition(event="operator_begins", x=210, y=210, resource="n_operators", label="Speaking to Operator"),
     EventPosition(event="nurse_wait_begins", x=205, y=110, label="Waiting for Nurse"),
     EventPosition(event="nurse_begins", x=210, y=50, resource="n_nurses", label="Speaking to Nurse"),
-    EventPosition(event="depart", x=270, y=10, label="Exit"),
+    ExitPosition(x=270, y=10),
 ])
 ```
 

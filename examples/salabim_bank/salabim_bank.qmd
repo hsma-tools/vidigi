@@ -1,6 +1,11 @@
 ---
 title: A Simple Salabim Model
 image: bank.gif
+pub-info:
+    abstract: |
+        vidigi isn't tied to SimPy - here it's paired with Salabim instead. Using the classic 'bank
+        with three clerks' example from the Salabim documentation, we show that the same logging and
+        animation approach carries across to a different simulation engine with only minor changes.
 filters:
   - line-highlight
 ---
@@ -9,6 +14,8 @@ filters:
 #| echo: false
 # pylint: disable=too-few-public-methods,function-redefined
 ```
+
+{{< include ../vidigi_2_0_0_example_warning.md >}}
 
 Using a Salabim model with vidigi follows the same process as a SimPy model. To demonstrate how it is set-up, we will use an example model from the [Salabim documentation](https://www.salabim.org/manual/Modelling.html#a-bank-example). Salabim is licensed under MIT.
 

@@ -1,7 +1,11 @@
-import pandas as pd
-from graphviz import Digraph
+import warnings
+
 import ipycytoscape
 import ipywidgets as widgets
+import pandas as pd
+from graphviz import Digraph
+
+from vidigi.utils import _resolve_run_column
 
 VALID_TIME_UNITS = {"seconds", "minutes", "hours", "days", "weeks"}
 
@@ -25,6 +29,7 @@ def add_sim_timestamp(
     timestamp_col: str = "timestamp",
     sim_start: pd.Timestamp | str | None = None,
     time_unit: str = "minutes",
+    warm_up: float | None = None,
 ) -> pd.DataFrame:
     """
     Add a pseudo-timestamp column to a simulation event log.
@@ -50,6 +55,25 @@ def add_sim_timestamp(
         Unit of the simulation time.
         Accepted values are 'seconds', 'minutes', 'hours', 'days' or 'weeks'.
         Default: "minutes".
+    warm_up : float, optional
+        Discard a warm-up period by dropping rows with `time_col <= warm_up`,
+        in the same units as `time_col`. Default is `None`, which keeps every row.
+
+        Unlike `reshape_for_animations`' `warm_up` argument, this is a plain
+        time-based filter and needs no other handling: `discover_dfg` builds
+        each case's edges from its own consecutive rows, rather than
+        reconstructing who was present at a given moment from arrival and
+        departure rows, so dropping early rows here does not make any case
+        vanish from output it should still appear in.
+
+        Two consequences worth knowing before relying on this for reporting:
+        a case entirely within the warm-up is dropped completely, and a case
+        that spans the cutoff loses the single edge connecting its last
+        pre-cutoff event to its first post-cutoff event, since one side of
+        that pair is no longer in the log. Both are intentional - they keep
+        warm-up activity from contributing to the transition statistics -
+        but they mean a case's node counts can undercount its true number of
+        events even where its later transitions are otherwise complete.
 
     Returns
     -------
@@ -68,18 +92,94 @@ def add_sim_timestamp(
     if time_col not in log.columns:
         raise KeyError(f"Column '{time_col}' not found in event log")
 
+    if warm_up is not None and warm_up < 0:
+        raise ValueError(
+            f"`warm_up` must not be negative, but {warm_up} was passed. It is a "
+            f"threshold in the same units as `{time_col}`: rows with "
+            f"`{time_col} <= warm_up` are dropped."
+        )
+
     df = log.copy()
+
+    if warm_up is not None:
+        df = df[df[time_col] > warm_up]
 
     if sim_start is None:
         sim_start = pd.Timestamp("2000-01-01 00:00:00")
     else:
         sim_start = pd.to_datetime(sim_start)
 
-    df[timestamp_col] = sim_start + pd.to_timedelta(
-        df[time_col], unit=time_unit
-    )
+    df[timestamp_col] = sim_start + pd.to_timedelta(df[time_col], unit=time_unit)
 
     return df
+
+
+def _transitions(
+    log: pd.DataFrame,
+    *,
+    case_col: str = "entity_id",
+    activity_col: str = "event",
+    timestamp_col: str = "timestamp",
+    time_unit: str = "minutes",
+    run_col: str | None = None,
+) -> pd.DataFrame:
+    """Every directly-follows pair in ``log`` with its transition duration.
+
+    Behaviour-preserving extraction of the sort + per-case ``shift(-1)`` +
+    unit conversion that :func:`discover_dfg` runs before it aggregates.
+    Split out so the trial-level cross-run graph
+    (:func:`vidigi.logging.TrialLogger.generate_dfg`) shares the exact same
+    transition computation rather than re-deriving it.
+
+    When ``run_col`` is given, cases are grouped per run so no edge is
+    fabricated between the last event of one replication and the first of the
+    next. On a single-run log, passing it is a no-op.
+
+    Returns
+    -------
+    pandas.DataFrame
+        One row per transition, with columns ``source``, ``target``,
+        ``delta_time`` and - when ``run_col`` is given - ``run_col``.
+    """
+    group_cols = [case_col] if run_col is None else [run_col, case_col]
+
+    df = log.sort_values([*group_cols, timestamp_col]).copy()
+
+    df["next_activity"] = df.groupby(group_cols)[activity_col].shift(-1)
+    df["next_time"] = df.groupby(group_cols)[timestamp_col].shift(-1)
+
+    dfg = df.dropna(subset=["next_activity"]).copy()
+
+    # Transition duration - the exact arithmetic discover_dfg used inline.
+    if time_unit == "seconds":
+        dfg["delta_time"] = (dfg["next_time"] - dfg[timestamp_col]).dt.total_seconds()
+    elif time_unit == "minutes":
+        dfg["delta_time"] = (
+            (dfg["next_time"] - dfg[timestamp_col]).dt.total_seconds()
+        ) / 60
+    elif time_unit == "hours":
+        dfg["delta_time"] = (
+            ((dfg["next_time"] - dfg[timestamp_col]).dt.total_seconds()) / 60 / 60
+        )
+    elif time_unit == "days":
+        dfg["delta_time"] = (
+            ((dfg["next_time"] - dfg[timestamp_col]).dt.total_seconds()) / 60 / 60 / 24
+        )
+    elif time_unit == "weeks":
+        dfg["delta_time"] = (
+            ((dfg["next_time"] - dfg[timestamp_col]).dt.total_seconds())
+            / 60
+            / 60
+            / 24
+            / 7
+        )
+
+    keep = ([run_col] if run_col is not None else []) + [
+        activity_col,
+        "next_activity",
+        "delta_time",
+    ]
+    return dfg[keep].rename(columns={activity_col: "source", "next_activity": "target"})
 
 
 def discover_dfg(
@@ -88,13 +188,22 @@ def discover_dfg(
     activity_col: str = "event",
     timestamp_col: str = "timestamp",
     time_unit: str = "minutes",
+    occupancy_stats: pd.DataFrame | None = None,
+    run_col_name: str | None = None,
 ):
     """
     Discover a Directly-Follows Graph (DFG) from an event log.
 
-    The event log must represent a *single simulation run or process
-    execution*. Logs containing multiple independent runs should be
-    filtered prior to calling this function.
+    Unless ``run_col_name`` is given, the event log should represent a
+    *single simulation run or process execution*: transitions are built from
+    each case's consecutive rows without regard to which run they belong to,
+    so a concatenated multi-run log fabricates edges between the last event
+    of one run and the first of the next. Pass ``run_col_name`` (or
+    ``"auto"``) to group transitions by run instead, filter to one run
+    first, or use
+    :meth:`vidigi.logging.TrialLogger.generate_dfg` with ``across_runs=True``.
+    A multi-run log passed without ``run_col_name`` now raises a
+    ``UserWarning`` (and will raise an error in vidigi 3.0).
 
     This function constructs a Directly-Follows Graph (DFG) from a
     case-based event log by identifying pairs of consecutive activities
@@ -127,6 +236,24 @@ def discover_dfg(
         Time unit used when computing the duration between consecutive
         events. Determines the scale of all time-based edge statistics.
         This should reflect the time unit used in your simulation.
+    occupancy_stats : pandas.DataFrame, optional
+        Output of :func:`vidigi.analysis.activity_occupancy_stats`, run on the
+        same log with matching column names. When given, its
+        ``mean_occupancy`` / ``min_occupancy`` / ``max_occupancy`` /
+        ``median_occupancy`` / ``kind`` columns are left-merged onto the node
+        table (keyed on the activity name), so a renderer can annotate each
+        step with the number of entities present. Steps with no occupancy
+        figure - ``arrival``, ``depart``, custom milestones - get ``NaN``.
+        Default ``None`` leaves the node table unchanged.
+    run_col_name : str or None, default=None
+        Which column identifies the replication. ``None`` (the default)
+        builds transitions per case only - the historic single-run
+        behaviour, byte-identical to before - but now warns if a run-like
+        column (``run``, ``run_number``, ``replication``, ``rep``,
+        ``run_id``, matched case-insensitively) holds more than one value.
+        A column name, or ``"auto"`` to detect one from those candidates,
+        groups transitions on ``[run, case]`` so no cross-run edge is
+        fabricated. On a single-run log this is a no-op.
 
     Returns
     -------
@@ -137,6 +264,9 @@ def discover_dfg(
           Activity label.
         - ``count`` : int
           Total number of times the activity appears in the log.
+
+        If ``occupancy_stats`` was passed, also ``kind``, ``mean_occupancy``,
+        ``min_occupancy``, ``max_occupancy`` and ``median_occupancy``.
 
     edges : pandas.DataFrame
         Edge table describing directly-follows relations between activities.
@@ -197,49 +327,35 @@ def discover_dfg(
             f"Supported values are: {', '.join(sorted(VALID_TIME_UNITS))}."
         )
 
-    df = log.sort_values([case_col, timestamp_col]).copy()
+    run_col = _resolve_run_column(log, run_col_name)
 
-    # Shift to get "next activity" per case
-    df["next_activity"] = df.groupby(case_col)[activity_col].shift(-1)
-    df["next_time"] = df.groupby(case_col)[timestamp_col].shift(-1)
+    if run_col_name is None:
+        detected = _resolve_run_column(log, "auto")
+        if detected is not None and log[detected].nunique(dropna=True) > 1:
+            warnings.warn(
+                f"discover_dfg was given a log whose '{detected}' column holds more "
+                f"than one run. Transitions are built per case without regard to "
+                f"run, so consecutive events from different replications are being "
+                f"joined into edges that occur in no single run of your model. Pass "
+                f"run_col_name='{detected}' to group by run, filter to one run "
+                f"first, or use TrialLogger.generate_dfg(across_runs=True). This "
+                f"will raise in vidigi 3.0.",
+                UserWarning,
+                stacklevel=2,
+            )
 
-    # Drop case endings
-    dfg = df.dropna(subset=["next_activity"]).copy()
-
-    # Transition duration
-    if time_unit == "seconds":
-        dfg["delta_time"] = (
-            dfg["next_time"] - dfg[timestamp_col]
-        ).dt.total_seconds()
-    elif time_unit == "minutes":
-        dfg["delta_time"] = (
-            (dfg["next_time"] - dfg[timestamp_col]).dt.total_seconds()
-        ) / 60
-    elif time_unit == "hours":
-        dfg["delta_time"] = (
-            ((dfg["next_time"] - dfg[timestamp_col]).dt.total_seconds())
-            / 60
-            / 60
-        )
-    elif time_unit == "days":
-        dfg["delta_time"] = (
-            ((dfg["next_time"] - dfg[timestamp_col]).dt.total_seconds())
-            / 60
-            / 60
-            / 24
-        )
-    elif time_unit == "weeks":
-        dfg["delta_time"] = (
-            ((dfg["next_time"] - dfg[timestamp_col]).dt.total_seconds())
-            / 60
-            / 60
-            / 24
-            / 7
-        )
+    dfg = _transitions(
+        log,
+        case_col=case_col,
+        activity_col=activity_col,
+        timestamp_col=timestamp_col,
+        time_unit=time_unit,
+        run_col=run_col,
+    )
 
     # Aggregate edges
     edges = (
-        dfg.groupby([activity_col, "next_activity"])
+        dfg.groupby(["source", "target"])
         .agg(
             frequency=("delta_time", "count"),
             mean_time=("delta_time", "mean"),
@@ -249,7 +365,6 @@ def discover_dfg(
             standard_deviation_time=("delta_time", "std"),
         )
         .reset_index()
-        .rename(columns={activity_col: "source", "next_activity": "target"})
     )
 
     # Transition probabilities
@@ -259,11 +374,18 @@ def discover_dfg(
 
     # Node counts
     nodes = (
-        df.groupby(activity_col)
+        log.groupby(activity_col)
         .agg(count=(case_col, "count"))
         .reset_index()
         .rename(columns={activity_col: "activity"})
     )
+
+    if occupancy_stats is not None and not occupancy_stats.empty:
+        nodes = nodes.merge(
+            occupancy_stats.rename(columns={"event": "activity"}),
+            on="activity",
+            how="left",
+        )
 
     return nodes, edges
 
@@ -279,6 +401,60 @@ def _scale_penwidth(values, min_width=0.8, max_width=5.0):
         v: min_width + (v - vmin) / (vmax - vmin) * (max_width - min_width)
         for v in values
     }
+
+
+def _occupancy_label_suffix(row, show_occupancy: bool) -> str:
+    """Extra node-label text with the mean/min/max entities present at a step.
+
+    Empty string unless `show_occupancy` is set and `row` carries a non-null
+    `mean_occupancy` - i.e. the node table was built by
+    `discover_dfg(occupancy_stats=...)` and this step is a queue or resource
+    step. `kind` picks the wording.
+    """
+    if not show_occupancy:
+        return ""
+    mean = row.get("mean_occupancy")
+    if mean is None or pd.isna(mean):
+        return ""
+    noun = "in use" if row.get("kind") == "resource" else "queued"
+    return (
+        f"\navg {noun} {mean:.1f} "
+        f"(min {row['min_occupancy']:.1f}, max {row['max_occupancy']:.1f})"
+    )
+
+
+def _between_run_count_suffix(row, min_col: str, max_col: str, show: bool) -> str:
+    """`` (lo–hi)`` giving the between-run spread of a per-run count.
+
+    Only the node / edge tables from
+    :meth:`vidigi.logging.TrialLogger.generate_dfg` with ``across_runs=True``
+    carry ``*_run_min`` / ``*_run_max`` columns, so this is a no-op on every
+    single-run graph.
+    """
+    if not show or min_col not in row or pd.isna(row.get(min_col)):
+        return ""
+    return f" ({row[min_col]:g}–{row[max_col]:g})"
+
+
+def _between_run_time_suffix(row, show: bool) -> str:
+    """`` (lo–hi across runs)`` for the between-run spread of the per-run
+    *mean* transition time.
+
+    Empty unless ``row`` carries ``mean_time_run_min`` / ``mean_time_run_max``
+    (the cross-run graph only) and ``show`` is set. A range, not a confidence
+    interval - ``TrialLogger.get_event_duration_ci`` is the route to a formal
+    interval. The time unit is already on the base label, so it is not
+    repeated here.
+    """
+    if (
+        not show
+        or "mean_time_run_min" not in row
+        or pd.isna(row.get("mean_time_run_min"))
+    ):
+        return ""
+    return (
+        f" ({row['mean_time_run_min']:.1f}–{row['mean_time_run_max']:.1f} across runs)"
+    )
 
 
 def dfg_to_graphviz(
@@ -300,6 +476,8 @@ def dfg_to_graphviz(
     show_edge_counts: bool = True,
     show_metric: bool = True,
     show_node_counts: bool = True,
+    show_occupancy: bool = True,
+    show_between_run_ci: bool = True,
     size: tuple[float, float] | None = None,
     dpi: int | None = None,
     ratio: str | None = None,
@@ -386,6 +564,20 @@ default="mean"
         If True, include the selected time statistic in edge labels.
     show_node_counts : bool, default=True
         If True, include activity occurrence counts in node labels.
+    show_occupancy : bool, default=True
+        If True, and the node table carries occupancy columns (i.e. it came
+        from ``discover_dfg(occupancy_stats=...)``), add a line to each queue
+        or resource node's label with the mean, minimum and maximum number of
+        entities present at that step. No effect on a plain node table.
+    show_between_run_ci : bool, default=True
+        If True, and the node/edge tables carry between-run range columns
+        (i.e. they came from
+        :meth:`vidigi.logging.TrialLogger.generate_dfg` with
+        ``across_runs=True``), append the min-max spread across replications
+        to each per-run count (``n=3.5 (1–7)``) and, when
+        ``time_metric="mean"``, to the mean transition time
+        (``mean=42.0 (35.0–51.0 minutes across runs)``). No effect on a
+        single-run graph.
     size : tuple of float, optional
         Maximum size of the rendered graph in inches, given as ``(width, height)``.
         This value is passed to the Graphviz ``size`` graph attribute and acts as
@@ -493,7 +685,15 @@ default="mean"
         dot.node(
             row["activity"],
             label=str(row["activity"])
-            + (f"\nn={row['count']}" if show_node_counts else ""),
+            + (
+                f"\nn={row['count']}"
+                + _between_run_count_suffix(
+                    row, "count_run_min", "count_run_max", show_between_run_ci
+                )
+                if show_node_counts
+                else ""
+            )
+            + _occupancy_label_suffix(row, show_occupancy),
             shape="box",
             style="rounded",
         )
@@ -509,8 +709,6 @@ default="mean"
                 if row["probability"] < infrequent_path_dash_threshold
                 else "solid"
             )
-        else:
-            None
 
         pw = penwidth_map[row["frequency"]]
 
@@ -525,14 +723,23 @@ default="mean"
 
         # Label the edges
         label = (
-            (f"n={row.frequency}\n" if show_edge_counts else "")
-            + (
-                f"p={row.probability:.2f}\n"
-                if show_transition_probabilities
+            (
+                f"n={row.frequency}"
+                + _between_run_count_suffix(
+                    row, "frequency_run_min", "frequency_run_max", show_between_run_ci
+                )
+                + "\n"
+                if show_edge_counts
                 else ""
             )
+            + (f"p={row.probability:.2f}\n" if show_transition_probabilities else "")
             + (
                 f"{time_metric}={row[f'{time_metric}_time']:.1f} {time_unit}"
+                + (
+                    _between_run_time_suffix(row, show_between_run_ci)
+                    if time_metric == "mean"
+                    else ""
+                )
                 if show_metric
                 else ""
             )
@@ -547,9 +754,7 @@ default="mean"
         )
 
     if title:
-        dot.attr(
-            label=title, labelloc=title_loc, fontsize=f"{title_font_size}"
-        )
+        dot.attr(label=title, labelloc=title_loc, fontsize=f"{title_font_size}")
 
     if not return_image:
         return dot
@@ -567,6 +772,8 @@ def process_nodes_and_edges_for_cytoscape(
     show_edge_counts: bool = True,
     show_metric: bool = True,
     show_node_counts: bool = True,
+    show_occupancy: bool = True,
+    show_between_run_ci: bool = True,
 ):
     """
     Convert DFG node and edge tables into Cytoscape-compatible elements.
@@ -627,6 +834,17 @@ def process_nodes_and_edges_for_cytoscape(
         If True, include the selected time statistic in edge labels.
     show_node_counts : bool, default=True
         If True, include activity occurrence counts in node labels.
+    show_occupancy : bool, default=True
+        If True, and ``nodes`` carries occupancy columns (from
+        ``discover_dfg(occupancy_stats=...)``), add a line to each queue or
+        resource node's label with the mean, minimum and maximum number of
+        entities present at that step. No effect on a plain node table.
+    show_between_run_ci : bool, default=True
+        If True, and the tables carry between-run range columns (from
+        :meth:`vidigi.logging.TrialLogger.generate_dfg` with
+        ``across_runs=True``), append the across-replication min-max spread to
+        each per-run count and mean transition time. No effect on a single-run
+        graph.
 
     Returns
     -------
@@ -664,7 +882,15 @@ def process_nodes_and_edges_for_cytoscape(
             "data": {
                 "id": str(row[node_label]),
                 "label": str(row[node_label])
-                + (f"\nn={row['count']}" if show_node_counts else ""),
+                + (
+                    f"\nn={row['count']}"
+                    + _between_run_count_suffix(
+                        row, "count_run_min", "count_run_max", show_between_run_ci
+                    )
+                    if show_node_counts
+                    else ""
+                )
+                + _occupancy_label_suffix(row, show_occupancy),
             },
             "classes": "multiline-manual",
         }
@@ -676,7 +902,18 @@ def process_nodes_and_edges_for_cytoscape(
             "data": {
                 "source": str(row["source"]),
                 "target": str(row["target"]),
-                "label": (f"n={row.frequency}\n" if show_edge_counts else "")
+                "label": (
+                    f"n={row.frequency}"
+                    + _between_run_count_suffix(
+                        row,
+                        "frequency_run_min",
+                        "frequency_run_max",
+                        show_between_run_ci,
+                    )
+                    + "\n"
+                    if show_edge_counts
+                    else ""
+                )
                 + (
                     f"p={row.probability:.2f}\n"
                     if show_transition_probabilities
@@ -684,6 +921,11 @@ def process_nodes_and_edges_for_cytoscape(
                 )
                 + (
                     f"{time_metric}={row[f'{time_metric}_time']:.1f} {time_unit}"
+                    + (
+                        _between_run_time_suffix(row, show_between_run_ci)
+                        if time_metric == "mean"
+                        else ""
+                    )
                     if show_metric
                     else ""
                 ),
@@ -713,12 +955,23 @@ def dfg_to_cytoscape(
     show_edge_counts: bool = True,
     show_metric: bool = True,
     show_node_counts: bool = True,
+    show_occupancy: bool = True,
+    show_between_run_ci: bool = True,
+    caption: str | None = None,
     line_color: str = "#9dbaea",
     edge_font_size: int = 8,
     node_font_size: int = 10,
 ):
     """
     Convert DFG node/edge tables to interactive Cytoscape widget.
+
+    ``show_between_run_ci`` (default True) appends the across-replication
+    min-max spread to per-run counts and mean transition times when the
+    tables carry between-run range columns (from
+    :meth:`vidigi.logging.TrialLogger.generate_dfg` with ``across_runs=True``);
+    it is a no-op on a single-run graph. ``caption``, if given, is shown as a
+    line of text above the widget - used by ``across_runs=True`` to carry the
+    "simulation output, not observed data" note.
 
     Parameters
     ----------
@@ -761,6 +1014,10 @@ default="mean"
         If True, include the selected time statistic in edge labels.
     show_node_counts : bool, default=True
         If True, include activity occurrence counts in node labels.
+    show_occupancy : bool, default=True
+        If True, and the node table came from
+        ``discover_dfg(occupancy_stats=...)``, add mean/min/max entities
+        present to each queue or resource node's label. No effect otherwise.
     line_color: str
         Line colour as a hex colour string. Will also define colour of arrowhead.
     edge_font_size: int, default=8
@@ -785,6 +1042,8 @@ default="mean"
         show_edge_counts=show_edge_counts,
         show_metric=show_metric,
         show_node_counts=show_node_counts,
+        show_occupancy=show_occupancy,
+        show_between_run_ci=show_between_run_ci,
     )
 
     # Build widget
@@ -793,9 +1052,7 @@ default="mean"
     cytoscapeobj.layout.width = f"{width - 20}px"
     cytoscapeobj.layout.height = f"{height - 20}px"
 
-    cytoscapeobj.graph.add_graph_from_json(
-        {"nodes": cy_nodes, "edges": cy_edges}
-    )
+    cytoscapeobj.graph.add_graph_from_json({"nodes": cy_nodes, "edges": cy_edges})
 
     cytoscapeobj.set_tooltip_source("label")
 
@@ -859,6 +1116,17 @@ default="mean"
         ),
     )
 
+    if caption:
+        return widgets.VBox(
+            [
+                widgets.HTML(
+                    f"<div style='font-size:{edge_font_size + 2}px;color:#555;"
+                    f"max-width:{width}px'>{caption}</div>"
+                ),
+                container,
+            ]
+        )
+
     return container
 
 
@@ -879,6 +1147,9 @@ def dfg_to_cytoscape_streamlit(
     show_edge_counts: bool = True,
     show_metric: bool = True,
     show_node_counts: bool = True,
+    show_occupancy: bool = True,
+    show_between_run_ci: bool = True,
+    caption: str | None = None,
     additional_layout_options: dict | None = None,
     **kwargs,
 ):
@@ -953,6 +1224,20 @@ default="mean"
         If True, include the selected time statistic in edge labels.
     show_node_counts : bool, default=True
         If True, include activity occurrence counts in node labels.
+    show_occupancy : bool, default=True
+        If True, and the node table came from
+        ``discover_dfg(occupancy_stats=...)``, add mean/min/max entities
+        present to each queue or resource node's label. No effect otherwise.
+    show_between_run_ci : bool, default=True
+        If True, and the tables carry between-run range columns (from
+        :meth:`vidigi.logging.TrialLogger.generate_dfg` with
+        ``across_runs=True``), append the across-replication min-max spread to
+        each per-run count and mean transition time. No effect on a single-run
+        graph.
+    caption : str or None, default=None
+        If given, rendered with ``st.caption`` above the graph - used by
+        ``across_runs=True`` for the "simulation output, not observed data"
+        note.
     additional_layout_options : dict or None, default=None
         Additional Cytoscape layout options to merge into the base layout
         configuration. Values in this dictionary override defaults.
@@ -1007,7 +1292,14 @@ default="mean"
         show_edge_counts=show_edge_counts,
         show_metric=show_metric,
         show_node_counts=show_node_counts,
+        show_occupancy=show_occupancy,
+        show_between_run_ci=show_between_run_ci,
     )
+
+    if caption:
+        import streamlit as st
+
+        st.caption(caption)
 
     elements = cy_nodes + cy_edges
 

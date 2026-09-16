@@ -1,27 +1,97 @@
+import json
+import pickle
+import warnings
+from collections.abc import Sequence
+from datetime import datetime
+from io import TextIOBase
+from pathlib import Path
+from typing import Any, ClassVar, Literal, TypeAlias
+
+import pandas as pd
+import plotly.express as px
 from pydantic import (
     BaseModel,
     Field,
+    ValidationInfo,
     field_validator,
     model_validator,
-    ValidationInfo,
 )
-from typing import Optional, Any, List, ClassVar, Set, Literal, TypeAlias
-import json
-import pandas as pd
-from pathlib import Path
-from io import TextIOBase
-from datetime import datetime
-import plotly.express as px
-import warnings
-import inspect
-from vidigi.prep import reshape_for_animations
-import plotly.graph_objects as go
+
+from vidigi.analysis import (
+    DurationStat,
+    MatchMode,
+    ResourceUtilisationBy,
+    UnclosedResourceUse,
+    _summarise_durations,
+    activity_occupancy_stats,
+    compare_replication_values,
+    entity_metric_by_arrival,
+    event_durations,
+    event_occurrence_rate,
+    flag_outlier_runs,
+    mean_confidence_interval,
+    replication_means,
+    replication_precision,
+    resource_utilisation,
+)
+from vidigi.animation import (
+    animate_activity_log as _animate_activity_log,
+)
+from vidigi.plots import (
+    Across,
+    DistributionKind,
+    ErrorBars,
+    PlotBackend,
+    ResourceMetric,
+    SplitBy,
+    WarmUpMethod,
+)
+from vidigi.plots import (
+    plot_duration_distribution as _plot_duration_distribution,
+)
+from vidigi.plots import (
+    plot_metric as _plot_metric,
+)
+from vidigi.plots import (
+    plot_metric_bar as _plot_metric_bar,
+)
+from vidigi.plots import (
+    plot_metric_vs_arrival_time as _plot_metric_vs_arrival_time,
+)
+from vidigi.plots import (
+    plot_outlier_runs as _plot_outlier_runs,
+)
+from vidigi.plots import (
+    plot_queue_size as _plot_queue_size,
+)
+from vidigi.plots import (
+    plot_replication_analysis as _plot_replication_analysis,
+)
+from vidigi.plots import (
+    plot_resource_utilisation as _plot_resource_utilisation,
+)
+from vidigi.plots import (
+    plot_resource_utilisation_comparison as _plot_resource_utilisation_comparison,
+)
+from vidigi.plots import (
+    plot_resource_utilisation_over_time as _plot_resource_utilisation_over_time,
+)
+from vidigi.plots import (
+    plot_scenario_comparison as _plot_scenario_comparison,
+)
+from vidigi.plots import (
+    plot_warm_up_diagnostic as _plot_warm_up_diagnostic,
+)
+from vidigi.prep import (
+    reshape_for_animations as _reshape_for_animations,
+)
 from vidigi.process_mapping import (
-    discover_dfg,
+    _transitions,
     add_sim_timestamp,
-    dfg_to_graphviz,
     dfg_to_cytoscape,
     dfg_to_cytoscape_streamlit,
+    dfg_to_graphviz,
+    discover_dfg,
 )
 
 RECOGNIZED_EVENT_TYPES = {
@@ -37,8 +107,204 @@ DFGType: TypeAlias = Literal[
 ]
 
 
+def _scenarios_agree(a, b) -> bool:
+    """Whether two attached `scenario` objects should be treated as the same one."""
+    if a is b:
+        return True
+    try:
+        return bool(a == b)
+    except Exception:
+        return False
+
+
+def _pickle_to(obj, path_or_buffer) -> None:
+    """Pickle `obj` to a path or writable binary buffer.
+
+    A common failure is an attached `scenario` that is not picklable (it holds a
+    live simpy Environment, a Store, or a lambda); re-raise those with a message
+    that points at the likely cause rather than the raw pickle error.
+    """
+    try:
+        if isinstance(path_or_buffer, (str, Path)):
+            with open(path_or_buffer, "wb") as f:
+                pickle.dump(obj, f)
+        else:
+            pickle.dump(obj, path_or_buffer)
+    except (pickle.PicklingError, TypeError, AttributeError) as e:
+        raise type(e)(
+            f"Could not pickle this {type(obj).__name__}. If a `scenario` is "
+            "attached, it may not itself be picklable - e.g. it holds a live "
+            f"simpy Environment, a Store, or a lambda. Original error: {e}"
+        ) from e
+
+
+def _unpickle_from(path_or_buffer, expected_type):
+    """Load a pickled object and check it is the expected logger class."""
+    if isinstance(path_or_buffer, (str, Path)):
+        with open(path_or_buffer, "rb") as f:
+            obj = pickle.load(f)
+    else:
+        obj = pickle.load(path_or_buffer)
+    if not isinstance(obj, expected_type):
+        raise TypeError(
+            f"Unpickled object is a {type(obj).__name__}, not a "
+            f"{expected_type.__name__}."
+        )
+    return obj
+
+
+def _render_dfg(nodes, edges, output_format, time_unit, **kwargs):
+    """Dispatch a discovered DFG to the renderer named by `output_format`.
+
+    Shared by `EventLogger.generate_dfg` and `TrialLogger.generate_dfg` so the
+    two stay in step.
+    """
+    if output_format == "graphviz-object":
+        return dfg_to_graphviz(nodes, edges, time_unit=time_unit, **kwargs)
+    elif output_format == "graphviz-image":
+        return dfg_to_graphviz(
+            nodes, edges, return_image=True, time_unit=time_unit, **kwargs
+        )
+    elif output_format == "cytoscape-jupyter":
+        return dfg_to_cytoscape(nodes, edges, time_unit=time_unit, **kwargs)
+    elif output_format == "cytoscape-streamlit":
+        return dfg_to_cytoscape_streamlit(nodes, edges, time_unit=time_unit, **kwargs)
+    else:
+        raise ValueError(f"Invalid output format passed. Valid formats are {DFGType}.")
+
+
+def _representative_run(trial_df: pd.DataFrame):
+    """The run id whose mean time-in-system is closest to the trial median.
+
+    Time-in-system is approximated per entity as the span (`max - min`) of its
+    event times; those are averaged within each run, and the run whose average
+    is nearest the median of the per-run averages is returned. Ties resolve to
+    the lowest run id. A single-run trial returns that run.
+    """
+    span = trial_df.groupby(["run_number", "entity_id"])["time"].agg(
+        lambda s: s.max() - s.min()
+    )
+    per_run = span.groupby("run_number").mean().sort_index()
+    if len(per_run) == 1:
+        return per_run.index[0]
+    return (per_run - per_run.median()).abs().idxmin()
+
+
+def _dfg_across_runs(
+    trial_df: pd.DataFrame,
+    *,
+    time_unit: str,
+    warm_up: float | None,
+    occupancy_metrics: bool,
+    occupancy_snapshot_interval: float,
+):
+    """Node/edge tables for one combined cross-run process map.
+
+    Transitions are grouped per `(run, entity)` so no cross-run edge is
+    fabricated. Node `count` and edge `frequency` are reported *per
+    replication* (pooled total / number of runs) and carry the between-run
+    min-max spread in `*_run_min` / `*_run_max` columns; a run in which a step
+    or transition never occurs counts as zero for that spread. Transition
+    times are pooled over every run's transitions, with `mean_time` also
+    carrying the between-run spread of the per-run mean (over the runs in
+    which the transition occurred). Occupancy, if requested, comes from
+    `activity_occupancy_stats(..., across_runs="average")`.
+    """
+    all_runs = sorted(trial_df["run_number"].unique())
+    n_runs = len(all_runs)
+
+    stamped = add_sim_timestamp(trial_df, time_unit=time_unit, warm_up=warm_up)
+    transitions = _transitions(stamped, time_unit=time_unit, run_col="run_number")
+
+    # Pooled edge statistics over every run's transitions.
+    edges = (
+        transitions.groupby(["source", "target"])
+        .agg(
+            frequency=("delta_time", "count"),
+            mean_time=("delta_time", "mean"),
+            median_time=("delta_time", "median"),
+            max_time=("delta_time", "max"),
+            min_time=("delta_time", "min"),
+            standard_deviation_time=("delta_time", "std"),
+        )
+        .reset_index()
+    )
+    edges["probability"] = edges["frequency"] / edges.groupby("source")[
+        "frequency"
+    ].transform("sum")
+
+    # Between-run spread of the per-run frequency (zero-filled for runs the
+    # transition never occurs in) and of the per-run mean time (only over runs
+    # it does occur in - a transition that never happened has no mean).
+    per_run_freq = (
+        transitions.groupby(["source", "target", "run_number"])
+        .size()
+        .unstack("run_number")
+        .reindex(columns=all_runs)
+        .fillna(0)
+        .astype(float)
+    )
+    per_run_mean = transitions.groupby(["source", "target", "run_number"])[
+        "delta_time"
+    ].mean()
+    edge_spread = pd.DataFrame(
+        {
+            "frequency_run_min": per_run_freq.min(axis=1),
+            "frequency_run_max": per_run_freq.max(axis=1),
+            "mean_time_run_min": per_run_mean.groupby(["source", "target"]).min(),
+            "mean_time_run_max": per_run_mean.groupby(["source", "target"]).max(),
+        }
+    ).reset_index()
+    edges = edges.merge(edge_spread, on=["source", "target"], how="left")
+    edges["frequency"] = (edges["frequency"] / n_runs).round(1)
+
+    # Node counts, per replication, with the same between-run spread.
+    per_run_node = (
+        stamped.groupby(["event", "run_number"])["entity_id"]
+        .count()
+        .unstack("run_number")
+        .reindex(columns=all_runs)
+        .fillna(0)
+        .astype(float)
+    )
+    nodes = (
+        stamped.groupby("event")
+        .agg(count=("entity_id", "count"))
+        .reset_index()
+        .rename(columns={"event": "activity"})
+    )
+    nodes["count"] = (nodes["count"] / n_runs).round(1)
+    node_spread = (
+        pd.DataFrame(
+            {
+                "count_run_min": per_run_node.min(axis=1),
+                "count_run_max": per_run_node.max(axis=1),
+            }
+        )
+        .reset_index()
+        .rename(columns={"event": "activity"})
+    )
+    nodes = nodes.merge(node_spread, on="activity", how="left")
+
+    if occupancy_metrics:
+        occupancy_stats = activity_occupancy_stats(
+            trial_df,
+            every_x_time_units=occupancy_snapshot_interval,
+            warm_up=warm_up or 0,
+            across_runs="average",
+        )
+        if not occupancy_stats.empty:
+            nodes = nodes.merge(
+                occupancy_stats.rename(columns={"event": "activity"}),
+                on="activity",
+                how="left",
+            )
+
+    return nodes, edges
+
+
 class BaseEvent(BaseModel):
-    _warned_unrecognized_event_types: ClassVar[Set[str]] = set()
+    _warned_unrecognized_event_types: ClassVar[set[str]] = set()
 
     entity_id: Any = Field(
         ...,
@@ -55,21 +321,25 @@ class BaseEvent(BaseModel):
     time: float = Field(..., description="Simulation time or timestamp of event.")
 
     # Optional commonly-used fields
-    pathway: Optional[str] = None
+    pathway: str | None = None
 
-    run_number: Optional[int] = Field(
+    run_number: int | None = Field(
         default=None,
         description="A numeric value identifying the simulation run this record is associated with.",
     )
 
-    timestamp: Optional[datetime] = Field(
+    timestamp: datetime | None = Field(
         default=None,
         description="Real-world timestamp of the event, if available.",
     )
 
-    resource_id: Optional[int] = Field(
+    resource_id: int | None = Field(
         None,
         description="ID of the resource involved (required for resource use events).",
+        # Without this, pydantic skips the field's validators when the caller omits it,
+        # so the "resource_id is recommended" check below could never fire in the one
+        # case it exists to catch.
+        validate_default=True,
     )
 
     # Allow arbitrary extra fields
@@ -154,19 +424,58 @@ class BaseEvent(BaseModel):
 
 
 class EventLogger:
-    def __init__(self, event_model=BaseEvent, env: Any = None, run_number: int = None):
+    """
+    Records simulation events for later reshaping into animations and statistics.
+
+    Parameters
+    ----------
+    env : optional
+        A simulation environment with a `.now` attribute or method (e.g. a
+        simpy or salabim `Environment`). When given, every `log_*` call below
+        may omit `time` - it is read from `env.now` at call time. Without an
+        `env`, `time` becomes a required argument on every `log_*` call, and
+        omitting it raises `ValueError`.
+    run_number : int, optional
+        Run/replication number to stamp on every event by default. When
+        given, every `log_*` call below may omit `run_number` - it is filled
+        in from this value. Without it, `run_number` is left off events
+        unless supplied per-call.
+    """
+
+    def __init__(
+        self,
+        event_model=BaseEvent,
+        env: Any = None,
+        run_number: int = None,
+        *,
+        scenario: Any = None,
+        label: str | None = None,
+    ):
         self.event_model = event_model
         self.env = env  # Optional simulation env with .now
         self.run_number = run_number
-        self._log: List[dict] = []
+        # Optional provenance: the parameters object (a class, an instance, or a
+        # plain {name: count} dict) that produced this run, and a human-readable
+        # name for it. `scenario` is the same shape accepted by the animation and
+        # resource-utilisation helpers; neither is validated here.
+        self.scenario = scenario
+        self.label = label
+        self._log: list[dict] = []
 
-    def log_event(self, context: Optional[dict] = None, **event_data):
+    def __getstate__(self):
+        # The simulation environment (a simpy/salabim `Environment`) holds live
+        # generators and cannot be pickled. It is only read while logging, to
+        # stamp `time` onto an event - a restored logger has a complete `_log`
+        # and does not need it - so drop it rather than block `to_pickle`.
+        state = self.__dict__.copy()
+        state["env"] = None
+        return state
+
+    def log_event(self, context: dict | None = None, **event_data):
         if "time" not in event_data:
             if self.env is not None and hasattr(self.env, "now"):
                 now_attr = self.env.now
-                event_data["time"] = (
-                    now_attr() if callable(now_attr) else now_attr
-                )
+                event_data["time"] = now_attr() if callable(now_attr) else now_attr
             else:
                 raise ValueError(
                     "Missing 'time' and no simulation environment provided."
@@ -191,13 +500,26 @@ class EventLogger:
         self,
         *,
         entity_id: Any,
-        time: Optional[float] = None,
-        pathway: Optional[str] = None,
-        run_number: Optional[int] = None,
+        time: float | None = None,
+        pathway: str | None = None,
+        run_number: int | None = None,
         **extra_fields,
     ):
         """
         Helper to log an arrival event with the correct event_type and event fields.
+
+        `entity_id` must be unique per arrival/departure within a run - logging a second
+        arrival under the same `entity_id` raises a `ValueError` when the log is reshaped
+        for animation.
+
+        Parameters
+        ----------
+        time : float, optional
+            Simulation time of the event. Defaults to `env.now` if `env` was
+            passed to `EventLogger(...)`; required otherwise.
+        run_number : int, optional
+            Run/replication number. Defaults to the `run_number` passed to
+            `EventLogger(...)`, if any.
         """
         event_data = {
             "entity_id": entity_id,
@@ -214,13 +536,26 @@ class EventLogger:
         self,
         *,
         entity_id: Any,
-        time: Optional[float] = None,
-        pathway: Optional[str] = None,
-        run_number: Optional[int] = None,
+        time: float | None = None,
+        pathway: str | None = None,
+        run_number: int | None = None,
         **extra_fields,
     ):
         """
         Helper to log a departure event with the correct event_type and event fields.
+
+        `entity_id` must be unique per arrival/departure within a run - logging a second
+        departure under the same `entity_id` raises a `ValueError` when the log is reshaped
+        for animation.
+
+        Parameters
+        ----------
+        time : float, optional
+            Simulation time of the event. Defaults to `env.now` if `env` was
+            passed to `EventLogger(...)`; required otherwise.
+        run_number : int, optional
+            Run/replication number. Defaults to the `run_number` passed to
+            `EventLogger(...)`, if any.
         """
         event_data = {
             "entity_id": entity_id,
@@ -238,13 +573,22 @@ class EventLogger:
         *,
         entity_id: Any,
         event: str,
-        time: Optional[float] = None,
-        pathway: Optional[str] = None,
-        run_number: Optional[int] = None,
+        time: float | None = None,
+        pathway: str | None = None,
+        run_number: int | None = None,
         **extra_fields,
     ):
         """
         Log a queue event. The 'event' here can be any string describing the queue event.
+
+        Parameters
+        ----------
+        time : float, optional
+            Simulation time of the event. Defaults to `env.now` if `env` was
+            passed to `EventLogger(...)`; required otherwise.
+        run_number : int, optional
+            Run/replication number. Defaults to the `run_number` passed to
+            `EventLogger(...)`, if any.
         """
         event_data = {
             "entity_id": entity_id,
@@ -262,18 +606,50 @@ class EventLogger:
         *,
         entity_id: Any,
         resource_id: int,
-        time: Optional[float] = None,
-        pathway: Optional[str] = None,
-        run_number: Optional[int] = None,
+        event: str = "start",
+        time: float | None = None,
+        pathway: str | None = None,
+        run_number: int | None = None,
         **extra_fields,
     ):
         """
         Log the start of resource use. Requires resource_id.
+
+        Parameters
+        ----------
+        event : str, default="start"
+            Name of the specific step, e.g. `"treatment_begins"`. The default
+            of `"start"` is fine for a model with only one resource-use step;
+            with more than one, a distinct name per step is what lets
+            `vidigi.analysis.resource_use_intervals`/`resource_utilisation`
+            report them separately rather than pooling every resource
+            together under one name.
+        time : float, optional
+            Simulation time of the event. Defaults to `env.now` if `env` was
+            passed to `EventLogger(...)`; required otherwise.
+        run_number : int, optional
+            Run/replication number. Defaults to the `run_number` passed to
+            `EventLogger(...)`, if any.
+        **extra_fields
+            Any further keyword arguments are recorded on the event as extra
+            columns in the log, e.g. `acuity=3`, `arrival_mode="ambulance"`,
+            `unique_resource_id=resource.unique_id`. Useful for
+            attaching entity-level attributes for later analysis. When resource
+            use is auto-logged via `VidigiStore(logger=...)`, the same passthrough
+            is available on `VidigiStore.request()`/`get_direct()`.
+
+        Notes
+        -----
+        This was already possible by passing `event=...` as an extra keyword
+        argument - it silently overrode the literal `"start"` above, since
+        `**extra_fields` is applied last. `event` is now an explicit,
+        documented parameter instead; behaviour for existing callers is
+        unchanged either way.
         """
         event_data = {
             "entity_id": entity_id,
             "event_type": "resource_use",
-            "event": "start",
+            "event": event,
             "time": time,
             "resource_id": resource_id,
             "pathway": pathway,
@@ -287,18 +663,47 @@ class EventLogger:
         *,
         entity_id: Any,
         resource_id: int,
-        time: Optional[float] = None,
-        pathway: Optional[str] = None,
-        run_number: Optional[int] = None,
+        event: str = "end",
+        time: float | None = None,
+        pathway: str | None = None,
+        run_number: int | None = None,
         **extra_fields,
     ):
         """
         Log the end of resource use. Requires resource_id.
+
+        Parameters
+        ----------
+        event : str, default="end"
+            Name of the specific step, e.g. `"treatment_ends"`. Only used as a
+            label by `vidigi.analysis.resource_use_intervals` - grouping uses
+            the matching `log_resource_use_start` call's `event` instead - but
+            still worth naming distinctly for readability.
+        time : float, optional
+            Simulation time of the event. Defaults to `env.now` if `env` was
+            passed to `EventLogger(...)`; required otherwise.
+        run_number : int, optional
+            Run/replication number. Defaults to the `run_number` passed to
+            `EventLogger(...)`, if any.
+        **extra_fields
+            Any further keyword arguments are recorded on the event as extra
+            columns in the log, e.g. an `outcome=...` known only once the
+            resource is released, or `unique_resource_id=resource.unique_id`.
+            When resource use is auto-logged via `VidigiStore(logger=...)`, the
+            same passthrough is available on `VidigiStore.put()`/`return_item()`.
+
+        Notes
+        -----
+        This was already possible by passing `event=...` as an extra keyword
+        argument - it silently overrode the literal `"end"` above, since
+        `**extra_fields` is applied last. `event` is now an explicit,
+        documented parameter instead; behaviour for existing callers is
+        unchanged either way.
         """
         event_data = {
             "entity_id": entity_id,
             "event_type": "resource_use_end",
-            "event": "end",
+            "event": event,
             "time": time,
             "resource_id": resource_id,
             "pathway": pathway,
@@ -313,14 +718,23 @@ class EventLogger:
         entity_id: Any,
         event_type: str,
         event: str,
-        time: Optional[float] = None,
-        pathway: Optional[str] = None,
-        run_number: Optional[int] = None,
+        time: float | None = None,
+        pathway: str | None = None,
+        run_number: int | None = None,
         **extra_fields,
     ):
         """
         Log a custom event. The 'event' here can be any string describing the queue event.
         An 'event_type' must also be passed, but can be any string of the user's choosing.
+
+        Parameters
+        ----------
+        time : float, optional
+            Simulation time of the event. Defaults to `env.now` if `env` was
+            passed to `EventLogger(...)`; required otherwise.
+        run_number : int, optional
+            Run/replication number. Defaults to the `run_number` passed to
+            `EventLogger(...)`, if any.
         """
         event_data = {
             "entity_id": entity_id,
@@ -344,7 +758,7 @@ class EventLogger:
     def log(self):
         return self._log
 
-    def get_log(self) -> List[dict]:
+    def get_log(self) -> list[dict]:
         return self._log
 
     def to_json_string(self, indent: int = 2) -> str:
@@ -376,6 +790,21 @@ class EventLogger:
         """Convert the event log to a pandas DataFrame."""
         return pd.DataFrame(self._log).dropna(axis=1, how="all")
 
+    def to_pickle(self, path_or_buffer: str | Path | Any) -> None:
+        """Pickle this `EventLogger` to a file path or writable binary buffer.
+
+        The event log and any attached `scenario` / `label` are pickled; the
+        simulation `env` is not (it holds live generators), so a restored logger
+        has `env=None` and cannot log new events - it is a finished record. An
+        attached `scenario` must itself be picklable.
+        """
+        _pickle_to(self, path_or_buffer)
+
+    @classmethod
+    def read_pickle(cls, path_or_buffer: str | Path | Any) -> "EventLogger":
+        """Load an `EventLogger` previously written with `to_pickle`."""
+        return _unpickle_from(path_or_buffer, cls)
+
     ####################################################
     # Creating a log from an existing dataframe        #
     ####################################################
@@ -387,8 +816,8 @@ class EventLogger:
         time_col_name: str = "time",
         event_col_name: str = "event",
         event_type_col_name: str = "event_type",
-        run_col_name: Optional[str] = None,
-        pathway_col_name: Optional[str] = None,
+        run_col_name: str | None = None,
+        pathway_col_name: str | None = None,
     ):
         df = df.rename(
             columns={
@@ -405,7 +834,10 @@ class EventLogger:
         if pathway_col_name is not None:
             df = df.rename(columns={pathway_col_name: "pathway"})
 
-        self._log = df.copy()
+        # `_log` is a list of records everywhere else. Assigning the DataFrame itself
+        # left the logger in a state where iteration walked column names, truthiness
+        # checks raised, and JSON export failed.
+        self._log = df.to_dict("records")
 
     ####################################################
     # Summarising Logs                                 #
@@ -413,7 +845,7 @@ class EventLogger:
 
     def summary(self) -> dict:
         if not self._log:
-            return {"total_events": 0}
+            return {"total_events": 0, "label": self.label}
         df = self.to_dataframe()
         return {
             "total_events": len(df),
@@ -422,6 +854,7 @@ class EventLogger:
             "unique_entities": (
                 df["entity_id"].nunique() if "entity_id" in df else None
             ),
+            "label": self.label,
         }
 
     ####################################################
@@ -461,6 +894,7 @@ class EventLogger:
         entity_id: any,
         split_by_entity_type: bool = False,
         show_labels: bool = False,
+        return_fig: bool = False,
     ):
         """
         Plot a timeline of events for a given entity.
@@ -481,6 +915,18 @@ class EventLogger:
         show_labels : bool, default=False
             If True, the event labels are displayed as text on the plot.
             If False, no labels are shown.
+        return_fig : bool, default=False
+            If True, return the Plotly figure instead of calling `fig.show()`.
+            Use this to customise the figure further or export it (e.g.
+            `fig.write_image(...)`). Defaults to False for backwards
+            compatibility; this default will flip to True in vidigi 3.0, at
+            which point the method will stop calling `fig.show()` itself.
+
+        Returns
+        -------
+        plotly.graph_objects.Figure or None
+            The figure if `return_fig=True`, otherwise None (the figure is
+            displayed via `fig.show()` and not returned).
 
         Raises
         ------
@@ -495,7 +941,7 @@ class EventLogger:
 
         Notes
         -----
-        - The plot is displayed using `plotly.express.scatter`.
+        - The plot is built using `plotly.express.scatter`.
         - The y-axis is treated as categorical to improve readability.
         - Marker styling includes a fixed size and outline color for clarity.
         """
@@ -504,7 +950,6 @@ class EventLogger:
 
         df = self.to_dataframe()
         entity_events = df[df["entity_id"] == entity_id]
-        print(entity_events)
 
         if entity_events.empty:
             raise ValueError(f"No events found for entity_id = {entity_id}")
@@ -547,12 +992,18 @@ class EventLogger:
 
         fig.update_yaxes(type="category")  # treat event_type as categorical on y-axis
 
+        if return_fig:
+            return fig
+
         fig.show()
 
     def generate_dfg(
         self,
         output_format: DFGType = "graphviz-object",
         input_time_format="minutes",
+        warm_up: float | None = None,
+        occupancy_metrics: bool = False,
+        occupancy_snapshot_interval: float = 1,
         **kwargs,
     ):
         """
@@ -578,6 +1029,22 @@ class EventLogger:
         input_time_format : str, optional
             The time unit used to calculate durations and timestamps,
             by default "minutes".
+        warm_up : float, optional
+            Discard a warm-up period before the graph is built, by dropping
+            events at or before this simulation time. Default is `None`,
+            which keeps every event. See
+            :func:`vidigi.process_mapping.add_sim_timestamp` for what this
+            does and does not affect.
+        occupancy_metrics : bool, default=False
+            If True, annotate each queue and resource node with the mean,
+            minimum and maximum number of entities present at that step, via
+            :func:`vidigi.analysis.activity_occupancy_stats`. Off by default
+            because the queue calculation runs `reshape_for_animations` once
+            per run, which is slow on a long log. `warm_up` is applied to
+            this the same way.
+        occupancy_snapshot_interval : float, default=1
+            Snapshot granularity for `occupancy_metrics`, in `input_time_format`
+            units. A larger value is faster and coarser.
         **kwargs
             Arbitrary keyword arguments passed to the underlying rendering
             functions (`dfg_to_graphviz`, `dfg_to_cytoscape`, etc.).
@@ -604,26 +1071,100 @@ class EventLogger:
         - :func:`dfg_to_cytoscape_streamlit`: For streamlit cytoscape styling kwargs.
 
         """
-        df = self.to_dataframe()
-        df = add_sim_timestamp(df, time_unit=input_time_format)
-        nodes, edges = discover_dfg(df, time_unit=input_time_format)
+        raw_df = self.to_dataframe()
+        df = add_sim_timestamp(raw_df, time_unit=input_time_format, warm_up=warm_up)
 
-        if output_format == "graphviz-object":
-            return dfg_to_graphviz(nodes, edges, time_unit=input_time_format, **kwargs)
-        elif output_format == "graphviz-image":
-            return dfg_to_graphviz(
-                nodes, edges, return_image=True, time_unit=input_time_format, **kwargs
+        occupancy_stats = None
+        if occupancy_metrics:
+            occupancy_stats = activity_occupancy_stats(
+                raw_df,
+                every_x_time_units=occupancy_snapshot_interval,
+                warm_up=warm_up or 0,
             )
-        elif output_format == "cytoscape-jupyter":
-            return dfg_to_cytoscape(nodes, edges, time_unit=input_time_format, **kwargs)
-        elif output_format == "cytoscape-streamlit":
-            return dfg_to_cytoscape_streamlit(
-                nodes, edges, time_unit=input_time_format, **kwargs
-            )
-        else:
-            raise ValueError(
-                f"Invalid output format passed. Valid formats are {DFGType}."
-            )
+
+        nodes, edges = discover_dfg(
+            df, time_unit=input_time_format, occupancy_stats=occupancy_stats
+        )
+
+        return _render_dfg(nodes, edges, output_format, input_time_format, **kwargs)
+
+    def reshape_for_animations(self, **kwargs):
+        """
+        Reshape this event log into the per-snapshot frame the animation uses.
+
+        Thin wrapper over `vidigi.prep.reshape_for_animations`, called on this
+        logger directly (no `.to_dataframe()` step needed). See that function
+        for the full parameter list.
+
+        This is the first of the three steps `animate_activity_log` runs for
+        you. Call it yourself only when you want to inspect or tweak the
+        intermediate frame before continuing:
+
+        ```python
+        full_entity_df = logger.reshape_for_animations(every_x_time_units=5)
+        full_entity_df_plus_pos = generate_animation_df(
+            full_entity_df, event_position_df
+        )
+        fig = generate_animation(full_entity_df_plus_pos, event_position_df)
+        ```
+
+        `generate_animation_df` and `generate_animation` stay as functions in
+        `vidigi.prep` / `vidigi.animation` - they act on the intermediate
+        DataFrame, not on the logger.
+
+        Parameters
+        ----------
+        **kwargs
+            Keyword arguments forwarded to `vidigi.prep.reshape_for_animations`
+            (e.g. `every_x_time_units`, `limit_duration`, `step_snapshot_max`).
+
+        Returns
+        -------
+        pandas.DataFrame
+            One row per (entity, snapshot time) - the input to
+            `generate_animation_df`.
+
+        See Also
+        --------
+        vidigi.prep.reshape_for_animations : The underlying implementation.
+        animate_activity_log : Run all three steps in one call.
+        """
+        return _reshape_for_animations(self, **kwargs)
+
+    def animate_activity_log(self, event_position_df, *, scenario=None, **kwargs):
+        """
+        Build an animated visualisation of the entities in this event log.
+
+        Thin wrapper over `vidigi.animation.animate_activity_log`, called on
+        this logger directly (no `.to_dataframe()` step needed). See that
+        function for the full parameter list.
+
+        Parameters
+        ----------
+        event_position_df : pandas.DataFrame
+            The layout: an `x`/`y` position per event. Build it with
+            `vidigi.utils.create_event_position_df` / `EventPosition`.
+        scenario : object or dict, optional
+            The parameters object (or `{name: count}` dict) that produced the
+            run, used to draw one icon per available resource unit.
+        **kwargs
+            Additional keyword arguments forwarded to
+            `vidigi.animation.animate_activity_log` (e.g. `every_x_time_units`,
+            `limit_duration`, `plotly_height`, the appearance arguments).
+
+        Returns
+        -------
+        plotly.graph_objects.Figure
+
+        See Also
+        --------
+        vidigi.animation.animate_activity_log : The underlying implementation.
+        reshape_for_animations : The first step, if you want to run the
+            pipeline yourself.
+        """
+        return _animate_activity_log(
+            self, event_position_df, scenario=scenario, **kwargs
+        )
 
 
 class TrialLogger:
@@ -644,30 +1185,122 @@ class TrialLogger:
         Return the full trial data as a pandas DataFrame.
     summary()
         Return a simple summary of the number of runs in the trial.
+    get_event_durations(first_event, second_event, match="first", **kwargs)
+        Compute per-entity durations between two event types across every run.
     get_event_duration_stat(first_event, second_event, what="mean",
                             exclude_incomplete=True, dp=2, label=None, **kwargs)
         Compute statistics on durations between two event types across runs.
+    plot_duration_distribution(first_event, second_event, kind="hist", **kwargs)
+        Plot the distribution of durations between two events, across every run.
+    generate_dfg(output_format="graphviz-object", run_number=None,
+                 across_runs=False, **kwargs)
+        Build a process map: the representative run, one chosen run, or one
+        combined cross-run map.
+    reshape_for_animations(run_number=None, **kwargs)
+        Reshape one run into the per-snapshot frame the animation uses.
+    animate_activity_log(event_position_df, scenario=None, run_number=None, **kwargs)
+        Build an animated visualisation of one run in the trial.
 
     Parameters
     ----------
     event_logs : list[EventLogger], optional
         A list of vidigi `EventLogger` instances to initialize the trial log with.
+    scenario : object or dict, optional
+        The parameters object that produced these runs - a class, an instance, or
+        a plain ``{name: count}`` dict. Same shape accepted by the animation and
+        resource-utilisation helpers; when set, `get_resource_utilisation`,
+        `plot_resource_utilisation` and `plot_resource_utilisation_over_time` use
+        it automatically if no `scenario=` is passed to them. If omitted, it is
+        inherited from the `EventLogger`s (a disagreement between runs warns).
+    label : str, optional
+        A human-readable name for this trial. Inherited from the `EventLogger`s if
+        omitted. Surfaced in `summary()`.
 
     """
 
-    def __init__(self, event_logs: Optional[list[EventLogger]] = None):
+    def __init__(
+        self,
+        event_logs: list[EventLogger] | None = None,
+        *,
+        scenario: Any = None,
+        label: str | None = None,
+    ):
         self._event_logs = []
 
         if event_logs is not None:
             for log in event_logs:
                 self._event_logs.append(
-                    {"run_id": log._log[0]["run_number"], "run_data": log}
+                    {"run_id": self._run_id_of(log), "run_data": log}
                 )
 
         self._run_index = {r["run_id"]: r for r in self._event_logs}
 
-        self._trial_dataframe = pd.concat(
-            [pd.DataFrame(log["run_data"].to_dataframe()) for log in self._event_logs]
+        # Provenance. An explicit argument wins; otherwise inherit from the
+        # constituent EventLoggers (warning if they disagree).
+        self.scenario = (
+            scenario if scenario is not None else self._inherited_attr("scenario")
+        )
+        self.label = label if label is not None else self._inherited_attr("label")
+
+    def _inherited_attr(self, attr: str):
+        """The value of `attr` carried by the constituent `EventLogger`s.
+
+        Returns the first non-`None` value; warns if the logs carry more than one
+        distinct non-`None` value.
+        """
+        present = [
+            v
+            for v in (getattr(rec["run_data"], attr, None) for rec in self._event_logs)
+            if v is not None
+        ]
+        if not present:
+            return None
+        first = present[0]
+        if attr == "scenario":
+            disagree = any(not _scenarios_agree(first, v) for v in present[1:])
+        else:
+            disagree = any(v != first for v in present[1:])
+        if disagree:
+            warnings.warn(
+                f"The EventLoggers passed to this TrialLogger carry more than one "
+                f"distinct `{attr}`. Using the first; pass `{attr}=` explicitly to "
+                "silence this.",
+                UserWarning,
+                stacklevel=3,
+            )
+        return first
+
+    @staticmethod
+    def _run_id_of(event_log: EventLogger):
+        """Read the run number off a log, with a message that says what is wrong."""
+        if not event_log._log:
+            raise ValueError(
+                "Cannot add an empty EventLogger to a TrialLogger - the run number is "
+                "read from its first event."
+            )
+        run_number = event_log._log[0].get("run_number")
+        if run_number is None:
+            raise ValueError(
+                "The EventLogger being added has no `run_number` on its first event. "
+                "Construct it with EventLogger(run_number=...) so its events can be "
+                "told apart from other runs in the trial."
+            )
+        return run_number
+
+    @property
+    def _trial_dataframe(self):
+        """Every run's events in one frame, rebuilt from the current logs.
+
+        This is derived rather than stored: it was previously built once in
+        __init__, so any log added later was counted by `summary()` but absent
+        from every statistic computed off this frame.
+        """
+        if not self._event_logs:
+            return pd.DataFrame()
+
+        return pd.concat(
+            [log["run_data"].to_dataframe() for log in self._event_logs],
+            ignore_index=True,
         )
 
     def add_log(self, event_log: EventLogger):
@@ -680,9 +1313,23 @@ class TrialLogger:
             An `EventLogger` instance containing a log of events for a single run.
         """
         self._event_logs.append(
-            {"run_id": event_log._log[0]["run_number"], "run_data": event_log}
+            {"run_id": self._run_id_of(event_log), "run_data": event_log}
         )
         self._run_index = {r["run_id"]: r for r in self._event_logs}
+
+        added_scenario = getattr(event_log, "scenario", None)
+        if (
+            added_scenario is not None
+            and self.scenario is not None
+            and not _scenarios_agree(self.scenario, added_scenario)
+        ):
+            warnings.warn(
+                "The EventLogger added to this TrialLogger carries a different "
+                "`scenario` from the one already attached; the trial's `scenario` "
+                "is left unchanged.",
+                UserWarning,
+                stacklevel=2,
+            )
 
     def get_log_by_run(self, run, as_df=False):
         """
@@ -704,7 +1351,7 @@ class TrialLogger:
         if not as_df:
             return self._run_index[run]["run_data"]
         else:
-            return self._run_index[run]["run_data"]
+            return self._run_index[run]["run_data"].to_dataframe()
 
     def to_dataframe(self):
         """
@@ -717,6 +1364,21 @@ class TrialLogger:
         """
         return self._trial_dataframe
 
+    def to_pickle(self, path_or_buffer: str | Path | Any) -> None:
+        """Pickle this `TrialLogger` to a file path or writable binary buffer.
+
+        Every constituent `EventLogger` and any attached `scenario` / `label`
+        are pickled; each logger's simulation `env` is not (see
+        `EventLogger.to_pickle`). An attached `scenario` must itself be
+        picklable.
+        """
+        _pickle_to(self, path_or_buffer)
+
+    @classmethod
+    def read_pickle(cls, path_or_buffer: str | Path | Any) -> "TrialLogger":
+        """Load a `TrialLogger` previously written with `to_pickle`."""
+        return _unpickle_from(path_or_buffer, cls)
+
     def summary(self):
         """
         Summarize the trial logs.
@@ -727,17 +1389,81 @@ class TrialLogger:
             Dictionary with summary information:
             - ``"number_of_runs"`` : int
               The number of runs currently stored.
+            - ``"label"`` : str or None
+              The trial's human-readable name.
+            - ``"scenario_attached"`` : bool
+              Whether a `scenario` / parameters object is attached.
         """
-        return {"number_of_runs": len(self._event_logs)}
+        return {
+            "number_of_runs": len(self._event_logs),
+            "label": self.label,
+            "scenario_attached": self.scenario is not None,
+        }
+
+    def get_event_durations(
+        self,
+        first_event,
+        second_event,
+        *,
+        match: MatchMode = "first",
+        warm_up: float = 0,
+        **kwargs,
+    ):
+        """
+        Compute per-entity durations between two event types across every run.
+
+        Thin wrapper over `vidigi.analysis.event_durations`, called on the trial's
+        combined dataframe. See that function for the full parameter list, the
+        meaning of `match`, and how incomplete pairs are handled.
+
+        Parameters
+        ----------
+        first_event : str
+            Name of the first event.
+        second_event : str
+            Name of the second event.
+        match : {"first", "last", "occurrence"}, default="first"
+            How repeated occurrences of the two events for the same entity are
+            paired. See `vidigi.analysis.event_durations`.
+        warm_up : float, default=0
+            Pairings whose `first_time` is before `warm_up` are excluded. See
+            `vidigi.analysis.event_durations`'s same parameter.
+        **kwargs : dict
+            Additional keyword arguments forwarded to
+            `vidigi.analysis.event_durations` (e.g. `entity_col_name`,
+            `keep_incomplete`).
+
+        Returns
+        -------
+        pandas.DataFrame
+            One row per matched pair, with columns ``entity_id``, ``run_number``,
+            ``pathway``, ``occurrence``, ``first_time``, ``second_time``,
+            ``duration``.
+
+        See Also
+        --------
+        vidigi.analysis.event_durations : Full parameter list and pairing semantics.
+        """
+        return event_durations(
+            self._trial_dataframe,
+            first_event,
+            second_event,
+            match=match,
+            warm_up=warm_up,
+            **kwargs,
+        )
 
     def get_event_duration_stat(
         self,
         first_event,
         second_event,
-        what="mean",
+        what: DurationStat = "mean",
         exclude_incomplete=True,
         dp=2,
         label=None,
+        match: MatchMode = "first",
+        warm_up: float = 0,
+        across: Across = "entities",
         **kwargs,
     ):
         """
@@ -762,6 +1488,29 @@ class TrialLogger:
         label : str, optional
             If provided, return the result as a dictionary with keys
             {"stat": label, "value": result}.
+        match : {"first", "last", "occurrence"}, default="first"
+            How repeated occurrences of the two events for the same entity are
+            paired, for entities that revisit a step. See
+            `vidigi.analysis.event_durations` for the full explanation. The
+            default matches the behaviour of every prior release, where an
+            entity visiting either event more than once was unsupported.
+        warm_up : float, default=0
+            Pairings whose `first_time` is before `warm_up` are excluded
+            before the statistic is computed. See
+            `vidigi.analysis.event_durations`'s same parameter. `n_runs`
+            (used by `"unserved_rate"`/`"served_rate"`/`"summary"`) is
+            unaffected - it always counts every run in the trial.
+        across : {"entities", "runs"}, default="entities"
+            Whether the statistic is pooled over every entity's duration with
+            run boundaries ignored (the default, matching every prior release),
+            or computed separately within each run and then averaged across
+            runs - the mean of `vidigi.analysis.replication_means`'s per-run
+            values. `across="runs"` weights every replication equally rather
+            than by its entity count, and is the figure a confidence interval
+            (`get_event_duration_ci`) is about; it accepts only a genuine
+            per-replication `what` (`"mean"`, `"median"`, `"max"`, `"min"`,
+            `"quantile"`, `"std"`, `"var"`, `"sum"`), and requires
+            `exclude_incomplete=True`.
         **kwargs : dict
             Additional arguments passed to the pandas Series method
             corresponding to `what` (e.g., `quantile(q=0.9)`).
@@ -776,123 +1525,628 @@ class TrialLogger:
         Raises
         ------
         ValueError
-            If `what` is not a supported aggregation function.
+            If `what` is not a supported aggregation function; if `across` is
+            not `"entities"` or `"runs"`; if `across="runs"` is combined with
+            `exclude_incomplete=False`, an entity-counting `what`, or a trial
+            with no complete pairs in any run.
+
+        See Also
+        --------
+        get_event_durations : The per-entity durations this method summarises.
+        get_event_duration_ci : A confidence interval around the `across="runs"` mean.
+        get_replication_precision : How that interval tightens as replications accumulate.
         """
-        event_df = self._trial_dataframe[
-            self._trial_dataframe["event"].isin([first_event, second_event])
-        ][["entity_id", "run_number", "event", "time"]].copy()
-
-        n_runs = len(event_df["run_number"].unique())
-
-        pivoted_df = event_df.pivot(
-            columns="event", index=["entity_id", "run_number"], values="time"
-        ).reset_index()[["entity_id", "run_number", first_event, second_event]]
-
-        pivoted_df["duration"] = pivoted_df[second_event] - pivoted_df[first_event]
-
-        series = pivoted_df["duration"]
-
-        # Define special cases
-        special_aggs = {
-            "count",
-            "unserved_count",
-            "served_count",
-            "unserved_rate",
-            "served_rate",
-            "summary",
-        }
-
-        # Collect allowed methods dynamically (only callables, no private methods)
-        allowed = {
-            "mean",
-            "median",
-            "max",
-            "min",
-            "quantile",
-            "std",
-            "var",
-            "sum",
-        } | special_aggs
-
-        # check if valid
-        if what not in allowed:
-            # Build helpful message
-            sigs = []
-            for name in sorted(allowed):
-                try:
-                    func = getattr(series, name)
-                    sig = str(inspect.signature(func))
-                except Exception:
-                    sig = "()"
-                sigs.append(f"  - {name}{sig}")
+        if across not in ("entities", "runs"):
+            raise ValueError(f"`across` must be 'entities' or 'runs'; got {across!r}.")
+        if across == "runs" and not exclude_incomplete:
             raise ValueError(
-                f"Unsupported aggregation: {what}.\n"
-                f"Allowed aggregations:\n" + "\n".join(sigs)
+                '`exclude_incomplete=False` is not supported with `across="runs"`: '
+                "a per-replication statistic cannot include an incomplete (NaN) "
+                'duration. Use `across="entities"` for `exclude_incomplete=False` '
+                "semantics."
             )
 
-        # Handle count separately
-        if what == "count":
-            if exclude_incomplete:
-                result = series.count()  # excludes NaN
-            else:
-                result = series.size  # includes NaN
-        elif what == "unserved_count":
-            result = series.size - series.count()
-        elif what == "served_count":
-            result = series.count()  # excludes NaN
-        elif what == "unserved_rate":
-            result = (series.size - series.count()) / series.size
-        elif what == "served_rate":
-            result = series.count() / series.size
-        elif what == "summary":
-            result = {
-                "mean (of complete)": series.mean(skipna=True),
-                "median (of complete)": series.median(skipna=True),
-                "min": series.min(),
-                "max": series.max(),
-                "unserved_count": series.size,
-                "served_count": series.count(),
-                "unserved_rate": (series.size - series.count()) / series.size,
-                "served_rate": series.count() / series.size,
-                "unserved_count_mean_per_run": series.size / n_runs,
-                "served_count_mean_per_run": series.count() / n_runs,
-            }
+        # Every run in the trial, not just those where one of the two events
+        # occurred - otherwise a run with neither event is silently uncounted,
+        # inflating served/unserved rates that are meant to be per-run averages.
+        n_runs = len(self._event_logs)
 
-        # Otherwise, use predefined methods
+        durations = self.get_event_durations(
+            first_event, second_event, match=match, warm_up=warm_up
+        )
+
+        if across == "runs":
+            run_values = replication_means(durations, what=what, **kwargs)["value"]
+            if run_values.empty:
+                raise ValueError(
+                    f"No complete '{first_event}' -> '{second_event}' pairs were "
+                    f"found in any run to compute a per-replication statistic from."
+                )
+            result = run_values.mean()
+            result = result if dp is None else round(result, dp)
         else:
-            method = getattr(series, what)
-
-            # Some methods accept skipna, others don't (like size, nunique with dropna instead).
-            try:
-                result = method(skipna=exclude_incomplete, **kwargs)
-            except TypeError:
-                # fallback if skipna isn't a parameter
-                result = method(**kwargs)
-
-        if what == "summary":
-            result = {k: round(v, dp) for k, v in result.items()}
-        else:
-            result = round(result, dp)
+            result = _summarise_durations(
+                durations["duration"], what, exclude_incomplete, n_runs, dp=dp, **kwargs
+            )
 
         if label:
             return {"stat": label, "value": result}
         else:
             return result
 
+    def get_event_duration_ci(
+        self,
+        first_event,
+        second_event,
+        *,
+        what: DurationStat = "mean",
+        ci_level: float = 0.95,
+        match: MatchMode = "first",
+        warm_up: float = 0,
+        **kwargs,
+    ):
+        """
+        Confidence interval for a duration statistic, computed across replications.
+
+        The headline "what is this number, and how sure are we" summary for a
+        trial: the chosen statistic is computed separately within each run
+        (`vidigi.analysis.replication_means`), then a Student's t confidence
+        interval is taken over those per-replication values
+        (`vidigi.analysis.mean_confidence_interval`). Replications are the
+        independent unit - see that function's *Notes* for why an interval must
+        never be computed over pooled per-entity durations.
+
+        Unlike `get_replication_precision`, which reports how the interval
+        tightens as replications accumulate, this returns the single interval
+        from every replication in the trial.
+
+        Parameters
+        ----------
+        first_event, second_event : str
+            The two events to pair. See `vidigi.analysis.event_durations`.
+        what : str, default="mean"
+            The per-replication statistic the interval is about: one of
+            `"mean"`, `"median"`, `"max"`, `"min"`, `"quantile"`, `"std"`,
+            `"var"`, `"sum"`. Entity-counting aggregations (`"count"`,
+            `"summary"`, ...) are rejected - see
+            `vidigi.analysis.replication_means`.
+        ci_level : float, default=0.95
+            Confidence level, e.g. `0.95` for a 95% interval.
+        match : {"first", "last", "occurrence"}, default="first"
+            How repeated occurrences of the two events are paired.
+        warm_up : float, default=0
+            Pairings whose `first_time` is before `warm_up` are excluded before
+            the per-replication statistic is computed. See
+            `vidigi.analysis.event_durations`'s same parameter.
+        **kwargs : dict
+            Additional keyword arguments passed to the chosen statistic, e.g.
+            `q=0.9` for `what="quantile"`.
+
+        Returns
+        -------
+        vidigi.analysis.ConfidenceInterval
+            Named tuple `(mean, half_width, lower, upper, n, method)`. With
+            fewer than two replications that have a complete pairing,
+            `half_width`/`lower`/`upper` are `NaN` and a warning is raised.
+
+        Raises
+        ------
+        ValueError
+            If no complete pairs are found in any run, or `what` is not a
+            per-replication statistic.
+        ImportError
+            If `scipy` is not installed - see
+            `vidigi.analysis.mean_confidence_interval`.
+
+        See Also
+        --------
+        get_event_duration_stat : The point estimate, with `across="runs"` for the same per-replication mean.
+        get_replication_precision : How this interval tightens as replications accumulate.
+        vidigi.analysis.mean_confidence_interval : The underlying implementation.
+        """
+        durations = self.get_event_durations(
+            first_event, second_event, match=match, warm_up=warm_up
+        )
+        run_values = replication_means(durations, what=what, **kwargs)["value"]
+        if run_values.empty:
+            raise ValueError(
+                f"No complete '{first_event}' -> '{second_event}' pairs were "
+                f"found in any run to compute a per-replication statistic from."
+            )
+        return mean_confidence_interval(run_values, ci_level=ci_level)
+
+    def get_event_occurrence_rate(
+        self,
+        event_name,
+        *,
+        ci_level: float = 0.95,
+        event_col_name: str = "event",
+    ):
+        """
+        Proportion of runs in which an event occurs at least once.
+
+        Thin wrapper over `vidigi.analysis.event_occurrence_rate`, called on
+        this trial's combined dataframe, with `n_runs` always set to the
+        true number of runs in the trial (`len(self._event_logs)`) - not
+        inferred from which runs happened to log the event, so a run where
+        the event never occurred is still correctly counted in the
+        denominator.
+
+        Parameters
+        ----------
+        event_name : str
+            The event to check for. Occurring for any entity, one or more
+            times, counts a run as an occurrence.
+        ci_level : float, default=0.95
+            Confidence level for the interval.
+        event_col_name : str, default="event"
+            Column holding the event name.
+
+        Returns
+        -------
+        vidigi.analysis.ProportionEstimate
+            Named tuple `(proportion, lower, upper, n_runs, n_occurred,
+            ci_level, method)` - see `vidigi.analysis.event_occurrence_rate`.
+
+        Raises
+        ------
+        ValueError
+            If `event_name` is not present in the trial's log.
+        ImportError
+            If `scipy` is not installed - see
+            `vidigi.analysis.mean_confidence_interval`.
+
+        See Also
+        --------
+        vidigi.analysis.event_occurrence_rate : The underlying implementation.
+        get_event_duration_stat : Entity-level `"unserved_rate"`/`"served_rate"` within one event pair.
+        """
+        return event_occurrence_rate(
+            self._trial_dataframe,
+            event_name,
+            event_col_name=event_col_name,
+            n_runs=len(self._event_logs),
+            ci_level=ci_level,
+        )
+
+    def _resolve_resource_col_name(
+        self, resource_col_name: str | None, trial_dataframe: pd.DataFrame
+    ) -> str:
+        """Resolve `resource_col_name=None` (the default) to `"unique_resource_id"`
+        when that column is present on `trial_dataframe`, else the canonical
+        `"resource_id"`.
+
+        This is what lets a model built the recommended way - `VidigiStore(...,
+        label=...)`, logging `unique_resource_id=resource.unique_id`
+        alongside `resource_id` - get a collision-proof `by="resource"`
+        breakdown from `TrialLogger` with no extra argument, while a model with
+        no `unique_resource_id` column behaves exactly as before. Any explicit
+        value other than `None` is returned unchanged.
+
+        Takes `trial_dataframe` as an argument rather than re-reading
+        `self._trial_dataframe` (a property rebuilt via `pd.concat` on every
+        access) so each caller only pays for that rebuild once, reusing the
+        same frame for both the column check and the actual call.
+        """
+        if resource_col_name is not None:
+            return resource_col_name
+        if "unique_resource_id" in trial_dataframe.columns:
+            return "unique_resource_id"
+        return "resource_id"
+
+    def get_resource_utilisation(
+        self,
+        *,
+        by: ResourceUtilisationBy = "step",
+        scenario=None,
+        resource_map: dict | None = None,
+        event_position_df: pd.DataFrame | None = None,
+        resource_capacities: dict | None = None,
+        capacity: Literal["infer"] | None = None,
+        warm_up: float = 0,
+        limit_duration: float | None = None,
+        unclosed: UnclosedResourceUse = "censor",
+        resource_col_name: str | None = None,
+        **kwargs,
+    ):
+        """
+        Summarise resource use into busy time, mean-in-use and utilisation, per run.
+
+        Thin wrapper over `vidigi.analysis.resource_utilisation`, called on the
+        trial's combined dataframe. See that function for the full parameter
+        list, the four capacity-resolution routes, and how an unclosed resource
+        use is handled.
+
+        Parameters
+        ----------
+        by : {"step", "resource", "run"}, default="step"
+            What each row summarises. See `vidigi.analysis.resource_utilisation`.
+        scenario, resource_map, event_position_df, resource_capacities, capacity :
+            Capacity resolution - see `vidigi.analysis._resolve_resource_capacities`
+            for the four routes. All optional; with none given, `utilisation`
+            is `NaN` throughout and only `busy_time`/`mean_in_use` are
+            meaningful. `scenario` defaults to the one attached to this
+            `TrialLogger` (if any) when not passed here.
+        warm_up : float, default=0
+            Start of the analysis window.
+        limit_duration : float, optional
+            End of the analysis window. `None` (default) uses the latest time
+            seen anywhere in the trial.
+        unclosed : {"censor", "drop"}, default="censor"
+            How an entity still holding a resource at the end of the window is
+            handled. See `vidigi.analysis.resource_use_intervals`.
+        resource_col_name : str, optional
+            Which column identifies the physical resource for `by="resource"`.
+            `None` (the default) uses `"unique_resource_id"` if that column is
+            present on this trial's log, else `"resource_id"` - so a model
+            built with `VidigiStore(..., label=...)` and logging
+            `unique_resource_id` alongside `resource_id` (see
+            `vidigi.resources.VidigiStore`) gets a collision-proof breakdown
+            with no extra argument here. Pass an explicit column name to
+            override.
+        **kwargs : dict
+            Additional keyword arguments forwarded to
+            `vidigi.analysis.resource_utilisation` (e.g. `entity_col_name`,
+            `time_col_name`, `run_col_name`).
+
+        Returns
+        -------
+        pandas.DataFrame
+            One row per run per group - see `vidigi.analysis.resource_utilisation`.
+
+        See Also
+        --------
+        vidigi.analysis.resource_utilisation : The underlying implementation.
+        vidigi.analysis.resource_use_intervals : The underlying per-bout intervals.
+        """
+        if scenario is None:
+            scenario = self.scenario
+        trial_dataframe = self._trial_dataframe
+        return resource_utilisation(
+            trial_dataframe,
+            by=by,
+            scenario=scenario,
+            resource_map=resource_map,
+            event_position_df=event_position_df,
+            resource_capacities=resource_capacities,
+            capacity=capacity,
+            warm_up=warm_up,
+            limit_duration=limit_duration,
+            unclosed=unclosed,
+            resource_col_name=self._resolve_resource_col_name(
+                resource_col_name, trial_dataframe
+            ),
+            **kwargs,
+        )
+
+    def generate_dfg(
+        self,
+        output_format: DFGType = "graphviz-object",
+        *,
+        run_number=None,
+        across_runs: bool = False,
+        input_time_format: str = "minutes",
+        warm_up: float | None = None,
+        occupancy_metrics: bool = False,
+        occupancy_snapshot_interval: float = 1,
+        **kwargs,
+    ):
+        """
+        Generate a Directly-Follows Graph (process map) from the trial.
+
+        Wraps :func:`vidigi.process_mapping.discover_dfg` and the DFG
+        renderers, the same way :meth:`EventLogger.generate_dfg` does, with
+        three ways to handle the several replications a trial holds:
+
+        =====================  =================================================
+        Call                   What you get
+        =====================  =================================================
+        (default)              The **representative run** - the replication
+                               whose mean time in system is closest to the
+                               trial median. Real integer counts.
+        ``run_number=N``       That one replication.
+        ``across_runs=True``   **One** combined cross-run map: transitions
+                               grouped per ``(run, entity)`` so no cross-run
+                               edge is fabricated, node/edge counts shown as
+                               per-run means with the between-run range,
+                               transition times pooled over every run.
+        =====================  =================================================
+
+        Parameters
+        ----------
+        output_format : DFGType, default="graphviz-object"
+            As :meth:`EventLogger.generate_dfg`.
+        run_number : int or str, optional
+            Render this one replication. Mutually exclusive with
+            ``across_runs=True``.
+        across_runs : bool, default=False
+            Render one combined map across every replication (see above).
+        input_time_format : str, default="minutes"
+            Time unit for durations and timestamps.
+        warm_up : float, optional
+            Discard events at or before this simulation time. With
+            ``across_runs=True`` a missing ``warm_up`` warns, because start-up
+            transient then feeds a stakeholder-facing aggregate.
+        occupancy_metrics : bool, default=False
+            Annotate queue/resource nodes with occupancy, via
+            :func:`vidigi.analysis.activity_occupancy_stats`. With
+            ``across_runs=True`` the figures are averaged over runs
+            (``across_runs="average"``) - note this averages over the runs in
+            which a step occurred, whereas the node counts zero-fill, so the
+            two conventions differ for a step absent from some runs.
+        occupancy_snapshot_interval : float, default=1
+            Snapshot granularity for ``occupancy_metrics``.
+        **kwargs
+            Forwarded to the renderer. An auto ``title`` (graphviz) or
+            ``caption`` (cytoscape) is set unless you pass your own.
+
+        Returns
+        -------
+        graphviz.Source or ipycytoscape widget or bytes
+
+        Raises
+        ------
+        ValueError
+            If both ``run_number`` and ``across_runs=True`` are given, or
+            ``run_number`` is not a run in this trial.
+
+        Notes
+        -----
+        For ``across_runs=True``:
+
+        - Counts are **per replication** (pooled total / number of runs);
+          the ``n=3.5 (1-7)`` annotation gives the between-run range. An edge
+          seen fewer than ``min_frequency`` times per run on average is hidden
+          by the cytoscape renderers' ``min_frequency=1`` default.
+        - Transition ``probability`` is pooled (frequency-weighted across
+          runs); with near-exchangeable replications the Simpson's-paradox
+          risk of pooling is negligible.
+        - Entities still in the system at a run's end have **truncated
+          paths**, which under-weights long-pathway transitions and biases
+          transition times downwards - the opposite of what a bottleneck
+          analysis wants. Set ``warm_up`` and be wary of a heavily censored
+          run.
+
+        See Also
+        --------
+        EventLogger.generate_dfg : The single-run version.
+        vidigi.process_mapping.discover_dfg : Edge discovery logic.
+        get_event_duration_ci : A formal confidence interval on a transition
+            time, rather than the between-run range shown here.
+        """
+        if run_number is not None and across_runs:
+            raise ValueError(
+                "Pass either `run_number=` (one replication) or "
+                "`across_runs=True` (one combined cross-run graph), not both."
+            )
+
+        trial_df = self._trial_dataframe
+        runs = sorted(trial_df["run_number"].unique().tolist())
+        n_runs = len(runs)
+
+        if not across_runs:
+            if run_number is None:
+                run_number = _representative_run(trial_df)
+                note = " (representative — closest to median time in system)"
+            else:
+                if run_number not in self._run_index:
+                    raise ValueError(
+                        f"run_number={run_number!r} is not in this trial. "
+                        f"Available runs: {runs}."
+                    )
+                note = ""
+            label = f"Run {run_number} of {n_runs}{note}"
+            if output_format in ("graphviz-object", "graphviz-image"):
+                kwargs.setdefault("title", label)
+            else:
+                kwargs.setdefault("caption", label)
+            return self.get_log_by_run(run_number).generate_dfg(
+                output_format,
+                input_time_format=input_time_format,
+                warm_up=warm_up,
+                occupancy_metrics=occupancy_metrics,
+                occupancy_snapshot_interval=occupancy_snapshot_interval,
+                **kwargs,
+            )
+
+        if warm_up is None:
+            warnings.warn(
+                "TrialLogger.generate_dfg(across_runs=True) is combining every "
+                "replication with no warm-up period, so start-up transient is "
+                "baked into the aggregate map. Pass `warm_up=` (the value you "
+                "use elsewhere) unless the log is already trimmed.",
+                UserWarning,
+                stacklevel=2,
+            )
+
+        nodes, edges = _dfg_across_runs(
+            trial_df,
+            time_unit=input_time_format,
+            warm_up=warm_up,
+            occupancy_metrics=occupancy_metrics,
+            occupancy_snapshot_interval=occupancy_snapshot_interval,
+        )
+
+        caveat = (
+            f"{n_runs} replications combined — simulation output, not observed "
+            "data. Counts are per-run means."
+        )
+        if output_format in ("graphviz-object", "graphviz-image"):
+            kwargs.setdefault("title", caveat)
+        else:
+            kwargs.setdefault("caption", caveat)
+
+        return _render_dfg(nodes, edges, output_format, input_time_format, **kwargs)
+
+    def reshape_for_animations(self, *, run_number=None, **kwargs):
+        """
+        Reshape one run's event log into the per-snapshot frame the animation uses.
+
+        Thin wrapper over `vidigi.prep.reshape_for_animations`, called on this
+        trial directly. See that function for the full parameter list.
+
+        Parameters
+        ----------
+        run_number : int or str, optional
+            Which replication to reshape. Required if the trial holds more than
+            one run - passing a multi-run trial without it raises `ValueError`.
+        **kwargs
+            Keyword arguments forwarded to `vidigi.prep.reshape_for_animations`
+            (e.g. `every_x_time_units`, `limit_duration`, `step_snapshot_max`).
+
+        Returns
+        -------
+        pandas.DataFrame
+            One row per (entity, snapshot time) - the input to
+            `generate_animation_df`.
+
+        See Also
+        --------
+        vidigi.prep.reshape_for_animations : The underlying implementation.
+        animate_activity_log : Run all three animation steps in one call.
+        """
+        return _reshape_for_animations(self, run_number=run_number, **kwargs)
+
+    def animate_activity_log(
+        self, event_position_df, *, scenario=None, run_number=None, **kwargs
+    ):
+        """
+        Build an animated visualisation of one run in this trial.
+
+        Thin wrapper over `vidigi.animation.animate_activity_log`, called on
+        this trial directly. See that function for the full parameter list.
+
+        Parameters
+        ----------
+        event_position_df : pandas.DataFrame
+            The layout: an `x`/`y` position per event. Build it with
+            `vidigi.utils.create_event_position_df` / `EventPosition`.
+        scenario : object or dict, optional
+            The parameters object (or `{name: count}` dict) that produced the
+            run, used to draw one icon per available resource unit. Falls back
+            to the trial's own `scenario` if not given.
+        run_number : int or str, optional
+            Which replication to animate. Required if the trial holds more than
+            one run - passing a multi-run trial without it raises `ValueError`.
+        **kwargs
+            Additional keyword arguments forwarded to
+            `vidigi.animation.animate_activity_log` (e.g. `every_x_time_units`,
+            `limit_duration`, `plotly_height`, the appearance arguments).
+
+        Returns
+        -------
+        plotly.graph_objects.Figure
+
+        See Also
+        --------
+        vidigi.animation.animate_activity_log : The underlying implementation.
+        reshape_for_animations : The first step, if you want to run the
+            pipeline yourself.
+        """
+        if scenario is None:
+            scenario = self.scenario
+        return _animate_activity_log(
+            self, event_position_df, scenario=scenario, run_number=run_number, **kwargs
+        )
+
+    def plot_duration_distribution(
+        self,
+        first_event,
+        second_event,
+        *,
+        kind: DistributionKind = "hist",
+        split_by: SplitBy | None = None,
+        bins=None,
+        match: MatchMode = "first",
+        normalise: bool = False,
+        highlight_bands: list[dict] | None = None,
+        title: str | None = None,
+        **kwargs,
+    ):
+        """
+        Plot the distribution of durations between two events, across every run.
+
+        Thin wrapper over `vidigi.plots.plot_duration_distribution`, called on
+        this trial's combined dataframe. See that function for the full
+        parameter list.
+
+        Parameters
+        ----------
+        first_event, second_event : str
+            The two events to measure the duration between.
+        kind : {"hist", "box", "violin", "ecdf", "ridgeline", "heatmap"}, default="hist"
+            Chart type. `"ridgeline"` and `"heatmap"` require `split_by` to be
+            set - see `vidigi.plots.plot_duration_distribution` for the full
+            explanation of each.
+        split_by : {"run", "pathway"} or None, default=None
+            If given, one trace (or, for `"heatmap"`, one row) per distinct
+            value of that column.
+        bins : int, sequence, or None, default=None
+            Passed to `numpy.histogram` when `kind` is `"hist"`, `"ridgeline"`
+            or `"heatmap"`.
+        match : {"first", "last", "occurrence"}, default="first"
+            How repeated occurrences of the two events are paired.
+        normalise : bool, default=False
+            For `kind="hist"` or `kind="heatmap"`: heights/cells as a
+            probability density rather than raw counts. `"ridgeline"` always
+            uses density, regardless of this argument.
+        highlight_bands : list of dict, optional
+            Shaded threshold zones drawn behind the chart, valid only for
+            `kind="box"` or `kind="violin"` - see
+            `vidigi.plots.plot_duration_distribution` for the dict shape.
+        title : str, optional
+            Figure title.
+        **kwargs : dict
+            Additional keyword arguments forwarded to
+            `vidigi.analysis.event_durations` (e.g. `warm_up`, `entity_col_name`).
+
+        Returns
+        -------
+        plotly.graph_objects.Figure
+
+        See Also
+        --------
+        vidigi.plots.plot_duration_distribution : The underlying implementation.
+        vidigi.analysis.event_durations : The underlying per-entity durations.
+        """
+        return _plot_duration_distribution(
+            self._trial_dataframe,
+            first_event,
+            second_event,
+            kind=kind,
+            split_by=split_by,
+            bins=bins,
+            match=match,
+            normalise=normalise,
+            highlight_bands=highlight_bands,
+            title=title,
+            **kwargs,
+        )
+
     def plot_metric_bar(
         self,
         event_pair_list: list[dict],
-        what: str = "mean",
+        what: DurationStat = "mean",
         exclude_incomplete: bool = True,
+        across: Across = "entities",
+        error_bars: ErrorBars | None = None,
+        ci_level: float = 0.95,
+        show_runs: bool = False,
+        match: MatchMode = "first",
+        warm_up: float = 0,
         interactive=True,
         **kwargs,
     ):
         """
         Plot a bar chart of event duration statistics for a list of event pairs.
 
-        This function computes a specified statistic (e.g., mean, median) of
-        durations between pairs of events and plots the results as a bar chart.
-        Interactive plotting is supported via Plotly.
+        .. deprecated:: 2.0.0
+            ``plot_metric_bar()`` will be removed in vidigi 3.0. Use
+            ``plot_metric(event_pair_list, kind="bar", ...)`` instead - see
+            `vidigi.plots.plot_metric` for why.
+
+        Thin wrapper over `vidigi.plots.plot_metric_bar`, called on this trial's
+        combined dataframe. See that function for the full parameter list.
 
         Parameters
         ----------
@@ -903,16 +2157,39 @@ class TrialLogger:
             - ``"first_event"`` (str): The name of the first event.
             - ``"second_event"`` (str): The name of the second event.
         what : str, default="mean"
-            The statistic to compute on event durations. Supported values depend on
-            the implementation of ``get_event_duration_stat`` (e.g., "mean", "median").
+            The statistic to compute on event durations. See
+            `vidigi.analysis.event_durations`'s module for the full set. When
+            `across="runs"`, only a genuine per-replication statistic is
+            accepted - see `vidigi.analysis.replication_means`.
         exclude_incomplete : bool, default=True
             If True, incomplete event durations (where the second event is missing)
-            are excluded from the calculation.
+            are excluded from the calculation. Must be True when `across="runs"`.
+        across : {"entities", "runs"}, default="entities"
+            Whether each bar is a statistic pooled over every entity (matching
+            every prior release), or the mean of a per-replication statistic
+            computed separately for each run. `error_bars` and `show_runs`
+            both require `across="runs"`.
+        error_bars : {"ci", "sd", "se", "range", "iqr"} or None, default=None
+            The spread drawn as an error bar around each bar. `"ci"` requires
+            the optional `scipy` dependency (`pip install vidigi[stats]`). See
+            `vidigi.plots.plot_metric_bar` for the full explanation of each.
+        ci_level : float, default=0.95
+            Confidence level used when `error_bars="ci"`.
+        show_runs : bool, default=False
+            If True, overlays each replication's individual value as a
+            semi-transparent point on top of its bar.
+        match : {"first", "last", "occurrence"}, default="first"
+            How repeated occurrences of the two events are paired. See
+            `vidigi.analysis.event_durations`.
+        warm_up : float, default=0
+            Pairings whose `first_time` is before `warm_up` are excluded from
+            every bar. See `vidigi.analysis.event_durations`'s same parameter.
         interactive : bool, default=True
             If True, returns an interactive Plotly bar chart. If False, static
             plotting is not currently supported (a message will be printed).
         **kwargs : dict
-            Additional keyword arguments passed to ``plotly.express.bar``.
+            Additional keyword arguments passed to ``plotly.express.bar`` (e.g.
+            `title=`, `width=`).
 
         Returns
         -------
@@ -922,12 +2199,8 @@ class TrialLogger:
 
         See Also
         --------
-        plot_queue_size : Plot the size of queues for events over time.
-
-        Notes
-        -----
-        This method relies on ``self.get_event_duration_stat`` to compute the
-        chosen statistic for each event pair.
+        plot_duration_distribution : The full distribution behind one of these bars.
+        vidigi.plots.plot_metric_bar : The underlying implementation.
 
         Examples
         --------
@@ -938,26 +2211,131 @@ class TrialLogger:
         >>> fig = obj.plot_metric_bar(event_pairs, what="mean")
         >>> fig.show()
         """
-        results = []
-        for event_pair in event_pair_list:
-            results.append(
-                {
-                    "label": event_pair["label"],
-                    "value": self.get_event_duration_stat(
-                        event_pair["first_event"],
-                        event_pair["second_event"],
-                        what=what,
-                        exclude_incomplete=exclude_incomplete,
-                    ),
-                }
-            )
-
-        results_df = pd.DataFrame(results)
-
-        if interactive:
-            return px.bar(results_df, x="label", y="value", **kwargs)
-        else:
+        if not interactive:
             print("Static plotting not currently supported - please use 'interactive'")
+            return None
+
+        return _plot_metric_bar(
+            self._trial_dataframe,
+            event_pair_list,
+            what=what,
+            exclude_incomplete=exclude_incomplete,
+            across=across,
+            error_bars=error_bars,
+            ci_level=ci_level,
+            show_runs=show_runs,
+            match=match,
+            warm_up=warm_up,
+            **kwargs,
+        )
+
+    def plot_metric(
+        self,
+        event_pair_list: list[dict],
+        *,
+        kind: Literal["bar", "box", "violin"] = "bar",
+        what: DurationStat = "mean",
+        exclude_incomplete: bool = True,
+        across: Across = "entities",
+        error_bars: ErrorBars | None = None,
+        ci_level: float = 0.95,
+        show_runs: bool = False,
+        highlight_bands: list[dict] | None = None,
+        match: MatchMode = "first",
+        warm_up: float = 0,
+        **kwargs,
+    ):
+        """
+        Plot event duration statistics for a list of event pairs, as a bar, box or violin.
+
+        Thin wrapper over `vidigi.plots.plot_metric`, called on this trial's
+        combined dataframe. See that function for the full parameter list.
+        The `kind="bar"` replacement for the deprecated `plot_metric_bar`.
+
+        Parameters
+        ----------
+        event_pair_list : list of dict
+            A list of dictionaries, each containing:
+
+            - ``"label"`` (str): A label for the event pair.
+            - ``"first_event"`` (str): The name of the first event.
+            - ``"second_event"`` (str): The name of the second event.
+        kind : {"bar", "box", "violin"}, default="bar"
+            Chart type. `"box"`/`"violin"` draw the full per-replication
+            distribution for each pair instead of a bar, and require
+            `across="runs"`.
+        what : str, default="mean"
+            The statistic to compute on event durations. See
+            `vidigi.analysis.event_durations`'s module for the full set. When
+            `across="runs"`, only a genuine per-replication statistic is
+            accepted - see `vidigi.analysis.replication_means`.
+        exclude_incomplete : bool, default=True
+            If True, incomplete event durations (where the second event is missing)
+            are excluded from the calculation. Must be True when `across="runs"`.
+        across : {"entities", "runs"}, default="entities"
+            Whether each bar/box/violin is a statistic pooled over every
+            entity, or built from a per-replication statistic computed
+            separately for each run. `error_bars`, `show_runs` and
+            `kind="box"`/`"violin"` all require `across="runs"`.
+        error_bars : {"ci", "sd", "se", "range", "iqr"} or None, default=None
+            The spread drawn as an error bar around each bar. Only valid with
+            `kind="bar"`. `"ci"` requires the optional `scipy` dependency
+            (`pip install vidigi[stats]`). See `vidigi.plots.plot_metric_bar`
+            for the full explanation of each.
+        ci_level : float, default=0.95
+            Confidence level used when `error_bars="ci"`.
+        show_runs : bool, default=False
+            If True, overlays each replication's individual value - a
+            semi-transparent point for `kind="bar"`, the trace's own points
+            (`boxpoints="all"`/`points="all"`) for `kind="box"`/`"violin"`.
+        highlight_bands : list of dict, optional
+            Shaded threshold zones drawn behind the chart - see
+            `vidigi.plots.plot_duration_distribution` for the dict shape.
+        match : {"first", "last", "occurrence"}, default="first"
+            How repeated occurrences of the two events are paired. See
+            `vidigi.analysis.event_durations`.
+        warm_up : float, default=0
+            Pairings whose `first_time` is before `warm_up` are excluded from
+            every bar/box/violin. See `vidigi.analysis.event_durations`'s
+            same parameter.
+        **kwargs : dict
+            Additional keyword arguments forwarded to
+            `vidigi.analysis.event_durations` (e.g. `entity_col_name`,
+            `run_col_name`).
+
+        Returns
+        -------
+        plotly.graph_objects.Figure
+
+        See Also
+        --------
+        plot_metric_bar : Deprecated - the `kind="bar"`-only predecessor to this method.
+        plot_duration_distribution : A box/violin of raw per-entity durations for a single pair.
+        vidigi.plots.plot_metric : The underlying implementation.
+
+        Examples
+        --------
+        >>> event_pairs = [
+        ...     {"label": "Start to End", "first_event": "start", "second_event": "end"},
+        ... ]
+        >>> fig = obj.plot_metric(event_pairs, kind="box", across="runs")
+        >>> fig.show()
+        """
+        return _plot_metric(
+            self._trial_dataframe,
+            event_pair_list,
+            kind=kind,
+            what=what,
+            exclude_incomplete=exclude_incomplete,
+            across=across,
+            error_bars=error_bars,
+            ci_level=ci_level,
+            show_runs=show_runs,
+            highlight_bands=highlight_bands,
+            match=match,
+            warm_up=warm_up,
+            **kwargs,
+        )
 
     def plot_queue_size(
         self,
@@ -967,15 +2345,16 @@ class TrialLogger:
         interactive=True,
         show_all_runs=True,
         shared_y_axis=True,
+        highlight_bands: list[dict] | None = None,
+        warm_up: int = 0,
+        backend: PlotBackend = "express",
         **kwargs,
     ):
         """
         Plot the size of one or more queues over time across simulation runs.
 
-        This function processes logged simulation events, computes queue sizes
-        for specified event types, and visualizes the results. If multiple runs
-        are available, individual trajectories and/or their mean are shown.
-        Currently, only interactive Plotly-based plotting is supported.
+        Thin wrapper over `vidigi.plots.plot_queue_size`, called on this trial's
+        combined dataframe.
 
         Parameters
         ----------
@@ -993,8 +2372,23 @@ class TrialLogger:
         show_all_runs : bool, default=True
             If True, plots all runs with semi-transparent lines and overlays
             the mean trajectory. If False, only the mean trajectory is plotted.
+        highlight_bands : list of dict, optional
+            Shaded threshold zones drawn behind the chart - see
+            `vidigi.plots.plot_duration_distribution` for the dict shape.
+        warm_up : int, default=0
+            Time at which the plotted window begins. Snapshots run from `warm_up`
+            to `limit_duration`. See `vidigi.prep.reshape_for_animations` for why
+            this - and not filtering the log by time - is the correct way to
+            discard a warm-up period. The default of `0` is a no-op.
+        backend : {"express", "go"}, default="express"
+            Which plotly API builds the figure. See `vidigi.plots.plot_queue_size`
+            for the full explanation - in short, `"go"` gives every trace a
+            deterministic name and order instead of `px`'s automatic grouping,
+            which some callers find easier to target when restyling the figure
+            afterwards. `**kwargs` is ignored when `backend="go"`.
         **kwargs
-            Additional keyword arguments passed to `plotly.express.line`.
+            Additional keyword arguments passed to `plotly.express.line`. Ignored
+            (with a warning) when `backend="go"`.
 
         Returns
         -------
@@ -1005,14 +2399,21 @@ class TrialLogger:
         -----
         - When multiple event types are specified, they are faceted in separate
         panels if `show_all_runs=False`.
-        - The function relies on `reshape_for_animations` to transform raw
-        event logs into a time-indexed format suitable for plotting.
+        - Queue lengths are **not** capped at `step_snapshot_max`, unlike the
+        animation functions, so long queues are plotted at their full length
+        rather than flattening off. Reshaping without that cap uses more memory
+        than an equivalent animation would.
+        - Snapshots at which an event has nobody queuing are plotted as zero
+        rather than omitted, so a queue that empties is drawn dropping to the
+        axis and the mean is taken across every run. An event in `event_list`
+        that occurs in no run is plotted as zero throughout, with a warning.
         - If `interactive=False`, no plot is returned and a message is printed
         instead.
 
         See Also
         --------
-        reshape_for_animations : Helper function for snapshotting simulation logs.
+        vidigi.plots.plot_queue_size : The underlying implementation.
+        vidigi.analysis.queue_size_over_time : The underlying per-run, per-snapshot counts.
 
         Examples
         --------
@@ -1024,103 +2425,982 @@ class TrialLogger:
         ... )
         <plotly.graph_objs._figure.Figure>
         """
-        results = []
-
-        for run in self._event_logs:
-            df = reshape_for_animations(
-                run["run_data"].to_dataframe(),
-                every_x_time_units=every_x_time_units,
-                limit_duration=limit_duration,
-            )
-            df = df[df["event"].isin(event_list)]
-            results.append(df.groupby(["run_number", "event", "snapshot_time"]).size())
-
-        event_counts = pd.concat(results).reset_index(name="count")
-
-        mean_df = event_counts.groupby(["snapshot_time", "event"], as_index=False)[
-            "count"
-        ].mean()
-
-        if len(event_list) > 1:
-            faceting_variable = "event"
-        else:
-            faceting_variable = None
-
-        if interactive:
-            if show_all_runs:
-                fig = px.line(
-                    event_counts,
-                    x="snapshot_time",
-                    y="count",
-                    color="run_number",
-                    **kwargs,
-                    facet_row=faceting_variable,
-                )
-
-                fig.update_traces(opacity=0.2)
-                if not shared_y_axis:
-                    fig.update_yaxes(matches=None)
-
-                if faceting_variable is None:
-                    fig.add_trace(
-                        go.Scatter(
-                            x=mean_df["snapshot_time"],
-                            y=mean_df["count"],
-                            mode="lines",
-                            line=dict(color="black", width=3),
-                            name="Mean",
-                        )
-                    )
-                else:
-                    # Build mapping from event name -> subplot row index
-                    event_to_row = {}
-                    for i, ann in enumerate(fig.layout.annotations):
-                        if ann.text.startswith(
-                            "event="
-                        ):  # e.g. "event=MINORS_examination_begins"
-                            event_name = ann.text.split("=")[-1]
-                            # Use enumeration index + 1 for proper row indexing
-                            event_to_row[event_name] = i + 1
-
-                    # Add mean traces to the correct row
-                    for event_name, df_event in mean_df.groupby("event"):
-                        row_idx = event_to_row.get(event_name, 1)
-                        fig.add_trace(
-                            go.Scatter(
-                                x=df_event["snapshot_time"],
-                                y=df_event["count"],
-                                mode="lines",
-                                line=dict(color="black", width=3),
-                                name="Mean",
-                                showlegend=False,
-                            ),
-                            row=row_idx,
-                            col=1,
-                        )
-                    # Show legend for just one mean line
-                    if len(fig.data) > 0:
-                        fig.data[-1].showlegend = True
-
-                    fig.for_each_annotation(
-                        lambda a: a.update(text=a.text.split("=")[-1])
-                    )
-
-                return fig
-            else:
-                fig = px.line(
-                    mean_df,
-                    x="snapshot_time",
-                    y="count",
-                    facet_row=faceting_variable,
-                    **kwargs,
-                )
-
-                if not shared_y_axis:
-                    fig.update_yaxes(matches=None)
-
-                fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
-
-                return fig
-
-        else:
+        if not interactive:
             print("Static plotting not currently supported - please use 'interactive'")
+            return None
+
+        return _plot_queue_size(
+            self._trial_dataframe,
+            event_list,
+            limit_duration,
+            every_x_time_units=every_x_time_units,
+            warm_up=warm_up,
+            show_all_runs=show_all_runs,
+            shared_y_axis=shared_y_axis,
+            highlight_bands=highlight_bands,
+            backend=backend,
+            **kwargs,
+        )
+
+    def plot_resource_utilisation(
+        self,
+        *,
+        by: ResourceUtilisationBy = "step",
+        metric: ResourceMetric = "utilisation",
+        kind: Literal["bar", "box", "violin"] = "bar",
+        error_bars: ErrorBars | None = "ci",
+        ci_level: float = 0.95,
+        show_runs: bool = True,
+        highlight_bands: list[dict] | None = None,
+        sort_by: Literal["value"] | None = None,
+        scenario=None,
+        resource_map: dict | None = None,
+        event_position_df: pd.DataFrame | None = None,
+        resource_capacities: dict | None = None,
+        capacity: Literal["infer"] | None = None,
+        warm_up: float = 0,
+        limit_duration: float | None = None,
+        unclosed: UnclosedResourceUse = "censor",
+        resource_col_name: str | None = None,
+        **kwargs,
+    ):
+        """
+        Plot a bar chart of resource utilisation, one bar per group, across runs.
+
+        Thin wrapper over `vidigi.plots.plot_resource_utilisation`, called on
+        this trial's combined dataframe. See that function for the full
+        parameter list.
+
+        Parameters
+        ----------
+        by : {"step", "resource", "run"}, default="step"
+            What each bar summarises. See `vidigi.analysis.resource_utilisation`.
+        metric : {"busy_time", "mean_in_use", "utilisation"}, default="utilisation"
+            Which quantity is the bar height. Falls back to `"mean_in_use"`,
+            with a warning, if no capacity was resolved for any group.
+        kind : {"bar", "box", "violin"}, default="bar"
+            Chart type. `"box"`/`"violin"` draw the full per-run distribution
+            for each group instead of a bar - `error_bars` is not valid with
+            either.
+        error_bars : {"ci", "sd", "se", "range", "iqr"} or None, default="ci"
+            The spread drawn as an error bar around each bar, computed over
+            the per-run values. Only valid with `kind="bar"`. `"ci"` requires
+            the optional `scipy` dependency (`pip install vidigi[stats]`).
+        ci_level : float, default=0.95
+            Confidence level used when `error_bars="ci"`.
+        show_runs : bool, default=True
+            If True, overlays each run's individual value - a
+            semi-transparent point for `kind="bar"`, the trace's own points
+            (`boxpoints="all"`/`points="all"`) for `kind="box"`/`"violin"`.
+        highlight_bands : list of dict, optional
+            Shaded threshold zones drawn behind the chart - see
+            `vidigi.plots.plot_duration_distribution` for the dict shape.
+        sort_by : {"value"} or None, default=None
+            If `"value"`, bars are ordered by descending metric value.
+        scenario, resource_map, event_position_df, resource_capacities, capacity :
+            Capacity resolution - see
+            `vidigi.analysis._resolve_resource_capacities` for the four
+            routes. Unused when `by="resource"`. `scenario` defaults to the one
+            attached to this `TrialLogger` (if any) when not passed here.
+        warm_up : float, default=0
+            Start of the analysis window.
+        limit_duration : float, optional
+            End of the analysis window. `None` (default) uses the latest time
+            seen anywhere in the trial.
+        unclosed : {"censor", "drop"}, default="censor"
+            How an entity still holding a resource at the end of the window is
+            handled. See `vidigi.analysis.resource_use_intervals`.
+        resource_col_name : str, optional
+            Which column identifies the physical resource for `by="resource"`.
+            `None` (the default) uses `"unique_resource_id"` if that column is
+            present on this trial's log, else `"resource_id"` - so a model
+            built with `VidigiStore(..., label=...)` and logging
+            `unique_resource_id` alongside `resource_id` (see
+            `vidigi.resources.VidigiStore`) gets a collision-proof breakdown
+            with no extra argument here. Pass an explicit column name to
+            override.
+        **kwargs : dict
+            Additional keyword arguments forwarded to
+            `vidigi.plots.plot_resource_utilisation` (e.g. `entity_col_name`,
+            `time_col_name`, `run_col_name`).
+
+        Returns
+        -------
+        plotly.graph_objects.Figure
+
+        See Also
+        --------
+        vidigi.plots.plot_resource_utilisation : The underlying implementation.
+        get_resource_utilisation : The underlying per-run, per-group summary.
+        """
+        if scenario is None:
+            scenario = self.scenario
+        trial_dataframe = self._trial_dataframe
+        return _plot_resource_utilisation(
+            trial_dataframe,
+            by=by,
+            metric=metric,
+            kind=kind,
+            error_bars=error_bars,
+            ci_level=ci_level,
+            show_runs=show_runs,
+            highlight_bands=highlight_bands,
+            sort_by=sort_by,
+            scenario=scenario,
+            resource_map=resource_map,
+            event_position_df=event_position_df,
+            resource_capacities=resource_capacities,
+            capacity=capacity,
+            warm_up=warm_up,
+            limit_duration=limit_duration,
+            unclosed=unclosed,
+            resource_col_name=self._resolve_resource_col_name(
+                resource_col_name, trial_dataframe
+            ),
+            **kwargs,
+        )
+
+    def plot_resource_utilisation_over_time(
+        self,
+        *,
+        every_x_time_units: float = 1,
+        warm_up: float = 0,
+        limit_duration: float | None = None,
+        as_proportion: bool = False,
+        show_all_runs: bool = True,
+        shared_y_axis: bool = True,
+        highlight_bands: list[dict] | None = None,
+        scenario=None,
+        resource_map: dict | None = None,
+        event_position_df: pd.DataFrame | None = None,
+        resource_capacities: dict | None = None,
+        capacity: Literal["infer"] | None = None,
+        resource_col_name: str | None = None,
+        **kwargs,
+    ):
+        """
+        Plot how many units of each resource step were in use over time, across runs.
+
+        Thin wrapper over `vidigi.plots.plot_resource_utilisation_over_time`,
+        called on this trial's combined dataframe. See that function for the
+        full parameter list.
+
+        Parameters
+        ----------
+        every_x_time_units : float, default=1
+            Time granularity for snapshots.
+        warm_up : float, default=0
+            Time at which the plotted window begins.
+        limit_duration : float, optional
+            End of the plotted window. `None` (default) uses the latest time
+            seen anywhere in the trial.
+        as_proportion : bool, default=False
+            If True, each step's count is divided by its resolved capacity, so
+            the y-axis is a proportion in use rather than a raw count. Requires
+            a capacity to be resolvable for every step plotted.
+        show_all_runs : bool, default=True
+            If True, plots every run with semi-transparent lines and overlays
+            the mean trajectory.
+        shared_y_axis : bool, default=True
+            If True (and more than one step is plotted), every facet shares a
+            y-axis range.
+        highlight_bands : list of dict, optional
+            Shaded threshold zones drawn behind the chart - see
+            `vidigi.plots.plot_duration_distribution` for the dict shape.
+            Spans every facet when more than one step is plotted.
+        scenario, resource_map, event_position_df, resource_capacities, capacity :
+            Capacity resolution, used only when `as_proportion=True`. `scenario`
+            defaults to the one attached to this `TrialLogger` (if any) when not
+            passed here.
+        resource_col_name : str, optional
+            Which column identifies the physical resource, used to pair
+            `resource_use`/`resource_use_end` bouts. `None` (the default)
+            uses `"unique_resource_id"` if that column is present on this
+            trial's log, else `"resource_id"` - see `get_resource_utilisation`'s
+            same parameter for why. Pass an explicit column name to override.
+        **kwargs : dict
+            Additional keyword arguments forwarded to
+            `vidigi.plots.plot_resource_utilisation_over_time` (e.g.
+            `entity_col_name`, `time_col_name`, `run_col_name`).
+
+        Returns
+        -------
+        plotly.graph_objects.Figure
+
+        Notes
+        -----
+        Traces use `line_shape="hv"` - occupancy is a step function, and linear
+        interpolation between snapshots would draw fractional resource counts
+        that never existed.
+
+        See Also
+        --------
+        vidigi.plots.plot_resource_utilisation_over_time : The underlying implementation.
+        vidigi.analysis.resource_occupancy_over_time : The underlying per-run, per-snapshot counts.
+        """
+        if scenario is None:
+            scenario = self.scenario
+        trial_dataframe = self._trial_dataframe
+        return _plot_resource_utilisation_over_time(
+            trial_dataframe,
+            every_x_time_units=every_x_time_units,
+            warm_up=warm_up,
+            limit_duration=limit_duration,
+            as_proportion=as_proportion,
+            show_all_runs=show_all_runs,
+            shared_y_axis=shared_y_axis,
+            highlight_bands=highlight_bands,
+            scenario=scenario,
+            resource_map=resource_map,
+            event_position_df=event_position_df,
+            resource_capacities=resource_capacities,
+            capacity=capacity,
+            resource_col_name=self._resolve_resource_col_name(
+                resource_col_name, trial_dataframe
+            ),
+            **kwargs,
+        )
+
+    def plot_warm_up_diagnostic(
+        self,
+        *,
+        series: Literal["queue", "occupancy", "duration"] = "queue",
+        event: str | None = None,
+        first_event: str | None = None,
+        second_event: str | None = None,
+        method: WarmUpMethod = "welch",
+        windows: Sequence[int] = (5, 10, 20),
+        every_x_time_units: float = 1,
+        limit_duration: float | None = None,
+        show_ensemble: bool = True,
+        show_runs: bool = False,
+        **kwargs,
+    ):
+        """
+        Plot a Welch (or cumulative-mean) diagnostic for choosing `warm_up=`.
+
+        Thin wrapper over `vidigi.plots.plot_warm_up_diagnostic`, called on
+        this trial's combined dataframe. See that function for the full
+        parameter list.
+
+        Parameters
+        ----------
+        series : {"queue", "occupancy", "duration"}, default="queue"
+            What per-run series to diagnose. See
+            `vidigi.plots.plot_warm_up_diagnostic`.
+        event : str, optional
+            The queue's or resource step's event name. Required, and only
+            used, for `series="queue"`/`"occupancy"`.
+        first_event, second_event : str, optional
+            The two events to pair. Required, and only used, for
+            `series="duration"`.
+        method : {"welch", "cumulative", "none"}, default="welch"
+            Smoothing procedure - see `vidigi.analysis.welch_moving_average`.
+        windows : sequence of int, default=(5, 10, 20)
+            Window half-widths to overlay when `method="welch"`.
+        every_x_time_units : float, default=1
+            Snapshot granularity. Only used for `series="queue"`/`"occupancy"`.
+        limit_duration : float, optional
+            End of the window snapshots are taken over. `None` (default)
+            uses the latest time seen anywhere in the trial.
+        show_ensemble : bool, default=True
+            If True, also draws the raw (unsmoothed) ensemble-average series.
+        show_runs : bool, default=False
+            If True, also draws every individual replication's own raw
+            series, at `opacity=0.2` under one shared legend entry. See
+            `vidigi.plots.plot_warm_up_diagnostic`.
+        **kwargs : dict
+            Additional keyword arguments forwarded to
+            `vidigi.plots.plot_warm_up_diagnostic` (e.g. `entity_col_name`,
+            `time_col_name`, `run_col_name`, `match=` for `series="duration"`).
+
+        Returns
+        -------
+        plotly.graph_objects.Figure
+
+        See Also
+        --------
+        vidigi.plots.plot_warm_up_diagnostic : The underlying implementation.
+        vidigi.analysis.welch_moving_average : The underlying smoothing procedure.
+        """
+        return _plot_warm_up_diagnostic(
+            self._trial_dataframe,
+            series=series,
+            event=event,
+            first_event=first_event,
+            second_event=second_event,
+            method=method,
+            windows=windows,
+            every_x_time_units=every_x_time_units,
+            limit_duration=limit_duration,
+            show_ensemble=show_ensemble,
+            show_runs=show_runs,
+            **kwargs,
+        )
+
+    def get_outlier_runs(
+        self,
+        first_event,
+        second_event,
+        *,
+        what: DurationStat = "mean",
+        match: MatchMode = "first",
+        warm_up: float = 0,
+        iqr_multiplier: float = 1.5,
+        **kwargs,
+    ):
+        """
+        Flag replications whose duration statistic is a statistical outlier.
+
+        Thin wrapper over `vidigi.analysis.event_durations`,
+        `replication_means` and `vidigi.analysis.flag_outlier_runs`, called
+        on this trial's combined dataframe.
+
+        Parameters
+        ----------
+        first_event, second_event : str
+            The two events to pair. See `vidigi.analysis.event_durations`.
+        what : str, default="mean"
+            The per-replication statistic to compute. See
+            `vidigi.analysis.replication_means`.
+        match : {"first", "last", "occurrence"}, default="first"
+            How repeated occurrences of the two events are paired.
+        warm_up : float, default=0
+            Pairings whose `first_time` is before `warm_up` are excluded.
+            See `vidigi.analysis.event_durations`'s same parameter.
+        iqr_multiplier : float, default=1.5
+            Fence width in IQRs. See `vidigi.analysis.flag_outlier_runs`.
+        **kwargs : dict
+            Additional keyword arguments passed to the chosen statistic,
+            e.g. `q=0.9` for `what="quantile"`.
+
+        Returns
+        -------
+        pandas.DataFrame
+            One row per run, with `value`, `lower_fence`, `upper_fence` and
+            `is_outlier` columns - see `vidigi.analysis.flag_outlier_runs`.
+
+        Raises
+        ------
+        ValueError
+            If no complete pairs are found in any run, or `iqr_multiplier`
+            is negative.
+
+        See Also
+        --------
+        vidigi.analysis.flag_outlier_runs : The underlying implementation.
+        get_replication_precision : A different per-replication diagnostic (precision, not outliers).
+        """
+        durations = self.get_event_durations(
+            first_event, second_event, match=match, warm_up=warm_up
+        )
+        run_values = replication_means(durations, what=what, **kwargs)
+        if run_values.empty:
+            raise ValueError(
+                f"No complete '{first_event}' -> '{second_event}' pairs were "
+                f"found in any run to compute a per-replication statistic from."
+            )
+        return flag_outlier_runs(run_values, iqr_multiplier=iqr_multiplier)
+
+    def plot_outlier_runs(
+        self,
+        first_event,
+        second_event,
+        **kwargs,
+    ):
+        """
+        Plot a horizontal beeswarm of per-replication values, flagging outliers.
+
+        Thin wrapper over `vidigi.plots.plot_outlier_runs`, called on this
+        trial's combined dataframe. See that function for the full
+        parameter list.
+
+        Parameters
+        ----------
+        first_event, second_event : str
+            The two events to pair. See `vidigi.analysis.event_durations`.
+        **kwargs : dict
+            Additional keyword arguments forwarded to
+            `vidigi.plots.plot_outlier_runs` (e.g. `what=`, `iqr_multiplier=`,
+            `marker_size=`, `spacing=`).
+
+        Returns
+        -------
+        plotly.graph_objects.Figure
+
+        Raises
+        ------
+        ValueError
+            If no complete pairs are found in any run, or `iqr_multiplier`
+            is negative.
+
+        See Also
+        --------
+        vidigi.plots.plot_outlier_runs : The underlying implementation.
+        get_outlier_runs : The underlying per-run table.
+        """
+        return _plot_outlier_runs(
+            self._trial_dataframe,
+            first_event,
+            second_event,
+            **kwargs,
+        )
+
+    def get_replication_precision(
+        self,
+        first_event,
+        second_event,
+        *,
+        what: DurationStat = "mean",
+        ci_level: float = 0.95,
+        deviation_threshold: float = 0.05,
+        match: MatchMode = "first",
+        **kwargs,
+    ):
+        """
+        Running confidence-interval precision as replications accumulate.
+
+        Thin wrapper over `vidigi.analysis.event_durations`,
+        `replication_means` and `vidigi.analysis.replication_precision`,
+        called on this trial's combined dataframe.
+
+        Parameters
+        ----------
+        first_event, second_event : str
+            The two events to pair. See `vidigi.analysis.event_durations`.
+        what : str, default="mean"
+            The per-replication statistic to compute. See
+            `vidigi.analysis.replication_means`.
+        ci_level : float, default=0.95
+            Confidence level for each cumulative interval.
+        deviation_threshold : float, default=0.05
+            Relative half-width threshold used for `stays_below_threshold` -
+            see `vidigi.analysis.replication_precision`.
+        match : {"first", "last", "occurrence"}, default="first"
+            How repeated occurrences of the two events are paired.
+        **kwargs : dict
+            Additional keyword arguments forwarded to
+            `vidigi.analysis.event_durations` (e.g. `run_col_name`).
+
+        Returns
+        -------
+        pandas.DataFrame
+            One row per replication count k - see
+            `vidigi.analysis.replication_precision`.
+
+        Raises
+        ------
+        ValueError
+            If no complete pairs are found in any run.
+        ImportError
+            If `scipy` is not installed - see
+            `vidigi.analysis.mean_confidence_interval`.
+
+        See Also
+        --------
+        vidigi.analysis.replication_precision : The underlying implementation.
+        plot_replication_analysis : Plots this table.
+        """
+        durations = event_durations(
+            self._trial_dataframe,
+            first_event,
+            second_event,
+            match=match,
+            keep_incomplete=False,
+            **kwargs,
+        )
+        run_values = replication_means(durations, what=what)["value"]
+        if run_values.empty:
+            raise ValueError(
+                f"No complete '{first_event}' -> '{second_event}' pairs were "
+                f"found in any run to compute a per-replication statistic from."
+            )
+        return replication_precision(
+            run_values, ci_level=ci_level, deviation_threshold=deviation_threshold
+        )
+
+    def plot_replication_analysis(
+        self,
+        first_event,
+        second_event,
+        *,
+        what: DurationStat = "mean",
+        ci_level: float = 0.95,
+        deviation_threshold: float = 0.05,
+        show_deviation: bool = True,
+        match: MatchMode = "first",
+        **kwargs,
+    ):
+        """
+        Plot cumulative-mean precision against replication count.
+
+        Thin wrapper over `vidigi.plots.plot_replication_analysis`, called on
+        this trial's combined dataframe. See that function for the full
+        parameter list.
+
+        Parameters
+        ----------
+        first_event, second_event : str
+            The two events to pair. See `vidigi.analysis.event_durations`.
+        what : str, default="mean"
+            The per-replication statistic to compute.
+        ci_level : float, default=0.95
+            Confidence level for each cumulative interval.
+        deviation_threshold : float, default=0.05
+            Relative half-width threshold - drawn as a reference line and
+            used for the recommended-replication-count annotation.
+        show_deviation : bool, default=True
+            If True, draws the relative half-width in a second panel below
+            the mean+CI panel.
+        match : {"first", "last", "occurrence"}, default="first"
+            How repeated occurrences of the two events are paired.
+        **kwargs : dict
+            Additional keyword arguments forwarded to
+            `vidigi.plots.plot_replication_analysis` (e.g. `run_col_name`).
+
+        Returns
+        -------
+        plotly.graph_objects.Figure
+
+        See Also
+        --------
+        vidigi.plots.plot_replication_analysis : The underlying implementation.
+        get_replication_precision : The underlying per-k table.
+        """
+        return _plot_replication_analysis(
+            self._trial_dataframe,
+            first_event,
+            second_event,
+            what=what,
+            ci_level=ci_level,
+            deviation_threshold=deviation_threshold,
+            show_deviation=show_deviation,
+            match=match,
+            **kwargs,
+        )
+
+    def _check_other_is_trial_logger(self, other) -> None:
+        if not isinstance(other, TrialLogger):
+            raise TypeError(
+                f"`other` must be a TrialLogger; got {type(other).__name__}."
+            )
+
+    def compare_event_duration_stat(
+        self,
+        other: "TrialLogger",
+        first_event,
+        second_event,
+        *,
+        what: DurationStat = "mean",
+        ci_level: float = 0.95,
+        match: MatchMode = "first",
+        warm_up: float = 0,
+        label_a: str | None = None,
+        label_b: str | None = None,
+        **kwargs,
+    ):
+        """
+        Compare a duration statistic between this trial and another scenario.
+
+        Thin wrapper over `vidigi.analysis.compare_replication_values`,
+        computing each trial's per-replication values via
+        `get_event_durations` + `replication_means`, then comparing them - a
+        two-independent-sample confidence-interval-overlap check plus a
+        Welch's t-test, the "scenario comparison highlighter" for
+        event-duration metrics.
+
+        Parameters
+        ----------
+        other : TrialLogger
+            The trial to compare against.
+        first_event, second_event : str
+            The two events to pair. See `vidigi.analysis.event_durations`.
+        what : str, default="mean"
+            The per-replication statistic to compute. See
+            `vidigi.analysis.replication_means`.
+        ci_level : float, default=0.95
+            Confidence level for each side's interval and the significance
+            test.
+        match : {"first", "last", "occurrence"}, default="first"
+            How repeated occurrences of the two events are paired.
+        warm_up : float, default=0
+            Pairings whose `first_time` is before `warm_up` are excluded.
+        label_a, label_b : str, optional
+            Names for each scenario. Default to this trial's and `other`'s
+            `.label`, falling back to `"A"`/`"B"` if neither has one.
+        **kwargs : dict
+            Additional keyword arguments passed to the chosen statistic,
+            e.g. `q=0.9` for `what="quantile"`.
+
+        Returns
+        -------
+        vidigi.analysis.ScenarioComparison
+
+        Raises
+        ------
+        TypeError
+            If `other` is not a `TrialLogger`.
+        ValueError
+            If no complete pairs are found in any run of either trial.
+        ImportError
+            If `scipy` is not installed.
+
+        See Also
+        --------
+        vidigi.analysis.compare_replication_values : The underlying implementation.
+        plot_event_duration_comparison : Plots this comparison.
+        compare_resource_utilisation : The resource-utilisation analogue.
+        """
+        self._check_other_is_trial_logger(other)
+        label_a = label_a or self.label or "A"
+        label_b = label_b or other.label or "B"
+
+        durations_a = self.get_event_durations(
+            first_event, second_event, match=match, warm_up=warm_up
+        )
+        durations_b = other.get_event_durations(
+            first_event, second_event, match=match, warm_up=warm_up
+        )
+        values_a = replication_means(durations_a, what=what, **kwargs)["value"]
+        values_b = replication_means(durations_b, what=what, **kwargs)["value"]
+        if values_a.empty or values_b.empty:
+            raise ValueError(
+                f"No complete '{first_event}' -> '{second_event}' pairs were "
+                f"found in any run of one or both trials."
+            )
+        return compare_replication_values(
+            values_a, values_b, label_a=label_a, label_b=label_b, ci_level=ci_level
+        )
+
+    def plot_event_duration_comparison(
+        self, other: "TrialLogger", first_event, second_event, **kwargs
+    ):
+        """
+        Plot a bar chart comparing a duration statistic between this trial and another.
+
+        Thin wrapper over `vidigi.plots.plot_scenario_comparison`, called on
+        this trial's and `other`'s combined dataframes. See that function
+        for the full parameter list.
+
+        Parameters
+        ----------
+        other : TrialLogger
+            The trial to compare against.
+        first_event, second_event : str
+            The two events to pair. See `vidigi.analysis.event_durations`.
+        **kwargs : dict
+            Additional keyword arguments forwarded to
+            `vidigi.plots.plot_scenario_comparison` (e.g. `what=`,
+            `ci_level=`, `label_a=`, `label_b=`, `highlight_bands=`).
+
+        Returns
+        -------
+        plotly.graph_objects.Figure
+
+        Raises
+        ------
+        TypeError
+            If `other` is not a `TrialLogger`.
+
+        See Also
+        --------
+        vidigi.plots.plot_scenario_comparison : The underlying implementation.
+        compare_event_duration_stat : The underlying numbers.
+        """
+        self._check_other_is_trial_logger(other)
+        kwargs.setdefault("label_a", self.label or "A")
+        kwargs.setdefault("label_b", other.label or "B")
+        return _plot_scenario_comparison(
+            self._trial_dataframe,
+            other._trial_dataframe,
+            first_event,
+            second_event,
+            **kwargs,
+        )
+
+    def compare_resource_utilisation(
+        self,
+        other: "TrialLogger",
+        *,
+        metric: ResourceMetric = "utilisation",
+        ci_level: float = 0.95,
+        label_a: str | None = None,
+        label_b: str | None = None,
+        **kwargs,
+    ):
+        """
+        Compare a resource utilisation metric between this trial and another scenario.
+
+        Thin wrapper over `vidigi.analysis.compare_replication_values`,
+        computing each trial's per-run `metric` via
+        `get_resource_utilisation(by="run")`, then comparing them - the
+        resource-utilisation analogue of `compare_event_duration_stat`.
+        Always pools every step/resource together into one blended per-run
+        figure (`by="run"`, see `vidigi.analysis.resource_utilisation`); to
+        compare one specific step or resource instead, call
+        `get_resource_utilisation(by=...)` on each trial and pass the
+        `metric` column straight into
+        `vidigi.analysis.compare_replication_values`.
+
+        Parameters
+        ----------
+        other : TrialLogger
+            The trial to compare against.
+        metric : {"utilisation", "busy_time", "mean_in_use"}, default="utilisation"
+            Which `vidigi.analysis.resource_utilisation` column to compare.
+        ci_level : float, default=0.95
+            Confidence level for each side's interval and the significance
+            test.
+        label_a, label_b : str, optional
+            Names for each scenario. Default to this trial's and `other`'s
+            `.label`, falling back to `"A"`/`"B"` if neither has one.
+        **kwargs : dict
+            Additional keyword arguments forwarded to
+            `get_resource_utilisation` on both trials (e.g. `scenario=`,
+            `warm_up=`).
+
+        Returns
+        -------
+        vidigi.analysis.ScenarioComparison
+
+        Raises
+        ------
+        TypeError
+            If `other` is not a `TrialLogger`.
+        ValueError
+            If `metric` is not a resource-utilisation column.
+        ImportError
+            If `scipy` is not installed.
+
+        See Also
+        --------
+        vidigi.analysis.compare_replication_values : The underlying implementation.
+        compare_event_duration_stat : The event-duration analogue.
+        """
+        self._check_other_is_trial_logger(other)
+        if metric not in ("utilisation", "busy_time", "mean_in_use"):
+            raise ValueError(
+                f"`metric` must be one of 'utilisation', 'busy_time', "
+                f"'mean_in_use'; got {metric!r}."
+            )
+        label_a = label_a or self.label or "A"
+        label_b = label_b or other.label or "B"
+
+        values_a = self.get_resource_utilisation(by="run", **kwargs)[metric]
+        values_b = other.get_resource_utilisation(by="run", **kwargs)[metric]
+        return compare_replication_values(
+            values_a, values_b, label_a=label_a, label_b=label_b, ci_level=ci_level
+        )
+
+    def plot_resource_utilisation_comparison(
+        self,
+        other: "TrialLogger",
+        *,
+        metric: ResourceMetric = "utilisation",
+        ci_level: float = 0.95,
+        label_a: str | None = None,
+        label_b: str | None = None,
+        scenario_a=None,
+        scenario_b=None,
+        highlight_bands: list[dict] | None = None,
+        **kwargs,
+    ):
+        """
+        Plot a bar chart comparing a resource utilisation metric between two trials.
+
+        Thin wrapper over `vidigi.plots.plot_resource_utilisation_comparison`,
+        called on this trial's and `other`'s combined dataframes - the plot
+        counterpart to `compare_resource_utilisation`, as
+        `plot_event_duration_comparison` is to `compare_event_duration_stat`.
+
+        Parameters
+        ----------
+        other : TrialLogger
+            The trial to compare against.
+        metric : {"utilisation", "busy_time", "mean_in_use"}, default="utilisation"
+            Which `vidigi.analysis.resource_utilisation` column to compare.
+        ci_level : float, default=0.95
+            Confidence level for each side's interval and the significance
+            test.
+        label_a, label_b : str, optional
+            Names for each scenario. Default to this trial's and `other`'s
+            `.label`, falling back to `"A"`/`"B"` if neither has one.
+        scenario_a, scenario_b : object or dict, optional
+            Capacity-resolution `scenario` for each trial - see
+            `vidigi.analysis._resolve_resource_capacities`. Default to this
+            trial's and `other`'s own attached `.scenario`, exactly as
+            `get_resource_utilisation` defaults `scenario=self.scenario`.
+        highlight_bands : list of dict, optional
+            Shaded threshold zones drawn behind the chart - see
+            `vidigi.plots.plot_duration_distribution` for the dict shape.
+        **kwargs : dict
+            Additional keyword arguments forwarded to
+            `vidigi.plots.plot_resource_utilisation_comparison` for both
+            trials (e.g. `resource_map=`, `warm_up=`).
+
+        Returns
+        -------
+        plotly.graph_objects.Figure
+
+        Raises
+        ------
+        TypeError
+            If `other` is not a `TrialLogger`.
+        ValueError
+            If `metric` is not a resource-utilisation column, or either
+            trial has no runs to compare.
+        ImportError
+            If `scipy` is not installed.
+
+        See Also
+        --------
+        vidigi.plots.plot_resource_utilisation_comparison : The underlying implementation.
+        compare_resource_utilisation : The underlying numbers.
+        """
+        self._check_other_is_trial_logger(other)
+        label_a = label_a or self.label or "A"
+        label_b = label_b or other.label or "B"
+        if scenario_a is None:
+            scenario_a = self.scenario
+        if scenario_b is None:
+            scenario_b = other.scenario
+        return _plot_resource_utilisation_comparison(
+            self._trial_dataframe,
+            other._trial_dataframe,
+            metric=metric,
+            ci_level=ci_level,
+            label_a=label_a,
+            label_b=label_b,
+            scenario_a=scenario_a,
+            scenario_b=scenario_b,
+            highlight_bands=highlight_bands,
+            **kwargs,
+        )
+
+    def get_entity_metric_by_arrival(
+        self,
+        first_event,
+        second_event,
+        *,
+        arrival_event: str = "arrival",
+        match: MatchMode = "first",
+        **kwargs,
+    ):
+        """
+        Per-entity duration joined with each entity's arrival time.
+
+        Thin wrapper over `vidigi.analysis.entity_metric_by_arrival`, called on
+        this trial's combined dataframe.
+
+        Parameters
+        ----------
+        first_event, second_event : str
+            The two events to pair. See `vidigi.analysis.event_durations`.
+        arrival_event : str, default="arrival"
+            The event marking an entity's arrival.
+        match : {"first", "last", "occurrence"}, default="first"
+            How repeated occurrences of the two events are paired. Does not
+            affect the arrival-time lookup.
+        **kwargs : dict
+            Additional keyword arguments forwarded to
+            `vidigi.analysis.entity_metric_by_arrival` (e.g. `run_col_name`).
+
+        Returns
+        -------
+        pandas.DataFrame
+
+        See Also
+        --------
+        vidigi.analysis.entity_metric_by_arrival : The underlying implementation.
+        plot_metric_vs_arrival_time : The matching chart.
+        """
+        return entity_metric_by_arrival(
+            self._trial_dataframe,
+            first_event,
+            second_event,
+            arrival_event=arrival_event,
+            match=match,
+            **kwargs,
+        )
+
+    def plot_metric_vs_arrival_time(
+        self,
+        first_event,
+        second_event,
+        *,
+        arrival_event: str = "arrival",
+        colour_by: SplitBy | None = None,
+        rolling_window: int | None = None,
+        rolling_time: float | None = None,
+        warm_up: float = 0,
+        match: MatchMode = "first",
+        marker_size: float = 6,
+        line_width: float = 3,
+        highlight_bands: list[dict] | None = None,
+        title: str | None = None,
+        **kwargs,
+    ):
+        """
+        Plot a duration/metric against the arrival time of the entity it belongs to.
+
+        Thin wrapper over `vidigi.plots.plot_metric_vs_arrival_time`, called on
+        this trial's combined dataframe. See that function for the full
+        parameter list.
+
+        Parameters
+        ----------
+        first_event, second_event : str
+            The two events to measure the duration between.
+        arrival_event : str, default="arrival"
+            The event marking an entity's arrival - drawn on the x-axis.
+        colour_by : {"run", "pathway"} or None, default=None
+            If given, draws one trace per distinct value of the corresponding
+            column instead of a single pooled trace.
+        rolling_window : int, optional
+            Half-width, in points, of a count-based moving average. Mutually
+            exclusive with `rolling_time`.
+        rolling_time : float, optional
+            Half-width, in time units, of a time-window moving average.
+            Mutually exclusive with `rolling_window`.
+        warm_up : float, default=0
+            Points whose `arrival_time` is before `warm_up` are excluded.
+        match : {"first", "last", "occurrence"}, default="first"
+            How repeated occurrences of the two events are paired.
+        marker_size : float, default=6
+            Marker size for the scatter points.
+        line_width : float, default=3
+            Line width for the rolling-mean trend line, when drawn.
+        highlight_bands : list of dict, optional
+            Shaded threshold zones drawn behind the chart - see
+            `vidigi.plots.plot_duration_distribution` for the dict shape.
+        title : str, optional
+            Figure title.
+        **kwargs : dict
+            Additional keyword arguments forwarded to
+            `vidigi.plots.plot_metric_vs_arrival_time` (e.g. `run_col_name`).
+
+        Returns
+        -------
+        plotly.graph_objects.Figure
+
+        See Also
+        --------
+        vidigi.plots.plot_metric_vs_arrival_time : The underlying implementation.
+        get_entity_metric_by_arrival : The underlying per-entity table.
+        """
+        return _plot_metric_vs_arrival_time(
+            self._trial_dataframe,
+            first_event,
+            second_event,
+            arrival_event=arrival_event,
+            colour_by=colour_by,
+            rolling_window=rolling_window,
+            rolling_time=rolling_time,
+            warm_up=warm_up,
+            match=match,
+            marker_size=marker_size,
+            line_width=line_width,
+            highlight_bands=highlight_bands,
+            title=title,
+            **kwargs,
+        )

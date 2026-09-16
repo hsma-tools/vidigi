@@ -1,9 +1,11 @@
 import random
+
 import numpy as np
 import pandas as pd
 import simpy
 from sim_tools.distributions import Exponential, Lognormal
-from vidigi.resources import VidigiResource, populate_store, VidigiStore
+
+from vidigi.resources import VidigiResource, VidigiStore, populate_store
 
 
 class g:

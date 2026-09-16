@@ -22,8 +22,47 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 """
 
+import warnings
+import weakref
+
 import simpy
 from simpy.core import BoundClass
+
+from vidigi.logging import EventLogger
+
+# {env: {labels already used for a pool on that env}}. Keyed on the
+# environment (not a bare module-level set) because reusing a label across
+# separate replications - a fresh `simpy.Environment` per run, the normal
+# case - is correct and must not warn; only two pools sharing a label on the
+# *same* env is a real collision. A WeakKeyDictionary lets a finished run's
+# entry be freed once its env is garbage collected, instead of growing for
+# the life of the process across many replications.
+_seen_pool_labels: "weakref.WeakKeyDictionary" = weakref.WeakKeyDictionary()
+
+
+def _check_label_not_reused(env, label, *, stacklevel):
+    """Warn if `label` was already used for another pool on this `env`.
+
+    Two pools sharing a label produce colliding `unique_id_attribute` values,
+    silently reproducing the exact `resource_id` collision `label=` exists to
+    prevent - and unlike the bare `resource_id` collision, nothing else
+    catches it unless the two pools' resources happen to be busy at the same
+    instant (see `vidigi.analysis._check_no_overlapping_resource_bouts`).
+    """
+    if label is None:
+        return
+    seen = _seen_pool_labels.setdefault(env, set())
+    if label in seen:
+        warnings.warn(
+            f"label={label!r} was already used for another resource pool on "
+            "this simpy.Environment. Resources from different pools sharing "
+            "a label get colliding unique_id_attribute values, silently "
+            "reproducing the resource_id collision label= exists to prevent "
+            "- give each pool on the same environment a distinct label.",
+            UserWarning,
+            stacklevel=stacklevel,
+        )
+    seen.add(label)
 
 
 # MARK: VidigiResource Class
@@ -31,25 +70,177 @@ class VidigiResource:
     """
     A simple resource class with an ID attribute for use in VidigiStore and VidigiPriorityStore.
 
-    This represents a resource that can be stored and retrieved from a store,
-    with an identifier for tracking purposes.
+    This represents a resource that can be stored and retrieved from a store, with an
+    identifier for tracking which specific unit of a pool an entity used.
 
-    Accepts additional attributes as kwargs.
+    Parameters
+    ----------
+    id_attribute : any, optional
+        Identifier for this resource, usually a small per-pool integer. Written to the
+        ``resource_id`` column when you log resource use. ``populate()`` /
+        ``populate_store()`` set it to ``1..capacity``.
+    **kwargs
+        Any further keyword arguments are set as attributes on the instance
+        (``VidigiResource(id_attribute=1, staff_type="nurse")`` ->
+        ``resource.staff_type``). To do this for a whole pool built by
+        ``populate_store`` / ``VidigiStore`` / ``VidigiPriorityStore``, pass their
+        ``extra_attributes=`` instead of building the pool by hand. Pools built
+        with ``label=`` additionally carry ``label`` and ``unique_id_attribute``
+        (``f"{label}_{id_attribute}"``), the latter unique across pools.
+
+    Notes
+    -----
+    ``id`` is a read-write alias of ``id_attribute``, and ``unique_id`` of
+    ``unique_id_attribute`` - reading or setting either name of a pair affects the same
+    value, at construction (``VidigiResource(id=3)``) or after. The ``_attribute`` names
+    keep working unchanged. ``unique_id`` is only present when the pool was built with
+    ``label=``, exactly like ``unique_id_attribute``. Passing both names of a pair with
+    different values raises ``ValueError``.
     """
 
     def __init__(self, id_attribute=None, **kwargs):
+        if "id" in kwargs and id_attribute is not None and kwargs["id"] != id_attribute:
+            raise ValueError(
+                f"VidigiResource got both id={kwargs['id']!r} and "
+                f"id_attribute={id_attribute!r} - pass one or the other, they are aliases "
+                "of the same value."
+            )
+        if (
+            "unique_id" in kwargs
+            and "unique_id_attribute" in kwargs
+            and kwargs["unique_id"] != kwargs["unique_id_attribute"]
+        ):
+            raise ValueError(
+                f"VidigiResource got both unique_id={kwargs['unique_id']!r} and "
+                f"unique_id_attribute={kwargs['unique_id_attribute']!r} - pass one or the "
+                "other, they are aliases of the same value."
+            )
+
         self.id_attribute = id_attribute
 
         for key, value in kwargs.items():
             setattr(self, key, value)
 
+    @property
+    def id(self):
+        """Alias of ``id_attribute`` - see the class docstring."""
+        return self.id_attribute
+
+    @id.setter
+    def id(self, value):
+        self.id_attribute = value
+
+    @property
+    def unique_id(self):
+        """Alias of ``unique_id_attribute`` - see the class docstring.
+
+        Only present when the pool was built with ``label=``; otherwise raises
+        ``AttributeError``, mirroring ``unique_id_attribute`` itself.
+        """
+        return self.unique_id_attribute
+
+    @unique_id.setter
+    def unique_id(self, value):
+        self.unique_id_attribute = value
+
     def __repr__(self):
         return f"VidigiResource(id={self.id_attribute})"
 
 
-def populate_store(num_resources, simpy_store, sim_env):
+_RESERVED_POOL_ATTRS = (
+    "id_attribute",
+    "id",
+    "label",
+    "unique_id_attribute",
+    "unique_id",
+)
+
+
+def _check_extra_attributes(extra_attributes):
+    """Reject `extra_attributes` keys the pool manages itself.
+
+    `id_attribute`/`id` come from the `1..num_resources` index and
+    `label`/`unique_id_attribute`/`unique_id` from `label=`; letting
+    `extra_attributes` set any of them would either be silently overridden or
+    collide as a duplicate keyword in `_new_pool_resource`. Fail loudly instead,
+    naming the replacement mechanism.
+    """
+    if not extra_attributes:
+        return
+    reserved = [k for k in _RESERVED_POOL_ATTRS if k in extra_attributes]
+    if reserved:
+        raise ValueError(
+            f"extra_attributes cannot set {reserved} - the pool manages these: "
+            "id_attribute/id come from the 1..num_resources index, and "
+            "label/unique_id_attribute/unique_id from label=. Use different "
+            "attribute names for your own data."
+        )
+
+
+def _new_pool_resource(env, index, label=None, *, extra_attributes=None, stacklevel=3):
+    """Build one `VidigiResource` for a `populate()`-style loop.
+
+    `id_attribute` is always `index + 1`, unchanged from every prior release -
+    `vidigi.prep`'s animation icon positioning does arithmetic directly on it,
+    so it must stay a small per-pool index. When `label` is given, the
+    resource additionally gets `.label` (the raw label) and
+    `.unique_id_attribute` (`f"{label}_{index + 1}"`, unique across pools when
+    every pool is given a distinct label) - two separate attributes rather
+    than one, so a consumer never needs to parse the combined string back
+    apart. Omitting `label` adds neither attribute at all (a true no-op), but
+    warns once that `label` will become mandatory at vidigi 3.0 - see
+    `pending_fixes.md`.
+
+    `extra_attributes`, if given, is a dict of further attributes set on every
+    resource in the pool (`{"staff_type": "nurse"}`) - the caller is expected to
+    have run it past `_check_extra_attributes` first.
+
+    `stacklevel` must count frames from here up to the *caller's* call site -
+    `populate_store()` and a direct `.populate()` call are both one frame
+    away (the default, 3, is correct for both), but `VidigiStore`/
+    `VidigiPriorityStore.__init__` call `.populate()` internally, adding a
+    frame, so they must pass `stacklevel=4` through `.populate()`'s own
+    `_stacklevel` parameter. Getting this wrong doesn't just mislabel the
+    warning's reported line - it can make it vanish. Python's default warning
+    filter suppresses repeats sharing the same (message, category, module,
+    lineno), so two distinct unlabelled pools that both misattribute to the
+    same internal line only warn once between them.
+    """
+    if label is None:
+        warnings.warn(
+            "VidigiStore/populate_store/VidigiPriorityStore was used without a "
+            "`label`. Resources from different pools currently number "
+            "themselves 1..capacity independently, so the same resource_id can "
+            "mean different physical things in different pools - this silently "
+            'breaks vidigi.analysis.resource_utilisation(by="resource"). Pass '
+            'label="..." to give this pool\'s resources a collision-proof '
+            "unique_id_attribute. `label` becomes mandatory in vidigi 3.0.",
+            DeprecationWarning,
+            stacklevel=stacklevel,
+        )
+        extra = {}
+    else:
+        extra = {"label": label, "unique_id_attribute": f"{label}_{index + 1}"}
+    if extra_attributes:
+        extra.update(extra_attributes)
+    return VidigiResource(env=env, capacity=1, id_attribute=index + 1, **extra)
+
+
+def populate_store(
+    num_resources, simpy_store, sim_env, label=None, extra_attributes=None
+):
     """
     Populate a SimPy Store (or VidigiPriorityStore) with VidigiResource objects.
+
+    .. deprecated:: 2.0.0
+        ``populate_store()`` will be removed in vidigi 3.0. It predates being able to
+        build the pool through the store itself. Use
+        ``VidigiStore(env, num_resources=N, label=...)`` /
+        ``VidigiPriorityStore(env, num_resources=N, label=...)``, or
+        ``store.populate(N, label=...)`` to top one up. A plain ``simpy.Store`` filled
+        this way should become a ``VidigiStore`` - a drop-in replacement for
+        ``simpy.Resource`` that also enables the ``count`` / ``num_resources``
+        properties. ``populate_store()`` does not feed those properties.
 
     This function creates a specified number of VidigiResource objects and adds them to
     a SimPy Store, a VidigiStore, or VidigiPriorityStore.
@@ -69,6 +260,23 @@ def populate_store(num_resources, simpy_store, sim_env):
         The SimPy Store object to populate with resources.
     sim_env : simpy.Environment
         The SimPy environment in which the resources and store exist.
+    label : str, optional
+        A name for this pool of resources, e.g. `"triage"`. When given, each
+        resource also gets `.unique_id_attribute` (`f"{label}_{id_attribute}"`)
+        - unique across pools when every pool is given a distinct label, unlike
+        `id_attribute` alone, which restarts at 1 in every pool. Omitting it
+        (the default) changes nothing about the resources produced, but warns
+        that `label` will become mandatory at vidigi 3.0 - see
+        `vidigi.analysis.resource_utilisation`'s `by="resource"` docs for why.
+    extra_attributes : dict, optional
+        Further attributes to set on every resource in this pool, e.g.
+        `{"staff_type": "nurse"}` - each becomes `resource.staff_type` etc.,
+        readable by your model code (for break scheduling, skill mix, ...) and
+        otherwise inert. `VidigiResource` has always accepted arbitrary keyword
+        attributes directly; this just threads them through the bulk populate
+        path so you do not have to build the pool by hand. Cannot be used to set
+        `id_attribute`/`id`/`label`/`unique_id_attribute`/`unique_id` (managed by
+        the pool) - that raises `ValueError`.
 
     Returns
     -------
@@ -86,14 +294,293 @@ def populate_store(num_resources, simpy_store, sim_env):
     >>> import simpy
     >>> env = simpy.Environment()
     >>> resource_store = simpy.Store(env)
-    >>> populate_store(5, resource_store, env)
+    >>> populate_store(5, resource_store, env, label="triage")
     >>> len(resource_store.items)  # The store now contains 5 VidigiResource objects
     5
     """
+    warnings.warn(
+        "populate_store() is deprecated and will be removed in vidigi 3.0. Build the "
+        "pool through the store instead: VidigiStore(env, num_resources=N, label=...) "
+        "or VidigiPriorityStore(env, num_resources=N, label=...), or "
+        "store.populate(N, label=...) to top up an existing one. A plain simpy.Store "
+        "filled this way should become a VidigiStore, which is a drop-in replacement "
+        "for simpy.Resource and also enables the .count / .num_resources properties.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    _check_extra_attributes(extra_attributes)
+    _check_label_not_reused(sim_env, label, stacklevel=3)
     for i in range(num_resources):
         simpy_store.put(
-            VidigiResource(env=sim_env, capacity=1, id_attribute=i + 1)
+            _new_pool_resource(sim_env, i, label, extra_attributes=extra_attributes)
         )
+
+
+# \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\#
+# Automatic resource-use logging helpers
+# \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\#
+# Shared by VidigiStore and VidigiPriorityStore's request()/get()/get_direct()/put()/
+# return_item() - see each class's `logger=` constructor parameter.
+
+
+def _default_resource_event_names(label):
+    """Default (start, end) event names for auto-logged resource-use events.
+
+    Derived from the pool's `label` (`f"{label}_start"`/`f"{label}_end"`) so a labelled
+    pool's auto-logged events are identifiable without an extra argument at every call site,
+    falling back to the same `"start"`/`"end"` literals `EventLogger.log_resource_use_start`/
+    `log_resource_use_end` themselves already default to when there is no label.
+    """
+    if label is None:
+        return "start", "end"
+    return f"{label}_start", f"{label}_end"
+
+
+def _should_auto_log(store, entity_id, method_name, *, auto_log=True, stacklevel):
+    """Whether an auto-logging call should proceed for this request/get/put call.
+
+    False, silently, when `store.logger` is None - the feature is then simply unused and
+    `entity_id` (if passed anyway) is ignored, so mixing auto-logging stores with
+    non-logging ones in the same model needs no special-casing.
+
+    False, silently, when the call passed `auto_log=False` - a caller opting this one
+    request/get/put out of auto-logging on purpose (e.g. to bracket it with hand-written
+    `EventLogger.log_resource_use_start`/`_end` calls carrying step-specific fields, while
+    every other call on the same store keeps auto-logging). Distinct from simply omitting
+    `entity_id`: that is treated as a probable mistake and warned about, this is not.
+
+    False, with a one-time warning per `store`, when a logger *is* configured but neither
+    `entity_id` nor `auto_log=False` was passed to this call - this is what stops a
+    forgotten `entity_id=` from silently producing a quieter-than-expected log with no
+    signal anything is wrong, while still not erroring on every single such call in a long
+    run. Mirrors the throttled `DeprecationWarning` pattern already used for a missing
+    `label` in `_new_pool_resource`.
+    """
+    if store.logger is None:
+        return False
+    if not auto_log:
+        return False
+    if entity_id is not None:
+        return True
+    if not store._warned_missing_entity_id:
+        warnings.warn(
+            f"{type(store).__name__} has a logger configured, but entity_id was not passed "
+            f"to {method_name}() - auto-logging skipped for this call. This will not be "
+            "reported again for this store.",
+            UserWarning,
+            stacklevel=stacklevel,
+        )
+        store._warned_missing_entity_id = True
+    return False
+
+
+def _resource_use_log_kwargs(store, item, phase, *, event, pathway, extra_fields):
+    """Build the kwargs for one auto-logged `log_resource_use_start`/`_end` call.
+
+    `resource_id` is read via `getattr(item, "id_attribute", None)` rather than assumed -
+    both stores are generic pools with no type constraint on what gets `put()` into them, so
+    an item lacking `id_attribute` (e.g. put in by mistake via some more complex get/put
+    pattern) must degrade to an unresourced log entry rather than crash the model with an
+    `AttributeError`. `EventLogger` already has a dedicated warning for a missing/invalid
+    `resource_id` (`BaseEvent.warn_if_missing_resource_id`), so that case is still surfaced.
+
+    `unique_resource_id` is added automatically, mirroring the pattern already recommended
+    in `TrialLogger._resolve_resource_col_name`'s docstring, whenever the item carries a
+    `unique_id_attribute` (i.e. the pool was built with `label=`).
+    """
+    default_start, default_end = _default_resource_event_names(store.label)
+    default_event = default_start if phase == "start" else default_end
+
+    kwargs = dict(extra_fields)
+    unique_id = getattr(item, "unique_id_attribute", None)
+    if unique_id is not None:
+        kwargs.setdefault("unique_resource_id", unique_id)
+
+    kwargs["resource_id"] = getattr(item, "id_attribute", None)
+    kwargs["event"] = event if event is not None else default_event
+    kwargs["pathway"] = pathway
+    return kwargs
+
+
+def _register_start_log_callback(
+    store, get_event, entity_id, event, pathway, extra_fields
+):
+    """Append a callback to `get_event` that logs `resource_use` once it is granted.
+
+    A simpy `Event`'s callbacks aren't invoked until `env.step()` processes it - even when
+    `.succeed()` was already called synchronously at creation time (the immediate-availability
+    path in both `VidigiStore`/`VidigiPriorityStore`) - so appending here, immediately after
+    the event is created and before it's returned to the caller, reliably fires once the item
+    is actually granted, with `env.now` at that moment being the true grant time (not the
+    request time). If the request is later cancelled via `cancel_get()`, the event is removed
+    from its queue and `.succeed()` is never called on it, so this callback never fires - no
+    phantom "start" is logged for a request that was given up on.
+
+    Returns the callback so a caller can detach it (`get_event.callbacks.remove(...)`) if it
+    later decides the request was abandoned - see `_StoreRequest.__exit__`.
+    """
+
+    def _on_grant(triggered_event):
+        if not triggered_event.ok:
+            return
+        kwargs = _resource_use_log_kwargs(
+            store,
+            triggered_event.value,
+            "start",
+            event=event,
+            pathway=pathway,
+            extra_fields=extra_fields,
+        )
+        store.logger.log_resource_use_start(entity_id=entity_id, **kwargs)
+
+    get_event.callbacks.append(_on_grant)
+    return _on_grant
+
+
+def _log_resource_use_end_now(store, item, entity_id, event, pathway, extra_fields):
+    """Log a `resource_use_end` event for `item` immediately (item already in hand)."""
+    kwargs = _resource_use_log_kwargs(
+        store, item, "end", event=event, pathway=pathway, extra_fields=extra_fields
+    )
+    store.logger.log_resource_use_end(entity_id=entity_id, **kwargs)
+
+
+def _reject_invalid_returned_item(item, method_name):
+    """Raise `TypeError` if `item` is a SimPy event or `None`, not a resource.
+
+    Both stores are generic pools with no constraint that contents be
+    `VidigiResource`/`simpy.Resource`, so anything else is let through. But a
+    SimPy event - typically the get/request event passed back instead of the
+    item it yielded - or `None` is never a valid pool member: putting one back
+    leaves an unfulfilled request sitting in the pool to be handed to a later
+    entity, or pushes an event object into `vidigi.prep`/the animation layer,
+    and the failure then surfaces far from the mistake as an unrelated error.
+    Fail loudly here instead. Easy to hit in a reneging or conditional-request
+    branch.
+    """
+    if item is None:
+        raise TypeError(
+            f"{method_name} was given None, not a resource. If this is a "
+            "reneging / conditional-request branch, make sure you only return "
+            "an item the store actually handed you."
+        )
+    if isinstance(item, simpy.Event):
+        raise TypeError(
+            f"{method_name} was given a SimPy event ({type(item).__name__}), "
+            "not a resource. This usually means the get/request event was passed "
+            "back instead of the item it yielded - return the value the event "
+            "produced (e.g. `item = yield store.get_direct(...)`), not the event "
+            "object. Passing an unfulfilled request into the pool corrupts it "
+            "and surfaces as an unrelated error later."
+        )
+
+
+def _reject_over_capacity_return(store, *, available, waiting, enforce):
+    """Raise ``ValueError`` if returning a unit now would grow a strict pool past its size.
+
+    A no-op unless the store was built with ``num_resources=`` / ``populate()`` (so the
+    pool size is known), no explicit ``capacity=`` was given, and ``strict_capacity`` was
+    left at its default ``True``. ``available`` is how many units are currently sitting in
+    the store and ``waiting`` how many gets are queued - a queued waiter would take the
+    unit straight away without growing the pool, so the check only fires when there is
+    none. ``enforce`` is passed ``False`` by a context manager's ``__exit__`` while an
+    exception is already propagating, so a genuine failure is not masked by this one.
+    """
+    if not (
+        enforce
+        and store._strict_capacity
+        and store._explicit_capacity is None
+        and store._n_pool_units
+    ):
+        return
+    if waiting == 0 and available >= store._n_pool_units:
+        raise ValueError(
+            f"{type(store).__name__} is full - all {store._n_pool_units} units are already "
+            "back in the pool, so this return would grow it past num_resources. A unit was "
+            "probably returned twice, or a unit from another pool was returned here. Pass "
+            f"strict_capacity=False to {type(store).__name__}(...) if the pool is meant to grow."
+        )
+
+
+def _handle_unawaited_request(
+    request, exc_type, *, method_name, store_name, return_item, cancel_get, store_label
+):
+    """Common `__exit__` path for a `request()` context manager left without `yield req`.
+
+    Reached only when the get event was never *processed*. That cannot happen under correct
+    use - `with store.request(...) as req: resource = yield req` - because a process cannot
+    get past `yield req` until the event is processed. So it means the `with` block was
+    entered but the request never awaited: the entity never actually waited for or held the
+    resource, its `env.timeout(...)` ran immediately, and the still-pending request would
+    otherwise be granted to it later (after it has already moved on and logged its departure),
+    logging a phantom `resource_use` with no matching end and leaking the unit.
+
+    So: warn (unless an exception is already propagating out of the block - that is the real
+    failure, surfacing on its own), detach the start-of-use log callback so no phantom
+    `resource_use` is logged when the abandoned request is later touched, and release the
+    request - return the item if one was already handed over, otherwise drop the queued get.
+
+    An entity whose (spurious) `env.timeout` outlasts the eventual grant still slips through
+    silently, because by the time its `__exit__` runs the event *is* processed; that case
+    does not produce the visible "entity skips straight to the exit" symptom.
+    """
+    if exc_type is None:
+        warnings.warn(
+            f"{store_name}.{method_name}() - labelled {store_label} - was used as a context manager but the request "
+            f"was never awaited. Write "
+            f"`with store.{method_name}(...) as req: resource = yield req` before using the "
+            f"resource - otherwise the entity never waits for or holds it, and the pending "
+            f"request is granted to it later, after it has already moved on.",
+            UserWarning,
+            stacklevel=4,
+        )
+
+    callback = getattr(request, "_start_log_callback", None)
+    if callback is not None:
+        try:
+            request.get_event.callbacks.remove(callback)
+        except (ValueError, AttributeError, TypeError):
+            pass
+
+    get_event = request.get_event
+    if get_event.triggered and hasattr(get_event, "value"):
+        # An item was already handed over (immediate-availability path) - put it straight
+        # back so the unit is not leaked.
+        return_item(get_event.value)
+    else:
+        # Still queued - drop it so it is never granted to the departed entity.
+        cancel_get(get_event)
+
+
+# \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\#
+# Filtered-request helpers
+# \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\#
+# Shared by VidigiStore and VidigiPriorityStore's request()/get()/get_direct()/
+# request_direct() - see each method's `filter_fn=` parameter.
+
+
+def _validate_filter_fn(filter_fn):
+    """Reject a non-callable `filter_fn` at the call site.
+
+    Left to reach simpy's `FilterStore._do_get` (VidigiStore) or the queue walk in
+    `VidigiPriorityStore._put_item`, a non-callable `filter_fn` fails on a *later* put,
+    far from the `request()` / `get_direct()` call that passed it. Mirrors the loud
+    validation already done by `_reject_invalid_returned_item` / `_check_extra_attributes`.
+    """
+    if filter_fn is not None and not callable(filter_fn):
+        raise TypeError(
+            f"filter_fn must be callable or None, got {type(filter_fn).__name__}"
+        )
+
+
+def _request_accepts_item(request, item):
+    """Whether a queued `VidigiPriorityStore` get event's stored filter accepts `item`.
+
+    A request with no `filter_fn` (or `filter_fn=None`) accepts anything, so an
+    unfiltered waiter behaves exactly as before this parameter existed.
+    """
+    filter_fn = getattr(request, "filter_fn", None)
+    return filter_fn is None or filter_fn(item)
 
 
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\#
@@ -115,6 +602,11 @@ class VidigiStore:
         yield env.timeout(10)
         # Item is automatically returned when exiting the context
 
+    For a pool built with ``num_resources=`` / ``populate()``, the ``count``, ``capacity``
+    (== ``num_resources``) and ``n_waiting`` properties mirror ``simpy.Resource.count`` /
+    ``.capacity`` / ``.queue``, and returning more units than the pool holds raises
+    ``ValueError`` (see ``strict_capacity``).
+
     AI USE DISCLOSURE: This code was generated by Claude 3.7 Sonnet. It has been evaluated
     and tested by a human.
     """
@@ -123,7 +615,11 @@ class VidigiStore:
         self,
         env,
         num_resources=None,
-        capacity=float("inf"),
+        capacity=None,
+        label=None,
+        logger: EventLogger | None = None,
+        extra_attributes=None,
+        strict_capacity=True,
         #  , init_items=None
     ):
         """
@@ -132,20 +628,63 @@ class VidigiStore:
         Args:
             env: SimPy environment
             num_resources: Number of VidigiCustomResource objects to populate the store with
-            capacity: Maximum capacity of the store
+            capacity: Maximum number of items the underlying container can hold. Leave unset
+                (the default) for a resource pool - `.capacity` then reports the pool size
+                (`num_resources`), mirroring `simpy.Resource.capacity`. Pass an explicit
+                value only when you deliberately want a bounded container; `.capacity` then
+                reports that value and the `strict_capacity` guard below is disabled.
+            label: A name for this pool of resources - see `populate()`.
+            strict_capacity: Default `True`. For a pool built with `num_resources=` /
+                `populate()` (and no explicit `capacity=`), returning more units than the
+                pool holds raises `ValueError` - a unit returned twice, or one from another
+                pool, would otherwise silently grow the pool. Pass `False` to allow the
+                pool to grow via a raw `put()`.
+            logger: An `EventLogger` (see `vidigi.logging`), optional. When given,
+                `request()`/`get()`/`get_direct()`/`put()` automatically log
+                `resource_use`/`resource_use_end` events around resource acquisition and
+                release whenever also passed `entity_id=` - see `request()`'s docstring for
+                the full behaviour. `None` (the default) leaves logging entirely manual,
+                exactly as before this parameter existed.
+            extra_attributes: Optional dict of further attributes to set on every
+                resource created for this pool, e.g. `{"staff_type": "nurse"}` -
+                see `populate()`.
         """
         self.env = env
-        self.store = simpy.Store(env, capacity)
+        # simpy.FilterStore, not simpy.Store, so `request()`/`get_direct()` can take a
+        # `filter_fn`. With no `filter_fn` the two are equivalent - FilterStore is a Store
+        # subclass and its default filter accepts every item, granting in the same order.
+        # The container itself is left unbounded even for a pool; `.capacity` reports the
+        # pool size, and `_reject_over_capacity_return` enforces it - see that helper.
+        self.store = simpy.FilterStore(
+            env, float("inf") if capacity is None else capacity
+        )
+        # None => `.capacity` reports the pool size instead of a container limit.
+        self._explicit_capacity = capacity
+        self._strict_capacity = strict_capacity
+        self.logger = logger
+        self.label = label
+        self._warned_missing_entity_id = False
+        # Running count of units added via num_resources= / populate(). Backs the
+        # num_resources and count properties; populate_store() and hand .put() calls
+        # are deliberately not tracked here.
+        self._n_pool_units = 0
 
         if num_resources is not None:
-            self.populate(num_resources)
+            self.populate(
+                num_resources,
+                label=label,
+                extra_attributes=extra_attributes,
+                _stacklevel=4,
+            )
 
         # # Initialize with items if provided
         # if init_items:
         #     for item in init_items:
         #         self.store.put(item)
 
-    def populate(self, num_resources):
+    def populate(
+        self, num_resources, label=None, extra_attributes=None, *, _stacklevel=3
+    ):
         """
         Populate this VidigiStore with VidigiResource objects.
 
@@ -157,17 +696,69 @@ class VidigiStore:
         ----------
         num_resources : int
             The number of VidigiResource objects to create and add to the store.
+        label : str, optional
+            A name for this pool of resources, e.g. `"triage"`. When given, each
+            resource also gets `.unique_id_attribute` (`f"{label}_{id_attribute}"`)
+            - unique across pools when every pool is given a distinct label,
+            unlike `id_attribute` alone, which restarts at 1 in every pool.
+            Omitting it (the default) changes nothing about the resources
+            produced, but warns that `label` will become mandatory at vidigi
+            3.0 - see `vidigi.analysis.resource_utilisation`'s `by="resource"`
+            docs for why. Also updates `self.label` (used to derive automatic
+            resource-use logging event names - see `__init__`'s `logger=`) when
+            given - a no-arg top-up call (`store.populate(5)`, adding resources
+            to an already-running pool) leaves `self.label` and therefore every
+            default event name for the whole store untouched.
+        extra_attributes : dict, optional
+            Further attributes to set on every resource in this pool, e.g.
+            `{"staff_type": "nurse"}` - each becomes `resource.staff_type` etc.,
+            readable by your model code (break scheduling, skill mix, ...) and
+            otherwise inert. `VidigiResource` has always accepted arbitrary
+            keyword attributes directly; this just threads them through the bulk
+            populate path so you do not have to build the pool by hand. Cannot
+            set `id_attribute`/`id`/`label`/`unique_id_attribute`/`unique_id`
+            (managed by the pool) - that raises `ValueError`.
+        _stacklevel : int, default=3
+            Internal - how many frames up from `_new_pool_resource` the
+            missing-`label` warning should attribute to. `__init__` calling
+            this internally passes `4` to still land on the caller's
+            `VidigiStore(...)` line rather than on this method.
 
         Returns
         -------
         None
         """
+        _check_extra_attributes(extra_attributes)
+        if label is not None:
+            self.label = label
+        _check_label_not_reused(self.env, label, stacklevel=_stacklevel)
+        # Grow the pool-size count *before* seeding, so a top-up populate() does not trip
+        # the over-capacity guard on its own new units (`len(items)` climbs 0..new_total-1).
+        self._n_pool_units += num_resources
         for i in range(num_resources):
-            self.put(
-                VidigiResource(env=self.env, capacity=1, id_attribute=i + 1)
+            # self.store.put(...) directly, not self.put(...) - populating the pool is not
+            # a resource being released by an entity, so it must never trigger auto-logging
+            # or the "missing entity_id" warning.
+            self.store.put(
+                _new_pool_resource(
+                    self.env,
+                    i,
+                    label,
+                    extra_attributes=extra_attributes,
+                    stacklevel=_stacklevel,
+                )
             )
 
-    def request(self):
+    def request(
+        self,
+        entity_id=None,
+        start_event=None,
+        end_event=None,
+        pathway=None,
+        auto_log=True,
+        filter_fn=None,
+        **extra_fields,
+    ):
         """
         Request context manager for getting an item from the store.
         The item is automatically returned when exiting the context.
@@ -179,62 +770,270 @@ class VidigiStore:
                 yield env.timeout(10)
                 # Item is automatically returned when exiting the context
 
+        The `as req: yield req` is not optional. Exiting the `with` block without ever
+        yielding the request means the entity never actually waits for or holds the
+        resource; the pending request is then granted to it later, after it has moved on.
+        This is now flagged with a `UserWarning` and the abandoned request is released
+        rather than silently corrupting the event log.
+
+        Filtering which unit is granted
+        -------------------------------
+        Pass `filter_fn` (a callable taking one pool item, returning `True` to accept it)
+        to be granted only a matching unit - e.g. `filter_fn=lambda r: r.grade == "senior"`
+        on a pool whose resources carry a `grade` attribute. With no match currently in the
+        store the request queues until a matching unit is returned; other units being
+        returned in the meantime do not satisfy it. `None` (the default) accepts any unit,
+        exactly as before this parameter existed. A `filter_fn` that never matches waits
+        forever, like any unsatisfiable get.
+
+        Automatic resource-use logging
+        -------------------------------
+        If this store was constructed with `logger=` and `entity_id` is passed here, a
+        `resource_use` event is logged automatically once the item is actually granted (not
+        when it's requested - if the request has to queue, the logged time reflects the
+        grant, not the request), and a matching `resource_use_end` event is logged
+        automatically in `__exit__`, right before the item is returned to the store. This
+        replaces the need to call `EventLogger.log_resource_use_start`/
+        `log_resource_use_end` by hand.
+
+        If a logger is configured on this store but `entity_id` is omitted here,
+        auto-logging is silently skipped for this call (after a one-time warning per store)
+        - so a model can still mix auto-logging with manual `EventLogger` calls per call.
+        Pass `auto_log=False` to opt this call out deliberately, with no warning - see that
+        argument below.
+
+        Args:
+            entity_id: Identifier of the entity making this request, for auto-logging. Only
+                meaningful when this store was constructed with `logger=`.
+            start_event: Event name for the auto-logged `resource_use` start event.
+                Defaults to `f"{label}_start"` (or `"start"` if this pool has no `label`).
+            end_event: Event name for the auto-logged `resource_use_end` event. Defaults to
+                `f"{label}_end"` (or `"end"` if this pool has no `label`).
+            pathway: Optional `pathway` value forwarded to both auto-logged events.
+            auto_log: Default `True`. Set `False` to skip auto-logging for this one request
+                even though the store has a `logger` - for bracketing it with hand-written
+                `EventLogger.log_resource_use_start`/`log_resource_use_end` calls instead
+                (for example to record a value only known when the resource is released),
+                while keeping the context manager's automatic item return. Unlike simply
+                omitting `entity_id`, this does not emit the "entity_id was not passed"
+                warning.
+            filter_fn: Optional callable taking one pool item and returning `True` to
+                accept it - only a matching unit is granted. `None` (the default) accepts
+                any unit. See "Filtering which unit is granted" above.
+            **extra_fields: Any further keyword arguments are forwarded to both auto-logged
+                events as extra columns in the log, exactly as passing them to
+                `EventLogger.log_resource_use_start`/`log_resource_use_end` by hand would -
+                e.g. `acuity=3`, `arrival_mode="ambulance"`. The same values go on both the
+                `resource_use` and the `resource_use_end` event; to put different fields on
+                each side, or a value only known at release time, use `get_direct()`/`put()`
+                or `auto_log=False` plus manual logging. `unique_resource_id` is added on
+                top automatically when this pool has a `label`.
+
         Returns:
             A context manager that returns the get event and handles returning the item
         """
-        return _StoreRequest(self)
+        return _StoreRequest(
+            self,
+            entity_id=entity_id,
+            start_event=start_event,
+            end_event=end_event,
+            pathway=pathway,
+            auto_log=auto_log,
+            filter_fn=filter_fn,
+            extra_fields=extra_fields,
+        )
 
-    def get(self):
+    def get(
+        self,
+        entity_id=None,
+        start_event=None,
+        end_event=None,
+        pathway=None,
+        auto_log=True,
+        filter_fn=None,
+        **extra_fields,
+    ):
         """
         Alias for request() to maintain compatibility with both patterns.
+
+        See `request()` for the full parameter list, including automatic resource-use
+        logging and `filter_fn`.
 
         Returns:
             A context manager for getting an item
         """
-        return self.request()
+        return self.request(
+            entity_id=entity_id,
+            start_event=start_event,
+            end_event=end_event,
+            pathway=pathway,
+            auto_log=auto_log,
+            filter_fn=filter_fn,
+            **extra_fields,
+        )
 
-    def put(self, item):
+    def put(
+        self,
+        item,
+        entity_id=None,
+        event=None,
+        pathway=None,
+        auto_log=True,
+        **extra_fields,
+    ):
         """
         Put an item into the store.
 
+        Automatic resource-use logging
+        -------------------------------
+        If this store was constructed with `logger=` and `entity_id` is passed here, a
+        `resource_use_end` event is logged automatically for `item` before it's returned to
+        the store - pairs with a matching `get_direct(entity_id=..., event=...)` call. If a
+        logger is configured but `entity_id` is omitted, auto-logging is silently skipped
+        for this call (after a one-time warning per store); pass `auto_log=False` to opt
+        out deliberately with no warning.
+
         Args:
             item: The item to put in the store
+            entity_id: Identifier of the entity releasing this item, for auto-logging.
+            event: Event name for the auto-logged `resource_use_end` event. Defaults to
+                `f"{label}_end"` (or `"end"` if this pool has no `label`).
+            pathway: Optional `pathway` value forwarded to the auto-logged event.
+            auto_log: Default `True`. Set `False` to skip auto-logging for this call even
+                though the store has a `logger`, with no "entity_id was not passed"
+                warning - for pairing with a hand-written `EventLogger.log_resource_use_end`
+                call instead.
+            **extra_fields: Any further keyword arguments are forwarded to the auto-logged
+                `resource_use_end` event as extra columns in the log, the same as passing
+                them to `EventLogger.log_resource_use_end` directly. Because this is a
+                separate call from the paired `get_direct()`, its fields are independent of
+                the start event's and are evaluated now - the place to record a value only
+                known once the resource is released.
+
+        Raises:
+            TypeError: If `item` is a SimPy event object or `None` rather than a
+                resource - almost always a reneging / conditional-request branch
+                passing the get event back instead of the item it yielded.
         """
+        _reject_invalid_returned_item(item, "VidigiStore.put()")
+        _reject_over_capacity_return(
+            self,
+            available=len(self.store.items),
+            waiting=len(self.store.get_queue),
+            enforce=True,
+        )
+        if _should_auto_log(self, entity_id, "put", auto_log=auto_log, stacklevel=3):
+            _log_resource_use_end_now(
+                self, item, entity_id, event, pathway, extra_fields
+            )
         return self.store.put(item)
 
-    def get_direct(self):
+    def get_direct(
+        self,
+        entity_id=None,
+        event=None,
+        pathway=None,
+        auto_log=True,
+        filter_fn=None,
+        **extra_fields,
+    ):
         """
         Get an item from the store without the context manager.
         Use this if you don't want to automatically return the item.
 
+        Automatic resource-use logging
+        -------------------------------
+        If this store was constructed with `logger=` and `entity_id` is passed here, a
+        `resource_use` event is logged automatically once the item is actually granted (not
+        when it's requested). Pair this with a matching `put(entity_id=..., event=...)` call
+        to also auto-log the `resource_use_end` event when the item is returned. If a logger
+        is configured but `entity_id` is omitted, auto-logging is silently skipped for this
+        call (after a one-time warning per store); pass `auto_log=False` to opt out
+        deliberately with no warning.
+
+        Args:
+            entity_id: Identifier of the entity making this request, for auto-logging.
+            event: Event name for the auto-logged `resource_use` start event. Defaults to
+                `f"{label}_start"` (or `"start"` if this pool has no `label`).
+            pathway: Optional `pathway` value forwarded to the auto-logged event.
+            auto_log: Default `True`. Set `False` to skip auto-logging for this call even
+                though the store has a `logger`, with no "entity_id was not passed"
+                warning - for pairing with a hand-written
+                `EventLogger.log_resource_use_start` call instead.
+            filter_fn: Optional callable taking one pool item and returning `True` to
+                accept it - only a matching unit is granted, and the get queues until one
+                is available. `None` (the default) accepts any unit. See `request()`.
+            **extra_fields: Any further keyword arguments are forwarded to the auto-logged
+                `resource_use` event as extra columns in the log, the same as passing them
+                to `EventLogger.log_resource_use_start` directly. The paired `put()`/
+                `return_item()` call takes its own separate `**extra_fields` for the end
+                event.
+
         Returns:
             A get event that can be yielded
         """
-        return self.store.get()
+        _validate_filter_fn(filter_fn)
+        get_event = self.store.get() if filter_fn is None else self.store.get(filter_fn)
+        if _should_auto_log(
+            self, entity_id, "get_direct", auto_log=auto_log, stacklevel=3
+        ):
+            _register_start_log_callback(
+                self, get_event, entity_id, event, pathway, extra_fields
+            )
+        return get_event
 
-    def request_direct(self):
+    def request_direct(
+        self,
+        entity_id=None,
+        event=None,
+        pathway=None,
+        auto_log=True,
+        filter_fn=None,
+        **extra_fields,
+    ):
         """
         Alias for get_direct() to maintain consistent API with SimPy resources.
 
+        See `get_direct()` for the full parameter list, including automatic resource-use
+        logging and `filter_fn`.
+
         Returns:
             A get event that can be yielded
         """
-        return self.get_direct()
+        return self.get_direct(
+            entity_id=entity_id,
+            event=event,
+            pathway=pathway,
+            auto_log=auto_log,
+            filter_fn=filter_fn,
+            **extra_fields,
+        )
 
     def cancel_get(self, get_event):
         """
         Cancels a pending get request by removing it from the queue.
+
+        Useful for modelling reneging, where an entity gives up waiting.
+
+        Note that if the request has already been fulfilled, the item has
+        already left the store. Cancelling does not put it back, so the caller
+        should return it with `put()` in that case - pass the item the get event
+        yielded, not the get event itself, or `put()` raises `TypeError`.
+
+        Parameters
+        ----------
+        get_event : simpy.resources.store.StoreGet
+            The event returned by `get_direct()` / `request_direct()`, or
+            yielded by the `request()` context manager.
         """
         try:
             # The get_event is the SimPy event object that was created
-            # and placed in the queue.
-            self.get_queue.remove(get_event)
-            # You might want to add a print statement for debugging:
-            # print(f"{self.env.now}: Successfully cancelled and removed a get request from the queue.")
+            # and placed in the queue. This class wraps a simpy.Store rather
+            # than subclassing it, so the queue lives on the wrapped store.
+            self.store.get_queue.remove(get_event)
         except ValueError:
             # This can happen if the request was already fulfilled between the
             # timeout and the cancellation call. It's safe to ignore.
-            # print(f"{self.env.now}: Attempted to cancel a request that was no longer in the queue (likely already fulfilled).")
             pass
 
     @property
@@ -244,8 +1043,74 @@ class VidigiStore:
 
     @property
     def capacity(self):
-        """Get the capacity of the store"""
+        """Maximum number of units this pool holds, mirroring ``simpy.Resource.capacity``.
+
+        For a pool built with ``num_resources=`` / ``populate()`` (and no explicit
+        ``capacity=``) this is the pool size - equal to ``num_resources``. A store built
+        with an explicit ``capacity=`` returns that value; a bare store returns
+        ``float("inf")``.
+
+        Changed in 2.0.0: previously always returned the underlying container limit
+        (``float("inf")`` by default).
+        """
+        if self._explicit_capacity is not None:
+            return self._explicit_capacity
+        if self._n_pool_units:
+            return self._n_pool_units
         return self.store.capacity
+
+    @property
+    def num_resources(self):
+        """Number of resource units in this pool.
+
+        The running total supplied to ``num_resources=`` / ``populate()``, including
+        later top-up ``populate()`` calls. Equal to ``capacity`` for a default pool;
+        the two differ only when an explicit ``capacity=`` was passed. Units added by
+        the ``populate_store()`` free function or a hand ``.put()`` are not counted
+        here - see ``count``.
+        """
+        return self._n_pool_units
+
+    @property
+    def count(self):
+        """Number of units currently in use, mimicking ``simpy.Resource.count``.
+
+        Computed as ``num_resources`` minus the units currently sitting in the store,
+        so it stays correct through ``filter_fn`` requests, reneging via ``cancel_get``
+        and direct holder-to-waiter handoff, with no per-request bookkeeping. The
+        invariant ``0 <= count <= num_resources`` matches the one simpy keeps between
+        ``Resource.count`` and ``Resource.capacity``.
+
+        If you pass an explicit ``capacity=`` smaller than the pool, ``count`` can
+        over-report while returned units wait in the put queue - the same unsupported
+        combination noted for ``filter_fn``. The default container is unbounded.
+
+        Raises
+        ------
+        RuntimeError
+            If units entered the pool by neither ``num_resources=`` nor ``populate()``
+            - e.g. a bare ``VidigiStore(env)`` filled with the ``populate_store()`` free
+            function or by hand with ``.put()`` - so the pool size, and hence the count,
+            is unknown. Populate via ``num_resources=`` / ``populate()`` to use ``count``.
+        """
+        in_use = self._n_pool_units - len(self.store.items) - len(self.store.put_queue)
+        if in_use < 0:
+            raise RuntimeError(
+                "VidigiStore.count needs the pool size, which is only tracked when units "
+                "are added via VidigiStore(num_resources=...) or store.populate(...). This "
+                f"store holds more items ({len(self.store.items)}) than were populated that "
+                f"way ({self._n_pool_units}) - populate_store() and hand .put() calls are "
+                "not counted."
+            )
+        return in_use
+
+    @property
+    def n_waiting(self):
+        """Number of get requests currently queued waiting for a unit.
+
+        The store analog of ``len(simpy.Resource.queue)``.
+        """
+        return len(self.store.get_queue)
 
 
 class _StoreRequest:
@@ -257,21 +1122,92 @@ class _StoreRequest:
     and tested by a human.
     """
 
-    def __init__(self, store):
+    def __init__(
+        self,
+        store,
+        *,
+        entity_id=None,
+        start_event=None,
+        end_event=None,
+        pathway=None,
+        auto_log=True,
+        filter_fn=None,
+        extra_fields=None,
+    ):
         self.store = store
         self.item = None
-        self.get_event = store.store.get()  # Create the get event
+        self.entity_id = entity_id
+        self.end_event = end_event
+        self.pathway = pathway
+        self.extra_fields = extra_fields or {}
+        _validate_filter_fn(filter_fn)
+        # Create the get event - a plain get, or a FilterStore filtered get.
+        self.get_event = (
+            store.store.get() if filter_fn is None else store.store.get(filter_fn)
+        )
+
+        # See `_register_start_log_callback`'s docstring for why appending here, before
+        # returning the event, still reliably captures the true grant time.
+        self._should_log = _should_auto_log(
+            store, entity_id, "request", auto_log=auto_log, stacklevel=4
+        )
+        self._start_log_callback = None
+        if self._should_log:
+            self._start_log_callback = _register_start_log_callback(
+                store,
+                self.get_event,
+                entity_id,
+                start_event,
+                pathway,
+                self.extra_fields,
+            )
 
     def __enter__(self):
         # Return the get event which will be yielded by the user
         return self.get_event
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        # If the get event has been processed and we have an item, put it back
+        # If the get event has been processed and we have an item, put it back. This runs
+        # whether or not an exception was raised during resource use (Python always calls
+        # __exit__ on the way out of the `with` block), so the end-log fires unconditionally
+        # once the item was actually granted.
         if self.get_event.processed and hasattr(self.get_event, "value"):
             self.item = self.get_event.value
-            # Return the item to the store
-            self.store.put(self.item)
+            if self._should_log:
+                _log_resource_use_end_now(
+                    self.store,
+                    self.item,
+                    self.entity_id,
+                    self.end_event,
+                    self.pathway,
+                    self.extra_fields,
+                )
+            # Return the item to the store DIRECTLY via the wrapped simpy.Store, not
+            # self.store.put() (VidigiStore's own logging-aware wrapper) - the logging above
+            # already covers this; going through VidigiStore.put() would either log the end
+            # event twice, or (since it wouldn't have this request's entity_id) spuriously
+            # warn about a missing entity_id. The over-capacity guard still applies (a
+            # double-return through the context manager is a real bug) - but not while an
+            # exception is already propagating out of the block.
+            _reject_over_capacity_return(
+                self.store,
+                available=len(self.store.store.items),
+                waiting=len(self.store.store.get_queue),
+                enforce=exc_type is None,
+            )
+            self.store.store.put(self.item)
+        else:
+            # The `with` block is being left without the request ever being awaited
+            # (`as req: yield req` omitted) - warn and release the abandoned request.
+            _handle_unawaited_request(
+                self,
+                exc_type,
+                method_name="request",
+                store_name="VidigiStore",
+                return_item=self.store.store.put,
+                cancel_get=self.store.cancel_get,
+                store_label=self.store.label,
+            )
         return False  # Don't suppress exceptions
 
 
@@ -370,6 +1306,11 @@ class VidigiPriorityStore:
     This implementation provides the same API as the original VidigiPriorityStore
     but with immediate resource handoff between processes.
 
+    For a pool built with ``num_resources=`` / ``populate()``, the ``count``, ``capacity``
+    (== ``num_resources``) and ``n_waiting`` properties mirror ``simpy.Resource.count`` /
+    ``.capacity`` / ``.queue``, and returning more units than the pool holds raises
+    ``ValueError`` (see ``strict_capacity``).
+
     AI USE DISCLOSURE: This code was generated by Claude 3.7 Sonnet. It has been evaluated
     and tested by a human.
     """
@@ -378,7 +1319,11 @@ class VidigiPriorityStore:
         self,
         env,
         num_resources=None,
-        capacity=float("inf"),
+        capacity=None,
+        label=None,
+        logger: EventLogger | None = None,
+        extra_attributes=None,
+        strict_capacity=True,
         #  , init_items=None
     ):
         """
@@ -387,22 +1332,59 @@ class VidigiPriorityStore:
         Args:
             env: The SimPy environment.
             num_resources: Number of VidigiCustomResource objects to populate the store with
-            capacity: Maximum capacity of the store (default: infinite).
+            capacity: Maximum number of items the container can hold. Leave unset (the
+                default) for a resource pool - `.capacity` then reports the pool size
+                (`num_resources`), mirroring `simpy.Resource.capacity`. Pass an explicit
+                value only for a deliberately bounded container; `.capacity` then reports
+                that value and the `strict_capacity` guard is disabled.
+            label: A name for this pool of resources - see `populate()`.
+            logger: An `EventLogger` (see `vidigi.logging`), optional. When given,
+                `request()`/`get_direct()`/`put()`/`return_item()` automatically log
+                `resource_use`/`resource_use_end` events around resource acquisition and
+                release whenever also passed `entity_id=` - see `request()`'s docstring for
+                the full behaviour. `None` (the default) leaves logging entirely manual,
+                exactly as before this parameter existed.
+            extra_attributes: Optional dict of further attributes to set on every
+                resource created for this pool, e.g. `{"staff_type": "nurse"}` -
+                see `populate()`.
+            strict_capacity: Default `True`. For a pool built with `num_resources=` /
+                `populate()` (and no explicit `capacity=`), returning more units than the
+                pool holds raises `ValueError`. Pass `False` to allow the pool to grow via
+                a raw `put()`.
 
         """
         self.env = env
-        self.capacity = capacity
+        self._explicit_capacity = capacity  # None => `.capacity` reports the pool size
+        # The container itself stays unbounded for a pool; `.capacity` reports the pool
+        # size and `_reject_over_capacity_return` enforces it. `_container_capacity` is
+        # only a real limit when an explicit `capacity=` was passed.
+        self._container_capacity = float("inf") if capacity is None else capacity
+        self._strict_capacity = strict_capacity
         self.items = []  # if init_items is None else list(init_items)
+        self.logger = logger
+        self.label = label
+        self._warned_missing_entity_id = False
 
         # Custom priority queue for get requests
         self.get_queue = []  # We'll maintain this as a sorted list
         # Standard queue for put requests
         self.put_queue = []
+        # Running count of units added via num_resources= / populate(). Backs the
+        # num_resources and count properties; populate_store() and hand .put() calls
+        # are deliberately not tracked here.
+        self._n_pool_units = 0
 
         if num_resources is not None:
-            self.populate(num_resources)
+            self.populate(
+                num_resources,
+                label=label,
+                extra_attributes=extra_attributes,
+                _stacklevel=4,
+            )
 
-    def populate(self, num_resources):
+    def populate(
+        self, num_resources, label=None, extra_attributes=None, *, _stacklevel=3
+    ):
         """
         Populate this VidigiPriorityStore with VidigiResource objects.
 
@@ -414,49 +1396,194 @@ class VidigiPriorityStore:
         ----------
         num_resources : int
             The number of VidigiResource objects to create and add to the store.
+        label : str, optional
+            A name for this pool of resources, e.g. `"triage"`. When given, each
+            resource also gets `.unique_id_attribute` (`f"{label}_{id_attribute}"`)
+            - unique across pools when every pool is given a distinct label,
+            unlike `id_attribute` alone, which restarts at 1 in every pool.
+            Omitting it (the default) changes nothing about the resources
+            produced, but warns that `label` will become mandatory at vidigi
+            3.0 - see `vidigi.analysis.resource_utilisation`'s `by="resource"`
+            docs for why. Also updates `self.label` (used to derive automatic
+            resource-use logging event names - see `__init__`'s `logger=`) when
+            given - a no-arg top-up call (`store.populate(5)`, adding resources
+            to an already-running pool) leaves `self.label` and therefore every
+            default event name for the whole store untouched.
+        extra_attributes : dict, optional
+            Further attributes to set on every resource in this pool, e.g.
+            `{"staff_type": "nurse"}` - each becomes `resource.staff_type` etc.,
+            readable by your model code (break scheduling, skill mix, ...) and
+            otherwise inert. `VidigiResource` has always accepted arbitrary
+            keyword attributes directly; this just threads them through the bulk
+            populate path so you do not have to build the pool by hand. Cannot
+            set `id_attribute`/`id`/`label`/`unique_id_attribute`/`unique_id`
+            (managed by the pool) - that raises `ValueError`.
+        _stacklevel : int, default=3
+            Internal - how many frames up from `_new_pool_resource` the
+            missing-`label` warning should attribute to. `__init__` calling
+            this internally passes `4` to still land on the caller's
+            `VidigiPriorityStore(...)` line rather than on this method.
 
         Returns
         -------
         None
         """
+        _check_extra_attributes(extra_attributes)
+        if label is not None:
+            self.label = label
+        _check_label_not_reused(self.env, label, stacklevel=_stacklevel)
+        # Grow the pool-size count *before* seeding, so a top-up populate() does not trip
+        # the over-capacity guard on its own new units (`len(items)` climbs 0..new_total-1).
+        self._n_pool_units += num_resources
         for i in range(num_resources):
-            self.put(
-                VidigiResource(env=self.env, capacity=1, id_attribute=i + 1)
+            # self._put_item(...) directly, not self.put(...) - populating the pool is not
+            # a resource being released by an entity, so it must never trigger auto-logging
+            # or the "missing entity_id" warning.
+            self._put_item(
+                _new_pool_resource(
+                    self.env,
+                    i,
+                    label,
+                    extra_attributes=extra_attributes,
+                    stacklevel=_stacklevel,
+                )
             )
 
-    def request(self, priority=0):
+    def request(
+        self,
+        priority=0,
+        entity_id=None,
+        start_event=None,
+        end_event=None,
+        pathway=None,
+        auto_log=True,
+        filter_fn=None,
+        **extra_fields,
+    ):
         """
         Request context manager for getting an item from the store.
         The item is automatically returned when exiting the context.
 
+        Usage:
+            with store.request() as req:
+                resource = yield req
+                yield env.timeout(10)
+
+        The `as req: yield req` is not optional. Exiting the `with` block without ever
+        yielding the request means the entity never actually waits for or holds the
+        resource; the pending request is then granted to it later, after it has moved on.
+        This is now flagged with a `UserWarning` and the abandoned request is released
+        rather than silently corrupting the event log.
+
+        Filtering which unit is granted
+        -------------------------------
+        Pass `filter_fn` (a callable taking one pool item, returning `True` to accept it)
+        to be granted only a matching unit - e.g. `filter_fn=lambda r: r.grade == "senior"`
+        on a pool whose resources carry a `grade` attribute. With no match currently in the
+        store the request queues until a matching unit is returned. `filter_fn` and
+        `priority` combine: a returned unit goes to the highest-priority queued request
+        that *accepts* it, so a lower-priority waiter whose filter matches can be served
+        ahead of a higher-priority waiter whose filter the unit fails - this is the point
+        of the parameter. `None` (the default) accepts any unit, exactly as before this
+        parameter existed. Combining `filter_fn` with a finite `capacity` smaller than the
+        number of items put is not fully supported - a matching unit can end up stuck in
+        the put queue; the default `capacity` is infinite.
+
+        Automatic resource-use logging
+        -------------------------------
+        If this store was constructed with `logger=` and `entity_id` is passed here, a
+        `resource_use` event is logged automatically once the item is actually granted (not
+        when it's requested - if the request has to queue, the logged time reflects the
+        grant, not the request), and a matching `resource_use_end` event is logged
+        automatically in `__exit__`, right before the item is returned to the store. This
+        replaces the need to call `EventLogger.log_resource_use_start`/
+        `log_resource_use_end` by hand.
+
+        If a logger is configured on this store but `entity_id` is omitted here,
+        auto-logging is silently skipped for this call (after a one-time warning per store)
+        - so a model can still mix auto-logging with manual `EventLogger` calls per call.
+        Pass `auto_log=False` to opt this call out deliberately, with no warning - see that
+        argument below.
+
         Args:
             priority: Lower values indicate higher priority (default: 0)
+            entity_id: Identifier of the entity making this request, for auto-logging. Only
+                meaningful when this store was constructed with `logger=`.
+            start_event: Event name for the auto-logged `resource_use` start event.
+                Defaults to `f"{label}_start"` (or `"start"` if this pool has no `label`).
+            end_event: Event name for the auto-logged `resource_use_end` event. Defaults to
+                `f"{label}_end"` (or `"end"` if this pool has no `label`).
+            pathway: Optional `pathway` value forwarded to both auto-logged events.
+            auto_log: Default `True`. Set `False` to skip auto-logging for this one request
+                even though the store has a `logger` - for bracketing it with hand-written
+                `EventLogger.log_resource_use_start`/`log_resource_use_end` calls instead
+                (for example to record a value only known when the resource is released),
+                while keeping the context manager's automatic item return. Unlike simply
+                omitting `entity_id`, this does not emit the "entity_id was not passed"
+                warning.
+            filter_fn: Optional callable taking one pool item and returning `True` to
+                accept it - only a matching unit is granted. `None` (the default) accepts
+                any unit. See "Filtering which unit is granted" above.
+            **extra_fields: Any further keyword arguments are forwarded to both auto-logged
+                events as extra columns in the log, exactly as passing them to
+                `EventLogger.log_resource_use_start`/`log_resource_use_end` by hand would -
+                e.g. `acuity=3`, `arrival_mode="ambulance"`. The same values go on both the
+                `resource_use` and the `resource_use_end` event; to put different fields on
+                each side, or a value only known at release time, use `get_direct()`/`put()`
+                or `auto_log=False` plus manual logging. `unique_resource_id` is added on
+                top automatically when this pool has a `label`.
 
         Returns:
             A context manager that yields the get event and handles item return
         """
-        return _OptimizedStoreRequest(store=self, priority=priority)
+        return _OptimizedStoreRequest(
+            store=self,
+            priority=priority,
+            entity_id=entity_id,
+            start_event=start_event,
+            end_event=end_event,
+            pathway=pathway,
+            auto_log=auto_log,
+            filter_fn=filter_fn,
+            extra_fields=extra_fields,
+        )
 
-    def get(self, priority=0):
+    def get(self, priority=0, filter_fn=None):
         """
         Create an event to get an item from the store.
 
         Args:
             priority: Lower values indicate higher priority (default: 0)
+            filter_fn: Optional callable taking one pool item and returning `True` to
+                accept it - only a matching unit is granted, and the get queues until one
+                is available. `None` (the default) accepts any unit. See `request()`.
 
         Returns:
             A get event that can be yielded
         """
+        _validate_filter_fn(filter_fn)
+
         if self.items:
-            # Items available - get one immediately
-            item = self.items.pop(0)
+            if filter_fn is None:
+                match_idx = 0
+            else:
+                match_idx = next(
+                    (i for i, item in enumerate(self.items) if filter_fn(item)), None
+                )
+        else:
+            match_idx = None
+
+        if match_idx is not None:
+            # A matching item is available - get it immediately
+            item = self.items.pop(match_idx)
             event = self.env.event()
             event.succeed(item)
             return event
         else:
-            # No items available - create request and add to queue
+            # No matching item available - create request and add to queue
             request = self.env.event()
             request.priority = priority  # Add priority attribute to the event
+            request.filter_fn = filter_fn  # None => accepts any returned item
 
             # Insert into priority queue (sorted list)
             # Find the right position to maintain sorted order
@@ -475,39 +1602,101 @@ class VidigiPriorityStore:
 
             return request
 
-    def put(self, item):
+    def put(
+        self,
+        item,
+        entity_id=None,
+        event=None,
+        pathway=None,
+        auto_log=True,
+        **extra_fields,
+    ):
         """
         Put an item into the store.
 
+        Automatic resource-use logging
+        -------------------------------
+        If this store was constructed with `logger=` and `entity_id` is passed here, a
+        `resource_use_end` event is logged automatically for `item` before it's put into the
+        store - pairs with a matching `get_direct(entity_id=..., event=...)` call. If a
+        logger is configured but `entity_id` is omitted, auto-logging is silently skipped
+        for this call (after a one-time warning per store); pass `auto_log=False` to opt
+        out deliberately with no warning.
+
         Args:
             item: The item to put in the store
+            entity_id: Identifier of the entity releasing this item, for auto-logging.
+            event: Event name for the auto-logged `resource_use_end` event. Defaults to
+                `f"{label}_end"` (or `"end"` if this pool has no `label`).
+            pathway: Optional `pathway` value forwarded to the auto-logged event.
+            auto_log: Default `True`. Set `False` to skip auto-logging for this call even
+                though the store has a `logger`, with no "entity_id was not passed"
+                warning - for pairing with a hand-written `EventLogger.log_resource_use_end`
+                call instead.
+            **extra_fields: Any further keyword arguments are forwarded to the auto-logged
+                `resource_use_end` event as extra columns in the log, the same as passing
+                them to `EventLogger.log_resource_use_end` directly. Independent of the
+                paired `get_direct()` call's fields and evaluated now - the place to record
+                a value only known once the resource is released.
 
         Returns:
             A put event that can be yielded
+
+        Raises:
+            TypeError: If `item` is a SimPy event object or `None` rather than a
+                resource - almost always a reneging / conditional-request branch
+                passing the get event back instead of the item it yielded.
         """
-        if len(self.items) < self.capacity:
-            # Space available - try to satisfy a waiting get request
-            if self.get_queue:
-                # Get highest-priority waiting request (first item in sorted queue)
-                request = self.get_queue.pop(
-                    0
-                )  # Get from front (highest priority)
-                # Directly trigger the request with this item
-                request.succeed(item)
-                # No need to add to items list as it's immediately consumed
+        _reject_invalid_returned_item(item, "VidigiPriorityStore.put()")
+        _reject_over_capacity_return(
+            self,
+            available=len(self.items),
+            waiting=len(self.get_queue),
+            enforce=True,
+        )
+        if _should_auto_log(self, entity_id, "put", auto_log=auto_log, stacklevel=3):
+            _log_resource_use_end_now(
+                self, item, entity_id, event, pathway, extra_fields
+            )
+        return self._put_item(item)
 
-                # Return a pre-triggered event
-                event = self.env.event()
-                event.succeed()
-                return event
-            else:
-                # No waiting get requests - add to items
-                self.items.append(item)
+    def _put_item(self, item):
+        """Raw put logic, with no auto-logging - used internally by `put()` and `populate()`.
 
-                # Return a pre-triggered event
-                event = self.env.event()
-                event.succeed()
-                return event
+        `populate()` seeds the pool with this directly (not through `put()`) because pool
+        initialization is not a resource being released by an entity.
+        """
+        # Hand straight to the highest-priority waiting get that accepts this item. This
+        # consumes no capacity slot (the item is never added to self.items), so it is
+        # tried before the capacity check - otherwise a filtered waiter could starve
+        # behind a full finite-capacity store. For an unfiltered queue (the default) the
+        # first waiting request always accepts, so this matches the old behaviour.
+        served_idx = next(
+            (
+                i
+                for i, req in enumerate(self.get_queue)
+                if _request_accepts_item(req, item)
+            ),
+            None,
+        )
+        if served_idx is not None:
+            request = self.get_queue.pop(served_idx)
+            # Directly trigger the request with this item - no need to add to items
+            request.succeed(item)
+
+            # Return a pre-triggered event
+            event = self.env.event()
+            event.succeed()
+            return event
+
+        if len(self.items) < self._container_capacity:
+            # Space available, no waiting get wants it - add to items
+            self.items.append(item)
+
+            # Return a pre-triggered event
+            event = self.env.event()
+            event.succeed()
+            return event
         else:
             # Store is full - create a put request
             request = self.env.event()
@@ -518,7 +1707,7 @@ class VidigiPriorityStore:
 
     def _process_put_queue(self):
         """Process waiting put requests if store has capacity."""
-        if self.put_queue and len(self.items) < self.capacity:
+        if self.put_queue and len(self.items) < self._container_capacity:
             # Get oldest put request
             request = self.put_queue.pop(0)
             # Add its item to store
@@ -536,49 +1725,190 @@ class VidigiPriorityStore:
             # Directly satisfy the get request
             request.succeed(item)
 
-    def return_item(self, item):
+    def return_item(
+        self,
+        item,
+        entity_id=None,
+        event=None,
+        pathway=None,
+        auto_log=True,
+        **extra_fields,
+    ):
         """
         Return an item to the store and immediately process any waiting get requests.
 
         This is the key to eliminating delays - it directly triggers waiting get
         requests without going through the normal put/get mechanism.
 
+        Automatic resource-use logging
+        -------------------------------
+        If this store was constructed with `logger=` and `entity_id` is passed here, a
+        `resource_use_end` event is logged automatically for `item` before it's returned -
+        pairs with a matching `get_direct(entity_id=..., event=...)` call. If a logger is
+        configured but `entity_id` is omitted, auto-logging is silently skipped for this
+        call (after a one-time warning per store); pass `auto_log=False` to opt out
+        deliberately with no warning.
+
         Args:
             item: The item to return to the store
+            entity_id: Identifier of the entity releasing this item, for auto-logging.
+            event: Event name for the auto-logged `resource_use_end` event. Defaults to
+                `f"{label}_end"` (or `"end"` if this pool has no `label`).
+            pathway: Optional `pathway` value forwarded to the auto-logged event.
+            auto_log: Default `True`. Set `False` to skip auto-logging for this call even
+                though the store has a `logger`, with no "entity_id was not passed"
+                warning - for pairing with a hand-written `EventLogger.log_resource_use_end`
+                call instead.
+            **extra_fields: Any further keyword arguments are forwarded to the auto-logged
+                `resource_use_end` event as extra columns in the log, the same as passing
+                them to `EventLogger.log_resource_use_end` directly. Independent of the
+                paired `get_direct()` call's fields and evaluated now - the place to record
+                a value only known once the resource is released.
+
+        Raises:
+            TypeError: If `item` is a SimPy event object or `None` rather than a
+                resource - almost always a reneging / conditional-request branch
+                passing the get event back instead of the item it yielded.
         """
-        # Check if there are waiting get requests
-        if self.get_queue:
-            # Get highest priority waiting request (first in sorted queue)
-            request = self.get_queue.pop(0)
-            # Directly trigger it with the item
+        _reject_invalid_returned_item(item, "VidigiPriorityStore.return_item()")
+        _reject_over_capacity_return(
+            self,
+            available=len(self.items),
+            waiting=len(self.get_queue),
+            enforce=True,
+        )
+        if _should_auto_log(
+            self, entity_id, "return_item", auto_log=auto_log, stacklevel=3
+        ):
+            _log_resource_use_end_now(
+                self, item, entity_id, event, pathway, extra_fields
+            )
+        # Guard already run above (before logging); don't repeat it in the raw method.
+        self._return_item_raw(item, enforce_capacity=False)
+
+    def _return_item_raw(self, item, *, enforce_capacity=True):
+        """Raw return logic, with no auto-logging.
+
+        Used internally by `return_item()` (which has already run the over-capacity guard,
+        hence ``enforce_capacity=False``) and by `_OptimizedStoreRequest.__exit__` (which
+        passes ``enforce_capacity=`` False only while an exception is already propagating).
+        Both already do their own logging - going through `return_item()` there would log
+        twice.
+        """
+        # Hand to the highest-priority waiting get that accepts this item. An unfiltered
+        # waiter (filter_fn None) accepts anything, so with no filters in play this is the
+        # front of the queue, exactly as before.
+        served_idx = next(
+            (
+                i
+                for i, req in enumerate(self.get_queue)
+                if _request_accepts_item(req, item)
+            ),
+            None,
+        )
+        if served_idx is not None:
+            request = self.get_queue.pop(served_idx)
+            # Directly trigger it with the item - consumed immediately, no need to store it
             request.succeed(item)
-            # Item is consumed immediately - no need to store it
         else:
-            # No waiting get requests - add to items
+            # No waiting get wants it - add to items (unless that would overfill a strict pool)
+            _reject_over_capacity_return(
+                self, available=len(self.items), waiting=0, enforce=enforce_capacity
+            )
             self.items.append(item)
 
-    def get_direct(self, priority=0):
+    def get_direct(
+        self,
+        priority=0,
+        entity_id=None,
+        event=None,
+        pathway=None,
+        auto_log=True,
+        filter_fn=None,
+        **extra_fields,
+    ):
         """
         Get an item from the store without the context manager.
         Use this if you don't want to automatically return the item.
 
+        Automatic resource-use logging
+        -------------------------------
+        If this store was constructed with `logger=` and `entity_id` is passed here, a
+        `resource_use` event is logged automatically once the item is actually granted (not
+        when it's requested). Pair this with a matching `put(entity_id=..., event=...)` or
+        `return_item(entity_id=..., event=...)` call to also auto-log the `resource_use_end`
+        event when the item is returned. If a logger is configured but `entity_id` is
+        omitted, auto-logging is silently skipped for this call (after a one-time warning
+        per store); pass `auto_log=False` to opt out deliberately with no warning.
+
+        Args:
+            priority: Lower values indicate higher priority (default: 0)
+            entity_id: Identifier of the entity making this request, for auto-logging.
+            event: Event name for the auto-logged `resource_use` start event. Defaults to
+                `f"{label}_start"` (or `"start"` if this pool has no `label`).
+            pathway: Optional `pathway` value forwarded to the auto-logged event.
+            auto_log: Default `True`. Set `False` to skip auto-logging for this call even
+                though the store has a `logger`, with no "entity_id was not passed"
+                warning - for pairing with a hand-written
+                `EventLogger.log_resource_use_start` call instead.
+            filter_fn: Optional callable taking one pool item and returning `True` to
+                accept it - only a matching unit is granted, and the get queues until one
+                is available. `None` (the default) accepts any unit. See `request()`.
+            **extra_fields: Any further keyword arguments are forwarded to the auto-logged
+                `resource_use` event as extra columns in the log, the same as passing them
+                to `EventLogger.log_resource_use_start` directly. The paired `put()`/
+                `return_item()` call takes its own separate `**extra_fields` for the end
+                event.
+
         Returns:
             A get event that can be yielded
         """
-        return self.get(priority=priority)
+        get_event = self.get(priority=priority, filter_fn=filter_fn)
+        if _should_auto_log(
+            self, entity_id, "get_direct", auto_log=auto_log, stacklevel=3
+        ):
+            _register_start_log_callback(
+                self, get_event, entity_id, event, pathway, extra_fields
+            )
+        return get_event
 
-    def request_direct(self, priority=0):
+    def request_direct(
+        self,
+        priority=0,
+        entity_id=None,
+        event=None,
+        pathway=None,
+        auto_log=True,
+        filter_fn=None,
+        **extra_fields,
+    ):
         """
         Alias for get_direct() to maintain consistent API.
 
+        See `get_direct()` for the full parameter list, including automatic resource-use
+        logging and `filter_fn`.
+
         Returns:
             A get event that can be yielded
         """
-        return self.get_direct(priority=priority)
+        return self.get_direct(
+            priority=priority,
+            entity_id=entity_id,
+            event=event,
+            pathway=pathway,
+            auto_log=auto_log,
+            filter_fn=filter_fn,
+            **extra_fields,
+        )
 
     def cancel_get(self, get_event):
         """
         Cancels a pending get request by removing it from the queue.
+
+        Useful for modelling reneging. If the request was already fulfilled, the
+        item has left the store; return it with `return_item()` / `put()`, passing
+        the item the get event yielded (not the get event itself, which raises
+        `TypeError`).
         """
         try:
             # The get_event is the SimPy event object that was created
@@ -592,6 +1922,83 @@ class VidigiPriorityStore:
             # print(f"{self.env.now}: Attempted to cancel a request that was no longer in the queue (likely already fulfilled).")
             pass
 
+    @property
+    def capacity(self):
+        """Maximum number of units this pool holds, mirroring ``simpy.Resource.capacity``.
+
+        For a pool built with ``num_resources=`` / ``populate()`` (and no explicit
+        ``capacity=``) this is the pool size - equal to ``num_resources``. A store built
+        with an explicit ``capacity=`` returns that value; a bare store returns
+        ``float("inf")``.
+
+        Changed in 2.0.0: previously always returned the container item-holding limit
+        (``float("inf")`` by default). Still writable, for back-compat.
+        """
+        if self._explicit_capacity is not None:
+            return self._explicit_capacity
+        if self._n_pool_units:
+            return self._n_pool_units
+        return float("inf")
+
+    @capacity.setter
+    def capacity(self, value):
+        self._explicit_capacity = value
+        self._container_capacity = float("inf") if value is None else value
+
+    @property
+    def num_resources(self):
+        """Number of resource units in this pool.
+
+        The running total supplied to ``num_resources=`` / ``populate()``, including
+        later top-up ``populate()`` calls. Equal to ``capacity`` for a default pool;
+        the two differ only when an explicit ``capacity=`` was passed. Units added by
+        the ``populate_store()`` free function or a hand ``.put()`` are not counted
+        here - see ``count``.
+        """
+        return self._n_pool_units
+
+    @property
+    def count(self):
+        """Number of units currently in use, mimicking ``simpy.Resource.count``.
+
+        Computed as ``num_resources`` minus the units currently sitting in the store,
+        so it stays correct through ``filter_fn`` requests, reneging via ``cancel_get``
+        and direct holder-to-waiter handoff, with no per-request bookkeeping. The
+        invariant ``0 <= count <= num_resources`` matches the one simpy keeps between
+        ``Resource.count`` and ``Resource.capacity``.
+
+        If you pass an explicit ``capacity=`` smaller than the pool, ``count`` can
+        over-report while returned units wait in the put queue - the same unsupported
+        combination noted for ``filter_fn``. The default container is unbounded.
+
+        Raises
+        ------
+        RuntimeError
+            If units entered the pool by neither ``num_resources=`` nor ``populate()``
+            - e.g. a bare ``VidigiPriorityStore(env)`` filled with the ``populate_store()``
+            free function or by hand with ``.put()`` - so the pool size, and hence the
+            count, is unknown. Populate via ``num_resources=`` / ``populate()`` to use
+            ``count``.
+        """
+        in_use = self._n_pool_units - len(self.items) - len(self.put_queue)
+        if in_use < 0:
+            raise RuntimeError(
+                "VidigiPriorityStore.count needs the pool size, which is only tracked "
+                "when units are added via VidigiPriorityStore(num_resources=...) or "
+                f"store.populate(...). This store holds more items ({len(self.items)}) "
+                f"than were populated that way ({self._n_pool_units}) - populate_store() "
+                "and hand .put() calls are not counted."
+            )
+        return in_use
+
+    @property
+    def n_waiting(self):
+        """Number of get requests currently queued waiting for a unit.
+
+        The store analog of ``len(simpy.Resource.queue)``.
+        """
+        return len(self.get_queue)
+
 
 # MARK: Priority Store Request
 class _OptimizedStoreRequest:
@@ -601,24 +2008,86 @@ class _OptimizedStoreRequest:
     immediate release through direct event triggering.
     """
 
-    def __init__(self, store, priority=0):
+    def __init__(
+        self,
+        store,
+        priority=0,
+        *,
+        entity_id=None,
+        start_event=None,
+        end_event=None,
+        pathway=None,
+        auto_log=True,
+        filter_fn=None,
+        extra_fields=None,
+    ):
         self.store = store
         self.item = None
         self.priority = priority
+        self.entity_id = entity_id
+        self.end_event = end_event
+        self.pathway = pathway
+        self.extra_fields = extra_fields or {}
         self.get_event = store.get(
-            priority=self.priority
+            priority=self.priority, filter_fn=filter_fn
         )  # Create the get event
+
+        # See `_register_start_log_callback`'s docstring for why appending here, before
+        # returning the event, still reliably captures the true grant time - including for
+        # this store's immediate-availability path, where `.succeed()` already ran
+        # synchronously inside `store.get()` above.
+        self._should_log = _should_auto_log(
+            store, entity_id, "request", auto_log=auto_log, stacklevel=4
+        )
+        self._start_log_callback = None
+        if self._should_log:
+            self._start_log_callback = _register_start_log_callback(
+                store,
+                self.get_event,
+                entity_id,
+                start_event,
+                pathway,
+                self.extra_fields,
+            )
 
     def __enter__(self):
         # Return the get event which will be yielded by the user
         return self.get_event
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        # If the get event has been processed and we have an item, put it back
+        # If the get event has been processed and we have an item, put it back. This runs
+        # whether or not an exception was raised during resource use (Python always calls
+        # __exit__ on the way out of the `with` block), so the end-log fires unconditionally
+        # once the item was actually granted.
         if self.get_event.processed and hasattr(self.get_event, "value"):
             self.item = self.get_event.value
-            # Return the item to the store DIRECTLY - key optimization point
-            self.store.return_item(self.item)
+            if self._should_log:
+                _log_resource_use_end_now(
+                    self.store,
+                    self.item,
+                    self.entity_id,
+                    self.end_event,
+                    self.pathway,
+                    self.extra_fields,
+                )
+            # Return the item to the store DIRECTLY - key optimization point. Uses the raw
+            # method, not return_item(), since the logging above already covers this - going
+            # through return_item() would log the end event twice. The over-capacity guard
+            # still applies (a double-return through the context manager is a real bug) -
+            # but not while an exception is already propagating out of the block.
+            self.store._return_item_raw(self.item, enforce_capacity=exc_type is None)
+        else:
+            # The `with` block is being left without the request ever being awaited
+            # (`as req: yield req` omitted) - warn and release the abandoned request.
+            _handle_unawaited_request(
+                self,
+                exc_type,
+                method_name="request",
+                store_name="VidigiPriorityStore",
+                return_item=self.store._return_item_raw,
+                cancel_get=self.store.cancel_get,
+                store_label=self.store.label,
+            )
         return False  # Don't suppress exceptions
 
 

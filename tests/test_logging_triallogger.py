@@ -1,0 +1,2108 @@
+"""Tests for ``TrialLogger``.
+
+TrialLogger is where multi-run statistics come from, so a mistake here shows
+up as a plausible-looking number rather than an error. Every expected value
+below is hand-computable from the fixtures in conftest.py: each entity arrives,
+waits one time unit, and departs five time units after arriving.
+"""
+
+import io
+import pickle
+import typing
+import warnings
+
+import pandas as pd
+import plotly.graph_objects as go
+import pytest
+
+from vidigi.logging import DurationStat, EventLogger, TrialLogger
+
+# --------------------------------------------------------------------------- #
+# Construction
+# --------------------------------------------------------------------------- #
+
+
+def test_construct_from_list_of_loggers(two_run_loggers):
+    trial = TrialLogger(two_run_loggers)
+
+    assert trial.summary() == {
+        "number_of_runs": 2,
+        "label": None,
+        "scenario_attached": False,
+    }
+
+
+def test_construct_empty():
+    """An empty trial is a reasonable starting point for a loop of add_log calls.
+
+    Regression test: this raised `ValueError: No objects to concatenate` from
+    pd.concat on an empty list.
+    """
+    trial = TrialLogger()
+
+    assert trial.summary() == {
+        "number_of_runs": 0,
+        "label": None,
+        "scenario_attached": False,
+    }
+    assert trial.to_dataframe().empty
+
+
+def test_add_log_to_empty_trial(single_run_logger):
+    trial = TrialLogger()
+
+    trial.add_log(single_run_logger)
+
+    assert trial.summary() == {
+        "number_of_runs": 1,
+        "label": None,
+        "scenario_attached": False,
+    }
+    assert len(trial.to_dataframe()) == len(single_run_logger.log)
+
+
+def test_logger_without_run_number_is_rejected():
+    """run_number identifies the run, so a log without one cannot be indexed."""
+    logger = EventLogger()
+    logger.log_arrival(entity_id=1, time=0.0)
+
+    with pytest.raises(ValueError, match="no `run_number`"):
+        TrialLogger([logger])
+
+
+def test_empty_logger_is_rejected():
+    with pytest.raises(ValueError, match="empty EventLogger"):
+        TrialLogger([EventLogger(run_number=1)])
+
+
+def test_add_log_validates_too(single_run_logger):
+    """The same checks must apply on both routes into the trial.
+
+    Validating only in the constructor would let add_log store None as the
+    run id, leaving the log unretrievable by run.
+    """
+    trial = TrialLogger([single_run_logger])
+    no_run_number = EventLogger()
+    no_run_number.log_arrival(entity_id=1, time=0.0)
+
+    with pytest.raises(ValueError, match="no `run_number`"):
+        trial.add_log(no_run_number)
+
+    with pytest.raises(ValueError, match="empty EventLogger"):
+        trial.add_log(EventLogger(run_number=2))
+
+
+# --------------------------------------------------------------------------- #
+# The trial dataframe stays current
+# --------------------------------------------------------------------------- #
+
+
+def test_add_log_is_reflected_in_the_trial_dataframe(two_run_loggers):
+    """Regression test: the frame was built once in __init__ and never rebuilt.
+
+    summary() counted the added run while every statistic was still computed
+    from the runs present at construction - a silently wrong answer, with no
+    error and no warning.
+    """
+    first, second = two_run_loggers
+    trial = TrialLogger([first])
+
+    trial.add_log(second)
+
+    runs_in_frame = set(trial.to_dataframe()["run_number"])
+    assert runs_in_frame == {1, 2}
+    assert trial.summary()["number_of_runs"] == 2
+
+
+def test_statistics_account_for_logs_added_after_construction(two_run_loggers):
+    """The count of durations must double when a second identical run is added."""
+    first, second = two_run_loggers
+    trial = TrialLogger([first])
+
+    before = trial.get_event_duration_stat("arrival", "depart", what="count")
+    trial.add_log(second)
+    after = trial.get_event_duration_stat("arrival", "depart", what="count")
+
+    assert before == 2
+    assert after == 4
+
+
+def test_trial_dataframe_concatenates_all_runs(two_run_loggers):
+    trial = TrialLogger(two_run_loggers)
+
+    expected_rows = sum(len(logger.log) for logger in two_run_loggers)
+
+    assert len(trial.to_dataframe()) == expected_rows
+
+
+# --------------------------------------------------------------------------- #
+# Retrieval
+# --------------------------------------------------------------------------- #
+
+
+def test_get_log_by_run_returns_the_logger(two_run_loggers):
+    trial = TrialLogger(two_run_loggers)
+
+    result = trial.get_log_by_run(1)
+
+    assert isinstance(result, EventLogger)
+
+
+def test_get_log_by_run_as_dataframe(two_run_loggers):
+    """Regression test: both branches returned the EventLogger.
+
+    `as_df=True` handed back an object with no DataFrame behaviour at all.
+    """
+    trial = TrialLogger(two_run_loggers)
+
+    result = trial.get_log_by_run(1, as_df=True)
+
+    assert isinstance(result, pd.DataFrame)
+    assert set(result["run_number"]) == {1}
+
+
+def test_get_log_by_run_rejects_unknown_run(two_run_loggers):
+    trial = TrialLogger(two_run_loggers)
+
+    with pytest.raises(KeyError):
+        trial.get_log_by_run(99)
+
+
+# --------------------------------------------------------------------------- #
+# get_event_durations - thin wrapper over vidigi.analysis.event_durations
+# --------------------------------------------------------------------------- #
+
+
+def test_get_event_durations_returns_the_full_per_entity_frame(two_run_loggers):
+    trial = TrialLogger(two_run_loggers)
+
+    result = trial.get_event_durations("arrival", "depart")
+
+    assert sorted(result["duration"].tolist()) == [5.0, 5.0, 5.0, 5.0]
+    assert set(result["run_number"]) == {1, 2}
+    assert list(result.columns) == [
+        "entity_id",
+        "run_number",
+        "pathway",
+        "occurrence",
+        "first_time",
+        "second_time",
+        "duration",
+    ]
+
+
+def test_get_event_durations_warm_up_is_passed_through(two_run_loggers):
+    """Entity 1 arrives at t=1, entity 2 at t=2, in both runs (see
+    `_build_logger`). `warm_up=1.5` excludes entity 1 from every run,
+    leaving only entity 2's four pairings."""
+    trial = TrialLogger(two_run_loggers)
+
+    result = trial.get_event_durations("arrival", "depart", warm_up=1.5)
+
+    assert set(result["entity_id"]) == {2}
+    assert len(result) == 2
+
+
+def test_get_event_durations_handles_a_rework_loop(rework_loop_logger):
+    """The old pivot-based calculation cannot run against this fixture at all."""
+    trial = TrialLogger([rework_loop_logger])
+
+    result = trial.get_event_durations("assessment", "treated", match="occurrence")
+
+    assert sorted(result["duration"].tolist()) == [4.0, 10.0]
+
+
+def _old_pivot_durations(trial, first_event, second_event):
+    """Replicates the pre-1.5.0 `pivot`-based calculation, for parity testing only."""
+    df = trial.to_dataframe()
+    event_df = df[df["event"].isin([first_event, second_event])][
+        ["entity_id", "run_number", "event", "time"]
+    ].copy()
+    pivoted = event_df.pivot(
+        columns="event", index=["entity_id", "run_number"], values="time"
+    ).reset_index()[["entity_id", "run_number", first_event, second_event]]
+    pivoted["duration"] = pivoted[second_event] - pivoted[first_event]
+    return pivoted
+
+
+@pytest.mark.parametrize(
+    "fixture_name",
+    [
+        "single_run_logger",
+        "two_run_loggers",
+        "logger_with_unserved_entity",
+        "long_queue_logger",
+        "emptying_queue_loggers",
+    ],
+)
+def test_get_event_durations_matches_the_old_pivot_where_it_worked(
+    fixture_name, request
+):
+    """`match="first"` must reproduce the old pivot exactly wherever it succeeded.
+
+    Every fixture here has each entity visiting 'arrival' and 'depart' at most
+    once per run, which is exactly the case the pivot could handle.
+    """
+    fixture = request.getfixturevalue(fixture_name)
+    loggers = fixture if isinstance(fixture, list) else [fixture]
+    trial = TrialLogger(loggers)
+
+    old = (
+        _old_pivot_durations(trial, "arrival", "depart")
+        .sort_values(["run_number", "entity_id"])
+        .reset_index(drop=True)
+    )
+    new = (
+        trial.get_event_durations("arrival", "depart")
+        .sort_values(["run_number", "entity_id"])
+        .reset_index(drop=True)
+    )
+
+    assert list(new["entity_id"]) == list(old["entity_id"])
+    assert list(new["run_number"]) == list(old["run_number"])
+    pd.testing.assert_series_equal(new["duration"], old["duration"], check_names=False)
+
+
+def test_old_pivot_raises_on_a_rework_loop(rework_loop_logger):
+    """Pins the behaviour `event_durations` replaces: the pivot cannot represent
+    an entity visiting the same event twice, since both visits map to the same
+    (entity_id, run_number, event) cell.
+    """
+    trial = TrialLogger([rework_loop_logger])
+
+    with pytest.raises(ValueError):
+        _old_pivot_durations(trial, "assessment", "treated")
+
+
+# --------------------------------------------------------------------------- #
+# Duration statistics
+# --------------------------------------------------------------------------- #
+
+
+@pytest.mark.parametrize(
+    "what, expected",
+    [
+        ("mean", 5.0),
+        ("median", 5.0),
+        ("min", 5.0),
+        ("max", 5.0),
+        ("sum", 20.0),
+        ("count", 4),
+        ("std", 0.0),
+        ("var", 0.0),
+    ],
+)
+def test_duration_statistics(two_run_loggers, what, expected):
+    """Every arrival-to-depart duration in the fixtures is exactly 5.0.
+
+    Two runs of two entities gives four durations, so the sum is 20 and the
+    spread is zero.
+    """
+    trial = TrialLogger(two_run_loggers)
+
+    assert trial.get_event_duration_stat("arrival", "depart", what=what) == expected
+
+
+def test_get_event_duration_stat_warm_up_is_passed_through(two_run_loggers):
+    """Entity 1 arrives at t=1, entity 2 at t=2 (see `_build_logger`).
+    `warm_up=1.5` excludes entity 1 from both runs, leaving only entity 2's
+    two durations - `count` drops from 4 to 2, proven to fail if `warm_up`
+    were dropped on the way to `get_event_durations`."""
+    trial = TrialLogger(two_run_loggers)
+
+    assert (
+        trial.get_event_duration_stat("arrival", "depart", what="count", warm_up=1.5)
+        == 2
+    )
+
+
+def test_quantile_accepts_kwargs(two_run_loggers):
+    trial = TrialLogger(two_run_loggers)
+
+    result = trial.get_event_duration_stat("arrival", "depart", what="quantile", q=0.9)
+
+    assert result == 5.0
+
+
+def test_rounding_honours_dp():
+    logger = EventLogger(run_number=1)
+    logger.log_arrival(entity_id=1, time=0.0)
+    logger.log_departure(entity_id=1, time=1.23456)
+    trial = TrialLogger([logger])
+
+    assert (
+        trial.get_event_duration_stat("arrival", "depart", what="mean", dp=3) == 1.235
+    )
+
+
+def test_label_wraps_result(two_run_loggers):
+    trial = TrialLogger(two_run_loggers)
+
+    result = trial.get_event_duration_stat(
+        "arrival", "depart", what="mean", label="Time in system"
+    )
+
+    assert result == {"stat": "Time in system", "value": 5.0}
+
+
+def test_unsupported_aggregation_lists_the_valid_ones(two_run_loggers):
+    trial = TrialLogger(two_run_loggers)
+
+    with pytest.raises(ValueError, match="Unsupported aggregation"):
+        trial.get_event_duration_stat("arrival", "depart", what="nonsense")
+
+
+# --------------------------------------------------------------------------- #
+# get_event_duration_stat: across="entities" vs across="runs"
+# --------------------------------------------------------------------------- #
+
+
+def test_get_event_duration_stat_across_entities_is_unchanged_at_defaults(
+    unequal_run_loggers,
+):
+    """The default `across="entities"` must give exactly what every prior
+    release gave: the pooled mean over every entity, ignoring run boundaries.
+    `unequal_run_loggers` has run means [4, 5, 9] but 8 entities totalling 46,
+    so the pooled mean is 46/8 = 5.75, distinct from the mean of run means."""
+    trial = TrialLogger(unequal_run_loggers)
+
+    assert trial.get_event_duration_stat("arrival", "depart") == 5.75
+
+
+def test_get_event_duration_stat_across_runs_is_mean_of_run_means(unequal_run_loggers):
+    """`across="runs"` computes the statistic within each run, then averages
+    those - mean of [4, 5, 9] = 6.0 - weighting each replication equally
+    rather than by its entity count. Fails (5.75) if it pools instead."""
+    trial = TrialLogger(unequal_run_loggers)
+
+    assert trial.get_event_duration_stat("arrival", "depart", across="runs") == 6.0
+
+
+def test_get_event_duration_stat_across_runs_passes_what_through(unequal_run_loggers):
+    """A per-run `max` of the constant-per-run fixture is that run's duration,
+    so the mean of per-run maxima is again mean([4, 5, 9]) = 6.0 - but this
+    proves `what` reaches `replication_means`, not just `"mean"`."""
+    trial = TrialLogger(unequal_run_loggers)
+
+    assert (
+        trial.get_event_duration_stat("arrival", "depart", what="max", across="runs")
+        == 6.0
+    )
+
+
+def test_get_event_duration_stat_across_runs_rejects_entity_counting_what(
+    two_run_loggers,
+):
+    """`"count"` answers "how many", not "what value", and is not meaningful
+    re-averaged across runs - `replication_means` rejects it."""
+    trial = TrialLogger(two_run_loggers)
+
+    with pytest.raises(ValueError, match="per-replication"):
+        trial.get_event_duration_stat("arrival", "depart", what="count", across="runs")
+
+
+def test_get_event_duration_stat_across_runs_requires_exclude_incomplete(
+    two_run_loggers,
+):
+    trial = TrialLogger(two_run_loggers)
+
+    with pytest.raises(ValueError, match="exclude_incomplete=False"):
+        trial.get_event_duration_stat(
+            "arrival", "depart", across="runs", exclude_incomplete=False
+        )
+
+
+def test_get_event_duration_stat_invalid_across_raises(two_run_loggers):
+    trial = TrialLogger(two_run_loggers)
+
+    with pytest.raises(ValueError, match="`across` must be"):
+        trial.get_event_duration_stat("arrival", "depart", across="both")
+
+
+def test_get_event_duration_stat_across_runs_no_complete_pairs_raises():
+    run1 = EventLogger(run_number=1)
+    run1.log_arrival(entity_id=1, time=0.0)  # never departs
+    run2 = EventLogger(run_number=2)
+    run2.log_departure(entity_id=1, time=5.0)  # never arrived
+    trial = TrialLogger([run1, run2])
+
+    with pytest.raises(ValueError, match="No complete"):
+        trial.get_event_duration_stat("arrival", "depart", across="runs")
+
+
+# --------------------------------------------------------------------------- #
+# get_event_duration_ci
+# --------------------------------------------------------------------------- #
+
+
+def test_get_event_duration_ci_matches_hand_computed_unequal_run_example(
+    unequal_run_loggers,
+):
+    """Reaches `replication_means` then `mean_confidence_interval`, reproducing
+    `unequal_run_loggers`'s own hand-computed values: mean of run means 6.0,
+    sample std sqrt(7), t_0.975,2 = 4.302653, half-width ~= 6.5724. A half-width
+    of ~1.716 would mean it had pooled the 8 per-entity durations instead - the
+    interval that function's Notes call ~30x too narrow."""
+    trial = TrialLogger(unequal_run_loggers)
+
+    ci = trial.get_event_duration_ci("arrival", "depart")
+
+    assert ci.n == 3
+    assert ci.mean == pytest.approx(6.0)
+    assert ci.half_width == pytest.approx(6.5724, abs=1e-3)
+    assert ci.lower == pytest.approx(6.0 - 6.5724, abs=1e-3)
+    assert ci.upper == pytest.approx(6.0 + 6.5724, abs=1e-3)
+
+
+def test_get_event_duration_ci_ci_level_is_passed_through(unequal_run_loggers):
+    trial = TrialLogger(unequal_run_loggers)
+
+    wide = trial.get_event_duration_ci("arrival", "depart")
+    narrow = trial.get_event_duration_ci("arrival", "depart", ci_level=0.90)
+
+    # t_0.95,2 = 2.919986 vs t_0.975,2 = 4.302653.
+    assert narrow.half_width < wide.half_width
+
+
+def test_get_event_duration_ci_what_is_passed_through():
+    """Run 1 has durations 2 and 8 (mean 5, max 8), run 2 a single duration 10.
+    The mean-of-means is (5 + 10) / 2 = 7.5; the mean of per-run maxima is
+    (8 + 10) / 2 = 9.0."""
+    run1 = EventLogger(run_number=1)
+    run1.log_arrival(entity_id=1, time=0.0)
+    run1.log_departure(entity_id=1, time=2.0)
+    run1.log_arrival(entity_id=2, time=0.0)
+    run1.log_departure(entity_id=2, time=8.0)
+    run2 = EventLogger(run_number=2)
+    run2.log_arrival(entity_id=1, time=0.0)
+    run2.log_departure(entity_id=1, time=10.0)
+    trial = TrialLogger([run1, run2])
+
+    assert trial.get_event_duration_ci("arrival", "depart").mean == pytest.approx(7.5)
+    assert trial.get_event_duration_ci(
+        "arrival", "depart", what="max"
+    ).mean == pytest.approx(9.0)
+
+
+def test_get_event_duration_ci_no_complete_pairs_raises():
+    run1 = EventLogger(run_number=1)
+    run1.log_arrival(entity_id=1, time=0.0)  # never departs
+    run2 = EventLogger(run_number=2)
+    run2.log_departure(entity_id=1, time=5.0)  # never arrived
+    trial = TrialLogger([run1, run2])
+
+    with pytest.raises(ValueError, match="No complete"):
+        trial.get_event_duration_ci("arrival", "depart")
+
+
+def test_get_event_duration_ci_single_replication_warns_and_nans(two_run_loggers):
+    """One replication cannot yield a spread - `mean_confidence_interval`
+    returns a NaN half-width and warns rather than raising."""
+    trial = TrialLogger([two_run_loggers[0]])
+
+    with pytest.warns(UserWarning, match="at least 2"):
+        ci = trial.get_event_duration_ci("arrival", "depart")
+
+    assert ci.n == 1
+    assert ci.mean == pytest.approx(5.0)
+    assert pd.isna(ci.half_width)
+
+
+# --------------------------------------------------------------------------- #
+# Served / unserved accounting
+# --------------------------------------------------------------------------- #
+
+
+@pytest.mark.parametrize(
+    "what, expected",
+    [
+        ("served_count", 2),
+        ("unserved_count", 1),
+        ("served_rate", pytest.approx(2 / 3, abs=0.01)),
+        ("unserved_rate", pytest.approx(1 / 3, abs=0.01)),
+    ],
+)
+def test_served_and_unserved_counts(logger_with_unserved_entity, what, expected):
+    """Three entities arrive, two depart - so exactly one is unserved."""
+    trial = TrialLogger([logger_with_unserved_entity])
+
+    assert trial.get_event_duration_stat("arrival", "depart", what=what) == expected
+
+
+def test_summary_unserved_count_is_the_number_unserved(logger_with_unserved_entity):
+    """Regression test: this reported the *total* entity count, not the unserved.
+
+    The standalone `what="unserved_count"` path was already correct, so the two
+    routes to the same statistic disagreed - with three entities of which one
+    was unserved, the summary said 3 and the standalone said 1.
+    """
+    trial = TrialLogger([logger_with_unserved_entity])
+
+    summary = trial.get_event_duration_stat("arrival", "depart", what="summary")
+    standalone = trial.get_event_duration_stat(
+        "arrival", "depart", what="unserved_count"
+    )
+
+    assert summary["unserved_count"] == 1
+    assert summary["unserved_count"] == standalone
+
+
+def test_summary_per_run_means(logger_with_unserved_entity):
+    """One run with one unserved and two served entities."""
+    trial = TrialLogger([logger_with_unserved_entity])
+
+    summary = trial.get_event_duration_stat("arrival", "depart", what="summary")
+
+    assert summary["unserved_count_mean_per_run"] == 1.0
+    assert summary["served_count_mean_per_run"] == 2.0
+
+
+def test_summary_per_run_means_across_two_runs():
+    """Per-run means must divide by the number of runs, not report the total."""
+    loggers = []
+    for run in (1, 2):
+        logger = EventLogger(run_number=run)
+        for entity_id in (1, 2):
+            logger.log_arrival(entity_id=entity_id, time=float(entity_id))
+            logger.log_departure(entity_id=entity_id, time=float(entity_id) + 5)
+        logger.log_arrival(entity_id=99, time=10.0)
+        loggers.append(logger)
+    trial = TrialLogger(loggers)
+
+    summary = trial.get_event_duration_stat("arrival", "depart", what="summary")
+
+    # Six entities across two runs: four served, two unserved.
+    assert summary["served_count"] == 4
+    assert summary["unserved_count"] == 2
+    assert summary["served_count_mean_per_run"] == 2.0
+    assert summary["unserved_count_mean_per_run"] == 1.0
+
+
+def test_summary_per_run_means_count_runs_with_neither_event_too():
+    """Regression test: the denominator was the number of runs *containing
+    either event*, so a run where neither occurred at all was silently dropped
+    from it - inflating served/unserved rates that are meant to be per-run
+    averages over the whole trial.
+    """
+    loggers = []
+    for run in (1, 2):
+        logger = EventLogger(run_number=run)
+        logger.log_custom_event(
+            entity_id=1, event_type="milestone", event="check_in", time=0.0
+        )
+        logger.log_custom_event(
+            entity_id=1, event_type="milestone", event="check_out", time=5.0
+        )
+        loggers.append(logger)
+
+    # Run 3 never has a 'check_in' or 'check_out' event at all.
+    third = EventLogger(run_number=3)
+    third.log_arrival(entity_id=1, time=0.0)
+    third.log_departure(entity_id=1, time=1.0)
+    loggers.append(third)
+
+    trial = TrialLogger(loggers)
+
+    summary = trial.get_event_duration_stat("check_in", "check_out", what="summary")
+
+    assert summary["served_count"] == 2
+    assert summary["served_count_mean_per_run"] == round(2 / 3, 2)
+    assert summary["unserved_count_mean_per_run"] == 0.0
+
+
+def test_summary_statistics_ignore_incomplete_journeys(
+    logger_with_unserved_entity,
+):
+    """The unserved entity has no duration, so it must not drag the mean down."""
+    trial = TrialLogger([logger_with_unserved_entity])
+
+    summary = trial.get_event_duration_stat("arrival", "depart", what="summary")
+
+    assert summary["mean (of complete)"] == 5.0
+    assert summary["median (of complete)"] == 5.0
+
+
+def test_count_can_include_incomplete_journeys(logger_with_unserved_entity):
+    trial = TrialLogger([logger_with_unserved_entity])
+
+    excluding = trial.get_event_duration_stat(
+        "arrival", "depart", what="count", exclude_incomplete=True
+    )
+    including = trial.get_event_duration_stat(
+        "arrival", "depart", what="count", exclude_incomplete=False
+    )
+
+    assert excluding == 2
+    assert including == 3
+
+
+# --------------------------------------------------------------------------- #
+# Plotting entry points
+# --------------------------------------------------------------------------- #
+
+
+def test_plot_metric_bar_returns_a_figure(two_run_loggers):
+    trial = TrialLogger(two_run_loggers)
+
+    fig = trial.plot_metric_bar(
+        [
+            {
+                "label": "Time in system",
+                "first_event": "arrival",
+                "second_event": "depart",
+            }
+        ]
+    )
+
+    assert isinstance(fig, go.Figure)
+
+
+def test_plot_metric_bar_uses_one_bar_per_pair(two_run_loggers):
+    trial = TrialLogger(two_run_loggers)
+
+    fig = trial.plot_metric_bar(
+        [
+            {"label": "A", "first_event": "arrival", "second_event": "depart"},
+            {"label": "B", "first_event": "arrival", "second_event": "waiting"},
+        ]
+    )
+
+    assert list(fig.data[0].x) == ["A", "B"]
+
+
+def test_plot_metric_bar_across_runs_with_ci_is_passed_through(unequal_run_loggers):
+    """`across="runs"`/`error_bars="ci"` reach `vidigi.plots.plot_metric_bar`, and
+    the delegation reproduces the hand-computed values from that fixture's
+    docstring exactly."""
+    trial = TrialLogger(unequal_run_loggers)
+
+    fig = trial.plot_metric_bar(
+        [{"label": "A", "first_event": "arrival", "second_event": "depart"}],
+        across="runs",
+        error_bars="ci",
+    )
+
+    assert fig.data[0].y == pytest.approx((6.0,))
+    assert round(fig.data[0].error_y.array[0], 3) == 6.572
+
+
+def test_plot_metric_bar_across_entities_is_unchanged_at_defaults(unequal_run_loggers):
+    """`across="entities"` (the default) must give exactly what every prior
+    release gave: the pooled mean over every entity, ignoring run boundaries."""
+    trial = TrialLogger(unequal_run_loggers)
+
+    fig = trial.plot_metric_bar(
+        [{"label": "A", "first_event": "arrival", "second_event": "depart"}]
+    )
+
+    assert fig.data[0].y == pytest.approx((5.75,))
+
+
+def test_plot_metric_bar_warm_up_is_passed_through():
+    """One entity's pairing starts before t=10 (duration 4), the other after
+    (duration 6) - a dropped `warm_up` would pool both into a mean of 5.0,
+    so this distinguishes a working passthrough from a silently ignored one
+    purely through `plot_metric_bar` itself."""
+    logger = EventLogger(run_number=1)
+    logger.log_arrival(entity_id=1, time=0.0)
+    logger.log_departure(entity_id=1, time=4.0)
+    logger.log_arrival(entity_id=2, time=10.0)
+    logger.log_departure(entity_id=2, time=16.0)
+    trial = TrialLogger([logger])
+
+    fig = trial.plot_metric_bar(
+        [{"label": "A", "first_event": "arrival", "second_event": "depart"}],
+        warm_up=10,
+    )
+
+    assert fig.data[0].y == pytest.approx((6.0,))
+
+
+def test_plot_metric_bar_warns_deprecated(two_run_loggers):
+    """The `DeprecationWarning` `vidigi.plots.plot_metric_bar` raises must
+    propagate up through this delegator, not be swallowed on the way."""
+    trial = TrialLogger(two_run_loggers)
+
+    with pytest.warns(DeprecationWarning, match="plot_metric"):
+        trial.plot_metric_bar(
+            [{"label": "A", "first_event": "arrival", "second_event": "depart"}]
+        )
+
+
+def test_plot_metric_returns_a_figure(two_run_loggers):
+    trial = TrialLogger(two_run_loggers)
+
+    fig = trial.plot_metric(
+        [{"label": "A", "first_event": "arrival", "second_event": "depart"}]
+    )
+
+    assert isinstance(fig, go.Figure)
+
+
+def test_plot_metric_emits_no_deprecation_warning(two_run_loggers):
+    trial = TrialLogger(two_run_loggers)
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        trial.plot_metric(
+            [{"label": "A", "first_event": "arrival", "second_event": "depart"}]
+        )
+    assert not any(issubclass(w.category, DeprecationWarning) for w in caught)
+
+
+def test_plot_metric_kind_box_matches_the_hand_computed_run_means(unequal_run_loggers):
+    """Run means for this fixture are [4, 5, 9] - see its own docstring."""
+    trial = TrialLogger(unequal_run_loggers)
+
+    fig = trial.plot_metric(
+        [{"label": "A", "first_event": "arrival", "second_event": "depart"}],
+        kind="box",
+        across="runs",
+    )
+
+    assert sorted(fig.data[0].y) == pytest.approx([4.0, 5.0, 9.0])
+
+
+def test_plot_metric_highlight_bands_is_passed_through(two_run_loggers):
+    trial = TrialLogger(two_run_loggers)
+
+    fig = trial.plot_metric(
+        [{"label": "A", "first_event": "arrival", "second_event": "depart"}],
+        highlight_bands=[{"upper": 3, "colour": "green"}],
+    )
+
+    assert len(fig.layout.shapes) == 2
+
+
+def test_get_resource_utilisation_is_passed_through(resource_use_loggers):
+    """`get_resource_utilisation` reaches `vidigi.analysis.resource_utilisation`,
+    and reproduces the hand-computed values from that fixture's docstring
+    exactly."""
+    trial = TrialLogger(resource_use_loggers)
+
+    result = trial.get_resource_utilisation(
+        by="resource", resource_capacities={"treatment_begins": 3}, limit_duration=20
+    )
+
+    run1 = result[result["run_number"] == 1]
+    assert dict(zip(run1["resource_id"], run1["busy_time"])) == {
+        1: 10.0,
+        2: 5.0,
+        3: 0.0,
+    }
+
+
+def _colliding_pool_logger():
+    """One run, two entities sharing resource_id=1 but with disjoint
+    unique_resource_id values, genuinely overlapping in time - the motivating
+    case for `VidigiStore`'s `label=`/`unique_id_attribute`."""
+    logger = EventLogger(run_number=1)
+    logger.log_resource_use_start(
+        entity_id=1,
+        resource_id=1,
+        unique_resource_id="a_1",
+        time=0.0,
+        event="step_begins",
+    )
+    logger.log_resource_use_end(
+        entity_id=1,
+        resource_id=1,
+        unique_resource_id="a_1",
+        time=10.0,
+        event="step_ends",
+    )
+    logger.log_resource_use_start(
+        entity_id=2,
+        resource_id=1,
+        unique_resource_id="b_1",
+        time=5.0,
+        event="step_begins",
+    )
+    logger.log_resource_use_end(
+        entity_id=2,
+        resource_id=1,
+        unique_resource_id="b_1",
+        time=15.0,
+        event="step_ends",
+    )
+    return logger
+
+
+def test_get_resource_utilisation_resource_col_name_auto_prefers_unique_resource_id():
+    """`resource_col_name=None` (the default) picks `unique_resource_id`
+    over `resource_id` whenever the log has it - so a model built the
+    recommended way needs no extra argument here to get a collision-proof
+    breakdown."""
+    trial = TrialLogger([_colliding_pool_logger()])
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        result = trial.get_resource_utilisation(by="resource", limit_duration=20)
+
+    assert not any("overlapping" in str(w.message) for w in caught)
+    assert set(result["resource_id"]) == {"a_1", "b_1"}
+
+
+def test_get_resource_utilisation_resource_col_name_explicit_override_still_works():
+    """Passing resource_col_name="resource_id" explicitly must still reach the
+    raw, collision-prone column, overriding the `None` (auto-detect) default."""
+    trial = TrialLogger([_colliding_pool_logger()])
+
+    with pytest.warns(UserWarning, match="overlapping"):
+        result = trial.get_resource_utilisation(
+            by="resource", resource_col_name="resource_id", limit_duration=20
+        )
+    assert set(result["resource_id"]) == {1}
+
+
+def test_resolve_resource_col_name_defaults_to_unique_resource_id_when_present():
+    trial = TrialLogger([_colliding_pool_logger()])
+    df = trial.to_dataframe()
+    assert trial._resolve_resource_col_name(None, df) == "unique_resource_id"
+
+
+def test_resolve_resource_col_name_falls_back_to_resource_id_when_absent(
+    resource_use_loggers,
+):
+    trial = TrialLogger(resource_use_loggers)
+    df = trial.to_dataframe()
+    assert trial._resolve_resource_col_name(None, df) == "resource_id"
+
+
+def test_resolve_resource_col_name_explicit_value_is_returned_unchanged(
+    resource_use_loggers,
+):
+    trial = TrialLogger(resource_use_loggers)
+    df = trial.to_dataframe()
+    assert trial._resolve_resource_col_name("something_else", df) == "something_else"
+
+
+def test_resolve_resource_col_name_uses_the_passed_dataframe_not_a_fresh_rebuild():
+    """The resolver must check `unique_resource_id` on the dataframe it is
+    given, not re-derive its own copy from `self._trial_dataframe` - that
+    would defeat the point of building the frame once per call and passing
+    it in (see the callers in get_resource_utilisation etc.)."""
+    trial = TrialLogger([_colliding_pool_logger()])  # has unique_resource_id
+    other_df = pd.DataFrame({"resource_id": [1, 2]})  # does not
+
+    assert trial._resolve_resource_col_name(None, other_df) == "resource_id"
+
+
+def test_get_resource_utilisation_auto_raises_on_a_partially_populated_column():
+    """Documented **BREAKING** edge case (see HISTORY.md): a trial where
+    unique_resource_id is present on some resource-use rows but not others -
+    e.g. only part of a model's logging was updated to the label= pattern -
+    used to succeed under the old hard-coded resource_id default. `None` now
+    picks unique_resource_id (it exists somewhere in the trial) and
+    resource_use_intervals correctly refuses to pair on a partially-populated
+    column, so this now raises instead of silently working. Passing
+    resource_col_name="resource_id" explicitly restores the old behaviour."""
+    with_unique_id = EventLogger(run_number=1)
+    with_unique_id.log_resource_use_start(
+        entity_id=1,
+        resource_id=1,
+        unique_resource_id="a_1",
+        time=0.0,
+        event="step_begins",
+    )
+    with_unique_id.log_resource_use_end(
+        entity_id=1,
+        resource_id=1,
+        unique_resource_id="a_1",
+        time=10.0,
+        event="step_ends",
+    )
+    without_unique_id = EventLogger(run_number=2)
+    without_unique_id.log_resource_use_start(
+        entity_id=1, resource_id=1, time=0.0, event="step_begins"
+    )
+    without_unique_id.log_resource_use_end(
+        entity_id=1, resource_id=1, time=10.0, event="step_ends"
+    )
+    trial = TrialLogger([with_unique_id, without_unique_id])
+
+    with pytest.raises(ValueError, match="unique_resource_id"):
+        trial.get_resource_utilisation(by="resource", limit_duration=20)
+
+    # The explicit escape hatch named in HISTORY.md must still work.
+    result = trial.get_resource_utilisation(
+        by="resource", resource_col_name="resource_id", limit_duration=20
+    )
+    assert set(result["run_number"]) == {1, 2}
+
+
+@pytest.mark.parametrize("what", typing.get_args(DurationStat))
+def test_every_duration_stat_literal_is_accepted(what, two_run_loggers):
+    """The annotation must not advertise a statistic the runtime check rejects.
+
+    `get_event_duration_stat` validates `what` against a set built in the method
+    body, so the Literal is a second copy of that list and could drift from it.
+    """
+    trial = TrialLogger(two_run_loggers)
+    extra = {"q": 0.9} if what == "quantile" else {}
+
+    result = trial.get_event_duration_stat("arrival", "depart", what=what, **extra)
+
+    assert result is not None
+
+
+def test_plot_queue_size_returns_a_figure(two_run_loggers):
+    trial = TrialLogger(two_run_loggers)
+
+    fig = trial.plot_queue_size(event_list=["waiting"], limit_duration=20)
+
+    assert isinstance(fig, go.Figure)
+
+
+def test_plot_queue_size_mean_only(two_run_loggers):
+    trial = TrialLogger(two_run_loggers)
+
+    fig = trial.plot_queue_size(
+        event_list=["waiting"], limit_duration=20, show_all_runs=False
+    )
+
+    assert isinstance(fig, go.Figure)
+
+
+def test_plot_queue_size_highlight_bands_is_passed_through(two_run_loggers):
+    trial = TrialLogger(two_run_loggers)
+
+    fig = trial.plot_queue_size(
+        event_list=["waiting"],
+        limit_duration=20,
+        highlight_bands=[{"upper": 1, "colour": "green", "label": "quiet"}],
+    )
+
+    assert any(t.name == "quiet" for t in fig.data)
+
+
+def test_plot_queue_size_backend_go_is_passed_through(long_queue_logger):
+    """`backend="go"` reaches vidigi.plots.plot_queue_size, and reports the same
+    queue length as the default express backend does.
+    """
+    trial = TrialLogger([long_queue_logger])
+
+    fig = trial.plot_queue_size(
+        event_list=["waiting"],
+        limit_duration=30,
+        every_x_time_units=10,
+        backend="go",
+    )
+
+    run_trace = [t for t in fig.data if t.name == "1"][0]
+    assert list(run_trace.x) == [0, 10, 20, 30]
+    assert list(run_trace.y) == [150, 150, 150, 150]
+
+
+# --------------------------------------------------------------------------- #
+# plot_queue_size: the plotted number must be the queue length
+#
+# These assert values rather than figure types. The two tests above would pass
+# against a blank chart, and did pass while the queue length was saturating.
+# --------------------------------------------------------------------------- #
+
+
+def test_plot_queue_size_reports_queues_longer_than_step_snapshot_max(
+    long_queue_logger,
+):
+    """A 150-long queue must plot as 150, not flatten off at the display cap.
+
+    `step_snapshot_max` caps how many entity icons an animation draws. Inherited
+    here it capped the *count*, so every long queue plotted a flat 61 - a
+    bottleneck reads as a stable queue, with no visual cue that anything had
+    been discarded.
+    """
+    trial = TrialLogger([long_queue_logger])
+
+    fig = trial.plot_queue_size(
+        event_list=["waiting"], limit_duration=30, every_x_time_units=10
+    )
+
+    run_trace = fig.data[0]
+    assert list(run_trace.x) == [0, 10, 20, 30]
+    assert list(run_trace.y) == [150, 150, 150, 150]
+
+
+def test_plot_queue_size_plots_an_empty_queue_as_zero(emptying_queue_loggers):
+    """A snapshot with nobody queuing must be plotted, not omitted.
+
+    An event with no rows contributed no point at all, so the line was drawn
+    straight across the gap - asserting a queue over exactly the period it had
+    emptied. See the fixture for the full expected series.
+    """
+    trial = TrialLogger(emptying_queue_loggers)
+
+    fig = trial.plot_queue_size(
+        event_list=["waiting"], limit_duration=30, every_x_time_units=10
+    )
+
+    by_run = {trace.name: list(trace.y) for trace in fig.data}
+    assert by_run["1"] == [1, 1, 0, 0]
+    assert by_run["2"] == [0, 0, 1, 1]
+    assert all(list(trace.x) == [0, 10, 20, 30] for trace in fig.data)
+
+
+def test_plot_queue_size_mean_includes_runs_with_an_empty_queue(
+    emptying_queue_loggers,
+):
+    """The mean must be over every run, including those with nobody queuing.
+
+    Averaging only the runs that happened to have a row biases the mean upwards
+    exactly when the queue is shortest. Here one run holds 1 and the other 0 at
+    every snapshot, so the mean is 0.5 throughout; it previously read 1.0.
+    """
+    trial = TrialLogger(emptying_queue_loggers)
+
+    fig = trial.plot_queue_size(
+        event_list=["waiting"],
+        limit_duration=30,
+        every_x_time_units=10,
+        show_all_runs=False,
+    )
+
+    assert list(fig.data[0].y) == [0.5, 0.5, 0.5, 0.5]
+
+
+def test_plot_queue_size_warns_when_an_event_never_occurs(emptying_queue_loggers):
+    """Zero-filling means a misspelt event name would silently plot a flat zero."""
+    trial = TrialLogger(emptying_queue_loggers)
+
+    with pytest.warns(UserWarning, match="did not occur in any run"):
+        fig = trial.plot_queue_size(
+            event_list=["waitng"], limit_duration=30, every_x_time_units=10
+        )
+
+    assert list(fig.data[0].y) == [0, 0, 0, 0]
+
+
+def test_plot_queue_size_does_not_warn_when_an_event_occurs_in_only_some_runs():
+    """A queue that forms in one run but not another is ordinary, not suspicious.
+
+    The warning has to key off the runs collectively. Keyed off each run
+    individually it would fire on entirely valid input, and a warning that cries
+    wolf gets filtered out along with the real one.
+    """
+    queues = EventLogger(run_number=1)
+    queues.log_arrival(entity_id=1, time=0.0)
+    queues.log_queue(entity_id=1, event="waiting", time=0.0)
+    queues.log_departure(entity_id=1, time=30.0)
+
+    never_queues = EventLogger(run_number=2)
+    never_queues.log_arrival(entity_id=1, time=0.0)
+    never_queues.log_departure(entity_id=1, time=30.0)
+
+    trial = TrialLogger([queues, never_queues])
+
+    with warnings.catch_warnings(record=True) as raised:
+        warnings.simplefilter("always")
+        fig = trial.plot_queue_size(
+            event_list=["waiting"], limit_duration=20, every_x_time_units=10
+        )
+
+    assert not [w for w in raised if "did not occur" in str(w.message)]
+
+    by_run = {trace.name: list(trace.y) for trace in fig.data}
+    assert by_run["1"] == [1, 1, 1]
+
+
+def test_plot_resource_utilisation_is_passed_through(resource_use_loggers):
+    """Reaches `vidigi.plots.plot_resource_utilisation`, and reproduces the
+    hand-computed values from the fixture's docstring: run 1 utilisation 0.25,
+    run 2 utilisation 0.5, mean 0.375."""
+    trial = TrialLogger(resource_use_loggers)
+
+    fig = trial.plot_resource_utilisation(
+        resource_capacities={"treatment_begins": 3}, limit_duration=20
+    )
+
+    assert fig.data[0].x == ("treatment_begins",)
+    assert fig.data[0].y == pytest.approx((0.375,))
+
+
+def test_plot_resource_utilisation_kind_box_is_passed_through(resource_use_loggers):
+    trial = TrialLogger(resource_use_loggers)
+
+    fig = trial.plot_resource_utilisation(
+        by="run",
+        kind="box",
+        error_bars=None,
+        resource_capacities={"treatment_begins": 3},
+        limit_duration=20,
+    )
+
+    assert sorted(fig.data[0].y) == pytest.approx([0.25, 0.5])
+
+
+def test_plot_resource_utilisation_highlight_bands_is_passed_through(
+    resource_use_loggers,
+):
+    trial = TrialLogger(resource_use_loggers)
+
+    fig = trial.plot_resource_utilisation(
+        resource_capacities={"treatment_begins": 3},
+        limit_duration=20,
+        highlight_bands=[{"upper": 0.1, "colour": "green", "label": "idle"}],
+    )
+
+    assert any(t.name == "idle" for t in fig.data)
+
+
+def _two_units_sharing_a_resource_id_logger():
+    """One run, two entities using disjoint units (never overlapping in time)
+    that nonetheless share resource_id=1 - only unique_resource_id tells them
+    apart."""
+    logger = EventLogger(run_number=1)
+    logger.log_resource_use_start(
+        entity_id=1,
+        resource_id=1,
+        unique_resource_id="a_1",
+        time=0.0,
+        event="step_begins",
+    )
+    logger.log_resource_use_end(
+        entity_id=1,
+        resource_id=1,
+        unique_resource_id="a_1",
+        time=10.0,
+        event="step_ends",
+    )
+    logger.log_resource_use_start(
+        entity_id=2,
+        resource_id=1,
+        unique_resource_id="b_1",
+        time=20.0,
+        event="step_begins",
+    )
+    logger.log_resource_use_end(
+        entity_id=2,
+        resource_id=1,
+        unique_resource_id="b_1",
+        time=30.0,
+        event="step_ends",
+    )
+    return logger
+
+
+def test_plot_resource_utilisation_resource_col_name_auto_prefers_unique_resource_id():
+    """`resource_col_name=None` (the default) draws one bar per
+    unique_resource_id whenever the log has that column, rather than
+    collapsing units that happen to share a resource_id."""
+    trial = TrialLogger([_two_units_sharing_a_resource_id_logger()])
+
+    fig = trial.plot_resource_utilisation(by="resource", limit_duration=40)
+
+    assert set(fig.data[0].x) == {"a_1", "b_1"}
+
+
+def test_plot_resource_utilisation_resource_col_name_explicit_override_still_works():
+    trial = TrialLogger([_two_units_sharing_a_resource_id_logger()])
+
+    fig = trial.plot_resource_utilisation(
+        by="resource", resource_col_name="resource_id", limit_duration=40
+    )
+
+    assert fig.data[0].x == ("1",)
+
+
+def test_plot_resource_utilisation_over_time_is_passed_through(resource_use_loggers):
+    """Reaches `vidigi.plots.plot_resource_utilisation_over_time`, and
+    reproduces the hand-computed occupancy curve from the fixture's
+    docstring."""
+    trial = TrialLogger(resource_use_loggers)
+
+    fig = trial.plot_resource_utilisation_over_time(
+        every_x_time_units=5, limit_duration=20
+    )
+
+    run_traces = {trace.name: trace for trace in fig.data if trace.name in ("1", "2")}
+    assert list(run_traces["1"].y) == [2, 1, 0, 0, 0]
+    assert list(run_traces["2"].y) == [1, 2, 2, 1, 0]
+    assert all(trace.line.shape == "hv" for trace in fig.data)
+
+
+def test_plot_resource_utilisation_over_time_highlight_bands_is_passed_through(
+    resource_use_loggers,
+):
+    trial = TrialLogger(resource_use_loggers)
+
+    fig = trial.plot_resource_utilisation_over_time(
+        every_x_time_units=5,
+        limit_duration=20,
+        highlight_bands=[{"upper": 1, "colour": "green", "label": "quiet"}],
+    )
+
+    assert any(t.name == "quiet" for t in fig.data)
+
+
+def test_plot_resource_utilisation_over_time_resource_col_name_is_passed_through():
+    """`resource_col_name` reaches `vidigi.plots.plot_resource_utilisation_over_time`
+    - previously not exposed on this method at all, with no `**kwargs` escape
+    hatch either. Proven by pointing it at a nonexistent column and seeing the
+    underlying missing-column fallback warning name it."""
+    logger = EventLogger(run_number=1)
+    logger.log_resource_use_start(
+        entity_id=1, resource_id=1, time=0.0, event="step_begins"
+    )
+    logger.log_resource_use_end(
+        entity_id=1, resource_id=1, time=10.0, event="step_ends"
+    )
+    trial = TrialLogger([logger])
+
+    with pytest.warns(UserWarning, match="totally_not_a_column"):
+        trial.plot_resource_utilisation_over_time(
+            resource_col_name="totally_not_a_column", limit_duration=20
+        )
+
+
+def test_plot_resource_utilisation_over_time_resource_col_name_auto_does_not_warn_when_absent(
+    resource_use_loggers,
+):
+    """No `unique_resource_id` column - `None` must resolve to plain
+    `resource_id`, which is genuinely present, rather than triggering the
+    missing-column fallback warning."""
+    trial = TrialLogger(resource_use_loggers)
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        trial.plot_resource_utilisation_over_time(limit_duration=20)
+
+    assert not any(
+        "missing from every resource_use row" in str(w.message) for w in caught
+    )
+
+
+def test_plot_warm_up_diagnostic_is_passed_through(resource_use_loggers):
+    """Reaches `vidigi.plots.plot_warm_up_diagnostic`, and reproduces the
+    hand-computed occupancy curve from the fixture's docstring.
+
+    `limit_duration=10` is deliberately shorter than the fixture's natural
+    log end (t=20) - passing 20 here would coincidentally match what
+    `resource_occupancy_over_time`'s own default resolves to if
+    `limit_duration` were silently dropped on the way through, so that value
+    would not prove the passthrough works. Snapshots are [0, 5, 10]; both
+    runs' bouts are clipped to the window and so end exactly *at* t=10 -
+    counted as free there under the half-open `[start, end)` convention -
+    giving ensemble [1.5, 1.5, 0.0]. `window=1` welch then drops the last
+    snapshot (output length `3 - 1 = 2`): `[1.5, mean(1.5, 1.5, 0.0)]` =
+    `[1.5, 1.0]`. Verified by running the call directly, not by hand alone -
+    an earlier version of this test had the wrong expected values because it
+    missed the boundary-clipping effect."""
+    trial = TrialLogger(resource_use_loggers)
+
+    fig = trial.plot_warm_up_diagnostic(
+        series="occupancy",
+        event="treatment_begins",
+        every_x_time_units=5,
+        limit_duration=10,
+        windows=(1,),
+        show_ensemble=False,
+    )
+
+    trace = fig.data[0]
+    assert trace.name == "window=1"
+    assert list(trace.x) == [0, 5]
+    assert list(trace.y) == pytest.approx([1.5, 1.0])
+
+
+def test_plot_warm_up_diagnostic_duration_series_and_cumulative_method_are_passed_through():
+    """`series="duration"` and `method="cumulative"` are the two `plot_warm_up_diagnostic`
+    options the occupancy-based test above never exercises. Two runs,
+    durations [4, 2, 8] and [6, 4, 2] -> ensemble [5, 3, 5] -> cumulative
+    mean [5.0, 4.0, 13/3] (hand-computed and independently verified, same
+    fixture shape as `test_plots_warm_up_diagnostic.py::_duration_loggers`)."""
+    run1 = EventLogger(run_number=1)
+    run2 = EventLogger(run_number=2)
+    for logger, durations in ((run1, [4, 2, 8]), (run2, [6, 4, 2])):
+        for i, duration in enumerate(durations):
+            logger.log_arrival(entity_id=i, time=float(i))
+            logger.log_departure(entity_id=i, time=float(i) + duration)
+    trial = TrialLogger([run1, run2])
+
+    fig = trial.plot_warm_up_diagnostic(
+        series="duration",
+        first_event="arrival",
+        second_event="depart",
+        method="cumulative",
+        show_ensemble=False,
+    )
+
+    trace = fig.data[0]
+    assert trace.name == "cumulative mean"
+    assert list(trace.y) == pytest.approx([5.0, 4.0, 13 / 3])
+
+
+def test_plot_warm_up_diagnostic_show_runs_is_passed_through(resource_use_loggers):
+    trial = TrialLogger(resource_use_loggers)
+
+    fig = trial.plot_warm_up_diagnostic(
+        series="occupancy",
+        event="treatment_begins",
+        every_x_time_units=5,
+        limit_duration=20,
+        windows=(1,),
+        show_ensemble=False,
+        show_runs=True,
+    )
+
+    run_traces = [trace for trace in fig.data if trace.name == "individual runs"]
+    assert [list(t.y) for t in run_traces] == [[2, 1, 0, 0, 0], [1, 2, 2, 1, 0]]
+
+
+def test_plot_warm_up_diagnostic_match_kwarg_reaches_event_durations(
+    rework_loop_logger,
+):
+    """`match=` isn't a named parameter on `plot_warm_up_diagnostic` - it
+    reaches `vidigi.analysis.event_durations` purely via `**kwargs`, the same
+    path `run_col_name` would take. Entity 1 hits `assessment`/`treated`
+    twice (see `rework_loop_logger`); `match="occurrence"` must produce two
+    observations instead of the one `match="first"` (the default) would."""
+    trial = TrialLogger([rework_loop_logger])
+
+    fig = trial.plot_warm_up_diagnostic(
+        series="duration",
+        first_event="assessment",
+        second_event="treated",
+        match="occurrence",
+        method="cumulative",
+        show_ensemble=False,
+    )
+
+    assert len(fig.data[0].y) == 2
+
+
+# --------------------------------------------------------------------------- #
+# get_replication_precision / plot_replication_analysis
+# --------------------------------------------------------------------------- #
+
+
+def test_get_replication_precision_is_passed_through(unequal_run_loggers):
+    """Reaches `vidigi.analysis.replication_precision` via `event_durations`
+    and `replication_means`, and reproduces `unequal_run_loggers`'s own
+    hand-computed cumulative means [4.0, 4.5, 6.0]."""
+    trial = TrialLogger(unequal_run_loggers)
+
+    result = trial.get_replication_precision("arrival", "depart")
+
+    assert list(result["n_replications"]) == [1, 2, 3]
+    assert result["cumulative_mean"].tolist() == pytest.approx([4.0, 4.5, 6.0])
+    assert result["half_width"].iloc[2] == pytest.approx(6.5724, abs=1e-3)
+
+
+def test_get_replication_precision_ci_level_is_passed_through(unequal_run_loggers):
+    trial = TrialLogger(unequal_run_loggers)
+
+    result_95 = trial.get_replication_precision("arrival", "depart")
+    result_90 = trial.get_replication_precision("arrival", "depart", ci_level=0.90)
+
+    assert result_90["half_width"].iloc[2] != pytest.approx(
+        result_95["half_width"].iloc[2], abs=1e-4
+    )
+    # t_0.95,2 = 2.919986 (published table) vs t_0.975,2 = 4.302653: narrower.
+    assert result_90["half_width"].iloc[2] < result_95["half_width"].iloc[2]
+
+
+def test_get_replication_precision_deviation_threshold_is_passed_through():
+    """Every run identical -> deviation is 0.0 from k=2 onward, so a generous
+    threshold recommends k=2 while an impossible one (negative - deviation can
+    never be negative) never converges."""
+    loggers = [EventLogger(run_number=r) for r in (1, 2, 3)]
+    for logger in loggers:
+        logger.log_arrival(entity_id=1, time=0.0)
+        logger.log_departure(entity_id=1, time=5.0)
+    trial = TrialLogger(loggers)
+
+    generous = trial.get_replication_precision(
+        "arrival", "depart", deviation_threshold=0.5
+    )
+    impossible = trial.get_replication_precision(
+        "arrival", "depart", deviation_threshold=-0.01
+    )
+
+    assert generous["stays_below_threshold"].any()
+    assert not impossible["stays_below_threshold"].any()
+
+
+def test_get_replication_precision_no_complete_pairs_raises():
+    run1 = EventLogger(run_number=1)
+    run1.log_arrival(entity_id=1, time=0.0)  # never departs
+    run2 = EventLogger(run_number=2)
+    run2.log_departure(entity_id=1, time=5.0)  # never arrived
+    trial = TrialLogger([run1, run2])
+
+    with pytest.raises(ValueError, match="No complete"):
+        trial.get_replication_precision("arrival", "depart")
+
+
+def test_get_replication_precision_what_is_passed_through():
+    """`what="max"` vs the default `"mean"` must reach `replication_means` -
+    a run with internal duration variation is needed, since a constant-per-run
+    fixture like `unequal_run_loggers` can't distinguish the two."""
+    logger = EventLogger(run_number=1)
+    logger.log_arrival(entity_id=1, time=0.0)
+    logger.log_departure(entity_id=1, time=2.0)
+    logger.log_arrival(entity_id=2, time=0.0)
+    logger.log_departure(entity_id=2, time=8.0)
+    logger2 = EventLogger(run_number=2)
+    logger2.log_arrival(entity_id=1, time=0.0)
+    logger2.log_departure(entity_id=1, time=10.0)
+    trial = TrialLogger([logger, logger2])
+
+    mean_result = trial.get_replication_precision("arrival", "depart", what="mean")
+    max_result = trial.get_replication_precision("arrival", "depart", what="max")
+
+    assert mean_result["cumulative_mean"].tolist() == pytest.approx([5.0, 7.5])
+    assert max_result["cumulative_mean"].tolist() == pytest.approx([8.0, 9.0])
+
+
+def test_get_replication_precision_match_kwarg_reaches_event_durations():
+    """`match=` reaches `vidigi.analysis.event_durations` via `**kwargs` -
+    `match="occurrence"` must give each run two observations for its repeated
+    `assessment`/`treated` pair (mean per run = mean(4, 10) = 7.0) instead of
+    the single observation `match="first"` (the default) would give (4.0)."""
+    loggers = []
+    for run_number in (1, 2):
+        logger = EventLogger(run_number=run_number)
+        logger.log_custom_event(
+            entity_id=1, event_type="milestone", event="assessment", time=1.0
+        )
+        logger.log_custom_event(
+            entity_id=1, event_type="milestone", event="treated", time=5.0
+        )
+        logger.log_custom_event(
+            entity_id=1, event_type="milestone", event="assessment", time=20.0
+        )
+        logger.log_custom_event(
+            entity_id=1, event_type="milestone", event="treated", time=30.0
+        )
+        loggers.append(logger)
+    trial = TrialLogger(loggers)
+
+    first_result = trial.get_replication_precision(
+        "assessment", "treated", match="first"
+    )
+    occurrence_result = trial.get_replication_precision(
+        "assessment", "treated", match="occurrence"
+    )
+
+    assert first_result["cumulative_mean"].tolist() == pytest.approx([4.0, 4.0])
+    assert occurrence_result["cumulative_mean"].tolist() == pytest.approx([7.0, 7.0])
+
+
+def test_get_replication_precision_succeeds_at_a_single_replication(two_run_loggers):
+    """Unlike `plot_replication_analysis`, `get_replication_precision` has no
+    `n >= 2` guard - it returns the same graceful one-row, NaN-spread table
+    `vidigi.analysis.replication_precision` gives for any single-replication
+    input, rather than raising. This pins that as intentional, not an
+    oversight."""
+    trial = TrialLogger([two_run_loggers[0]])
+
+    result = trial.get_replication_precision("arrival", "depart")
+
+    assert len(result) == 1
+    assert result.loc[0, "cumulative_mean"] == pytest.approx(5.0)
+    assert pd.isna(result.loc[0, "half_width"])
+
+
+def test_plot_replication_analysis_is_passed_through(unequal_run_loggers):
+    trial = TrialLogger(unequal_run_loggers)
+
+    fig = trial.plot_replication_analysis("arrival", "depart")
+
+    assert isinstance(fig, go.Figure)
+    mean_trace = fig.data[1]
+    assert mean_trace.name == "cumulative mean"
+    assert list(mean_trace.y) == pytest.approx([4.0, 4.5, 6.0])
+
+
+def test_plot_replication_analysis_show_deviation_is_passed_through(
+    unequal_run_loggers,
+):
+    trial = TrialLogger(unequal_run_loggers)
+
+    with_deviation = trial.plot_replication_analysis("arrival", "depart")
+    without_deviation = trial.plot_replication_analysis(
+        "arrival", "depart", show_deviation=False
+    )
+
+    assert "deviation" in [t.name for t in with_deviation.data]
+    assert "deviation" not in [t.name for t in without_deviation.data]
+
+
+def test_plot_replication_analysis_match_kwarg_reaches_event_durations():
+    """`match=` reaches `vidigi.analysis.event_durations` the same way it does
+    for `plot_warm_up_diagnostic` above - `match="occurrence"` must give each
+    run two observations for its repeated `assessment`/`treated` pair
+    (mean per run = mean(4, 10) = 7.0) instead of the single observation
+    `match="first"` (the default) would give (duration 4.0 per run)."""
+    loggers = []
+    for run_number in (1, 2):
+        logger = EventLogger(run_number=run_number)
+        logger.log_custom_event(
+            entity_id=1, event_type="milestone", event="assessment", time=1.0
+        )
+        logger.log_custom_event(
+            entity_id=1, event_type="milestone", event="treated", time=5.0
+        )
+        logger.log_custom_event(
+            entity_id=1, event_type="milestone", event="assessment", time=20.0
+        )
+        logger.log_custom_event(
+            entity_id=1, event_type="milestone", event="treated", time=30.0
+        )
+        loggers.append(logger)
+    trial = TrialLogger(loggers)
+
+    first_fig = trial.plot_replication_analysis("assessment", "treated", match="first")
+    occurrence_fig = trial.plot_replication_analysis(
+        "assessment", "treated", match="occurrence"
+    )
+
+    assert list(first_fig.data[1].y) == pytest.approx([4.0, 4.0])
+    assert list(occurrence_fig.data[1].y) == pytest.approx([7.0, 7.0])
+
+
+# --------------------------------------------------------------------------- #
+# get_entity_metric_by_arrival / plot_metric_vs_arrival_time
+# --------------------------------------------------------------------------- #
+
+
+def test_get_entity_metric_by_arrival_is_passed_through(unequal_run_loggers):
+    trial = TrialLogger(unequal_run_loggers)
+
+    result = trial.get_entity_metric_by_arrival("arrival", "depart")
+
+    assert list(result.columns) == [
+        "entity_id",
+        "run_number",
+        "pathway",
+        "occurrence",
+        "first_time",
+        "second_time",
+        "duration",
+        "arrival_time",
+    ]
+    assert list(result["duration"]) == pytest.approx([4] * 2 + [5] * 4 + [9] * 2)
+
+
+def test_get_entity_metric_by_arrival_arrival_event_is_passed_through():
+    """`arrival_event="assessment"` must reach `entity_metric_by_arrival` -
+    `rework_loop_logger`'s own event set has no 'arrival' event at all, so
+    the default would raise if this kwarg were silently dropped."""
+    logger = EventLogger(run_number=1)
+    logger.log_custom_event(
+        entity_id=1, event_type="milestone", event="assessment", time=1.0
+    )
+    logger.log_custom_event(
+        entity_id=1, event_type="milestone", event="treated", time=5.0
+    )
+    trial = TrialLogger([logger])
+
+    result = trial.get_entity_metric_by_arrival(
+        "assessment", "treated", arrival_event="assessment"
+    )
+
+    assert result["arrival_time"].iloc[0] == pytest.approx(1.0)
+
+
+def test_plot_metric_vs_arrival_time_is_passed_through(unequal_run_loggers):
+    trial = TrialLogger(unequal_run_loggers)
+
+    fig = trial.plot_metric_vs_arrival_time("arrival", "depart")
+
+    assert isinstance(fig, go.Figure)
+    # Every entity arrives at t=0.0, so the secondary sort key (entity_id)
+    # decides order: entity 1's three runs (4, 5, 9), then entity 2's (4, 5,
+    # 9), then run 2's extra entities 3 and 4 (5, 5).
+    assert list(fig.data[0].y) == pytest.approx([4, 5, 9, 4, 5, 9, 5, 5])
+
+
+def test_plot_metric_vs_arrival_time_highlight_bands_is_passed_through(
+    unequal_run_loggers,
+):
+    trial = TrialLogger(unequal_run_loggers)
+
+    fig = trial.plot_metric_vs_arrival_time(
+        "arrival",
+        "depart",
+        highlight_bands=[{"upper": 4, "colour": "green", "label": "fast"}],
+    )
+
+    assert any(t.name == "fast" for t in fig.data)
+
+
+def test_plot_metric_vs_arrival_time_colour_by_is_passed_through(unequal_run_loggers):
+    trial = TrialLogger(unequal_run_loggers)
+
+    fig = trial.plot_metric_vs_arrival_time("arrival", "depart", colour_by="run")
+
+    by_name = {trace.name: sorted(trace.y) for trace in fig.data}
+    assert by_name == {"1": [4.0, 4.0], "2": [5.0, 5.0, 5.0, 5.0], "3": [9.0, 9.0]}
+
+
+def test_plot_metric_vs_arrival_time_rolling_window_is_passed_through():
+    logger = EventLogger(run_number=1)
+    for i, (arrival, duration) in enumerate(
+        [(0.0, 10.0), (2.0, 20.0), (4.0, 30.0)], start=1
+    ):
+        logger.log_arrival(entity_id=i, time=arrival)
+        logger.log_departure(entity_id=i, time=arrival + duration)
+    trial = TrialLogger([logger])
+
+    no_trend = trial.plot_metric_vs_arrival_time("arrival", "depart")
+    with_trend = trial.plot_metric_vs_arrival_time(
+        "arrival", "depart", rolling_window=1
+    )
+
+    assert "rolling mean" not in [t.name for t in no_trend.data]
+    trend = [t for t in with_trend.data if t.name == "rolling mean"][0]
+    assert list(trend.y) == pytest.approx([15.0, 20.0, 25.0])
+
+
+def test_plot_metric_vs_arrival_time_rolling_time_is_passed_through():
+    logger = EventLogger(run_number=1)
+    for i, (arrival, duration) in enumerate(
+        [(0.0, 10.0), (2.0, 20.0), (4.0, 30.0)], start=1
+    ):
+        logger.log_arrival(entity_id=i, time=arrival)
+        logger.log_departure(entity_id=i, time=arrival + duration)
+    trial = TrialLogger([logger])
+
+    fig = trial.plot_metric_vs_arrival_time("arrival", "depart", rolling_time=2.5)
+
+    trend = [t for t in fig.data if t.name == "rolling mean"][0]
+    assert list(trend.y) == pytest.approx([15.0, 20.0, 25.0])
+
+
+def test_plot_metric_vs_arrival_time_warm_up_is_passed_through():
+    logger = EventLogger(run_number=1)
+    for i, (arrival, duration) in enumerate([(0.0, 10.0), (10.0, 20.0)], start=1):
+        logger.log_arrival(entity_id=i, time=arrival)
+        logger.log_departure(entity_id=i, time=arrival + duration)
+    trial = TrialLogger([logger])
+
+    unfiltered = trial.plot_metric_vs_arrival_time("arrival", "depart")
+    filtered = trial.plot_metric_vs_arrival_time("arrival", "depart", warm_up=5)
+
+    assert list(unfiltered.data[0].y) == pytest.approx([10.0, 20.0])
+    assert list(filtered.data[0].y) == pytest.approx([20.0])
+
+
+# --------------------------------------------------------------------------- #
+# Attached scenario / label (issue #154)
+# --------------------------------------------------------------------------- #
+
+
+def _treatment_scenario_route_b():
+    """Route-B capacity resolution args for the ``resource_use_loggers`` fixture."""
+    return (
+        {"n_treatment": 3},
+        {"treatment_begins": "n_treatment"},
+    )
+
+
+def test_scenario_and_label_are_stored_and_surfaced(two_run_loggers):
+    scenario = {"n_cubicles": 5}
+    trial = TrialLogger(two_run_loggers, scenario=scenario, label="base case")
+
+    assert trial.scenario is scenario
+    assert trial.label == "base case"
+    summary = trial.summary()
+    assert summary["label"] == "base case"
+    assert summary["scenario_attached"] is True
+
+
+def test_scenario_and_label_are_inherited_from_event_loggers():
+    scenario = {"n_cubicles": 5}
+    logs = [
+        EventLogger(run_number=n, scenario=scenario, label="from runs") for n in (1, 2)
+    ]
+    for logger in logs:
+        logger.log_arrival(entity_id=1, time=0.0)
+        logger.log_departure(entity_id=1, time=5.0)
+
+    trial = TrialLogger(logs)
+
+    assert trial.scenario is scenario
+    assert trial.label == "from runs"
+
+
+def test_explicit_scenario_and_label_override_inherited():
+    logs = [EventLogger(run_number=n, scenario={"a": 1}, label="runs") for n in (1, 2)]
+    for logger in logs:
+        logger.log_arrival(entity_id=1, time=0.0)
+        logger.log_departure(entity_id=1, time=5.0)
+
+    override = {"b": 2}
+    trial = TrialLogger(logs, scenario=override, label="explicit")
+
+    assert trial.scenario is override
+    assert trial.label == "explicit"
+
+
+def test_disagreeing_scenarios_between_runs_warn_and_take_the_first():
+    logs = []
+    for n, scen in ((1, {"a": 1}), (2, {"a": 2})):
+        logger = EventLogger(run_number=n, scenario=scen)
+        logger.log_arrival(entity_id=1, time=0.0)
+        logger.log_departure(entity_id=1, time=5.0)
+        logs.append(logger)
+
+    with pytest.warns(UserWarning, match="more than one distinct `scenario`"):
+        trial = TrialLogger(logs)
+
+    assert trial.scenario == {"a": 1}
+
+
+def test_add_log_with_conflicting_scenario_warns_but_leaves_trial_scenario(
+    single_run_logger,
+):
+    trial = TrialLogger(scenario={"a": 1})
+    single_run_logger.scenario = {"a": 2}
+
+    with pytest.warns(UserWarning, match="different\\s+`scenario`"):
+        trial.add_log(single_run_logger)
+
+    assert trial.scenario == {"a": 1}
+
+
+def test_resource_utilisation_defaults_scenario_from_the_trial(resource_use_loggers):
+    scenario, resource_map = _treatment_scenario_route_b()
+
+    attached = TrialLogger(resource_use_loggers, scenario=scenario)
+    from_attached = attached.get_resource_utilisation(
+        by="step", resource_map=resource_map, limit_duration=20
+    )
+
+    plain = TrialLogger(resource_use_loggers)
+    passed_explicitly = plain.get_resource_utilisation(
+        by="step", scenario=scenario, resource_map=resource_map, limit_duration=20
+    )
+
+    pd.testing.assert_frame_equal(from_attached, passed_explicitly)
+    # The whole point: utilisation is resolved, not NaN.
+    assert from_attached["utilisation"].notna().all()
+    run1 = from_attached[from_attached["run_number"] == 1]
+    assert float(run1["utilisation"].iloc[0]) == pytest.approx(0.25)
+
+
+def test_explicit_scenario_still_beats_the_attached_one(resource_use_loggers):
+    attached = TrialLogger(resource_use_loggers, scenario={"n_treatment": 3})
+    _, resource_map = _treatment_scenario_route_b()
+
+    # An explicit (wrong-key) scenario should be used as-is and raise, proving the
+    # attached one was not silently substituted.
+    with pytest.raises(AttributeError, match="n_treatment"):
+        attached.get_resource_utilisation(
+            by="step",
+            scenario={"not_the_key": 3},
+            resource_map=resource_map,
+            limit_duration=20,
+        )
+
+
+# --------------------------------------------------------------------------- #
+# Pickling
+# --------------------------------------------------------------------------- #
+
+
+def test_pickle_round_trip_via_buffer(two_run_loggers):
+    trial = TrialLogger(two_run_loggers, scenario={"n_cubicles": 5}, label="base case")
+
+    buffer = io.BytesIO()
+    trial.to_pickle(buffer)
+    buffer.seek(0)
+    restored = TrialLogger.read_pickle(buffer)
+
+    assert restored.label == "base case"
+    assert restored.scenario == {"n_cubicles": 5}
+    assert restored.summary() == trial.summary()
+    pd.testing.assert_frame_equal(restored.to_dataframe(), trial.to_dataframe())
+
+
+def test_pickle_round_trip_via_path(two_run_loggers, tmp_path):
+    trial = TrialLogger(two_run_loggers)
+    path = tmp_path / "trial.pkl"
+
+    trial.to_pickle(path)
+    restored = TrialLogger.read_pickle(path)
+
+    pd.testing.assert_frame_equal(restored.to_dataframe(), trial.to_dataframe())
+
+
+def test_read_pickle_rejects_the_wrong_type(single_run_logger, tmp_path):
+    path = tmp_path / "logger.pkl"
+    single_run_logger.to_pickle(path)
+
+    with pytest.raises(TypeError, match="not a TrialLogger"):
+        TrialLogger.read_pickle(path)
+
+
+def test_to_pickle_with_an_unpicklable_scenario_names_the_scenario(two_run_loggers):
+    trial = TrialLogger(two_run_loggers, scenario={"f": lambda x: x})
+
+    # Pickling an unpicklable local lambda raises AttributeError on Python <=
+    # 3.13 and pickle.PicklingError on Python 3.14+ - a CPython pickle change,
+    # not a vidigi one. Either way, _pickle_to's wrapper re-raises `type(e)`
+    # with a message naming "scenario", which `match` below checks for.
+    with pytest.raises(
+        (TypeError, AttributeError, pickle.PicklingError), match="scenario"
+    ):
+        trial.to_pickle(io.BytesIO())
+
+
+# --------------------------------------------------------------------------- #
+# generate_dfg - trial-level process maps
+#
+# Three routes: the representative run (default), one chosen run
+# (`run_number=`), and one combined cross-run map (`across_runs=True`). The
+# cross-run figures are hand-computed from `branching_two_runs` below.
+# --------------------------------------------------------------------------- #
+
+
+def _edge_lines(source: str) -> list[str]:
+    return [ln for ln in source.splitlines() if "->" in ln]
+
+
+def test_generate_dfg_run_number_and_across_runs_are_mutually_exclusive(
+    two_run_loggers,
+):
+    with pytest.raises(ValueError, match="not both"):
+        TrialLogger(two_run_loggers).generate_dfg(run_number=1, across_runs=True)
+
+
+def test_generate_dfg_unknown_run_number_raises(two_run_loggers):
+    with pytest.raises(ValueError, match="not in this trial"):
+        TrialLogger(two_run_loggers).generate_dfg(run_number=99)
+
+
+def test_generate_dfg_run_number_delegates_to_that_eventlogger(two_run_loggers):
+    trial = TrialLogger(two_run_loggers)
+
+    via_trial = trial.generate_dfg(run_number=2)
+    via_logger = trial.get_log_by_run(2).generate_dfg()
+
+    # Same graph as calling generate_dfg on that run's own logger, plus an
+    # injected title naming the run.
+    assert _edge_lines(via_trial.source) == _edge_lines(via_logger.source)
+    assert 'label="Run 2 of 2"' in via_trial.source
+
+
+@pytest.fixture
+def spread_runs():
+    """Four runs whose mean time-in-system is 10, 20, 30, 100.
+
+    Median of [10, 20, 30, 100] is 25, so runs 2 and 3 are equidistant and
+    the representative run is the lower id, 2. The mean (40) would instead
+    pick run 3, and "farthest from the median" would pick run 4 - so this
+    fixture separates the correct rule from both plausible wrong ones.
+    """
+
+    def _run(run_number, span):
+        lg = EventLogger(run_number=run_number)
+        lg.log_arrival(entity_id=1, time=0.0)
+        lg.log_queue(entity_id=1, event="waiting", time=0.0)
+        lg.log_departure(entity_id=1, time=float(span))
+        return lg
+
+    return [_run(1, 10), _run(2, 20), _run(3, 30), _run(4, 100)]
+
+
+def test_representative_run_selection(spread_runs):
+    from vidigi.logging import _representative_run
+
+    assert _representative_run(TrialLogger(spread_runs).to_dataframe()) == 2
+
+
+def test_representative_run_uses_the_median_not_the_mean(spread_runs):
+    """Mutation guard: swapping `.median()` for `.mean()` in
+    `_representative_run` would return run 3 for this fixture."""
+    df = TrialLogger(spread_runs).to_dataframe()
+    span = df.groupby(["run_number", "entity_id"])["time"].agg(
+        lambda s: s.max() - s.min()
+    )
+    per_run = span.groupby("run_number").mean().sort_index()
+
+    assert (per_run - per_run.median()).abs().idxmin() == 2
+    assert (per_run - per_run.mean()).abs().idxmin() == 3  # the wrong answer
+
+
+def test_representative_run_single_run_trial(single_run_logger):
+    from vidigi.logging import _representative_run
+
+    assert _representative_run(TrialLogger([single_run_logger]).to_dataframe()) == 1
+
+
+def test_generate_dfg_default_is_the_representative_run(spread_runs):
+    g = TrialLogger(spread_runs).generate_dfg()
+    assert "Run 2 of 4 (representative" in g.source
+
+
+@pytest.fixture
+def branching_two_runs():
+    """Two runs, entity id reused, one branch in run 1.
+
+    Run 1: entity 1  arrival,waiting@0 -> treat@10 -> depart@20
+           entity 2  arrival,waiting@0 -> depart@50
+    Run 2: entity 1  arrival,waiting@0 -> treat@30 -> depart@40
+
+    Hand-computed cross-run tables (minutes, 2 runs):
+
+    edge                pooled freq  per-run freq   mean_time  per-run mean
+    ------------------  -----------  -------------  ---------  ------------
+    arrival -> waiting  3            [2, 1]         0.0        [0, 0]
+    treat -> depart     2            [1, 1]         10.0       [10, 10]
+    waiting -> depart   1            [1, 0]         50.0       [50]
+    waiting -> treat    2            [1, 1]         20.0       [10, 30]
+
+    node       total  per-run
+    ---------  -----  -------
+    arrival    3      [2, 1]
+    depart     3      [2, 1]
+    treat      2      [1, 1]
+    waiting    3      [2, 1]
+
+    Counts reported per replication are total / 2.
+    """
+
+    def _mk(run_number, journeys):
+        lg = EventLogger(run_number=run_number)
+        for entity_id, steps in journeys:
+            for event, t in steps:
+                if event == "arrival":
+                    lg.log_arrival(entity_id=entity_id, time=float(t))
+                elif event == "depart":
+                    lg.log_departure(entity_id=entity_id, time=float(t))
+                elif event == "treat":
+                    lg.log_resource_use_start(
+                        entity_id=entity_id, resource_id=1, time=float(t), event="treat"
+                    )
+                else:
+                    lg.log_queue(entity_id=entity_id, event=event, time=float(t))
+        return lg
+
+    run1 = _mk(
+        1,
+        [
+            (1, [("arrival", 0), ("waiting", 0), ("treat", 10), ("depart", 20)]),
+            (2, [("arrival", 0), ("waiting", 0), ("depart", 50)]),
+        ],
+    )
+    run2 = _mk(
+        2,
+        [(1, [("arrival", 0), ("waiting", 0), ("treat", 30), ("depart", 40)])],
+    )
+    return [run1, run2]
+
+
+def test_dfg_across_runs_tables_are_hand_computed(branching_two_runs):
+    from vidigi.logging import _dfg_across_runs
+
+    nodes, edges = _dfg_across_runs(
+        TrialLogger(branching_two_runs).to_dataframe(),
+        time_unit="minutes",
+        warm_up=None,
+        occupancy_metrics=False,
+        occupancy_snapshot_interval=1,
+    )
+
+    got_edges = edges.set_index(["source", "target"])[
+        [
+            "frequency",
+            "probability",
+            "frequency_run_min",
+            "frequency_run_max",
+            "mean_time",
+            "mean_time_run_min",
+            "mean_time_run_max",
+        ]
+    ]
+    expected_edges = pd.DataFrame(
+        {
+            "frequency": [1.5, 1.0, 0.5, 1.0],
+            "probability": [1.0, 1.0, 1 / 3, 2 / 3],
+            "frequency_run_min": [1.0, 1.0, 0.0, 1.0],
+            "frequency_run_max": [2.0, 1.0, 1.0, 1.0],
+            "mean_time": [0.0, 10.0, 50.0, 20.0],
+            "mean_time_run_min": [0.0, 10.0, 50.0, 10.0],
+            "mean_time_run_max": [0.0, 10.0, 50.0, 30.0],
+        },
+        index=pd.MultiIndex.from_tuples(
+            [
+                ("arrival", "waiting"),
+                ("treat", "depart"),
+                ("waiting", "depart"),
+                ("waiting", "treat"),
+            ],
+            names=["source", "target"],
+        ),
+    )
+    pd.testing.assert_frame_equal(got_edges, expected_edges)
+
+    got_nodes = nodes.set_index("activity")[["count", "count_run_min", "count_run_max"]]
+    expected_nodes = pd.DataFrame(
+        {
+            "count": [1.5, 1.5, 1.0, 1.5],
+            "count_run_min": [1.0, 1.0, 1.0, 1.0],
+            "count_run_max": [2.0, 2.0, 1.0, 2.0],
+        },
+        index=pd.Index(["arrival", "depart", "treat", "waiting"], name="activity"),
+    )
+    pd.testing.assert_frame_equal(got_nodes, expected_nodes)
+
+
+def test_dfg_across_runs_probabilities_sum_to_one_per_source(branching_two_runs):
+    from vidigi.logging import _dfg_across_runs
+
+    _, edges = _dfg_across_runs(
+        TrialLogger(branching_two_runs).to_dataframe(),
+        time_unit="minutes",
+        warm_up=None,
+        occupancy_metrics=False,
+        occupancy_snapshot_interval=1,
+    )
+    per_source = edges.groupby("source")["probability"].sum()
+    assert per_source.round(9).eq(1.0).all()
+
+
+def test_generate_dfg_across_runs_warns_without_warm_up(branching_two_runs):
+    with pytest.warns(UserWarning, match="no warm-up period"):
+        TrialLogger(branching_two_runs).generate_dfg(across_runs=True)
+
+
+def test_generate_dfg_across_runs_no_warning_with_warm_up(branching_two_runs):
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        TrialLogger(branching_two_runs).generate_dfg(across_runs=True, warm_up=1)
+
+
+def test_generate_dfg_across_runs_graphviz_carries_the_caveat_and_ranges(
+    branching_two_runs,
+):
+    g = TrialLogger(branching_two_runs).generate_dfg(across_runs=True, warm_up=1)
+
+    assert "replications combined" in g.source
+    assert "simulation output, not observed data" in g.source
+    assert "(1–2)" in g.source  # a between-run count range
+
+
+def test_generate_dfg_across_runs_occupancy_averages_over_runs(
+    branching_two_runs, monkeypatch
+):
+    """`occupancy_metrics=True` must ask `activity_occupancy_stats` for the
+    per-replication (`across_runs="average"`) figures, not the pool."""
+    seen = {}
+    import vidigi.logging as logging_module
+
+    real = logging_module.activity_occupancy_stats
+
+    def spy(event_log, **kwargs):
+        seen["across_runs"] = kwargs.get("across_runs")
+        return real(event_log, **kwargs)
+
+    monkeypatch.setattr(logging_module, "activity_occupancy_stats", spy)
+
+    TrialLogger(branching_two_runs).generate_dfg(
+        across_runs=True, warm_up=1, occupancy_metrics=True
+    )
+
+    assert seen["across_runs"] == "average"

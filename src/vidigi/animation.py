@@ -1,15 +1,75 @@
+import base64
 import datetime as dt
+import mimetypes
 import time
+import warnings
+from collections.abc import Callable, Sequence
+from pathlib import Path
+from typing import Literal, TypeAlias
+
+import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from vidigi.prep import reshape_for_animations, generate_animation_df
-from vidigi.utils import _enforce_int_params
-import numpy as np
-from typing import Optional
-import base64
-import mimetypes
-from pathlib import Path
+from plotly.basedatatypes import BaseTraceType
+from plotly.subplots import make_subplots
+
+from vidigi.prep import (
+    SnapshotAlignment,
+    generate_animation_df,
+    reshape_for_animations,
+)
+from vidigi.utils import (
+    ICON_FLIP_MARKER,
+    PHANTOM_ICON,
+    QueueDirection,
+    _check_one_arrival_per_entity,
+    _check_single_run,
+    _coerce_event_log,
+    _enforce_int_params,
+    _is_image_source,
+    _resolve_direction_sign,
+    _resolve_icon_flip,
+    _resolve_icon_font,
+    _resolve_scenario_value,
+    _resource_map_from_event_position_df,
+    _warn_on_event_positions_outside_range,
+    inject_icon_flip_css,
+    inject_icon_font_css,
+)
+
+# Which plotly API draws the animation. Several spellings of each are accepted, and
+# matching is case-insensitive; the canonical forms are listed first. Editors offer
+# these as completions, but the values are still validated at runtime, since
+# annotations are not enforced.
+AnimationBackend: TypeAlias = Literal[
+    "express",
+    "px",
+    "plotly express",
+    "go",
+    "graph objects",
+    "plotly graph objects",
+    "plotly go",
+]
+
+# The real-world duration of one simulation time unit, used to turn snapshot times
+# into datetimes. Each is also accepted in the singular.
+SimulationTimeUnit: TypeAlias = Literal[
+    "seconds",
+    "second",
+    "minutes",
+    "minute",
+    "hours",
+    "hour",
+    "days",
+    "day",
+    "weeks",
+    "week",
+    "months",
+    "month",
+    "years",
+    "year",
+]
 
 
 def process_background_image_path(source):
@@ -50,37 +110,336 @@ def process_background_image_path(source):
     return f"data:{mime};base64,{b64}"
 
 
+# Baseline figure margins (px). Auto-layout only ever grows a side past its
+# floor - it never shrinks one - so a plain animation keeps Plotly's defaults.
+_MARGIN_FLOORS = {"l": 80, "r": 80, "t": 100, "b": 80}
+# Ceilings, so a pathological label or a tiny responsive figure can't hand the
+# whole canvas over to the margin.
+_MARGIN_CAPS = {"l": 400, "r": 450, "t": 250, "b": 300}
+
+
+def _reconcile_grouped_traces(fig: go.Figure, categories) -> None:
+    """Guarantee exactly one trace per `color=` category, in a fixed order, in
+    `fig.data` and every frame.
+
+    Plotly Express only creates a trace for a category in the frames where it
+    actually has at least one point (confirmed on plotly.js 6.7 and 5.12) - a
+    category absent from a given frame (no `entity_colour_by` value of that kind
+    present at that moment - including the very first frame, "frame 0" being what
+    `fig.data` itself represents) is silently dropped from that frame's trace list
+    entirely, rather than getting an empty placeholder the way an individual
+    entity does. A category that never appears in the first frame would be
+    missing from the animation outright; one only some entities have would wink
+    in and out as they arrive and depart. This finds one real occurrence of each
+    category (wherever it happens to exist) to carry its colour and legend
+    grouping over, and fills in an empty placeholder trace - the same idiom the
+    `go` backend already uses per entity - everywhere else.
+    """
+
+    def _find_template(category):
+        for trace in fig.data:
+            if trace.name == category:
+                return trace
+        for frame in fig.frames or ():
+            for trace in frame.data:
+                if trace.name == category:
+                    return trace
+        return None
+
+    templates = {category: _find_template(category) for category in categories}
+
+    def _placeholder(category):
+        template = templates[category]
+        marker_color = template.marker.color if template is not None else None
+        return go.Scatter(
+            x=[None],
+            y=[None],
+            text=[None],
+            mode="markers+text",
+            name=category,
+            # Null x/y already draw nothing, so a trace-level `opacity=0` isn't
+            # needed for *this* frame - and setting one anyway is actively
+            # harmful: Plotly's frame animation only patches attributes a frame
+            # explicitly sets, and a real (non-placeholder) trace from px never
+            # sets a trace-level `opacity` (only `marker.opacity`, applied
+            # uniformly - see the `opacity=0` passed to `px.scatter` above). So a
+            # trace-level 0 here would never get reset back to 1, leaving a
+            # category invisible for the rest of the animation once it does have
+            # entities, if it happened to be empty in the frame that first
+            # created this placeholder.
+            marker=dict(opacity=0, color=marker_color),
+            legendgroup=category,
+            showlegend=getattr(template, "showlegend", None)
+            if template is not None
+            else None,
+        )
+
+    # `fig.data = (...)` only accepts a permutation of fig's *own* existing traces -
+    # new ones have to be added first, then the whole set reordered into place.
+    _base_names = {trace.name for trace in fig.data}
+    missing = [category for category in categories if category not in _base_names]
+    if missing:
+        fig.add_traces([_placeholder(category) for category in missing])
+    by_name = {trace.name: trace for trace in fig.data}
+    fig.data = tuple(by_name[category] for category in categories)
+
+    # `go.Frame.data` carries no such restriction - a frame is not a `BaseFigure`.
+    for frame in fig.frames or ():
+        existing = {trace.name: trace for trace in frame.data}
+        frame.data = tuple(
+            existing[category] if category in existing else _placeholder(category)
+            for category in categories
+        )
+
+
+def _disable_axis_clipping(fig: go.Figure) -> None:
+    """Stop Plotly clipping scatter markers/text at the axis line.
+
+    Stage labels are drawn past the rightmost event anchor and queue/resource
+    icons are drawn left of their anchor, so with the default
+    ``cliponaxis=True`` any content outside the data range is chopped at the
+    plot edge. Turning it off lets that content render into the figure margin
+    (which :func:`_overflow_margin_updates` enlarges to fit it).
+    """
+    for trace in fig.data:
+        if trace.type == "scatter":
+            trace.cliponaxis = False
+    for frame in fig.frames or ():
+        for trace in frame.data:
+            if getattr(trace, "type", None) == "scatter":
+                try:
+                    trace.cliponaxis = False
+                except (ValueError, TypeError):
+                    # Frame data stored as a bare dict - the base trace it
+                    # merges onto already carries cliponaxis=False.
+                    pass
+
+
+# Single-character strftime directives Python's datetime.strftime supports -
+# see https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes
+_VALID_STRFTIME_DIRECTIVES = set("aAwdbBmyYHIpMSfzZjUWcxXG%uV")
+
+
+def _validate_strftime_format(fmt: str) -> None:
+    """Raise ``ValueError`` if ``fmt`` contains an unrecognised strftime directive.
+
+    ``datetime.strftime`` delegates directive validation to the platform's C
+    library, which is not portable: an unrecognised directive like ``%Q``
+    raises on Windows (msvcrt) but is silently passed through unrendered by
+    glibc/macOS libc, so relying on ``strftime`` itself to catch a typo'd
+    ``time_display_units`` only works on some platforms. This checks the
+    format string directly instead, so behaviour is identical everywhere.
+    """
+    i = 0
+    while i < len(fmt):
+        if fmt[i] == "%":
+            if i + 1 >= len(fmt) or fmt[i + 1] not in _VALID_STRFTIME_DIRECTIVES:
+                raise ValueError(
+                    f"Invalid time_display_units option provided: "
+                    f"'{fmt}'. Valid options are: dhms, dhm, dh, d, m, y. "
+                    f"Alternatively, you can provide your own valid strftime format "
+                    f"(e.g. '%Y-%m-%d %H'). See the strftime documentation for more "
+                    f"details: https://strftime.org/"
+                )
+            i += 2
+        else:
+            i += 1
+
+
+def _series_min(df: pd.DataFrame | None, col: str) -> float | None:
+    """Smallest finite value in ``df[col]``, or ``None`` if unavailable."""
+    if df is None or col not in getattr(df, "columns", []) or not len(df):
+        return None
+    value = pd.to_numeric(df[col], errors="coerce").min()
+    return float(value) if pd.notna(value) else None
+
+
+def _series_max(df: pd.DataFrame | None, col: str) -> float | None:
+    """Largest finite value in ``df[col]``, or ``None`` if unavailable."""
+    if df is None or col not in getattr(df, "columns", []) or not len(df):
+        return None
+    value = pd.to_numeric(df[col], errors="coerce").max()
+    return float(value) if pd.notna(value) else None
+
+
+def _overflow_margin_updates(
+    *,
+    event_position_df: pd.DataFrame,
+    entity_df: pd.DataFrame | None,
+    resource_df: pd.DataFrame | None,
+    x_max: float,
+    y_max: float,
+    text_size: int,
+    plotly_width: int | None,
+    plotly_height: int | None,
+    display_stage_labels: bool,
+    queue_direction: QueueDirection = "left",
+    entity_resource_offset_y: float = -10,
+    stage_label_offset: float = 10,
+) -> dict:
+    """Figure-margin overrides that keep auto-positioned content on-canvas.
+
+    The data ranges are deliberately left untouched - widening them would
+    rescale every diagram built without ``override_x_max`` / ``override_y_max``
+    and shift alignment against background images. Instead the margin grows so
+    ``cliponaxis=False`` content has somewhere to go. Returns only the sides
+    that need to exceed :data:`_MARGIN_FLOORS`; an empty dict means "leave the
+    margins alone".
+    """
+    need = dict(_MARGIN_FLOORS)
+
+    ref_w = plotly_width or 700
+    ref_h = plotly_height or 900
+
+    # Stage labels are drawn just past the anchor - to the right of a
+    # left-building queue, to the left of a right-building one. Reserve room for
+    # the longest label on whichever side(s) it actually falls. ~0.55 em per
+    # character for a proportional font, plus the label offset and a little
+    # breathing room.
+    if display_stage_labels and "label" in getattr(event_position_df, "columns", []):
+        label_sign = _resolve_direction_sign(event_position_df, queue_direction)
+        left_lens = [
+            len(str(s))
+            for s, sign in zip(event_position_df["label"].to_list(), label_sign)
+            if sign > 0
+        ]
+        right_lens = [
+            len(str(s))
+            for s, sign in zip(event_position_df["label"].to_list(), label_sign)
+            if sign <= 0
+        ]
+        if right_lens:
+            need["r"] = max(right_lens) * 0.55 * text_size + stage_label_offset + 10
+        if left_lens:
+            need["l"] = max(
+                need["l"], max(left_lens) * 0.55 * text_size + stage_label_offset + 10
+            )
+
+    # Top: a label vertically centred on the topmost anchor overhangs upwards
+    # by about half its height.
+    if display_stage_labels:
+        need["t"] = max(need["t"], text_size * 1.5)
+
+    # Left / bottom: how far, in pixels, the furthest queue or resource icon
+    # sits outside [0, .]. Converted from data units via the axis span and a
+    # reference figure size (the real width is often unknown at build time).
+    x_candidates = [0.0]
+    for value in (
+        _series_min(entity_df, "x_final"),
+        _series_min(resource_df, "x_final"),
+    ):
+        if value is not None:
+            x_candidates.append(value)
+    x_min_data = min(x_candidates)
+
+    y_candidates = [0.0]
+    entity_y_min = _series_min(entity_df, "y_final")
+    if entity_y_min is not None:
+        y_candidates.append(entity_y_min)
+    resource_y_min = _series_min(resource_df, "y_final")
+    if resource_y_min is not None:
+        # resource icons are drawn `entity_resource_offset_y` (default -10) from
+        # their y_final
+        y_candidates.append(resource_y_min + entity_resource_offset_y)
+    y_min_data = min(y_candidates)
+
+    # Right: how far the furthest right-building queue or resource icon sits
+    # past x_max (the mirror of the left-margin logic below).
+    x_candidates_hi = [x_max]
+    for value in (
+        _series_max(entity_df, "x_final"),
+        _series_max(resource_df, "x_final"),
+    ):
+        if value is not None:
+            x_candidates_hi.append(value)
+    x_max_data = max(x_candidates_hi)
+
+    if x_max and x_min_data < 0:
+        need["l"] = max(need["l"], (-x_min_data) / (x_max - x_min_data) * ref_w + 20)
+    if y_max and y_min_data < 0:
+        need["b"] = (-y_min_data) / (y_max - y_min_data) * ref_h + 20
+    if x_max and x_max_data > x_max:
+        need["r"] = max(
+            need["r"],
+            (x_max_data - x_max) / (x_max_data - x_min_data) * ref_w + 20,
+        )
+
+    return {
+        side: int(min(value, _MARGIN_CAPS[side]))
+        for side, value in need.items()
+        if value > _MARGIN_FLOORS[side]
+    }
+
+
+def _warn_on_missing_scenario_resources(resource_attr_map: dict) -> None:
+    """Warn when events declare a resource but no ``scenario`` was passed.
+
+    Without a ``scenario`` the resource-availability icons cannot be drawn, and
+    the animation is otherwise silent about it - the stage simply shows no
+    resources. Called only when ``resource_attr_map`` is non-empty and
+    ``scenario is None``.
+    """
+    declared = ", ".join(
+        f"'{event}' -> '{attr}'" for event, attr in resource_attr_map.items()
+    )
+    warnings.warn(
+        f"{len(resource_attr_map)} event(s) declare a resource ({declared}) but "
+        "no `scenario` was passed, so no resource-availability icons will be "
+        "drawn for them.\n\n"
+        "Pass `scenario={'n_cubicles': 3, ...}` (a dict) or a scenario object "
+        "exposing those names, or remove the `resource` entries from "
+        "`event_position_df` if the icons are not wanted.",
+        UserWarning,
+        stacklevel=3,
+    )
+
+
 @_enforce_int_params(["plotly_height"])
 def generate_animation(
     full_entity_df_plus_pos: pd.DataFrame,
     event_position_df: pd.DataFrame,
-    scenario: Optional[object] = None,
+    scenario: object | None = None,
     time_col_name: str = "time",
     entity_col_name: str = "entity_id",
     event_col_name: str = "event",
     event_type_col_name: str = "event_type",
     resource_col_name: str = "resource_id",
-    simulation_time_unit: str = "minutes",
+    simulation_time_unit: SimulationTimeUnit = "minutes",
     plotly_height: int = 900,
-    plotly_width: Optional[int] = None,
+    plotly_width: int | None = None,
     include_play_button: bool = True,
-    add_background_image: Optional[str] = None,
+    add_background_image: str | None = None,
     display_stage_labels: bool = True,
     entity_icon_size: int = 24,
     text_size: int = 24,
-    hover_text_entity: Optional[str] = "default",
-    custom_hover_data: Optional[list[str]] = None,
+    hover_text_entity: str | None = "default",
+    custom_hover_data: list[str] | None = None,
     resource_icon_size: int = 24,
-    override_x_max: Optional[int] = None,
-    override_y_max: Optional[int] = None,
-    time_display_units: Optional[int] = None,
-    start_date: Optional[str] = None,
-    start_time: Optional[str] = None,
+    override_x_max: int | None = None,
+    override_y_max: int | None = None,
+    time_display_units: int | None = None,
+    start_date: str | None = None,
+    start_time: str | None = None,
     resource_opacity: float = 0.8,
-    custom_resource_icon: Optional[str] = None,
-    wrap_resources_at: Optional[int] = 20,
+    custom_resource_icon: str | None = None,
+    wrap_resources_at: int | None = 20,
     gap_between_resources: int = 10,
     gap_between_resource_rows: int = 30,
+    queue_direction: QueueDirection = "left",
+    flip_entity_icons: bool = False,
+    entity_icon_font: str | None = None,
+    entity_icon_font_weight: int | None = None,
+    resource_icon_font: str | None = None,
+    resource_icon_font_weight: int | None = None,
+    entity_colour_by: str | None = None,
+    entity_colour_map: dict | None = None,
+    show_entity_legend: bool = True,
+    entity_annotation_by: str | None = None,
+    entity_annotation_size: int = 14,
+    entity_annotation_color: str = "black",
+    entity_annotation_offset_y: float = -15,
+    resource_image_size: float | None = None,
+    entity_resource_offset_y: float = -10,
     setup_mode: bool = False,
     frame_duration: int = 400,  # milliseconds
     frame_transition_duration: int = 600,  # milliseconds
@@ -88,7 +447,11 @@ def generate_animation(
     background_image_opacity: float = 0.5,
     overflow_text_color: str = "black",
     stage_label_text_colour: str = "black",
-    backend: str = "express",
+    stage_label_offset: float = 10,
+    plot_bgcolor: str | None = None,
+    paper_bgcolor: str | None = None,
+    backend: AnimationBackend = "express",
+    run_col_name: str | None = "auto",
 ) -> go.Figure:
     """
     Generate an animated visualization of patient flow through a system.
@@ -104,9 +467,25 @@ def generate_animation(
         reshape_for_animations() and generate_animation_df() functions.
     event_position_df : pd.DataFrame
         DataFrame specifying the positions of different events.
-    scenario : object, optional
-        Object containing attributes for resource counts at different steps
-        (default is None).
+    scenario : object or dict, optional
+        Object whose attributes - or dict whose keys - give the number of each
+        resource available at a step, e.g. ``scenario.n_nurses`` or
+        ``scenario={"n_nurses": 2}`` (default is None). Used for two
+        independent things:
+
+        - Drawing the resource-availability icons at each stage. This also needs
+          a ``resource`` column on ``event_position_df`` naming the attribute or
+          key to read for that step (e.g. ``resource="n_nurses"``). If an event
+          declares a ``resource`` but no ``scenario`` is passed, a warning is
+          raised and those icons are skipped.
+        - Appending the resource identifier column (``resource_col_name``,
+          "resource_id" by default) to the hover ``customdata``, so a custom
+          ``hover_text_entity`` template can display it. This happens only when
+          the event log actually contains that column, i.e. the model logged
+          resource use via ``log_resource_use_start`` / ``log_resource_use_end``.
+          The built-in default template does not reference it, and a scenario
+          passed for a model with no resource-use logging is harmless - the
+          column is simply not appended.
     time_col_name : str, optional
         Name of the column in `event_log` that contains the timestamp of each
         event (default is "time"). Timestamps should represent the number of
@@ -158,12 +537,25 @@ def generate_animation(
         column specified customdata[1] is the second etc. So e.g. if you pass
         in ["widgets_created_cumulative"] as your custom_hover_data, your
         hover_text_entity may be "Widgets created so far: %{customdata[0]}".
+        When ``scenario`` is set and the event log has a ``resource_col_name``
+        column, that column is appended to the list automatically, landing at
+        ``customdata[len(custom_hover_data)]``.
+        Because ``custom_hover_data`` replaces the fixed column list the default
+        ``hover_text_entity`` template indexes, you must also pass your own
+        ``hover_text_entity`` string - supplying ``custom_hover_data`` while
+        leaving ``hover_text_entity`` at its default raises ``ValueError``.
     resource_icon_size : int, optional
         Size of resource icons in the animation (default is 24).
     override_x_max : int, optional
-        Override the maximum x-coordinate (default is None).
+        Override the maximum x-coordinate (default is None). The figure margin
+        already auto-expands to fit auto-generated stage labels, so this is only
+        needed to reframe a layout the auto-sizing gets wrong. The axis then runs
+        exactly ``[0, override_x_max]``; a `UserWarning` is raised if any event
+        anchor falls outside that, as its queue / resources would be drawn
+        off-canvas.
     override_y_max : int, optional
-        Override the maximum y-coordinate (default is None).
+        Override the maximum y-coordinate (default is None). Same off-canvas
+        `UserWarning` as `override_x_max`.
     time_display_units : str, optional
         Format for displaying time on the animation timeline. This affects how
         simulation time is converted into human-readable dates or clock
@@ -209,6 +601,119 @@ def generate_animation(
         Spacing between resources in pixels (default is 10).
     gap_between_resource_rows : int, optional
         Vertical spacing between rows in pixels (default is 30).
+    queue_direction : {"left", "right"}, default="left"
+        Which way queues (and rows of resources) build out from their anchor.
+        "left" is the historic behaviour - the anchor is the front of the queue
+        and entities stack up to its left. "right" mirrors this, so the anchor
+        becomes the bottom-left corner and the queue extends rightwards, which
+        suits entity emojis that face right. Stage labels flip to the opposite
+        side of a right-building queue. If set here it must also be set on
+        `generate_animation_df`; overridden per event by a `direction` column
+        on `event_position_df`.
+    flip_entity_icons : bool, default=False
+        Mirror entity icons (and a `custom_resource_icon`) horizontally - useful
+        when an emoji faces the wrong way for a particular layout, independently
+        of `queue_direction`. Overridden per event by a `flip_icons` column on
+        `event_position_df` (or `EventPosition(..., flip_icons=...)`). Requires
+        CSS to reach the page - this is injected automatically (see
+        `vidigi.utils.inject_icon_flip_css`) whenever any icon actually resolves
+        to flipped; embedding the figure a different way may need
+        `vidigi.utils.entity_icon_flip_css()` added explicitly. Does not affect
+        a static export via `fig.write_image()`.
+    entity_icon_font : str, optional
+        Render entity icons in an icon font instead of emoji - lets an icon be
+        any glyph the font provides, and, because icon fonts are monochrome
+        rather than colour fonts, is what makes `entity_colour_by` visible on
+        the icon itself. One of `vidigi.utils.ICON_FONT_PRESETS` (currently
+        `"font-awesome"`, `"bootstrap-icons"`, `"material-symbols"`), or any CSS
+        font-family name already available on the page. `custom_entity_icon_list`
+        then supplies that font's codepoints (or, for `"material-symbols"`,
+        ligature names like `"directions_walk"`) instead of emoji. The overflow
+        `+ N more` / ASCII-gauge icon is always left on the default font,
+        whatever this is set to - seeing tofu or a substituted glyph in place of
+        ASCII art would be worse than the plain text. See
+        `vidigi.utils.entity_icon_font_css` for what reaching the page involves
+        and two Plotly quirks it works around; like `flip_entity_icons`, the CSS
+        is injected automatically. Applies to entity icons only - resource
+        glyphs have their own `resource_icon_font`.
+    entity_icon_font_weight : int, optional
+        Overrides a preset's default weight (Font Awesome ships Solid at 900
+        and Regular at 400, say). Ignored for a raw custom family in
+        `entity_icon_font` - most fonts have only one.
+    resource_icon_font : str, optional
+        Render glyph resource icons - a `custom_resource_icon`, and any per-event
+        `resource_icon` that is a text glyph rather than an image - in an icon
+        font instead of emoji. Independent of `entity_icon_font`: entities and
+        resources can each be in their own font, or one in an icon font and the
+        other left on emoji. Same accepted values (a
+        `vidigi.utils.ICON_FONT_PRESETS` name or a raw CSS family), same
+        automatic CSS injection. The codepoint or ligature goes straight into
+        `custom_resource_icon` / `resource_icon` - there is no list argument like
+        `custom_entity_icon_list`. Animation-wide, like `entity_icon_font`: every
+        glyph resource stage shares it (the resource glyphs are a single trace),
+        so there is no per-stage font. An image `resource_icon` is unaffected.
+        Default `None` leaves glyph resource icons on the page default font.
+    resource_icon_font_weight : int, optional
+        Overrides a preset's default weight for `resource_icon_font`, as
+        `entity_icon_font_weight` does for `entity_icon_font`.
+    entity_colour_by : str, optional
+        Name of a column - typically one already on your event log, such as
+        `priority` or `pathway` - to colour entity icons by by. Unlike emoji,
+        which are colour fonts and ignore `textfont.color` entirely, this only
+        has a visible effect together with `entity_icon_font`. Overflow rows
+        keep `overflow_text_color` and are never coloured or added to the
+        legend, whatever category they would otherwise fall into.
+    entity_colour_map : dict, optional
+        Maps values of `entity_colour_by` to specific colours, e.g.
+        `{"high": "crimson", "low": "steelblue"}`. A value with no entry falls
+        back to Plotly's default qualitative palette.
+    show_entity_legend : bool, default=True
+        Show a legend for `entity_colour_by`. Ignored when `entity_colour_by`
+        is not set - there is nothing to key.
+    entity_annotation_by : str, optional
+        Name of a column to draw as a second line of text offset below each
+        entity's icon - e.g. a running length-of-stay figure or a delay flag.
+        Express backend only (see `backend`). Appending extra text directly
+        onto `icon`/`icon_display` is cheaper and is what vidigi has always
+        drawn - prefer it whenever `flip_entity_icons`/`entity_icon_font`
+        aren't in play for this animation. It stops working once either of
+        those is combined with baked-in text, though: Plotly gives a single
+        SVG `<text>` node one `font-family` and one transform, so flipping or
+        re-fonting the icon does the same to any text appended into the same
+        string. `entity_annotation_by` draws the annotation as a genuinely
+        separate scatter trace instead, so it is structurally untouched by
+        either - at the cost of roughly doubling the per-frame point/text
+        payload for every entity, for the whole animation. `None` (default)
+        draws no second trace at all. Raises `ValueError` if the column isn't
+        found, matching `entity_colour_by`.
+    entity_annotation_size : int, default=14
+        Font size (in points) of the `entity_annotation_by` text. Independent
+        of `entity_icon_size`.
+    entity_annotation_color : str, default="black"
+        Colour of the `entity_annotation_by` text. Independent of
+        `entity_colour_by`/`overflow_text_color`.
+    entity_annotation_offset_y : float, default=-15
+        Vertical offset, in data units (the same units as
+        `event_position_df`'s `x`/`y`), of `entity_annotation_by` text below
+        (negative) or above (positive) each entity's icon. Given its own
+        literal default rather than derived from an unrelated spacing
+        argument - check it against your `entity_icon_size` if icons and
+        annotations start to overlap.
+    resource_image_size : float, optional
+        Size, in data units (the same units as `event_position_df`'s `x`/`y`),
+        of an image `resource_icon` (see `EventPosition.resource_icon`).
+        Defaults to `resource_icon_size`, kept independent of
+        `gap_between_resources` so changing the spacing between resources
+        doesn't also change their size. Has no effect on a text glyph
+        resource icon, which is sized by `resource_icon_size` as before.
+    entity_resource_offset_y : float, default=-10
+        Vertical offset, in data units (the same units as
+        `event_position_df`'s `x`/`y`), of each resource icon relative to the
+        entity using it - negative sits the icon below the entity (the
+        historic default), positive above. Applies to all three resource-icon
+        forms (the default dot, a glyph `custom_resource_icon` / `resource_icon`,
+        and an image `resource_icon`). Use it to lift an entity clear of a large
+        `resource_image_size`, or to sit it down onto the icon.
     setup_mode : bool, optional
         Whether to run in setup mode, showing grid and tick marks (default is
         False).
@@ -227,10 +732,32 @@ def generate_animation(
     stage_label_text_colour : str, optional
         Color of the stage label text added next to each event position when
         display_stage_labels is True (default is black).
+    stage_label_offset : float, optional
+        Gap, in data units, between a stage label and the front of its
+        queue/resources (the event anchor point) when display_stage_labels is
+        True (default is 10). Increase this for larger icon sizes so labels
+        don't crowd the icons.
+    plot_bgcolor : str, optional
+        Background colour of the plotting area (inside the axes), passed
+        straight to ``fig.update_layout(plot_bgcolor=...)``. Accepts any CSS
+        colour string, e.g. "white" or "#f5f5f5". If None (default), Plotly's
+        template default is left untouched.
+    paper_bgcolor : str, optional
+        Background colour of the area surrounding the plotting area (behind the
+        title, play button and timeline), passed straight to
+        ``fig.update_layout(paper_bgcolor=...)``. Accepts any CSS colour string.
+        If None (default), Plotly's template default is left untouched.
     backend: str, optional
         EXPERIMENTAL. Whether to use the plotly express backend for the initial
         plot (default), or the experimental plotly go backend. The go approach
         is currently unstable and much slower. Use at your own risk.
+    run_col_name : str or None, optional
+        Name of the column identifying which simulation run (replication) each
+        row belongs to, used to reject data containing more than one
+        replication. Default is "auto", which looks for a column named
+        (case-insensitively) one of 'run', 'run_number', 'replication', 'rep' or
+        'run_id'. Pass an explicit column name to override the search, or `None`
+        to disable the check.
 
     Returns
     -------
@@ -239,6 +766,9 @@ def generate_animation(
 
     Notes
     -----
+    - **This function animates a single replication only.** Data containing more
+      than one run is rejected with a `ValueError`, because the runs would
+      otherwise be blended into an animation representing no run of your model.
     - The function uses Plotly Express to create an animated scatter plot.
     - Time can be displayed as actual dates or as model time units.
     - The animation supports customization of icon sizes, resource
@@ -252,6 +782,14 @@ def generate_animation(
     - The `snapshot_time` column is transformed to datetime strings, and a
       `snapshot_time_display` column is created for visual display.
     """
+    # The run column survives both earlier pipeline stages, so a multi-replication
+    # frame that reached this far is still caught rather than animated as a blend.
+    _check_single_run(
+        full_entity_df_plus_pos,
+        run_col_name=run_col_name,
+        frame_arg="full_entity_df_plus_pos",
+    )
+
     full_entity_df_plus_pos_copy = full_entity_df_plus_pos.copy()
 
     if override_x_max is not None:
@@ -263,6 +801,16 @@ def generate_animation(
         y_max = override_y_max
     else:
         y_max = event_position_df["y"].max() * 1.1
+
+    # A caller-supplied override becomes the axis bound directly, so an event
+    # anchor outside it is drawn off-canvas and that step disappears silently.
+    _warn_on_event_positions_outside_range(
+        event_position_df,
+        override_x_max=override_x_max,
+        override_y_max=override_y_max,
+        event_col_name=event_col_name,
+        stacklevel=3,
+    )
 
     # If we're displaying time as a clock instead of as units of whatever time
     # our model is working in, create a snapshot_time_display column that will
@@ -284,17 +832,23 @@ def generate_animation(
         elif simulation_time_unit in ("hour", "hours"):
             unit = "h"
         elif simulation_time_unit in ("day", "days"):
-            unit = "d"
+            unit = "D"
         elif simulation_time_unit in ("week", "weeks"):
-            unit = "w"
+            unit = "W"
         elif simulation_time_unit in ("month", "months"):
             # Approximate 1 month as 30 days
             full_entity_df_plus_pos_copy["snapshot_time"] *= 30
-            unit = "d"
+            unit = "D"
         elif simulation_time_unit in ("year", "years"):
             # Approximate 1 year as 365 days
             full_entity_df_plus_pos_copy["snapshot_time"] *= 365
-            unit = "d"
+            unit = "D"
+        else:
+            raise ValueError(
+                f"Invalid `simulation_time_unit` '{simulation_time_unit}'. Valid options "
+                f"are: 'seconds', 'minutes', 'hours', 'days', 'weeks', 'months', 'years' "
+                f"(each also accepted in the singular)."
+            )
 
         if start_date is None and start_time is None:
             full_entity_df_plus_pos_copy["snapshot_time"] = (
@@ -438,7 +992,7 @@ def generate_animation(
             use_ampm = time_display_units.endswith("_ampm")
 
             def format_day_clock(t):
-                delta = t - pd.Timestamp(t.date())
+                # delta = t - pd.Timestamp(t.date())
                 sim_day = (
                     t.normalize()
                     - full_entity_df_plus_pos_copy["snapshot_time"].min().normalize()
@@ -457,6 +1011,7 @@ def generate_animation(
                 )
             )
         else:
+            _validate_strftime_format(time_display_units)
             try:
                 full_entity_df_plus_pos_copy["snapshot_time_display"] = (
                     full_entity_df_plus_pos_copy["snapshot_time"].apply(
@@ -468,8 +1023,14 @@ def generate_animation(
                         lambda x: dt.datetime.strftime(x, time_display_units)
                     )
                 )
-            except:
-                raise "Invalid time_display_units option provided. Valid options are: dhms, dhm, dh, d, m, y. Alternatively, you can provide your own valid strftime format (e.g. '%Y-%m-%d %H'). See the strftime documentation for more details: https://strftime.org/"
+            except Exception as exc:
+                raise ValueError(
+                    f"Invalid time_display_units option provided: "
+                    f"'{time_display_units}'. Valid options are: dhms, dhm, dh, d, m, y. "
+                    f"Alternatively, you can provide your own valid strftime format "
+                    f"(e.g. '%Y-%m-%d %H'). See the strftime documentation for more "
+                    f"details: https://strftime.org/"
+                ) from exc
 
     else:
         full_entity_df_plus_pos_copy["snapshot_time_display"] = (
@@ -483,10 +1044,30 @@ def generate_animation(
     # tell it where to put people at each defined step of the process, and the
     # scattergraph will move them
 
-    # If we have been passed a custom hover data list, use this
+    # The default hover template indexes customdata[0..5] by fixed meaning (entity
+    # id, time, snapshot time, label, time in event, queue position). A caller-
+    # supplied custom_hover_data replaces that list wholesale, so the default
+    # template would then point at the wrong - or missing - columns and render
+    # broken hover with no error. Make the mismatch legible instead.
+    if custom_hover_data and hover_text_entity == "default":
+        raise ValueError(
+            "`custom_hover_data` was provided but `hover_text_entity` is still the "
+            "default template, which expects exactly these six columns in this "
+            "order: entity id, time, snapshot time, label, time in event, queue "
+            "position. Pass your own `hover_text_entity` string that references "
+            'your columns by position - e.g. hover_text_entity="Widgets: '
+            '%{customdata[0]}" for custom_hover_data=["widgets"] - or drop '
+            "`custom_hover_data` to use the default hover text."
+        )
+
+    # If we have been passed a custom hover data list, use this.
+    # Copy it - appending to the caller's list would grow it on every call.
     if custom_hover_data:
-        hovers = custom_hover_data
-        if scenario:
+        hovers = list(custom_hover_data)
+        # Only offer the resource column if the log actually has one. A scenario can be
+        # passed for a model with no resource_use events, in which case referencing it
+        # would fail inside plotly with an unrelated-looking error.
+        if scenario is not None and resource_col_name in full_entity_df_plus_pos_copy:
             hovers.append(resource_col_name)
 
     else:
@@ -530,21 +1111,21 @@ def generate_animation(
         if "additional" in full_entity_df_plus_pos_copy:
             full_entity_df_plus_pos_copy["entity_display_hover"] = (
                 full_entity_df_plus_pos_copy.apply(
-                    lambda x: ("N/A" if x["additional"] > 1.0 else x[entity_col_name]),
+                    lambda x: "N/A" if x["additional"] > 1.0 else x[entity_col_name],
                     axis=1,
                 )
             )
 
             full_entity_df_plus_pos_copy["time_hover"] = (
                 full_entity_df_plus_pos_copy.apply(
-                    lambda x: ("N/A" if x["additional"] > 1.0 else x[time_col_name]),
+                    lambda x: "N/A" if x["additional"] > 1.0 else x[time_col_name],
                     axis=1,
                 )
             )
 
             full_entity_df_plus_pos_copy["time_in_event"] = (
                 full_entity_df_plus_pos_copy.apply(
-                    lambda x: ("N/A" if x["additional"] > 1.0 else x["time_in_event"]),
+                    lambda x: "N/A" if x["additional"] > 1.0 else x["time_in_event"],
                     axis=1,
                 )
             )
@@ -567,7 +1148,8 @@ def generate_animation(
                 "queue_position",
             ]
 
-        if scenario is not None:
+        # As above, only when the column is actually present.
+        if scenario is not None and resource_col_name in full_entity_df_plus_pos_copy:
             hovers.append(resource_col_name)
 
     if hover_text_entity == "default":
@@ -587,6 +1169,169 @@ def generate_animation(
     if "opacity" not in full_entity_df_plus_pos_copy:
         full_entity_df_plus_pos_copy["opacity"] = 1
 
+    # Resolve which events have their entity icon mirrored, from `event_position_df`
+    # directly rather than any column that survived onto the entity frame - this is
+    # the same source `_resolve_direction_sign` reads for stage labels below, so a
+    # row's icon flip and its layout direction can never disagree about where an
+    # event's settings come from.
+    _event_flip_map = dict(
+        zip(
+            event_position_df[event_col_name],
+            _resolve_icon_flip(event_position_df, flip_entity_icons),
+        )
+    )
+    # `.map(dict.get, ...)` rather than `.map(_event_flip_map).fillna(False)` -
+    # an event absent from the map (or NaN, for the all-NaN-position filler row
+    # that keeps an otherwise-empty snapshot from vanishing entirely) resolves
+    # straight to False, with no NaN-then-downcast step to trigger pandas'
+    # object-dtype fillna deprecation warning.
+    _entity_flip = full_entity_df_plus_pos_copy[event_col_name].map(
+        lambda event: _event_flip_map.get(event, False)
+    )
+    any_icons_flipped = bool(_entity_flip.any())
+
+    # Overflow rows ('+ N more', the ASCII gauge bars) are never flipped - the
+    # ASCII bar / count string is unreadable mirrored, whatever entity icon it
+    # happens to be attached to (`ascii_queue_icon` takes an `icon` argument but
+    # never actually uses it in its output).
+    if "additional" in full_entity_df_plus_pos_copy.columns:
+        _entity_flip = _entity_flip & full_entity_df_plus_pos_copy["additional"].isna()
+
+    full_entity_df_plus_pos_copy["icon_display"] = full_entity_df_plus_pos_copy["icon"]
+    full_entity_df_plus_pos_copy.loc[_entity_flip, "icon_display"] = (
+        ICON_FLIP_MARKER + full_entity_df_plus_pos_copy.loc[_entity_flip, "icon"]
+    )
+
+    if any_icons_flipped:
+        inject_icon_flip_css()
+
+    # Icon font: a single choice for the whole animation (not per-event, unlike
+    # queue_direction/flip_icons - this is a font, not a layout concern), applied
+    # per point only so overflow rows can be exempted from it, the same way they
+    # are exempted from flipping - a substituted glyph in place of the ASCII gauge
+    # would be worse than plain text, and font metrics for a wide bar-and-count
+    # string were never designed against an icon font in mind.
+    #
+    # A row with no entity at all - the all-NaN placeholder that keeps an
+    # otherwise-empty snapshot from vanishing - is exempted the same way: it
+    # never renders (NaN x/y), and without this it would surface as its own
+    # spurious "nan" colour-group category below (`entity_colour_by`/`icon`
+    # cast to plain strings), one entry no real entity ever belongs to.
+    _not_overflow = full_entity_df_plus_pos_copy[entity_col_name].notna()
+    if "additional" in full_entity_df_plus_pos_copy.columns:
+        _not_overflow &= full_entity_df_plus_pos_copy["additional"].isna()
+
+    _resolved_family = _resolved_weight = None
+    if entity_icon_font is not None:
+        _resolved_family, _resolved_weight = _resolve_icon_font(
+            entity_icon_font, entity_icon_font_weight
+        )
+        inject_icon_font_css(entity_icon_font, entity_icon_font_weight)
+
+    # Resource glyphs get their own font, chosen independently of the entity one -
+    # `entity_icon_font` has never re-fonted a `custom_resource_icon` (its trace is
+    # built further down, after the per-point entity styling pass has run), so the
+    # two are genuinely separate controls, not one leaking into the other.
+    _resource_resolved_family = _resource_resolved_weight = None
+    if resource_icon_font is not None:
+        _resource_resolved_family, _resource_resolved_weight = _resolve_icon_font(
+            resource_icon_font, resource_icon_font_weight
+        )
+        if (resource_icon_font, resource_icon_font_weight) != (
+            entity_icon_font,
+            entity_icon_font_weight,
+        ):
+            inject_icon_font_css(resource_icon_font, resource_icon_font_weight)
+
+    # Per-entity colour needs its own trace per category, since Plotly Express has
+    # no per-point channel for `textfont.color` on an animated figure (the same gap
+    # `flip_entity_icons` works around for text, by folding the marker into the
+    # string itself - not an option here, since colour is a real Plotly attribute
+    # rather than something that can be smuggled into `text`). `color=` is reused
+    # for the font exemption too: overflow rows are routed into their own reserved
+    # category, `_entity_icon_group="_overflow"`, so the two concerns share one
+    # mechanism instead of needing separate mid-animation restyling passes.
+    _icon_group_column = None
+    if entity_colour_by is not None or entity_icon_font is not None:
+        if entity_colour_by is not None:
+            if entity_colour_by not in full_entity_df_plus_pos_copy.columns:
+                raise ValueError(
+                    f"`entity_colour_by='{entity_colour_by}'` is not a column on the "
+                    f"positioned entity frame. Available columns: "
+                    f"{sorted(str(c) for c in full_entity_df_plus_pos_copy.columns)}. "
+                    f"This is usually a column carried straight through from your "
+                    f"event log (e.g. 'priority', 'pathway')."
+                )
+            # `.map(str)` rather than `.astype(str)` - under pandas >=3.0, `astype(str)`
+            # resolves to the new default `str` dtype, which leaves a missing value as
+            # a genuine `float('nan')` instead of stringifying it (pandas <3.0 always
+            # produced the string "nan" here). A raw NaN reaching `_not_overflow=True`
+            # rows below - a real entity simply absent from this colour-by column, e.g.
+            # not currently holding a resource - then survives into `_icon_group_values`
+            # and crashes `sorted()` comparing a float against every other category's
+            # str. `.map(str)` calls Python's own `str()` per element, sidestepping
+            # `astype`'s pandas-3-only special-casing, on every pandas version this
+            # library supports.
+            _base_group = full_entity_df_plus_pos_copy[entity_colour_by].map(str)
+        else:
+            # No real category - one synthetic bucket, so every non-overflow entity
+            # still lands in its own trace, separate from the overflow row's.
+            _base_group = pd.Series("_entity", index=full_entity_df_plus_pos_copy.index)
+
+        _icon_group_column = "_entity_icon_group"
+        _icon_group_values = _base_group.where(_not_overflow, "_overflow")
+        full_entity_df_plus_pos_copy[_icon_group_column] = _icon_group_values
+
+        # Every category that will ever occur, across the whole animation - not
+        # just whichever ones px.scatter's own first frame happens to draw. Fed to
+        # `_reconcile_grouped_traces` below, which is what actually makes a
+        # category missing from a given frame (nobody of that `entity_colour_by`
+        # value has arrived yet, say) show up there anyway, as an empty
+        # placeholder - see its docstring for the Plotly Express behaviour this
+        # works around.
+        _all_icon_categories = sorted(_icon_group_values.unique())
+
+    # Validated unconditionally (like `entity_colour_by` above) so a typo'd column
+    # name is caught even on the `go` backend, which doesn't otherwise look at
+    # `entity_annotation_by` at all - see the express-only trace build below.
+    if entity_annotation_by is not None:
+        if entity_annotation_by not in full_entity_df_plus_pos_copy.columns:
+            raise ValueError(
+                f"`entity_annotation_by='{entity_annotation_by}'` is not a column on "
+                f"the positioned entity frame. Available columns: "
+                f"{sorted(str(c) for c in full_entity_df_plus_pos_copy.columns)}. "
+                f"This is usually a column carried straight through from your event "
+                f"log (e.g. 'los', 'priority')."
+            )
+
+    # The animation frame is the *formatted* time, so a display format coarser than the
+    # snapshot interval silently merges snapshots into a single frame - e.g. 10 minute
+    # snapshots displayed as 'd' collapse a whole day into one. Plotly then drops the
+    # animation entirely, and entities from different moments are drawn on top of one
+    # another. Say so rather than returning a quietly wrong figure.
+    distinct_snapshots = full_entity_df_plus_pos_copy["snapshot_time_base"].nunique()
+    distinct_labels = full_entity_df_plus_pos_copy["snapshot_time_display"].nunique()
+    if distinct_labels < distinct_snapshots:
+        warnings.warn(
+            f"`time_display_units` is coarser than the snapshot interval: "
+            f"{distinct_snapshots} snapshots collapse into {distinct_labels} distinct "
+            f"frame label(s), so snapshots will be merged and the animation will show "
+            f"fewer - possibly no - frames. Either use a finer `time_display_units`, or "
+            f"increase `every_x_time_units` so each snapshot gets its own label.",
+            UserWarning,
+            stacklevel=3,
+        )
+
+    # Reused by both express calls below - a group with no explicit colour still
+    # gets one, from px's own default qualitative palette, by leaving it out of
+    # the map entirely rather than trying to pre-assign a default ourselves.
+    _px_color_kwargs = {}
+    if _icon_group_column is not None:
+        _color_map = dict(entity_colour_map) if entity_colour_map else {}
+        _color_map.setdefault("_overflow", overflow_text_color)
+        _color_map.setdefault("_entity", overflow_text_color)
+        _px_color_kwargs = dict(color=_icon_group_column, color_discrete_map=_color_map)
+
     if str.lower(backend) in ["express", "px", "plotly express"]:
         if hover_text_entity is None:
             fig = px.scatter(
@@ -598,15 +1343,26 @@ def generate_animation(
                 animation_frame="snapshot_time_display",
                 # Important to group by patient here
                 animation_group=entity_col_name,
-                text="icon",
+                text="icon_display",
                 range_x=[0, x_max],
                 range_y=[0, y_max],
                 height=plotly_height,
                 width=plotly_width,
                 # This sets the opacity of the points that sit behind
                 opacity=0,
-                hoverinfo="none",
+                **_px_color_kwargs,
             )
+
+            if _icon_group_column is not None:
+                _reconcile_grouped_traces(fig, _all_icon_categories)
+
+            # plotly express does not accept `hoverinfo`, so hover has to be
+            # switched off on the resulting traces instead.
+            fig.update_traces(hoverinfo="skip", hovertemplate=None)
+            for frame in fig.frames:
+                for trace in frame.data:
+                    trace.hoverinfo = "skip"
+                    trace.hovertemplate = None
         else:
             fig = px.scatter(
                 full_entity_df_plus_pos_copy.sort_values("snapshot_time_base"),
@@ -617,7 +1373,7 @@ def generate_animation(
                 animation_frame="snapshot_time_display",
                 # Important to group by patient here
                 animation_group=entity_col_name,
-                text="icon",
+                text="icon_display",
                 hover_name=event_col_name,
                 custom_data=hovers,
                 range_x=[0, x_max],
@@ -626,7 +1382,11 @@ def generate_animation(
                 width=plotly_width,
                 # This sets the opacity of the points that sit behind
                 opacity=0,
+                **_px_color_kwargs,
             )
+
+            if _icon_group_column is not None:
+                _reconcile_grouped_traces(fig, _all_icon_categories)
 
             # update hover text in initial frame
             fig.update_traces(hovertemplate=hover_text)
@@ -637,12 +1397,23 @@ def generate_animation(
                     trace.hovertemplate = hover_text
 
     # EXPERIMENTAL
-    elif backend in [
+    # Lowercased to match the express branch above, which has always accepted
+    # 'Express'. Without it, 'GO' was rejected while 'EXPRESS' was accepted.
+    elif str.lower(backend) in [
         "go",
         "graph objects",
         "plotly graph objects",
         "plotly go",
     ]:
+        # No per-row overflow exemption in this backend (unlike express) - out of
+        # scope for the experimental path. `entity_colour_by` and the legend are
+        # not supported here at all.
+        _go_backend_font_kwargs = {}
+        if _resolved_family is not None:
+            _go_backend_font_kwargs["family"] = _resolved_family
+            if _resolved_weight is not None:
+                _go_backend_font_kwargs["weight"] = _resolved_weight
+
         # Get sorted lists of unique entities and animation frames
         unique_entities = sorted(full_entity_df_plus_pos_copy[entity_col_name].unique())
         unique_frames = sorted(
@@ -676,9 +1447,13 @@ def generate_animation(
                         x=entity_df["x_final"],
                         y=entity_df["y_final"],
                         name=entity,
-                        text=entity_df["icon"],
+                        text=entity_df["icon_display"],
                         mode="text",
-                        textfont=dict(size=16, color=f"rgba(0, 0, 0, {text_opacity})"),
+                        textfont=dict(
+                            size=16,
+                            color=f"rgba(0, 0, 0, {text_opacity})",
+                            **_go_backend_font_kwargs,
+                        ),
                         hovertemplate=(
                             f"<b>{entity_df[event_col_name].iloc[0]}</b><br><br>"
                             "x: %{x}<br>"
@@ -698,7 +1473,11 @@ def generate_animation(
                         name=entity,
                         text=[""],
                         mode="text",
-                        textfont=dict(size=16, color=f"rgba(0, 0, 0, {text_opacity})"),
+                        textfont=dict(
+                            size=16,
+                            color=f"rgba(0, 0, 0, {text_opacity})",
+                            **_go_backend_font_kwargs,
+                        ),
                         hovertemplate="<extra></extra>",
                         customdata=[[""]],
                     )
@@ -729,7 +1508,7 @@ def generate_animation(
                         {
                             "x": entity_df["x_final"].tolist(),
                             "y": entity_df["y_final"].tolist(),
-                            "text": entity_df["icon"].tolist(),
+                            "text": entity_df["icon_display"].tolist(),
                             "customdata": entity_df[hovers].values.tolist(),
                             "textfont.color": f"rgba(0, 0, 0, {text_opacity})",
                         }
@@ -823,9 +1602,41 @@ def generate_animation(
             ],
         )
     else:
-        raise (
-            "Invalid backend passed. Options are: 'express'|'px'|'plotly express' for original vidigi backend, or 'go'|'graph objects' for advanced backend"
+        raise ValueError(
+            f"Invalid backend passed: '{backend}'. Options are: 'express'|'px'|"
+            f"'plotly express' for the original vidigi backend, or 'go'|"
+            f"'graph objects'|'plotly graph objects'|'plotly go' for the advanced "
+            f"backend. Matching is case-insensitive."
         )
+
+    # `color=` grouping is express-only (see `_px_color_kwargs` above) - the `go`
+    # backend sets its own font at trace-construction time instead, and never
+    # supports colour/legend at all (see its params' docstrings).
+    _is_express_backend = str.lower(backend) in ["express", "px", "plotly express"]
+
+    def _style_entity_trace(trace):
+        """Apply size, and colour/font-by-category if grouping is active, to one
+        entity trace - shared between the base traces and every frame's, since a
+        colour-grouped frame trace carries its own (initially empty) `textfont`
+        that otherwise blocks it inheriting `family`/`color` from the base trace -
+        confirmed via mutation testing, and the reason this exists as its own
+        per-frame pass rather than a single pass over `fig.data`.
+        """
+        trace.textfont.size = entity_icon_size
+        if _icon_group_column is not None and _is_express_backend:
+            # One trace per `_entity_icon_group` category (see its construction
+            # above) - each already carries its own colour via `trace.marker.color`
+            # (from `color_discrete_map`, or px's own default palette for a
+            # category the map doesn't cover), so copy that across rather than
+            # overwriting every trace with the same `overflow_text_color`, which
+            # would defeat the point of colouring entities in the first place.
+            trace.textfont.color = trace.marker.color
+            if trace.name != "_overflow" and _resolved_family is not None:
+                trace.textfont.family = _resolved_family
+                if _resolved_weight is not None and hasattr(trace.textfont, "weight"):
+                    trace.textfont.weight = _resolved_weight
+        else:
+            trace.textfont.color = overflow_text_color
 
     # Update the size of the icons and labels
     # This is what determines the size of the individual emojis that
@@ -834,21 +1645,133 @@ def generate_animation(
     # Apply entity_icon_size to all traces that represent entities
     for trace in fig.data:
         if "marker" in trace:
-            trace.textfont.size = entity_icon_size
-            trace.textfont.color = overflow_text_color
+            _style_entity_trace(trace)
+
+    if _icon_group_column is not None and _is_express_backend:
+        for trace in fig.data:
+            # "_entity" (no real `entity_colour_by`, just the font exemption's own
+            # grouping) and "_overflow" are never real categories - never worth a
+            # legend entry, whatever `show_entity_legend` says.
+            if trace.name in ("_entity", "_overflow") or not show_entity_legend:
+                trace.showlegend = False
+
+        for frame in fig.frames or ():
+            for trace in frame.data:
+                if "marker" in trace:
+                    _style_entity_trace(trace)
+
+    #############################################
+    # Optional second trace: entity_annotation_by
+    #############################################
+
+    # A separate scatter trace, offset below each entity's icon, built from its
+    # own independent `px.scatter` call over the exact same rows (just a
+    # different text/y column) - not a per-point style tweaked onto the icon
+    # trace above. That's a deliberate response to a genuine Plotly/SVG ceiling:
+    # a single `<text>` node gets one `font-family` and one transform, so any
+    # text appended into `icon`/`icon_display` itself inherits whatever
+    # `flip_entity_icons`/`entity_icon_font` did to the icon glyph it shares a
+    # text node with. Only a structurally separate trace is immune to both -
+    # this one is never touched by `_style_entity_trace` or the flip-marker
+    # logic above, so it can't inherit either. Express backend only, matching
+    # `entity_colour_by`/`entity_icon_font` - the `go` backend gets neither.
+    if entity_annotation_by is not None and _is_express_backend:
+        _annotation_df = full_entity_df_plus_pos_copy.copy()
+        # NaN on the synthetic "+ N more" / gauge overflow row - it isn't a real
+        # entity, so it gets no annotation, the same exemption the icon trace
+        # already gives it from flipping and icon fonts.
+        _entity_annotation_text = _annotation_df[entity_annotation_by].where(
+            _not_overflow
+        )
+        # A phantom row (`step_snapshot_reveal_pop_in` / `spawn_in_from_arrival`,
+        # see `generate_animation_df`) is a real entity, not overflow, so the
+        # `.where` above leaves its real annotation text in place - unlike the icon
+        # trace, which is deliberately given an invisible `PHANTOM_ICON` on these
+        # rows. Blanked here to match: this is a second, independent `<text>` node
+        # with its own d3 join, so an unblanked real label would itself fly in at
+        # the reveal/spawn frame, one trace after the icon trace's own fly-in was
+        # just fixed. NaN would not do - a falsy `text` value gets its node removed
+        # by Plotly, which is exactly the failure mode this whole feature exists to
+        # avoid (see that docstring) - so this uses the same placeholder glyph the
+        # icon trace does.
+        if "_phantom" in _annotation_df.columns:
+            _entity_annotation_text = _entity_annotation_text.mask(
+                _annotation_df["_phantom"].fillna(False), PHANTOM_ICON
+            )
+        _annotation_df["_entity_annotation_text"] = _entity_annotation_text
+        _annotation_df["_entity_annotation_y"] = (
+            _annotation_df["y_final"] + entity_annotation_offset_y
+        )
+
+        fig_annotation = px.scatter(
+            _annotation_df.sort_values("snapshot_time_base"),
+            x="x_final",
+            y="_entity_annotation_y",
+            animation_frame="snapshot_time_display",
+            animation_group=entity_col_name,
+            text="_entity_annotation_text",
+            range_x=[0, x_max],
+            range_y=[0, y_max],
+            height=plotly_height,
+            width=plotly_width,
+            opacity=0,
+        )
+
+        def _style_annotation_trace(trace):
+            trace.name = "_annotation"
+            trace.showlegend = False
+            trace.hoverinfo = "skip"
+            trace.hovertemplate = None
+            trace.textfont = dict(
+                size=entity_annotation_size, color=entity_annotation_color
+            )
+            return trace
+
+        fig.add_trace(_style_annotation_trace(fig_annotation.data[0]))
+
+        # Matched by frame name, not position - `fig_annotation` is built from
+        # the same underlying rows as the entity trace(s) above (same
+        # `snapshot_time_display`/`animation_group` values), so its frames carry
+        # the same names, but not necessarily rebuilt in the same order.
+        _annotation_frames_by_name = {
+            frame.name: frame for frame in (fig_annotation.frames or ())
+        }
+        for frame in fig.frames or ():
+            _matching_frame = _annotation_frames_by_name.get(frame.name)
+            if _matching_frame is not None and _matching_frame.data:
+                _annotation_trace = _matching_frame.data[0]
+            else:
+                # Defensive only - every frame is expected to have a match,
+                # since both figures are built from the same source rows.
+                _annotation_trace = go.Scatter(
+                    x=[None], y=[None], text=[None], mode="markers+text"
+                )
+            frame.data = tuple(frame.data) + (
+                _style_annotation_trace(_annotation_trace),
+            )
 
     # Now add labels identifying each stage (optional - can either be used
     # in conjunction with a background image or as a way to see stage names
     # without the need to create a background image)
     if display_stage_labels:
+        # A right-building queue would run straight over a label drawn to the
+        # right of the anchor, so for those events the label goes to the left
+        # instead. Resolved per event, so a mixed layout gets each label on its
+        # own clear side.
+        label_sign = _resolve_direction_sign(event_position_df, queue_direction)
+        label_x = [
+            pos - stage_label_offset if s > 0 else pos + stage_label_offset
+            for pos, s in zip(event_position_df["x"].to_list(), label_sign)
+        ]
+        label_pos = ["middle left" if s > 0 else "middle right" for s in label_sign]
         fig.add_trace(
             go.Scatter(
-                x=[pos + 10 for pos in event_position_df["x"].to_list()],
+                x=label_x,
                 y=event_position_df["y"].to_list(),
                 mode="text",
                 name="",
                 text=event_position_df["label"].to_list(),
-                textposition="middle right",
+                textposition=label_pos,
                 hoverinfo="none",
             )
         )
@@ -867,20 +1790,39 @@ def generate_animation(
     # Make an additional dataframe that has one row per resource type
     # Then, starting from the initial position, make that many large circles
     # make them semi-transparent or you won't see the people using them!
-    if scenario is not None:
+    # A scenario can be supplied for a model where no event declares a resource - a
+    # purely queue-based model, say. There is nothing to draw in that case, and the
+    # explode below would fail on the resulting empty frame. Only the truthy check
+    # below is shared with `vidigi.analysis._resolve_resource_capacities`'s route C
+    # (via `_resource_map_from_event_position_df`) - the row selection immediately
+    # below still re-derives its own filter on the raw `resource` column, rather
+    # than consuming the helper's mapping, so this only guarantees the two agree on
+    # *whether* a resource exists, not on every detail of *which* rows count.
+    resource_attr_map = _resource_map_from_event_position_df(event_position_df)
+    events_with_resources = None
+    if resource_attr_map and scenario is None:
+        _warn_on_missing_scenario_resources(resource_attr_map)
+    if scenario is not None and resource_attr_map:
         events_with_resources = event_position_df[
             event_position_df["resource"].notnull()
         ].copy()
         events_with_resources["resource_count"] = events_with_resources[
             "resource"
-        ].apply(lambda x: getattr(scenario, x))
+        ].apply(lambda x: _resolve_scenario_value(scenario, x))
+
+        # -1 lays the resource dots out leftwards from the anchor (historic
+        # behaviour), +1 rightwards - matching the queue direction for that
+        # event so a resource emoji faces the same way as its queue.
+        events_with_resources["_dir_sign"] = _resolve_direction_sign(
+            events_with_resources, queue_direction
+        )
 
         events_with_resources = events_with_resources.join(
             events_with_resources.apply(
                 lambda r: pd.Series(
                     {
                         "x_final": [
-                            r["x"] - (gap_between_resources * (i + 1))
+                            r["x"] + r["_dir_sign"] * (gap_between_resources * (i + 1))
                             for i in range(r["resource_count"])
                         ]
                     }
@@ -903,12 +1845,13 @@ def generate_animation(
 
             events_with_resources["x_final"] = (
                 events_with_resources["x_final"]
-                + (
+                - events_with_resources["_dir_sign"]
+                * (
                     wrap_resources_at
                     * events_with_resources["row"]
                     * gap_between_resources
                 )
-                + gap_between_resources
+                - events_with_resources["_dir_sign"] * gap_between_resources
             )
 
             events_with_resources["y_final"] = events_with_resources["y"] + (
@@ -917,20 +1860,76 @@ def generate_animation(
         else:
             events_with_resources["y_final"] = events_with_resources["y"]
 
+        # `EventPosition.resource_icon` overrides `custom_resource_icon` per event, and
+        # - when it names an image (a URL, local path, or `data:` URI with an image
+        # extension; anything else is a text glyph, exactly like `custom_resource_icon`)
+        # - is drawn as a static `layout.images` entry instead of scatter text. Closes
+        # the TODO this replaced: custom icons per resource, for glyphs and images alike.
+        if "resource_icon" in events_with_resources.columns:
+            _resource_icon_override = events_with_resources["resource_icon"]
+            _is_image_icon = _resource_icon_override.apply(
+                lambda v: _is_image_source(v) if pd.notna(v) else False
+            )
+        else:
+            _resource_icon_override = pd.Series(None, index=events_with_resources.index)
+            _is_image_icon = pd.Series(False, index=events_with_resources.index)
+
+        image_resources = events_with_resources[_is_image_icon]
+        events_with_resources = events_with_resources[~_is_image_icon]
+        _resource_icon_override = _resource_icon_override[~_is_image_icon]
+
+        for _, row in image_resources.iterrows():
+            image_source = process_background_image_path(row["resource_icon"])
+            image_size = (
+                resource_image_size
+                if resource_image_size is not None
+                else resource_icon_size
+            )
+            fig.add_layout_image(
+                dict(
+                    source=image_source,
+                    x=row["x_final"],
+                    y=row["y_final"] + entity_resource_offset_y,
+                    xref="x",
+                    yref="y",
+                    sizex=image_size,
+                    sizey=image_size,
+                    xanchor="center",
+                    yanchor="middle",
+                    sizing="contain",
+                    layer="above",
+                )
+            )
+
         # This just adds an additional scatter trace that creates large dots
-        # that represent the individual resources
-        # TODO: Add ability to pass in 'icon' column as part of the event_position_df that
-        # can then be used to provide custom icons per resource instead of a single custom
-        # icon for all resources
-        if custom_resource_icon is not None:
+        # that represent the individual resources. A row's own `resource_icon`
+        # (when a text glyph, not an image - handled above) takes precedence over
+        # `custom_resource_icon`, falling back to it where unset.
+        _resource_glyph = _resource_icon_override.where(
+            _resource_icon_override.notna(), custom_resource_icon
+        )
+        if custom_resource_icon is not None or _resource_icon_override.notna().any():
+            # Follows the same per-event flip resolution as the entity icons above,
+            # so a resource icon faces the same way as the entities queuing for it.
+            resource_flip = _resolve_icon_flip(events_with_resources, flip_entity_icons)
+            resource_icon_text = [
+                (ICON_FLIP_MARKER + icon) if flipped else icon
+                for icon, flipped in zip(_resource_glyph, resource_flip)
+            ]
+            if resource_flip.any():
+                inject_icon_flip_css()
+
             fig.add_trace(
                 go.Scatter(
                     x=events_with_resources["x_final"].to_list(),
-                    # Place these slightly below the y position for each entity
-                    # that will be using the resource
-                    y=[i - 10 for i in events_with_resources["y_final"].to_list()],
+                    # Offset from the y position of each entity using the
+                    # resource - `entity_resource_offset_y`, below by default.
+                    y=[
+                        i + entity_resource_offset_y
+                        for i in events_with_resources["y_final"].to_list()
+                    ],
                     mode="markers+text",
-                    text=custom_resource_icon,
+                    text=resource_icon_text,
                     # Make the actual marker invisible
                     marker=dict(opacity=0),
                     # Set opacity of the icon
@@ -942,12 +1941,15 @@ def generate_animation(
             fig.add_trace(
                 go.Scatter(
                     x=events_with_resources["x_final"].to_list(),
-                    # Place these slightly below the y position for each entity
-                    # that will be using the resource
-                    y=[i - 10 for i in events_with_resources["y_final"].to_list()],
+                    # Offset from the y position of each entity using the
+                    # resource - `entity_resource_offset_y`, below by default.
+                    y=[
+                        i + entity_resource_offset_y
+                        for i in events_with_resources["y_final"].to_list()
+                    ],
                     mode="markers",
                     # Define what the marker will look like
-                    marker=dict(color="LightSkyBlue", size=15),
+                    marker=dict(color="LightSkyBlue", size=resource_icon_size),
                     opacity=resource_opacity,
                     hoverinfo="none",
                 )
@@ -958,6 +1960,18 @@ def generate_animation(
         # represent our people!
         fig.data[-1].textfont.size = resource_icon_size
         # fig.data[-1].opacity = resource_opacity # Set opacity for the resource icon text
+
+        # A glyph resource icon (a `custom_resource_icon`, or a text-glyph
+        # `resource_icon`) in `resource_icon_font`. One family for the whole trace,
+        # matching how `entity_icon_font` styles the entity trace - the resource
+        # glyphs are a single trace, so there is no per-stage font. An image
+        # `resource_icon` was split off above and is untouched.
+        if _resource_resolved_family is not None:
+            fig.data[-1].textfont.family = _resource_resolved_family
+            if _resource_resolved_weight is not None and hasattr(
+                fig.data[-1].textfont, "weight"
+            ):
+                fig.data[-1].textfont.weight = _resource_resolved_weight
 
     #############################################
     # Optional step to add a background image
@@ -1016,6 +2030,37 @@ def generate_animation(
         sliders=[dict(currentvalue=dict(font=dict(size=35), prefix=""))],
     )
 
+    # Optional overrides of the figure background colours. Left untouched when
+    # None so the active Plotly template keeps control.
+    if plot_bgcolor is not None:
+        fig.update_layout(plot_bgcolor=plot_bgcolor)
+    if paper_bgcolor is not None:
+        fig.update_layout(paper_bgcolor=paper_bgcolor)
+
+    # Keep auto-positioned content on the canvas. With no override_x_max /
+    # override_y_max the axis range is derived purely from event anchor points,
+    # so long stage labels (drawn past the rightmost anchor) and queue/resource
+    # icons (drawn left of a low-x anchor) would otherwise be clipped at the
+    # axis. Let that content spill into an enlarged margin rather than rescaling
+    # the diagram.
+    _disable_axis_clipping(fig)
+    margin_updates = _overflow_margin_updates(
+        event_position_df=event_position_df,
+        entity_df=full_entity_df_plus_pos_copy,
+        resource_df=events_with_resources,
+        x_max=x_max,
+        y_max=y_max,
+        text_size=text_size,
+        plotly_width=plotly_width,
+        plotly_height=plotly_height,
+        display_stage_labels=display_stage_labels,
+        queue_direction=queue_direction,
+        entity_resource_offset_y=entity_resource_offset_y,
+        stage_label_offset=stage_label_offset,
+    )
+    if margin_updates:
+        fig.update_layout(margin=margin_updates)
+
     # You can get rid of the play button if desired
     # Was more useful in older versions of the function
     if not include_play_button:
@@ -1047,53 +2092,78 @@ def generate_animation(
 def animate_activity_log(
     event_log: pd.DataFrame,
     event_position_df: pd.DataFrame,
-    scenario: Optional[object] = None,
+    scenario: object | None = None,
     time_col_name: str = "time",
     entity_col_name: str = "entity_id",
     event_type_col_name: str = "event_type",
     event_col_name: str = "event",
-    pathway_col_name: Optional[str] = None,
+    pathway_col_name: str | None = None,
     resource_col_name: str = "resource_id",
-    simulation_time_unit: str = "minutes",
+    simulation_time_unit: SimulationTimeUnit = "minutes",
     every_x_time_units: int = 10,
-    wrap_queues_at: Optional[int] = 20,
-    wrap_resources_at: Optional[int] = 20,
+    wrap_queues_at: int | None = 20,
+    wrap_resources_at: int | None = 20,
     step_snapshot_max: int = 60,
-    limit_duration: Optional[int] = None,
+    step_snapshot_max_overrides: dict | None = None,
+    limit_duration: int | None = None,
     plotly_height: int = 900,
-    plotly_width: Optional[int] = None,
+    plotly_width: int | None = None,
     include_play_button: bool = True,
-    add_background_image: Optional[str] = None,
+    add_background_image: str | None = None,
     display_stage_labels: bool = True,
     entity_icon_size: int = 24,
     text_size: int = 24,
     resource_icon_size: int = 24,
-    hover_text_entity: Optional[str] = "default",
-    custom_hover_data: Optional[list[str]] = None,
+    hover_text_entity: str | None = "default",
+    custom_hover_data: list[str] | None = None,
     gap_between_entities: int = 10,
     gap_between_queue_rows: int = 30,
     gap_between_resource_rows: int = 30,
     gap_between_resources: int = 10,
+    queue_direction: QueueDirection = "left",
+    flip_entity_icons: bool = False,
+    entity_icon_font: str | None = None,
+    entity_icon_font_weight: int | None = None,
+    resource_icon_font: str | None = None,
+    resource_icon_font_weight: int | None = None,
+    entity_colour_by: str | None = None,
+    entity_colour_map: dict | None = None,
+    show_entity_legend: bool = True,
+    entity_annotation_by: str | None = None,
+    entity_annotation_size: int = 14,
+    entity_annotation_color: str = "black",
+    entity_annotation_offset_y: float = -15,
+    resource_image_size: float | None = None,
+    entity_resource_offset_y: float = -10,
     resource_opacity: float = 0.8,
-    custom_resource_icon: Optional[str] = None,
-    override_x_max: Optional[int] = None,
-    override_y_max: Optional[int] = None,
-    start_date: Optional[str] = None,
-    start_time: Optional[str] = None,
-    time_display_units: Optional[str] = None,
+    custom_resource_icon: str | None = None,
+    override_x_max: int | None = None,
+    override_y_max: int | None = None,
+    start_date: str | None = None,
+    start_time: str | None = None,
+    time_display_units: str | None = None,
     setup_mode: bool = False,
     frame_duration: int = 400,  # milliseconds
     frame_transition_duration: int = 600,  # milliseconds
     debug_mode: bool = False,
-    custom_entity_icon_list: Optional[list[str]] = None,
+    custom_entity_icon_list: list[str] | None = None,
     debug_write_intermediate_objects: bool = False,
     background_image_opacity: float = 0.5,
     overflow_text_color: str = "black",
     stage_label_text_colour: str = "black",
-    backend: str = "express",
+    stage_label_offset: float = 10,
+    plot_bgcolor: str | None = None,
+    paper_bgcolor: str | None = None,
+    backend: AnimationBackend = "express",
     step_snapshot_limit_gauges: bool = False,
     gauge_segments: int = 10,
-    gauge_max_override: Optional[int | float] = None,
+    gauge_max_override: float | None = None,
+    step_snapshot_reveal_pop_in: bool = False,
+    spawn_in_from_arrival: bool = True,
+    run_number: int | None = None,
+    run_col_name: str | None = "auto",
+    warm_up: int = 0,
+    snapshot_alignment: SnapshotAlignment = "warm_up",
 ) -> go.Figure:
     """
     Generate an animated visualization of patient flow through a system.
@@ -1104,13 +2174,35 @@ def animate_activity_log(
 
     Parameters
     ----------
-    event_log : pd.DataFrame
-        The log of events to be animated, containing patient activities.
+    event_log : pd.DataFrame, EventLogger, or TrialLogger
+        The log of events to be animated, containing patient activities. A
+        `vidigi.logging.EventLogger` or `TrialLogger` may be passed directly, in
+        which case its `.to_dataframe()` is called for you.
     event_position_df : pd.DataFrame
         DataFrame specifying the positions of different events, with columns
-        'event', 'x', and 'y'.
-    scenario : object
-        An object containing attributes for resource counts at different steps.
+        'event', 'x', and 'y' (plus optional 'label', 'resource', 'direction' -
+        see ``queue_direction`` - 'flip_icons' - see ``flip_entity_icons`` -
+        and 'resource_icon', which overrides ``custom_resource_icon`` per event
+        and can name an image instead of a text glyph - see ``EventPosition``).
+    scenario : object or dict, optional
+        Object whose attributes - or dict whose keys - give the number of each
+        resource available at a step, e.g. ``scenario.n_nurses`` or
+        ``scenario={"n_nurses": 2}`` (default is None). Used for two
+        independent things:
+
+        - Drawing the resource-availability icons at each stage. This also needs
+          a ``resource`` column on ``event_position_df`` naming the attribute or
+          key to read for that step (e.g. ``resource="n_nurses"``). If an event
+          declares a ``resource`` but no ``scenario`` is passed, a warning is
+          raised and those icons are skipped.
+        - Appending the resource identifier column (``resource_col_name``,
+          "resource_id" by default) to the hover ``customdata``, so a custom
+          ``hover_text_entity`` template can display it. This happens only when
+          the event log actually contains that column, i.e. the model logged
+          resource use via ``log_resource_use_start`` / ``log_resource_use_end``.
+          The built-in default template does not reference it, and a scenario
+          passed for a model with no resource-use logging is harmless - the
+          column is simply not appended.
     time_col_name : str, default="time"
         Name of the column in `event_log` that contains the timestamp of each
         event. Timestamps should represent the number of time units since the
@@ -1146,10 +2238,19 @@ def animate_activity_log(
         20).
     step_snapshot_max : int, optional
         Maximum number of patients to show in each snapshot per event (default
-        is 60).
+        is 60). Any entities beyond this are collapsed into a `+ n more` label
+        (or a gauge, see `step_snapshot_limit_gauges`). Acts as the fallback for
+        any event not named in `step_snapshot_max_overrides`.
+    step_snapshot_max_overrides : dict, optional
+        A mapping of event name to a per-event `step_snapshot_max`, e.g.
+        ``{"waiting_for_bed": 250}`` to show a long bottleneck queue in full
+        while keeping every other step capped at `step_snapshot_max`. Any event
+        not listed uses the scalar `step_snapshot_max`. Default `None`. A key
+        that matches no event in the log raises a warning.
     limit_duration : int, optional
-        Maximum duration to animate in minutes (default is None, which
-        auto-adjusts to the maximum time in the provided event log).
+        The time at which the animation stops (default is None, which
+        auto-adjusts to the maximum time in the provided event log). Together
+        with `warm_up` this bounds the animation window.
     plotly_height : int, optional
         Height of the Plotly figure in pixels (default is 900).
     plotly_width : int, optional
@@ -1184,6 +2285,13 @@ def animate_activity_log(
         column specified, customdata[1] is the second, etc. So e.g. if you pass
         in ["widgets_created_cumulative"] as your custom_hover_data, your
         hover_text_entity may be "Widgets created so far: %{customdata[0]}".
+        When ``scenario`` is set and the event log has a ``resource_col_name``
+        column, that column is appended to the list automatically, landing at
+        ``customdata[len(custom_hover_data)]``.
+        Because ``custom_hover_data`` replaces the fixed column list the default
+        ``hover_text_entity`` template indexes, you must also pass your own
+        ``hover_text_entity`` string - supplying ``custom_hover_data`` while
+        leaving ``hover_text_entity`` at its default raises ``ValueError``.
     gap_between_entities : int, optional
         Horizontal spacing between entities in pixels (default is 10).
     gap_between_queue_rows : int, optional
@@ -1192,14 +2300,95 @@ def animate_activity_log(
         Vertical spacing between rows in pixels (default is 30).
     gap_between_resources : int, optional
         Horizontal spacing between resources in pixels (default is 10).
+    queue_direction : {"left", "right"}, default="left"
+        Which way queues (and rows of resources) build out from their anchor.
+        "left" (the default, and byte-identical to previous versions) makes the
+        anchor the front of the queue, with entities stacking up to its left.
+        "right" mirrors this - the anchor becomes the bottom-left corner and the
+        queue extends rightwards, which reads better with entity emojis that
+        face right. Stage labels move to the opposite side of a right-building
+        queue. Set this per event instead with a `direction` column on
+        `event_position_df` (or `EventPosition(..., direction=...)`), which
+        overrides the animation-wide value.
+    flip_entity_icons : bool, default=False
+        Mirror entity icons (and a `custom_resource_icon`) horizontally - useful
+        when an emoji faces the wrong way for a particular layout, independently
+        of `queue_direction`. Set this per event instead with a `flip_icons`
+        column on `event_position_df` (or `EventPosition(..., flip_icons=...)`),
+        which overrides the animation-wide value. Requires CSS to reach the page
+        - this is injected automatically (see `vidigi.utils.inject_icon_flip_css`)
+        whenever any icon actually resolves to flipped; embedding the figure a
+        different way may need `vidigi.utils.entity_icon_flip_css()` added
+        explicitly. Does not affect a static export via `fig.write_image()`.
+    entity_icon_font : str, optional
+        Render entity icons in an icon font instead of emoji, so an icon can be
+        any glyph the font provides - one of `vidigi.utils.ICON_FONT_PRESETS`
+        (`"font-awesome"`, `"bootstrap-icons"`, `"material-symbols"`), or any
+        CSS font-family name already available on the page.
+        `custom_entity_icon_list` then supplies that font's codepoints instead
+        of emoji. Resource glyphs have their own `resource_icon_font`. See
+        `generate_animation`'s docstring for the overflow-icon exemption and
+        `vidigi.utils.entity_icon_font_css` for what reaching the page
+        involves; the CSS is injected automatically, as for
+        `flip_entity_icons`.
+    entity_icon_font_weight : int, optional
+        Overrides a preset's default weight. Ignored for a raw custom family.
+    resource_icon_font : str, optional
+        Render glyph resource icons (`custom_resource_icon`, and any text-glyph
+        `resource_icon`) in an icon font, independently of `entity_icon_font` -
+        each side can be in its own font, or one left on emoji. Same accepted
+        values and automatic CSS injection; the codepoint goes straight into
+        `custom_resource_icon` / `resource_icon`. Animation-wide. See
+        `generate_animation`'s docstring for detail.
+    resource_icon_font_weight : int, optional
+        Overrides a preset's default weight for `resource_icon_font`.
+    entity_colour_by : str, optional
+        Name of a column - typically one already on your event log - to
+        colour entity icons by. Only visible together with `entity_icon_font`,
+        since emoji are colour fonts and ignore `textfont.color` entirely.
+    entity_colour_map : dict, optional
+        Maps values of `entity_colour_by` to specific colours; an uncovered
+        value falls back to Plotly's default qualitative palette.
+    show_entity_legend : bool, default=True
+        Show a legend for `entity_colour_by`. Ignored when it is not set.
+    entity_annotation_by : str, optional
+        Name of a column to draw as offset text below each entity's icon -
+        e.g. a running length-of-stay figure. Express backend only. See
+        `generate_animation`'s docstring for the full trade-off against
+        appending text directly onto `icon` yourself: prefer appending when
+        `flip_entity_icons`/`entity_icon_font` aren't in play, and reach for
+        this only once they are.
+    entity_annotation_size : int, default=14
+        Font size (in points) of the `entity_annotation_by` text.
+    entity_annotation_color : str, default="black"
+        Colour of the `entity_annotation_by` text.
+    entity_annotation_offset_y : float, default=-15
+        Vertical offset, in data units, of `entity_annotation_by` text below
+        (negative) or above (positive) each entity's icon.
+    resource_image_size : float, optional
+        Size, in data units, of an image `resource_icon` (see
+        `EventPosition.resource_icon`). Defaults to `resource_icon_size`,
+        kept independent of `gap_between_resources` so changing the spacing
+        between resources doesn't also change their size.
+    entity_resource_offset_y : float, default=-10
+        Vertical offset, in data units, of each resource icon relative to the
+        entity using it - negative below (the historic default), positive
+        above. Applies to the default dot, a glyph `custom_resource_icon` /
+        `resource_icon`, and an image `resource_icon` alike.
     resource_opacity : float, optional
         Opacity of resource icons (default is 0.8).
     custom_resource_icon : str, optional
         Custom icon to use for resources (default is None).
     override_x_max : int, optional
-        Override the maximum x-coordinate of the plot (default is None).
+        Override the maximum x-coordinate of the plot (default is None). The
+        figure margin already auto-expands to fit auto-generated stage labels,
+        so this is only needed to reframe a layout the auto-sizing gets wrong.
+        The axis then runs exactly ``[0, override_x_max]``; a `UserWarning` is
+        raised if any event anchor falls outside that, as its queue / resources
+        would be drawn off-canvas.
     override_y_max : int, optional
-        Override the maximum y-coordinate of the plot (default is None).
+        Override the maximum y-coordinate of the plot (default is None). Same
+        off-canvas `UserWarning` as `override_x_max`.
     start_date : str, optional
         Start date for the animation in 'YYYY-MM-DD' format. Only used when
         time_display_units is 'd' or 'dhm' (default is None).
@@ -1257,6 +2446,21 @@ def animate_activity_log(
     stage_label_text_colour : str, optional
         Color of the stage label text added next to each event position when
         display_stage_labels is True (default is black).
+    stage_label_offset : float, optional
+        Gap, in data units, between a stage label and the front of its
+        queue/resources (the event anchor point) when display_stage_labels is
+        True (default is 10). Increase this for larger icon sizes so labels
+        don't crowd the icons.
+    plot_bgcolor : str, optional
+        Background colour of the plotting area (inside the axes), passed
+        straight to ``fig.update_layout(plot_bgcolor=...)``. Accepts any CSS
+        colour string, e.g. "white" or "#f5f5f5". If None (default), Plotly's
+        template default is left untouched.
+    paper_bgcolor : str, optional
+        Background colour of the area surrounding the plotting area (behind the
+        title, play button and timeline), passed straight to
+        ``fig.update_layout(paper_bgcolor=...)``. Accepts any CSS colour string.
+        If None (default), Plotly's template default is left untouched.
     backend: str, optional
         EXPERIMENTAL. Whether to use the plotly express backend for the
         initial plot (default), or the experimental plotly go backend. The go
@@ -1273,6 +2477,62 @@ def animate_activity_log(
         Manually specified maximum value for queue length gauges. If `None`,
         the upper limit is determined from the maximum queue length observed in
         the simulation when `step_snapshot_limit_gauges` is `True`.
+    step_snapshot_reveal_pop_in : bool, default=False
+        If True, an entity that re-appears as an individually-drawn icon after
+        being hidden by `step_snapshot_max` "pops in" at its queue position
+        instead of visibly flying in from the top-left of the plot. See
+        `generate_animation_df`'s docstring for the full mechanism and cost.
+        The default `False` is a verified no-op; **planned to change to `True`
+        at the next major version (3.0)**.
+    spawn_in_from_arrival : bool, default=True
+        When True (the default), a genuinely new entity glides into the animation
+        from the `event_position_df` anchor named `"arrival"` instead of flying in
+        from the plot's top-left corner - the arrival-side mirror of how the
+        synthetic `depart` step makes an exit land at a chosen anchor. Only
+        affects entities that arrive at least two snapshots after the animation
+        window opens; an entity already present when it opens keeps the top-left
+        fly-in, as does a layout with no `"arrival"` row in `event_position_df`.
+        Pass `False` to restore the pre-2.0.0 top-left fly-in. Independent of
+        `step_snapshot_reveal_pop_in`. See `generate_animation_df`'s docstring for
+        the full mechanism.
+    run_number : int, optional
+        Selects a single replication from a `TrialLogger` passed as `event_log`.
+        Only valid with a `TrialLogger`: passing it alongside a DataFrame or an
+        `EventLogger` raises `ValueError`, as does passing a multi-run
+        `TrialLogger` without it.
+    run_col_name : str or None, optional
+        Name of the column identifying which simulation run (replication) each
+        row belongs to, used to reject event logs containing more than one
+        replication. Default is "auto", which looks for a column named
+        (case-insensitively) one of 'run', 'run_number', 'replication', 'rep' or
+        'run_id'. Pass an explicit column name to override the search, or `None`
+        to disable the check.
+    warm_up : int, optional
+        The time at which the animation starts, in simulation time units
+        (default is 0, the beginning of the run). Not to be confused with
+        `start_time` above, which is a time of day used only for labelling
+        frames as clock times.
+
+        This is how to discard a warm-up period. Pass the **whole** event log
+        and set `warm_up` to the end of your warm-up; do not filter the log by
+        time first. Filtering removes the 'arrival' rows of every entity that
+        arrived during the warm-up, and since presence is worked out from
+        arrival and departure rows, those entities then vanish from every frame
+        - including ones still queuing, which is exactly what a steady-state
+        animation is meant to show. `warm_up` trims the window while leaving
+        that history intact.
+    snapshot_alignment : {"warm_up", "run_start"}, optional
+        Which point the snapshot grid counts from when `warm_up` is non-zero.
+        Ignored when `warm_up` is 0.
+
+        - "warm_up" (default): the first frame lands exactly on the boundary,
+          showing the state of the system as the warm-up ends.
+        - "run_start": frame times stay on the grid running from time 0 and the
+          early ones are dropped, so they remain the same times you would get
+          with no warm-up at all.
+
+        The two are identical whenever `warm_up` is a multiple of
+        `every_x_time_units`.
 
     Returns
     -------
@@ -1281,6 +2541,11 @@ def animate_activity_log(
 
     Notes
     -----
+    - **Pass a single replication only.** An event log containing more than one
+      run is rejected with a `ValueError`. Passing several runs does not raise on
+      its own - it silently blends them into an animation that represents no run
+      of your model - so this is checked before any work is done. Filter first,
+      e.g. `event_log[event_log["run"] == 1]`.
     - This function uses helper functions: reshape_for_animations,
       generate_animation_df, and generate_animation.
     - The animation supports customization of icon sizes, resource
@@ -1289,6 +2554,24 @@ def animate_activity_log(
     - A background image can be added to provide context for the patient flow.
     - The function handles both queuing and resource use events.
     """
+    # Accept an EventLogger / TrialLogger in place of a DataFrame; `run_number`
+    # picks one replication out of a TrialLogger. Passed on to reshape_for_animations
+    # as a plain DataFrame, so it does not re-run this coercion.
+    event_log = _coerce_event_log(event_log, run_number=run_number)
+
+    # Check here as well as in reshape_for_animations, deliberately. This is the entry
+    # point most users call, so the error should name this function's own arguments
+    # rather than an internal one's, and should fire before any work is done.
+    _check_single_run(event_log, run_col_name=run_col_name, frame_arg="event_log")
+    _check_one_arrival_per_entity(
+        event_log,
+        entity_col_name=entity_col_name,
+        event_type_col_name=event_type_col_name,
+        event_col_name=event_col_name,
+        pathway_col_name=pathway_col_name,
+        frame_arg="event_log",
+    )
+
     if debug_mode:
         start_time_function = time.perf_counter()
         print(
@@ -1296,19 +2579,23 @@ def animate_activity_log(
         )
 
     if limit_duration is None:
-        limit_duration = round(max(event_log["time"]))
+        limit_duration = round(event_log[time_col_name].max())
 
     full_entity_df = reshape_for_animations(
         event_log,
         every_x_time_units=every_x_time_units,
         limit_duration=limit_duration,
         step_snapshot_max=step_snapshot_max,
+        step_snapshot_max_overrides=step_snapshot_max_overrides,
         debug_mode=debug_mode,
         time_col_name=time_col_name,
         entity_col_name=entity_col_name,
         event_type_col_name=event_type_col_name,
         event_col_name=event_col_name,
         pathway_col_name=pathway_col_name,
+        run_col_name=run_col_name,
+        warm_up=warm_up,
+        snapshot_alignment=snapshot_alignment,
     )
 
     if debug_write_intermediate_objects:
@@ -1325,10 +2612,12 @@ def animate_activity_log(
         wrap_queues_at=wrap_queues_at,
         wrap_resources_at=wrap_resources_at,
         step_snapshot_max=step_snapshot_max,
+        step_snapshot_max_overrides=step_snapshot_max_overrides,
         gap_between_entities=gap_between_entities,
         gap_between_resources=gap_between_resources,
         gap_between_resource_rows=gap_between_resource_rows,
         gap_between_queue_rows=gap_between_queue_rows,
+        queue_direction=queue_direction,
         debug_mode=debug_mode,
         custom_entity_icon_list=custom_entity_icon_list,
         time_col_name=time_col_name,
@@ -1339,6 +2628,9 @@ def animate_activity_log(
         step_snapshot_limit_gauges=step_snapshot_limit_gauges,
         gauge_max_override=gauge_max_override,
         gauge_segments=gauge_segments,
+        step_snapshot_reveal_pop_in=step_snapshot_reveal_pop_in,
+        spawn_in_from_arrival=spawn_in_from_arrival,
+        run_col_name=run_col_name,
     )
 
     if debug_write_intermediate_objects:
@@ -1367,6 +2659,21 @@ def animate_activity_log(
         resource_opacity=resource_opacity,
         wrap_resources_at=wrap_resources_at,
         gap_between_resources=gap_between_resources,
+        queue_direction=queue_direction,
+        flip_entity_icons=flip_entity_icons,
+        entity_icon_font=entity_icon_font,
+        entity_icon_font_weight=entity_icon_font_weight,
+        resource_icon_font=resource_icon_font,
+        resource_icon_font_weight=resource_icon_font_weight,
+        entity_colour_by=entity_colour_by,
+        entity_colour_map=entity_colour_map,
+        show_entity_legend=show_entity_legend,
+        entity_annotation_by=entity_annotation_by,
+        entity_annotation_size=entity_annotation_size,
+        entity_annotation_color=entity_annotation_color,
+        entity_annotation_offset_y=entity_annotation_offset_y,
+        resource_image_size=resource_image_size,
+        entity_resource_offset_y=entity_resource_offset_y,
         custom_resource_icon=custom_resource_icon,
         frame_duration=frame_duration,  # milliseconds
         frame_transition_duration=frame_transition_duration,  # milliseconds
@@ -1374,13 +2681,18 @@ def animate_activity_log(
         time_col_name=time_col_name,
         entity_col_name=entity_col_name,
         event_col_name=event_col_name,
+        event_type_col_name=event_type_col_name,
         resource_col_name=resource_col_name,
         background_image_opacity=background_image_opacity,
         overflow_text_color=overflow_text_color,
         stage_label_text_colour=stage_label_text_colour,
+        stage_label_offset=stage_label_offset,
+        plot_bgcolor=plot_bgcolor,
+        paper_bgcolor=paper_bgcolor,
         backend=backend,
         hover_text_entity=hover_text_entity,
         custom_hover_data=custom_hover_data,
+        run_col_name=run_col_name,
     )
 
     if debug_mode:
@@ -1617,21 +2929,392 @@ def add_repeating_overlay(
         frame.data = frame_data
 
     if rect_opacity > 0:
-        for updatemenu in fig.layout.updatemenus:
-            if "buttons" in updatemenu and updatemenu["type"] == "buttons":
-                for button in updatemenu["buttons"]:
-                    if "args" in button and len(button["args"]) > 1:
-                        # args is [None, {frame: {...}, ...}]
-                        # Set redraw=True in the frame dict
-                        if "frame" in button["args"][1]:
-                            button["args"][1]["frame"]["redraw"] = True
-
-        for slider in fig.layout.sliders:
-            for step in slider["steps"]:
-                if "args" in step and len(step["args"]) > 1:
-                    # args is [ [frame_name], {frame: {...}, ...} ]
-                    # Set redraw=True in the frame dict
-                    if "frame" in step["args"][1]:
-                        step["args"][1]["frame"]["redraw"] = True
+        _enable_frame_redraw(fig)
 
     return fig
+
+
+def _enable_frame_redraw(fig: go.Figure) -> None:
+    """Force ``redraw=True`` on the play button and every slider step.
+
+    Plotly's default animation only re-styles existing traces
+    (``redraw=False``); a trace whose *type* changes between frames, or one on a
+    secondary axis, needs a full redraw or it renders once and then freezes.
+    Shared by :func:`add_repeating_overlay` and :func:`add_synchronised_trace`.
+    """
+    for updatemenu in fig.layout.updatemenus:
+        if "buttons" in updatemenu and updatemenu["type"] == "buttons":
+            for button in updatemenu["buttons"]:
+                if "args" in button and len(button["args"]) > 1:
+                    # args is [None, {frame: {...}, ...}]
+                    if "frame" in button["args"][1]:
+                        button["args"][1]["frame"]["redraw"] = True
+
+    for slider in fig.layout.sliders:
+        for step in slider["steps"]:
+            if "args" in step and len(step["args"]) > 1:
+                # args is [ [frame_name], {frame: {...}, ...} ]
+                if "frame" in step["args"][1]:
+                    step["args"][1]["frame"]["redraw"] = True
+
+
+# A single trace, or several, or nothing - accepted anywhere the synchronised
+# trace helpers take trace input. Frame data can also be a bare dict (the `go`
+# animation backend stores it that way), so those are tolerated too.
+_TraceInput: TypeAlias = BaseTraceType | dict | Sequence[BaseTraceType | dict] | None
+
+
+def _as_trace_list(traces: _TraceInput) -> list:
+    """Normalise ``None`` / a single trace / a sequence of traces to a list."""
+    if traces is None:
+        return []
+    if isinstance(traces, (list, tuple)):
+        return list(traces)
+    return [traces]
+
+
+def _traces_need_redraw(traces: Sequence) -> bool:
+    """True if any trace can't be animated by a plain restyle.
+
+    A trace whose *type* is not scatter (a bar, say), or one drawn on a
+    secondary axis, needs ``redraw=True`` or it renders on the first frame and
+    then freezes.
+    """
+    for trace in traces:
+        if isinstance(trace, dict):
+            ttype = trace.get("type")
+            xaxis = trace.get("xaxis")
+            yaxis = trace.get("yaxis")
+        else:
+            ttype = getattr(trace, "type", None)
+            xaxis = getattr(trace, "xaxis", None)
+            yaxis = getattr(trace, "yaxis", None)
+        if ttype not in (None, "scatter", "scattergl"):
+            return True
+        if xaxis not in (None, "x") or yaxis not in (None, "y"):
+            return True
+    return False
+
+
+def add_subplot_panels(
+    fig: go.Figure,
+    *,
+    row_heights: Sequence[float],
+    vertical_spacing: float = 0.05,
+    subplot_titles: Sequence[str] | None = None,
+    hide_new_panel_axes: bool = True,
+) -> go.Figure:
+    """Re-home a vidigi animation into the top row of a stacked subplot grid.
+
+    A vidigi animation is a plain single-axis Plotly figure. To show an extra
+    chart beneath it (a running total, a per-frame bar panel, a growing line)
+    the figure first needs a subplot grid it can share. This does the
+    ``plotly.subplots.make_subplots`` scaffolding - including copying the private
+    ``_grid_ref`` attribute, without which later ``fig.add_trace(..., row=2,
+    col=1)`` calls cannot resolve the panel - so callers don't have to.
+
+    Call this **before** :func:`add_synchronised_trace` /
+    :func:`add_synchronised_trace_from_dataframe`: the target axes must exist
+    before traces are placed on them.
+
+    Parameters
+    ----------
+    fig : plotly.graph_objects.Figure
+        The figure from :func:`generate_animation` or
+        :func:`animate_activity_log`. Modified in place.
+    row_heights : sequence of float
+        One entry per row, top to bottom. ``row_heights[0]`` is the animation
+        panel; there must be at least one row beneath it. Passed straight to
+        ``make_subplots``.
+    vertical_spacing : float, default 0.05
+        Gap between rows, as a fraction of figure height.
+    subplot_titles : sequence of str, optional
+        One title per row (use ``""`` for rows with no title).
+    hide_new_panel_axes : bool, default True
+        Blank the grid lines, zero line, axis line and tick labels on the new
+        panels (rows 2 onward). They are usually annotation strips rather than
+        full charts; set ``False`` and restyle by hand if you want axes.
+
+    Returns
+    -------
+    plotly.graph_objects.Figure
+        The same figure, now backed by a subplot grid, with the animation in
+        row 1 and empty panels below it.
+    """
+    n_rows = len(row_heights)
+    if n_rows < 2:
+        raise ValueError(
+            "`row_heights` needs at least two entries: the vidigi animation "
+            "panel plus at least one panel beneath it."
+        )
+
+    sp = make_subplots(
+        rows=n_rows,
+        cols=1,
+        row_heights=list(row_heights),
+        vertical_spacing=vertical_spacing,
+        subplot_titles=subplot_titles,
+    )
+
+    # Shrink the existing animation into the first row's vertical band.
+    fig.layout["xaxis"]["domain"] = sp.layout["xaxis"]["domain"]
+    fig.layout["yaxis"]["domain"] = sp.layout["yaxis"]["domain"]
+
+    # Bring across the axis for every new row.
+    for i in range(2, n_rows + 1):
+        fig.layout[f"xaxis{i}"] = sp.layout[f"xaxis{i}"]
+        fig.layout[f"yaxis{i}"] = sp.layout[f"yaxis{i}"]
+
+    # `_grid_ref` is what lets Plotly translate `row=`/`col=` on a later
+    # `add_trace` into the right axis pair. It is private, but there is no
+    # public way to graft a grid onto a figure that did not come from
+    # `make_subplots`.
+    fig._grid_ref = sp._grid_ref
+
+    if hide_new_panel_axes:
+        blank = dict(
+            showgrid=False, zeroline=False, showline=False, showticklabels=False
+        )
+        updates = {}
+        for i in range(2, n_rows + 1):
+            updates[f"xaxis{i}"] = dict(blank)
+            updates[f"yaxis{i}"] = dict(blank)
+        fig.update_layout(**updates)
+
+    return fig
+
+
+def add_synchronised_trace(
+    fig: go.Figure,
+    frame_traces: Callable[[str, int], _TraceInput],
+    *,
+    static_traces: _TraceInput = None,
+    initial_traces: _TraceInput = None,
+    redraw: bool | None = None,
+) -> go.Figure:
+    """Add extra traces to an animation, kept in step with its frames.
+
+    A vidigi animation figure holds more traces in ``fig.data`` than in each
+    ``fig.frames[i].data`` - the per-entity traces are animated, while the
+    stage-label and resource-icon traces are static and simply left untouched as
+    the animation plays. Adding your own animated trace by hand means
+    reproducing that arrangement exactly, and getting it slightly wrong makes
+    traces flicker, vanish after the first frame, or blank out the stage labels.
+
+    This helper does it for you:
+
+    - ``static_traces`` are added once and never re-sent per frame, so - like
+      vidigi's own label/resource traces - they stay put for the whole
+      animation.
+    - ``frame_traces`` is called once per frame to build the animated trace(s)
+      for that frame. It **must return the same number of traces every time**
+      (return an empty trace such as ``go.Scatter(x=[], y=[])`` for frames with
+      nothing to show); a mismatch raises ``ValueError`` naming the frame.
+    - The existing frames' trace mapping is preserved, so the stage labels and
+      resource icons keep rendering throughout.
+
+    Parameters
+    ----------
+    fig : plotly.graph_objects.Figure
+        An animated figure from :func:`generate_animation` /
+        :func:`animate_activity_log`. Modified in place. If it has no frames a
+        ``UserWarning`` is issued and it is returned unchanged.
+    frame_traces : callable
+        ``frame_traces(frame_name, frame_index) -> trace | list[trace]``. Called
+        for every frame, in order. ``frame_name`` is ``fig.frames[i].name`` (the
+        formatted time shown on the slider); ``frame_index`` is ``i``. Prefer
+        ``frame_index`` for lookups - ``frame_name`` is reformatted by
+        ``time_display_units`` and may not match your data.
+    static_traces : trace or list of traces, optional
+        Trace(s) shown identically on every frame - a target line, a fixed
+        annotation, a reference band. Added to ``fig.data`` only.
+    initial_traces : trace or list of traces, optional
+        What to seed ``fig.data`` with for the animated slots (the state shown
+        before Play is pressed). Defaults to ``frame_traces(frames[0].name, 0)``.
+        Must have the same length as ``frame_traces`` returns.
+    redraw : bool, optional
+        Whether to force ``redraw=True`` on the play button and slider. ``None``
+        (default) decides automatically: needed for non-scatter traces (bars) or
+        traces on a secondary axis, not otherwise. Pass a bool to override.
+
+    Returns
+    -------
+    plotly.graph_objects.Figure
+        The same figure, with the extra traces added and every frame updated.
+
+    See Also
+    --------
+    add_synchronised_trace_from_dataframe : convenience wrapper for the common
+        case of a long-form DataFrame with one row per entity per time step.
+    add_subplot_panels : make room for an extra chart panel first.
+    """
+    if not fig.frames:
+        warnings.warn(
+            "The figure has no animation frames, so there is nothing to keep a "
+            "synchronised trace in step with. Returning the figure unchanged.",
+            UserWarning,
+            stacklevel=2,
+        )
+        return fig
+
+    static_list = _as_trace_list(static_traces)
+
+    # Build every frame's traces up front, so a ragged return aborts before the
+    # figure has been touched.
+    per_frame = [
+        _as_trace_list(frame_traces(frame.name, i))
+        for i, frame in enumerate(fig.frames)
+    ]
+
+    n_animated = len(per_frame[0])
+    if n_animated == 0:
+        raise ValueError(
+            "`frame_traces` returned nothing for the first frame. It must "
+            "return at least one trace per frame - use an empty trace such as "
+            "go.Scatter(x=[], y=[]) for a frame with nothing to show."
+        )
+    for i, new in enumerate(per_frame):
+        if len(new) != n_animated:
+            raise ValueError(
+                f"`frame_traces` returned {len(new)} trace(s) for frame {i} "
+                f"({fig.frames[i].name!r}) but {n_animated} for the first "
+                f"frame. It must return the same number of traces for every "
+                f"frame."
+            )
+
+    seed = (
+        _as_trace_list(initial_traces) if initial_traces is not None else per_frame[0]
+    )
+    if len(seed) != n_animated:
+        raise ValueError(
+            f"`initial_traces` has {len(seed)} trace(s) but `frame_traces` "
+            f"returns {n_animated} per frame; they must match."
+        )
+
+    # Static traces first, then the animated ones, so the animated traces take
+    # the final contiguous block of indices in `fig.data`.
+    for trace in static_list:
+        fig.add_trace(trace)
+    for trace in seed:
+        fig.add_trace(trace)
+
+    animated_indices = list(range(len(fig.data) - n_animated, len(fig.data)))
+
+    redraw_needed = _traces_need_redraw(static_list)
+
+    for i, frame in enumerate(fig.frames):
+        new = per_frame[i]
+        base_data = list(frame.data)
+        if frame.traces is not None:
+            base_indices = list(frame.traces)
+        else:
+            # Plotly's default: frame trace k maps to fig.data[k]. vidigi's
+            # frames carry only the per-entity traces, so this is [0 .. E-1] and
+            # the trailing static traces are never disturbed.
+            base_indices = list(range(len(base_data)))
+
+        frame.data = tuple(base_data) + tuple(new)
+        frame.traces = base_indices + animated_indices
+
+        if _traces_need_redraw(new):
+            redraw_needed = True
+
+    if redraw is True or (redraw is None and redraw_needed):
+        _enable_frame_redraw(fig)
+
+    return fig
+
+
+def add_synchronised_trace_from_dataframe(
+    fig: go.Figure,
+    data: pd.DataFrame,
+    make_trace: Callable[[pd.DataFrame], _TraceInput],
+    *,
+    frame_time_col: str,
+    match: Literal["index", "value"] = "index",
+    accumulate: bool = False,
+    static_traces: _TraceInput = None,
+    redraw: bool | None = None,
+) -> go.Figure:
+    """Add a synchronised trace built from a long-form DataFrame.
+
+    A convenience wrapper over :func:`add_synchronised_trace` for the usual
+    shape: a DataFrame with a time column, from which one (or more) trace is
+    built per animation frame.
+
+    Parameters
+    ----------
+    fig : plotly.graph_objects.Figure
+        An animated figure from :func:`generate_animation` /
+        :func:`animate_activity_log`. Modified in place.
+    data : pandas.DataFrame
+        Long-form data. The distinct values of ``frame_time_col``, sorted
+        ascending, are the time steps.
+    make_trace : callable
+        ``make_trace(rows) -> trace | list[trace]``, where ``rows`` is the slice
+        of ``data`` for the current frame (see ``accumulate``). Must return the
+        same number of traces every call - return an empty trace (e.g.
+        ``go.Bar(x=[], y=[])``) for a frame with no rows.
+    frame_time_col : str
+        Column of ``data`` identifying the time step of each row.
+    match : {"index", "value"}, default "index"
+        How data times line up with animation frames. ``"index"`` pairs the
+        i-th distinct time with ``fig.frames[i]`` regardless of how the frame is
+        labelled - robust to ``time_display_units`` - and raises ``ValueError``
+        if the counts differ. ``"value"`` matches ``str(time) == str(frame.name)``
+        instead, for when only some frames have data.
+    accumulate : bool, default False
+        ``False`` passes ``make_trace`` only the current time step's rows (a
+        snapshot - e.g. a bar chart of the current state). ``True`` passes every
+        row up to and including the current time (a cumulative view - e.g. a
+        line that grows as the animation plays).
+    static_traces, redraw
+        Passed through to :func:`add_synchronised_trace`.
+
+    Returns
+    -------
+    plotly.graph_objects.Figure
+        The same figure, with the extra trace(s) added and every frame updated.
+    """
+    if frame_time_col not in data.columns:
+        raise ValueError(
+            f"`frame_time_col='{frame_time_col}'` is not a column of `data`. "
+            f"Available columns: {sorted(str(c) for c in data.columns)}."
+        )
+    if match not in ("index", "value"):
+        raise ValueError(f"`match` must be 'index' or 'value', not {match!r}.")
+
+    ordered_times = sorted(data[frame_time_col].dropna().unique())
+
+    if match == "index" and len(ordered_times) != len(fig.frames):
+        raise ValueError(
+            f"`match='index'` needs one distinct value of '{frame_time_col}' "
+            f"per animation frame, but `data` has {len(ordered_times)} and the "
+            f"figure has {len(fig.frames)}. Filter `data` down to the "
+            f"animation's snapshot times, or pass `match='value'` to align on "
+            f"frame name instead."
+        )
+
+    def _frame_traces(frame_name: str, frame_index: int) -> _TraceInput:
+        if match == "index":
+            current = ordered_times[frame_index]
+        else:
+            current = next(
+                (t for t in ordered_times if str(t) == str(frame_name)), None
+            )
+
+        if current is None:
+            rows = data.iloc[0:0]
+        elif accumulate:
+            rows = data[data[frame_time_col] <= current]
+        else:
+            rows = data[data[frame_time_col] == current]
+
+        return make_trace(rows)
+
+    return add_synchronised_trace(
+        fig,
+        _frame_traces,
+        static_traces=static_traces,
+        redraw=redraw,
+    )

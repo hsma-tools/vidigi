@@ -11,6 +11,11 @@ filters:
   - quarto
   - line-highlight
 image: adding_vidigi_to_a_simple_simpy_model_hsma_structure.gif
+pub-info:
+    abstract: |
+        The original version of the HSMA-structure walkthrough, kept for anyone still running vidigi
+        0.0.4 or earlier. If you're on a current release, see the updated version of this example
+        instead.
 ---
 
 ```{python}

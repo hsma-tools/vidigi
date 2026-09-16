@@ -1,14 +1,12 @@
-import simpy
+# import matplotlib.pyplot as plt
+import random
+
+import arrow
 import numpy as np
 import pandas as pd
+import simpy
+from sim_tools.distributions import Bernoulli, Lognormal
 
-# import matplotlib.pyplot as plt
-import itertools
-import arrow
-import random
-import math
-import warnings
-from sim_tools.distributions import Lognormal, Bernoulli, Gamma
 from vidigi.resources import VidigiResource as CustomResource
 
 TRACE = False
@@ -1153,71 +1151,57 @@ class Hospital:
 
         results_primary_pt = pd.DataFrame(
             {
-                "Day": np.array([getattr(p, "day") for p in self.cum_primary_patients]),
-                "weekday": np.array(
-                    [getattr(p, "weekday") for p in self.cum_primary_patients]
-                ),
-                "ID": np.array([getattr(p, "id") for p in self.cum_primary_patients]),
+                "Day": np.array([p.day for p in self.cum_primary_patients]),
+                "weekday": np.array([p.weekday for p in self.cum_primary_patients]),
+                "ID": np.array([p.id for p in self.cum_primary_patients]),
                 "arrival time": np.array(
-                    [getattr(p, "arrival") for p in self.cum_primary_patients]
+                    [p.arrival for p in self.cum_primary_patients]
                 ),
                 "patient class": np.array(
-                    [getattr(p, "patient_class") for p in self.cum_primary_patients]
+                    [p.patient_class for p in self.cum_primary_patients]
                 ),
                 "surgery type": np.array(
-                    [getattr(p, "primary_label") for p in self.cum_primary_patients]
+                    [p.primary_label for p in self.cum_primary_patients]
                 ),
                 "lost slots": np.array(
-                    [getattr(p, "lost_slots_bool") for p in self.cum_primary_patients]
+                    [p.lost_slots_bool for p in self.cum_primary_patients]
                 ),
                 "queue time": np.array(
-                    [getattr(p, "queue_beds") for p in self.cum_primary_patients]
+                    [p.queue_beds for p in self.cum_primary_patients]
                 ),
-                "los": np.array(
-                    [getattr(p, "primary_los") for p in self.cum_primary_patients]
-                ),
+                "los": np.array([p.primary_los for p in self.cum_primary_patients]),
                 "delayed discharge": np.array(
-                    [getattr(p, "delayed_los_bool") for p in self.cum_primary_patients]
+                    [p.delayed_los_bool for p in self.cum_primary_patients]
                 ),
-                "depart": np.array(
-                    [getattr(p, "depart") for p in self.cum_primary_patients]
-                ),
+                "depart": np.array([p.depart for p in self.cum_primary_patients]),
             }
         )
 
         results_revision_pt = pd.DataFrame(
             {
-                "Day": np.array(
-                    [getattr(p, "day") for p in self.cum_revision_patients]
-                ),
-                "ID": np.array([getattr(p, "id") for p in self.cum_revision_patients]),
-                "weekday": np.array(
-                    [getattr(p, "weekday") for p in self.cum_revision_patients]
-                ),
+                "Day": np.array([p.day for p in self.cum_revision_patients]),
+                "ID": np.array([p.id for p in self.cum_revision_patients]),
+                "weekday": np.array([p.weekday for p in self.cum_revision_patients]),
                 "arrival time": np.array(
-                    [getattr(p, "arrival") for p in self.cum_revision_patients]
+                    [p.arrival for p in self.cum_revision_patients]
                 ),
                 "patient class": np.array(
-                    [getattr(p, "patient_class") for p in self.cum_revision_patients]
+                    [p.patient_class for p in self.cum_revision_patients]
                 ),
                 "surgery type": np.array(
-                    [getattr(p, "revision_label") for p in self.cum_revision_patients]
+                    [p.revision_label for p in self.cum_revision_patients]
                 ),
                 "lost slots": np.array(
-                    [getattr(p, "lost_slots_bool") for p in self.cum_revision_patients]
+                    [p.lost_slots_bool for p in self.cum_revision_patients]
                 ),
                 "queue time": np.array(
-                    [getattr(p, "queue_beds") for p in self.cum_revision_patients]
+                    [p.queue_beds for p in self.cum_revision_patients]
                 ),
-                "los": np.array(
-                    [getattr(p, "revision_los") for p in self.cum_revision_patients]
-                ),
+                "los": np.array([p.revision_los for p in self.cum_revision_patients]),
                 "delayed discharge": np.array(
-                    [getattr(p, "delayed_los_bool") for p in self.cum_revision_patients]
+                    [p.delayed_los_bool for p in self.cum_revision_patients]
                 ),
-                "depart": np.array(
-                    [getattr(p, "depart") for p in self.cum_revision_patients]
-                ),
+                "depart": np.array([p.depart for p in self.cum_revision_patients]),
             }
         )
         return (results_primary_pt, results_revision_pt)
@@ -1289,18 +1273,18 @@ class Hospital:
             # queue times
             primary_q = np.array(
                 [
-                    getattr(p, "queue_beds")
+                    p.queue_beds
                     for p in self.cum_primary_patients
-                    if getattr(p, "queue_beds") > -np.inf
+                    if p.queue_beds > -np.inf
                 ]
             ).mean()
             self.audit_primary_queue_beds.append(primary_q)
 
             revision_q = np.array(
                 [
-                    getattr(p, "queue_beds")
+                    p.queue_beds
                     for p in self.cum_revision_patients
-                    if getattr(p, "queue_beds") > -np.inf
+                    if p.queue_beds > -np.inf
                 ]
             ).mean()
             self.audit_revision_queue_beds.append(revision_q)
@@ -1309,9 +1293,9 @@ class Hospital:
             primarylos = (
                 np.array(
                     [
-                        getattr(p, "primary_los")
+                        p.primary_los
                         for p in self.cum_primary_patients
-                        if getattr(p, "primary_los") > -np.inf
+                        if p.primary_los > -np.inf
                     ]
                 )
                 .mean()
@@ -1322,9 +1306,9 @@ class Hospital:
             revisionlos = (
                 np.array(
                     [
-                        getattr(p, "revision_los")
+                        p.revision_los
                         for p in self.cum_revision_patients
-                        if getattr(p, "revision_los") > -np.inf
+                        if p.revision_los > -np.inf
                     ]
                 )
                 .mean()

@@ -11,20 +11,19 @@ listing:
       - "adding_vidigi_to_a_simple_simpy_model_hsma_structure.qmd"
       - "example_1_simplest_case/*.ipynb"
       - "example_2_branching_multistep/*.ipynb"
-      - "example_6_simplest_case_storewrapper/*.ipynb"
       - "example_7_simplest_case_priority_resource_storewrapper/*.ipynb"
       - "example_14_carwash/*.ipynb"
     type: grid
-    sort: "title"
+    sort: false
     grid-columns: 3
     template: ../vidigi_docs/listing.ejs
 
   - id: ciw-examples
     contents:
-      - "example_4_ciw/*.ipynb"
       - "example_10_advanced_ciw/*.ipynb"
+      - "example_4_ciw/*.ipynb"
     type: grid # A list style instead of a grid
-    sort: "title"
+    sort: false
     grid-columns: 3
     template: ../vidigi_docs/listing.ejs
 
@@ -32,7 +31,15 @@ listing:
     contents:
       - "salabim_bank/salabim_bank.qmd"
     type: grid
-    sort: "title"
+    sort: false
+    grid-columns: 3
+    template: ../vidigi_docs/listing.ejs
+
+  - id: abs-examples
+    contents:
+      - "example_18_vidigi_with_mesa_abs/vidigi_abs.ipynb"
+    type: grid # A list style instead of a grid
+    sort: false
     grid-columns: 3
     template: ../vidigi_docs/listing.ejs
 
@@ -50,22 +57,18 @@ listing:
       - "example_17_resourceless_larger_queues/resourceless_longer_queues.ipynb"
       - "example_19_moving_resource/moving_resource.ipynb"
     type: grid # A list style instead of a grid
-    sort: "title"
+    sort: false
     grid-columns: 3
     template: ../vidigi_docs/listing.ejs
 
-  - id: abs-examples
-    contents:
-      - "example_18_vidigi_with_mesa_abs/vidigi_abs.ipynb"
-    type: grid # A list style instead of a grid
-    sort: "title"
-    grid-columns: 3
-    template: ../vidigi_docs/listing.ejs
+
 
   - id: legacy-examples
     contents:
       - "../vidigi_docs/adding_vidigi_to_a_simple_simpy_model_hsma_structure_old.qmd"
+      - "../vidigi_docs/adding_vidigi_to_a_simple_simpy_model_hsma_structure_1_0_0_1_3_1.qmd"
       - "../vidigi_docs/populating_event_logs.qmd"
+      - "example_6_simplest_case_storewrapper/*.ipynb"
     type: grid # A list style instead of a grid
     sort: false
     grid-columns: 3
@@ -94,6 +97,13 @@ Models built using the Salabim package.
 ::: {#salabim-examples}
 :::
 
+## Agent Based Simulation (ABS) Examples
+
+These examples look at how vidigi could be used for agent based simulation instead.
+
+::: {#abs-examples}
+:::
+
 ## Advanced Examples
 
 Advanced examples with more complex elements introduced.
@@ -102,16 +112,9 @@ These are primarily written in SimPy, but a lot of the principles could be appli
 ::: {#advanced-examples}
 :::
 
-## Agent Based Simulation (ABS) Examples
-
-These examples look at how vidigi could be used for agent based simulation instead.
-
-::: {#abs-examples}
-:::
-
 ## Legacy Examples
 
-Old examples aimed at those using vidigi 0.0.4 and below.
+Old examples aimed at those using earlier versions of vidigi.
 
 ::: {#legacy-examples}
 :::

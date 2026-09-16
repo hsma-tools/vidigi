@@ -1,16 +1,19 @@
 import random
+
 import numpy as np
 import pandas as pd
 import simpy
 from sim_tools.distributions import Exponential, Lognormal
-from vidigi.resources import populate_store
+
+from vidigi.resources import VidigiStore
+from vidigi.logging import EventLogger, TrialLogger
 
 
 # Class to store global parameter values.  We don't create an instance of this
 # class - we just refer to the class blueprint itself to access the numbers
 # inside.
 class g:
-    '''
+    """
     Create a scenario to parameterise the simulation model
 
     Parameters:
@@ -38,7 +41,8 @@ class g:
     number_of_runs: int
         The number of times the simulation will be run with different random number streams
 
-    '''
+    """
+
     random_number_set = 42
 
     n_cubicles = 4
@@ -50,42 +54,48 @@ class g:
     sim_duration = 600
     number_of_runs = 100
 
+
 # Class representing patients coming in to the clinic.
 class Patient:
-    '''
+    """
     Class defining details for a patient entity
-    '''
+    """
+
     def __init__(self, p_id):
-        '''
+        """
         Constructor method
 
         Params:
         -----
         identifier: int
             a numeric identifier for the patient.
-        '''
+        """
         self.identifier = p_id
         self.arrival = -np.inf
         self.wait_treat = -np.inf
         self.total_time = -np.inf
         self.treat_duration = -np.inf
 
+
 # Class representing our model of the clinic.
 class Model:
-    '''
+    """
     Simulates the simplest minor treatment process for a patient
 
     1. Arrive
     2. Examined/treated by nurse when one available
     3. Discharged
-    '''
+    """
+
     # Constructor to set up the model for a run.  We pass in a run number when
     # we create a new model.
     def __init__(self, run_number):
         # Create a SimPy environment in which everything will live
         self.env = simpy.Environment()
+        # Store the passed in run number
+        self.run_number = run_number
 
-        self.event_log = []
+        self.logger = EventLogger(env=self.env, run_number=self.run_number)
 
         # Create a patient counter (which we'll use as a patient ID)
         self.patient_counter = 0
@@ -94,9 +104,6 @@ class Model:
 
         # Create our resources
         self.init_resources()
-
-        # Store the passed in run number
-        self.run_number = run_number
 
         # Create a new Pandas DataFrame that will store some results against
         # the patient ID (which we'll use as the index).
@@ -110,26 +117,29 @@ class Model:
         # the model
         self.mean_q_time_cubicle = 0
 
-        self.patient_inter_arrival_dist = Exponential(mean = g.arrival_rate,
-                                                      random_seed = self.run_number*g.random_number_set)
-        self.treat_dist = Lognormal(mean = g.trauma_treat_mean,
-                                    stdev = g.trauma_treat_var,
-                                    random_seed = self.run_number*g.random_number_set)
+        self.patient_inter_arrival_dist = Exponential(
+            mean=g.arrival_rate, random_seed=self.run_number * g.random_number_set
+        )
+        self.treat_dist = Lognormal(
+            mean=g.trauma_treat_mean,
+            stdev=g.trauma_treat_var,
+            random_seed=self.run_number * g.random_number_set,
+        )
+
+
 
     def init_resources(self):
-        '''
+        """
         Init the number of resources
         and store in the arguments container object
 
         Resource list:
             1. Nurses/treatment bays (same thing in this model)
 
-        '''
-        self.treatment_cubicles = simpy.Store(self.env)
-
-        populate_store(num_resources=g.n_cubicles,
-                       simpy_store=self.treatment_cubicles,
-                       sim_env=self.env)
+        """
+        self.treatment_cubicles = VidigiStore(
+            self.env, num_resources=g.n_cubicles, label="treatment_cubicle", logger=self.logger
+        )
 
     # A generator function that represents the DES generator for patient
     # arrivals
@@ -172,65 +182,26 @@ class Model:
     # extract information from / record information to it
     def attend_clinic(self, patient):
         self.arrival = self.env.now
-        self.event_log.append(
-            {'patient': patient.identifier,
-             'pathway': 'Simplest',
-             'event_type': 'arrival_departure',
-             'event': 'arrival',
-             'time': self.env.now}
-        )
+        self.logger.log_arrival(entity_id=patient.identifier)
+        start_wait = self.env.now
+
+        self.logger.log_queue(entity_id=patient.identifier, event="treatment_wait_begins")
 
         # request examination resource
-        start_wait = self.env.now
-        self.event_log.append(
-            {'patient': patient.identifier,
-             'pathway': 'Simplest',
-             'event': 'treatment_wait_begins',
-             'event_type': 'queue',
-             'time': self.env.now}
-        )
+        with self.treatment_cubicles.request(entity_id=patient.identifier) as req:
+            # Seize a treatment resource when available
+            yield req
 
-        # Seize a treatment resource when available
-        treatment_resource = yield self.treatment_cubicles.get()
+            # record the waiting time for registration
+            self.wait_treat = self.env.now - start_wait
 
-        # record the waiting time for registration
-        self.wait_treat = self.env.now - start_wait
-        self.event_log.append(
-            {'patient': patient.identifier,
-                'pathway': 'Simplest',
-                'event': 'treatment_begins',
-                'event_type': 'resource_use',
-                'time': self.env.now,
-                'resource_id': treatment_resource.id_attribute
-                }
-        )
-
-        # sample treatment duration
-        self.treat_duration = self.treat_dist.sample()
-        yield self.env.timeout(self.treat_duration)
-
-        self.event_log.append(
-            {'patient': patient.identifier,
-                'pathway': 'Simplest',
-                'event': 'treatment_complete',
-                'event_type': 'resource_use_end',
-                'time': self.env.now,
-                'resource_id': treatment_resource.id_attribute}
-        )
-
-        # Resource is no longer in use, so put it back in
-        self.treatment_cubicles.put(treatment_resource)
+            # sample treatment duration
+            self.treat_duration = self.treat_dist.sample()
+            yield self.env.timeout(self.treat_duration)
 
         # total time in system
         self.total_time = self.env.now - self.arrival
-        self.event_log.append(
-            {'patient': patient.identifier,
-            'pathway': 'Simplest',
-            'event': 'depart',
-            'event_type': 'arrival_departure',
-            'time': self.env.now}
-        )
-
+        self.logger.log_departure(entity_id=patient.identifier)
 
     # This method calculates results over a single run.  Here we just calculate
     # a mean, but in real world models you'd probably want to calculate more.
@@ -254,29 +225,25 @@ class Model:
         # run results
         self.calculate_run_results()
 
-        self.event_log = pd.DataFrame(self.event_log)
-
-        self.event_log["run"] = self.run_number
-
-        return {'results': self.results_df, 'event_log': self.event_log}
+        return self.results_df
 
 # Class representing a Trial for our simulation - a batch of simulation runs.
 class Trial:
     # The constructor sets up a pandas dataframe that will store the key
     # results from each run against run number, with run number as the index.
-    def  __init__(self):
+    def __init__(self):
         self.df_trial_results = pd.DataFrame()
         self.df_trial_results["Run Number"] = [0]
         self.df_trial_results["Arrivals"] = [0]
         self.df_trial_results["Mean Queue Time Cubicle"] = [0.0]
         self.df_trial_results.set_index("Run Number", inplace=True)
 
-        self.all_event_logs = []
+        self.trial_logger = TrialLogger()
 
     # Method to run a trial
     def run_trial(self):
         print(f"{g.n_cubicles} nurses")
-        print("") ## Print a blank line
+        print()  ## Print a blank line
 
         # Run the simulation for the number of runs specified in g class.
         # For each run, we create a new instance of the Model class and call its
@@ -288,17 +255,11 @@ class Trial:
             random.seed(run)
 
             my_model = Model(run)
-            model_outputs = my_model.run()
-            patient_level_results = model_outputs["results"]
-            event_log = model_outputs["event_log"]
+            patient_level_results = my_model.run()
 
             self.df_trial_results.loc[run] = [
                 len(patient_level_results),
                 my_model.mean_q_time_cubicle,
             ]
 
-            # print(event_log)
-
-            self.all_event_logs.append(event_log)
-
-        self.all_event_logs = pd.concat(self.all_event_logs)
+            self.trial_logger.add_log(my_model.logger)

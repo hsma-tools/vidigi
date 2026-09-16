@@ -1,0 +1,181 @@
+---
+title: "Migrating to vidigi 2.0.0"
+subtitle: "What breaks, what's deprecated, and how to update your code"
+toc: true
+toc-expand: 2
+---
+
+vidigi 2.0.0 is a major release: alongside a large set of additions (a new `vidigi.analysis`/`vidigi.plots` layer, icon fonts, queue direction, process-map occupancy metrics, and more), it fixes several long-standing bugs whose corrected behaviour changes output for callers who change nothing in their own code.
+
+This page is an action-oriented checklist for upgrading from 1.x — it only covers what you need to *do*. For the complete list of every addition, see the [Changelog](changelog.qmd); for a runnable tour of everything new, see [`examples/v2_release_additions`](../examples/v2_release_additions/v2_release_additions.ipynb).
+
+## Breaking changes
+
+### Animations
+
+::: {.callout-warning}
+**Multi-run event logs are now rejected.** Passing an event log containing more than one simulation run to `animate_activity_log`, `generate_animation`, `reshape_for_animations` or `generate_animation_df` used to silently blend the runs into one fictional animation representing no run of your model. All four functions now raise `ValueError` naming the offending column.
+
+If you were already filtering to a single replication before animating, nothing changes. If not, filter first — e.g. `event_log[event_log["run_number"] == 0]`. The new `run_col_name` argument (default `"auto"`, matching `run`/`run_number`/`replication`/`rep`/`run_id` case-insensitively) can be pointed at a custom column name, or set to `None` to disable the check entirely.
+:::
+
+::: {.callout-warning}
+**Exit steps now use your `event_type_col_name` column.** `reshape_for_animations` used to always write the exit step's type to a hardcoded `event_type` column, even when you passed a custom `event_type_col_name`. That left two type columns — yours (empty on exit rows) and a spurious `event_type`.
+
+If you use the default column names, nothing changes. If you pass a custom `event_type_col_name`, re-check any code downstream of `reshape_for_animations` that reads exit rows.
+:::
+
+::: {.callout-warning}
+**`custom_hover_data` without a matching `hover_text_entity` now raises.** The default hover template indexes six fixed columns by position; passing `custom_hover_data` alone replaced that list wholesale, so the built-in template silently read the wrong columns and rendered garbled hover text. This combination now raises `ValueError` (naming the six default columns) instead.
+
+If you never passed `custom_hover_data`, or already paired it with your own `hover_text_entity`, nothing changes.
+:::
+
+::: {.callout-warning}
+**New entities now glide in from the arrival anchor.** `animate_activity_log` / `generate_animation_df` gained `spawn_in_from_arrival`, defaulting to `True`: a genuinely new entity now slides in from the `event_position_df` `"arrival"` position, instead of flying in from the plot's top-left corner.
+
+If your layout gives `"arrival"` a position, new-arrival animation now looks different. Pass `spawn_in_from_arrival=False` to restore the old fly-in:
+
+```python
+animate_activity_log(
+    event_log=event_log,
+    event_position_df=event_position_df,
+    scenario=scenario,
+    spawn_in_from_arrival=False,
+)
+```
+:::
+
+::: {.callout-warning}
+**The default resource dot now honours `resource_icon_size`.** With no `custom_resource_icon` and no per-event `resource_icon`, vidigi's fallback resource dot had its marker `size` hardcoded to `15`, ignoring `resource_icon_size`. It now uses `resource_icon_size`, which defaults to `24` — so an animation that never set this argument will show a larger default dot.
+
+Pass `resource_icon_size=15` to keep the old size:
+
+```python
+animate_activity_log(
+    event_log=event_log,
+    event_position_df=event_position_df,
+    scenario=scenario,
+    resource_icon_size=15,
+)
+```
+:::
+
+### `TrialLogger` statistics
+
+::: {.callout-warning}
+**Runs added via `add_log()` after construction are now counted.** `TrialLogger` built its combined dataframe once in `__init__` and never rebuilt it, so a run added afterwards with `add_log` was counted by `summary()` but silently excluded from every other statistic. If you construct a `TrialLogger` empty and add runs in a loop, every figure you've previously reported from it was computed from a subset of your runs and will change (usually for the better — all your runs are now included).
+:::
+
+::: {.callout-warning}
+**`get_event_duration_stat(what="summary")`'s `unserved_count` is now correct.** It used to report the *total* entity count, so a trial where everyone was served still reported every entity as unserved. It now reports the number actually unserved. `unserved_count_mean_per_run` changes the same way.
+:::
+
+::: {.callout-warning}
+**`get_event_duration_stat(what="summary")`'s per-run denominator is now correct.** `served_count_mean_per_run` and `unserved_count_mean_per_run` used to divide only by runs where the event pair occurred at all, silently excluding a run with neither event and inflating both figures. They now divide by the true number of runs in the trial.
+:::
+
+::: {.callout-warning}
+**`TrialLogger.plot_queue_size` had three compounding bugs, all now fixed:**
+
+- Queue length was capped at 61 (the animation `step_snapshot_max` default), so a queue of 150 plotted as a flat 61.
+- A snapshot where a queue was empty produced no row, so the line drew straight across the gap instead of touching zero.
+- The mean was taken only over runs with somebody waiting, so two runs holding 1 and 0 gave a mean of 1.0 instead of 0.5.
+
+Any queue-length chart you've previously reported from `plot_queue_size` will change — usually showing a worse queue than before, since all three bugs made queues look better than they were.
+:::
+
+::: {.callout-warning}
+**`get_event_duration_stat`/`get_event_durations` are now built on `vidigi.analysis.event_durations` instead of a `pivot`.** At the default `match="first"`, results are identical everywhere the old `pivot`-based code used to succeed — the only change is that a log where an entity revisits an event (a rework loop), which used to raise `ValueError: Index contains duplicate entries`, now returns a value instead of failing. The new `match` argument (`"first"`/`"last"`/`"occurrence"`) controls how repeated occurrences are paired.
+:::
+
+### Resource pools (`VidigiStore` / `VidigiPriorityStore`)
+
+::: {.callout-warning}
+**`.capacity` now returns the pool size, not `float("inf")`.** For a pool built with `num_resources=`/`.populate()`, `.capacity` now mirrors `simpy.Resource.capacity` and equals `num_resources`. A store built with an explicit `capacity=`, or a bare `VidigiStore(env)`, is unchanged.
+:::
+
+::: {.callout-warning}
+**Over-returning units to a pool now raises immediately.** Returning more units than a pool holds — a unit returned twice, or one from another pool — used to grow the pool silently, only surfacing later as a `RuntimeError` from `.count`. It now raises `ValueError` at the `put()` call site itself:
+
+```python
+tills = VidigiStore(env, num_resources=2, label="till")
+held = [tills.get_direct(), tills.get_direct()]
+for got in held:
+    tills.put(got.value)          # both units back - the pool is now full
+tills.put(held[0].value)          # ValueError: same unit returned a second time
+```
+
+Pass `strict_capacity=False` for a genuinely elastic pool that's meant to grow via a raw `put()` — note that `.count` can then no longer be trusted, and raises its own `RuntimeError` once the store holds more units than were populated:
+
+```python
+elastic = VidigiStore(env, num_resources=2, label="till", strict_capacity=False)
+```
+:::
+
+::: {.callout-warning}
+**`TrialLogger.get_resource_utilisation()` / `.plot_resource_utilisation()` / `.plot_resource_utilisation_over_time()` now auto-detect `resource_col_name`.** These used to default `resource_col_name` to the literal `"resource_id"`. They now default to `None`, which resolves to `"unique_resource_id"` if that column is present on the trial's log, else `"resource_id"`.
+
+If your log has `unique_resource_id` on **all** its resource-use rows (the recommended pattern via `label=`), or has none at all, nothing changes — you get a collision-proof breakdown for free in the first case. If `unique_resource_id` is present on only *some* resource-use rows (partial migration to the new pattern), a call that used to succeed now raises `ValueError`, since mixing the two would risk crossing entities using different physical units. Pass `resource_col_name="resource_id"` explicitly to restore the old behaviour, or finish migrating the partial logging.
+:::
+
+## Deprecations
+
+These still work exactly as before, but emit a `DeprecationWarning` and will be **removed in vidigi 3.0**.
+
+### `populate_store()` → `VidigiStore`/`VidigiPriorityStore`
+
+```python
+# Old
+from vidigi.resources import populate_store
+populate_store(store, num_resources=3)
+
+# New
+from vidigi.resources import VidigiStore
+store = VidigiStore(env, num_resources=3, label="till")
+# or, to top up an existing pool:
+store.populate(3, label="till")
+```
+
+A plain `simpy.Store` filled with `populate_store()` should become a `VidigiStore` — a drop-in replacement for `simpy.Resource` that also gets `.count`/`.num_resources`/`.n_waiting`, which a pool filled via `populate_store()` does not.
+
+### `plot_metric_bar()` → `plot_metric(kind="bar", ...)`
+
+```python
+# Old
+from vidigi.plots import plot_metric_bar
+plot_metric_bar(trial_data, ...)
+
+# New
+from vidigi.plots import plot_metric
+plot_metric(trial_data, kind="bar", ...)
+```
+
+Same computation and the same `**kwargs` meaning as before, rebuilt on `plotly.graph_objects` so it can also offer `kind="box"`/`"violin"` and `highlight_bands`. `TrialLogger.plot_metric_bar` → `TrialLogger.plot_metric(kind="bar", ...)` the same way.
+
+### `minimize_output_df`
+
+Deprecated and inert — it has never had any effect (a bug meant the intended `.drop()` never applied). If you pass this argument, stop; there is no replacement to switch to, and its behaviour won't change until 3.0.
+
+## Heads-up for vidigi 3.0
+
+These don't change your results today, but the current default is planned to flip at the next major version — worth adopting the new behaviour now if you can:
+
+- `step_snapshot_reveal_pop_in` will default to `True` (an entity re-emerging from a "+N more" cap will no longer visibly fly in from the corner).
+- `EventLogger.plot_entity_timeline`'s `return_fig=` will default to `True` (it will stop calling `fig.show()` automatically).
+- `discover_dfg`'s warning about a missing `run_col_name` on a multi-run log will become a raise.
+- Resource pool `label=` (on `VidigiStore`/`VidigiPriorityStore`) is planned to become mandatory.
+
+## What's new (brief)
+
+The rest of 2.0.0 is additive — nothing below changes behaviour for existing callers. Headline additions:
+
+- **`vidigi.analysis`** — a numbers-in, DataFrames-out layer: `event_durations`, confidence intervals via `mean_confidence_interval`/`get_event_duration_ci` (Student's t, needs the new `[stats]` extra), resource utilisation (`resource_use_intervals`, `resource_utilisation`, `resource_occupancy_over_time`), warm-up diagnostics (`welch_moving_average`), replication-count guidance (`replication_precision`), scenario comparison (`compare_replication_values` and `TrialLogger` equivalents), outlier-run flagging, and rare-event rates.
+- **`vidigi.plots`** — `go.Figure`-returning charts over the analysis layer above: `plot_duration_distribution`, `plot_metric` (bar/box/violin, replacing `plot_metric_bar`) with `highlight_bands`, `plot_resource_utilisation`(`_over_time`), `plot_warm_up_diagnostic`, `plot_replication_analysis`, `plot_outlier_runs`, `plot_metric_vs_arrival_time`, and scenario-comparison plots.
+- **Animation styling** — `queue_direction` (left/right queues), `flip_entity_icons`, icon fonts (`entity_icon_font`/`resource_icon_font`, Font Awesome/Bootstrap/Material Symbols presets), `entity_colour_by`, per-event `resource_icon`, `entity_annotation_by`, and `stage_label_offset`.
+- **Warm-up handling** — `warm_up`/`snapshot_alignment` on `reshape_for_animations`/`animate_activity_log`, correctly keeping entities already present at the cutoff (unlike a naive log filter).
+- **Process maps** — `generate_dfg(occupancy_metrics=True)`, annotating nodes with queue/resource occupancy.
+- **`vidigi.ciw`** — `event_logger_from_ciw_recs`/`trial_logger_from_ciw_recs`, building `EventLogger`/`TrialLogger` directly from ciw records.
+- **Logger conveniences** — `scenario=`/`label=` on `EventLogger`/`TrialLogger`, `to_pickle()`/`read_pickle()`, and calling `.animate_activity_log()`/`.reshape_for_animations()` directly as logger methods.
+
+For the full detail behind every one of these, see the [Changelog](changelog.qmd) or work through [`examples/v2_release_additions`](../examples/v2_release_additions/v2_release_additions.ipynb), which runs almost all of them against one shared model.

@@ -1,6 +1,6 @@
-import pandas as pd
 import numpy as np
-from model_classes import Schedule, Hospital
+import pandas as pd
+from model_classes import Hospital, Schedule
 from simulation_summary_functions import Summary
 
 # Model execution

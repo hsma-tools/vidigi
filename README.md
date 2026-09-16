@@ -2,11 +2,11 @@
 
 | | |
 | --- | --- |
-| **Project info:** | ![Code licence](https://img.shields.io/badge/Licence-MIT-A6CE39?&labelColor=gray)  [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20291776.svg)](https://doi.org/10.5281/zenodo.20291776)   [![ORCID](https://img.shields.io/badge/ORCID_Sammi_Rosser-0000--0002--9552--8988-A6CE39?&logo=orcid&logoColor=white)](https://orcid.org/0000-0002-9552-8988)  [![All Contributors](https://img.shields.io/github/all-contributors/hsma-tools/vidigi?color=ee8449&style=flat-square)](#contributors)  |
+| **Project info:** | ![Code licence](https://img.shields.io/badge/Licence-MIT-A6CE39?&labelColor=gray)  [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14635602.svg)](https://doi.org/10.5281/zenodo.14635602)   [![ORCID](https://img.shields.io/badge/ORCID_Sammi_Rosser-0000--0002--9552--8988-A6CE39?&logo=orcid&logoColor=white)](https://orcid.org/0000-0002-9552-8988)  [![All Contributors](https://img.shields.io/github/all-contributors/hsma-tools/vidigi?color=ee8449&style=flat-square)](#contributors)  |
 | **Installation:** | [![PyPI](https://img.shields.io/pypi/v/vidigi?&labelColor=gray)](https://pypi.org/project/vidigi/)     [![Anaconda-Server Badge](https://anaconda.org/conda-forge/vidigi/badges/version.svg)](https://anaconda.org/conda-forge/vidigi) |
 | **Metrics:** | [![PyPI downloads all time](https://static.pepy.tech/badge/vidigi)](https://pepy.tech/project/vidigi)    [![PyPI downloads monthly](https://static.pepy.tech/badge/vidigi/month)](https://pepy.tech/project/vidigi)    [![PyPI downloads weekly](https://static.pepy.tech/badge/vidigi/week)](https://pepy.tech/project/vidigi)    ![Conda Downloads](https://img.shields.io/conda/d/conda-forge/vidigi)    ![GitHub Repo stars](https://img.shields.io/github/stars/hsma-tools/vidigi)     |
 | **Activity:** | ![GitHub forks](https://img.shields.io/github/forks/hsma-tools/vidigi)    ![GitHub last commit](https://img.shields.io/github/last-commit/hsma-tools/vidigi)    ![GitHub Release Date](https://img.shields.io/github/release-date/hsma-tools/vidigi) [![GitHub open-pull-requests](https://badgen.net/github/open-prs/hsma-tools/vidigi)](https://GitHub.com/hsma-tools/vidigi/pulls?q=is%3Aopen) |
-| **Build & quality status:** | [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)    [![Tests](https://github.com/hsma-tools/vidigi/actions/workflows/tests.yml/badge.svg)](https://github.com/hsma-tools/vidigi/actions/workflows/tests.yml)   [![Documentation](https://github.com/hsma-tools/vidigi/actions/workflows/docker_quarto.yml/badge.svg)](https://github.com/hsma-tools/vidigi/actions/workflows/docker_quarto.yml) [![Dogfooding-by-docs](https://github.com/hsma-tools/vidigi/actions/workflows/documentation_as_tests.yml/badge.svg)](https://github.com/hsma-tools/vidigi/actions/workflows/documentation_as_tests.yml) [![Documentation Against PyPI Release](https://github.com/hsma-tools/vidigi/actions/workflows/documentation_as_tests_pypi.yml/badge.svg)](https://github.com/hsma-tools/vidigi/actions/workflows/documentation_as_tests_pypi.yml)  |
+| **Build & quality status:** | [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)    [![Tests](https://github.com/hsma-tools/vidigi/actions/workflows/tests.yml/badge.svg)](https://github.com/hsma-tools/vidigi/actions/workflows/tests.yml)   [![Documentation](https://github.com/hsma-tools/vidigi/actions/workflows/documentation_deploy.yml/badge.svg)](https://github.com/hsma-tools/vidigi/actions/workflows/documentation_deploy.yml) [![Dogfooding-by-docs](https://github.com/hsma-tools/vidigi/actions/workflows/documentation_as_tests.yml/badge.svg)](https://github.com/hsma-tools/vidigi/actions/workflows/documentation_as_tests.yml) [![Documentation Against PyPI Release](https://github.com/hsma-tools/vidigi/actions/workflows/documentation_as_tests_pypi.yml/badge.svg)](https://github.com/hsma-tools/vidigi/actions/workflows/documentation_as_tests_pypi.yml)  |
 | **Supported platforms:** | ![3.10\|3.11\|3.12\|3.13\|3.14](https://img.shields.io/badge/Python-3.10%7C3.11%7C3.12%7C3.13%7C3.14-blue)    ![OS](https://img.shields.io/badge/OS-Windows%20%7C%20Linux%20%7C%20macOS-blue?logo=windows&logo=linux&logo=apple) |
 
 
@@ -96,6 +96,30 @@ Fancy helping out? Consider submitting a pull request with some tests! It's a gr
 ![](https://img.shields.io/badge/vidigi.utils.create__event__position__df()-Not%20Covered-orange?style=for-the-badge&logo=pytest)
 
 
+# Citation
+
+If you use vidigi in your work, please cite the paper:
+
+> Rosser, S., & Chalk, D. (2026). Vidigi: A Python library for interactive-animated visualisations of discrete event simulation models. *Journal of Simulation*. Advance online publication. https://doi.org/10.1080/17477778.2026.2663849
+
+<details>
+<summary>BibTeX</summary>
+
+```bibtex
+@article{rosser2026vidigi,
+  title     = {Vidigi: a Python library for interactive-animated visualisations of discrete event simulation models},
+  author    = {Rosser, Sammi and Chalk, Daniel},
+  journal   = {Journal of Simulation},
+  year      = {2026},
+  publisher = {Taylor \& Francis},
+  doi       = {10.1080/17477778.2026.2663849}
+}
+```
+
+</details>
+
+To cite a specific version of the software, use its Zenodo archive - the [all-versions DOI](https://doi.org/10.5281/zenodo.14635602) always resolves to the latest release. GitHub's **Cite this repository** button generates both citations from [`CITATION.cff`](CITATION.cff).
+
 # Acknowledgements
 
 Thanks are due to
@@ -153,3 +177,18 @@ Thanks goes to all of the following people ([emoji key](https://allcontributors.
 <!-- ALL-CONTRIBUTORS-LIST:END -->
 
 Contributors of any kind - not just code - are welcome! Please see `CONTRIBUTING.md` for guidance.
+
+
+# Generative AI use disclosure and policy
+
+A note about AI usage from Sammi (primary library author and maintainer):
+
+> I've been coding for over ten years, love the act of coding, and have significant concerns about the ethics and environmental impact of AI. However, I can't deny its utility as a solo maintainer when it comes to making all the features I want to include in my projects a reality. I hope you find these projects useful enough to help offset some of the downsides of AI, and will use them to help do some good in the world, or at least use them to claw back some of your time so you can spend more of it enjoying being human. For my part, I will continue to use AI critically and carefully, and I will try to make environmentally-conscious choices in my personal life to help balance the scales.
+
+The fundamentals of this library were written by hand, with occasionaly use of the web version of ChatGPT, Gemini and Claude for debugging, debating architecture, and exploring possible approaches. Vidigi was born from a real gap that I saw in simulation visualisation for teaching, debugging and communication, and throughout the development process, I have used vidigi myself in real projects to help steer its development and test it thoroughly beyond the borders of the notebooks and tests in the library.
+
+Claude usage via Claude Code was not introduced until 17 August 2026. The project's CLAUDE.md is provided for transparency, and for consistency if contributors wish to use it. CHAT-GPT usage via Codex was introduced on 15 September 2026, and the AGENTS.md is similarly provided for transparency.
+
+All AI-generated code or prose will always be thoroughly reviewed, tweaked and tested before inclusion.
+
+We are happy to accept AI-supported contributions to the library, but reserve the right to reject wholly AI generated pull requests which are not felt to add value to the project.

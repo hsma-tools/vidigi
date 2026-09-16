@@ -69,33 +69,18 @@ If you make changes to the development environment, please ensure you change it 
 
 ### R
 
-To build the documentation, you will also need to set-up an appropriate R environment, as we compare `vidigi` to some similar packages in R.
+R is **not** currently required to build vidigi's documentation. R was previously used to compare `vidigi` against similar packages in R (bupaR, processanimateR), but that comparison content (`examples/ARCHIVE_vidigi_vs_bupar/`, `examples/r_simmer/`, `vidigi_docs/prep_vidigi_outputs_for_bupar_processing.ipynb`) is excluded from the active Quarto render scope, and the CI docs-build workflow ([`documentation_deploy.yml`](.github/workflows/documentation_deploy.yml)) no longer uses Docker or installs R at all.
 
-You can find the version of R used listed in the `renv.lock` file - we'd suggest using `rig` to install this.
+The old R/renv toolchain files (`renv.lock`, `DESCRIPTION`, `.Rprofile`, `.renvignore`, `vidigi.Rproj`, `renv/`) are kept for reference under [`archive/r_environment/`](archive/r_environment/) rather than deleted, in case this comparison content is revived in future.
 
-To fetch the required R packages, you can first try using `renv::restore()`. This will attempt to create the exact environment description in the `renv.lock` file. However, if you encounter problems, you can try using the `DESCRIPTION` file instead.
+#### Reviving R support
 
-The `DESCRIPTION` file lists all the required R packages (though with no pinned dependencies). You'll want to open R, initialise renv, install (based on `DESCRIPTION`), and then record this using `renv::snapshot()` - for example, from the terminal:
+If you want to bring R support back:
 
-```
-R
-renv::init()
-renv::install()
-renv::snapshot()
-```
-
-To quit R from the terminal (e.g., if need to restart it after initialising renv), use the command `q()`.
-
-To install the package `processanimateR` via `renv::install()`, you'll need to add GitHub authentication credentials (as it pulls the package from GitHub, since it was removed from CRAN). If you don't, it will default to looking on CRAN and fail with the error `package 'processanimateR' is not available`. Alternatively, you can get it manually using the package `remotes`:
-
-```
-install.packages("remotes")
-remotes::install_github("bupaverse/processanimateR")
-```
-
-**Warning:** This package can take a long time to install.
-
-**Note:** We use renv snapshot type `all` as `implicit` mode excludes packages it can't detect as dependencies, but we have `reticulate` which is necessary but doesn't appear like a typical dependency (e.g., `library(reticulate)`).
+1. Move the files out of `archive/r_environment/` back to the repo root (this restores `renv`'s and RStudio's expected relative paths, e.g. `.Rprofile`'s `source("renv/activate.R")`).
+2. For a starting point on installing R again, see the archived [`archive/docker_quarto_workflow/Dockerfile`](archive/docker_quarto_workflow/Dockerfile) and [`archive/docker_quarto_workflow/docker_quarto.yml`](archive/docker_quarto_workflow/docker_quarto.yml), or the last commit with a working (rocker-based) R install, [`14a363b`](https://github.com/hsma-tools/vidigi/commit/14a363b).
+3. Expect to re-validate the R/renv install from scratch: R was dropped after a long run of CI build failures (rocker base image issues, CRAN mirror problems, package version pinning - see commits `3269691` through `b9646b6` in the git history), so it wasn't reliable even when last in use.
+4. Re-add `examples/ARCHIVE_vidigi_vs_bupar/` and/or `examples/r_simmer/` to `_quarto.yml`'s `project.render` list (remove their `!` exclusion entries) once R renders successfully again.
 
 <br>
 
@@ -105,44 +90,73 @@ The vidigi documentation is created using quarto and `quartodoc`. You can genera
 
 ```
 quartodoc build
-quarto render vidigi_docs
+quarto render
 ```
 
-It is rendered via GitHub actions and hosted on GitHub pages. The action creates a Docker image hosted on GitHub Container Registry. This makes it more efficient, as it doesn't need to rebuild the environment when no changes have been made to the packages installed.
+It is rendered via GitHub Actions ([`documentation_deploy.yml`](.github/workflows/documentation_deploy.yml)) and hosted on GitHub Pages. The workflow installs Quarto and vidigi's dependencies directly on the Actions runner and renders/publishes from there - no Docker container is involved.
 
-To test rendering the quarto site in the docker container locally...
-
-Build image:
-
-```
-sudo docker build -t vidigi .
-```
-
-Render quarto project inside container:
-
-```
-docker run --rm vidigi quarto render
-```
+A Docker-based build was previously used (to reuse a cached environment across runs, back when R was part of the docs build), but with R no longer required it added more overhead than it saved. It's kept for reference under [`archive/docker_quarto_workflow/`](archive/docker_quarto_workflow/) in case a containerized build is needed again.
 
 <br>
 
-## Linting
+## Linting and formatting
 
-We use Black to auto-format the vidigi package, setting the maximum line length to 79 to comply with PEP 8 - simply run:
+Code style is enforced with [`pre-commit`](https://pre-commit.com/) hooks rather than by running tools by hand. The hooks are defined in `.pre-commit-config.yaml`:
+
+* [`nbstripout`](https://github.com/kynan/nbstripout) - clears cell outputs and execution counts from Jupyter notebooks.
+* [`ruff`](https://docs.astral.sh/ruff/) - lints (`ruff check --fix`) and auto-formats (`ruff format`) the Python code.
+* [`pyupgrade`](https://github.com/asottile/pyupgrade) - rewrites Python to modern (3.10+) syntax.
+* `mixed-line-ending` - normalises line endings.
+
+### Installing the hooks
+
+`pre-commit` is a Python package, listed in the `dev` dependency group in `pyproject.toml`. If it is not already in your environment, install it with:
 
 ```
-black vidigi --line-length=79
+pip install pre-commit
 ```
 
-We also run other linters to manually check and edit package style:
+Then register the git hook in your local clone (once per clone):
 
 ```
-# Checks PEP8-style, basic errors and code complexity
-flake8 vidigi
-
-# Run flake8 on .ipynb files
-nbqa flake8 examples
-
-# Run flake8 on .qmd files
-lintquarto -l flake8 -p vidigi_docs
+pre-commit install
 ```
+
+The hooks now run automatically against staged files on every `git commit`. If a hook modifies a file (for example `ruff format` or `nbstripout`), the commit is aborted - re-stage the changed files and commit again.
+
+### Running the hooks manually
+
+To check the whole repository without making a commit - useful after first installing the hooks, or after editing `.pre-commit-config.yaml`:
+
+```
+pre-commit run --all-files
+```
+
+To run a single hook, give its id, for example `pre-commit run ruff-format --all-files`.
+
+<br>
+
+## Releasing
+
+vidigi follows [semantic versioning](https://semver.org/). Releases are cut from `main`; PyPI and Zenodo publishing happen automatically once a GitHub Release is created.
+
+Before releasing, check the following are all updated **to the same version number**:
+
+* [ ] `HISTORY.md` - the top section has a bare-number version header (`# 2.0.0`, not `## v2.0.0`), and, if the release contains breaking changes, opens with a `### ⚠️ Breaking changes` summary. See the HISTORY.md conventions in `CLAUDE.md`.
+* [ ] `pyproject.toml` - `version` matches that header exactly.
+* [ ] `CITATION.cff` - `version` and `date-released` (ISO `YYYY-MM-DD`) updated to this release. Leave `doi` as the all-versions Zenodo DOI (`10.5281/zenodo.14635602`) - do **not** swap in the per-version DOI.
+
+Then confirm:
+
+* [ ] `pytest` passes.
+* [ ] `quartodoc build && quarto render` runs clean locally (CI also builds docs on push to `main`, but catch failures first).
+
+To publish:
+
+1. Merge the above to `main`.
+2. Create a [GitHub Release](https://github.com/hsma-tools/vidigi/releases/new), creating a new `v`-prefixed tag (e.g. `v2.0.0`) that targets the latest `main` commit. Draw the notes from `HISTORY.md`. Publishing the release triggers:
+   * [`publish_package_pypi.yml`](.github/workflows/publish_package_pypi.yml) - builds with `hatch` and publishes to PyPI via OIDC.
+   * the Zenodo GitHub integration - archives the tag and mints a new version DOI under the [concept DOI](https://doi.org/10.5281/zenodo.14635602).
+3. The conda-forge bot opens a PR on [`vidigi-feedstock`](https://github.com/conda-forge/vidigi-feedstock) within a day or so of the PyPI upload - review and merge it to publish the conda-forge build.
+
+If the accompanying paper's citation details change (e.g. the *Journal of Simulation* article is assigned a volume/issue), update `CITATION.cff` and the Citation sections in `README.md` and `vidigi_docs/citation.qmd` together.

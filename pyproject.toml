@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "vidigi"
-version = "1.3.1"
+version = "2.0.0"
 description = "A package for creating animated visualisations of queues and pathways from historical data or simulations"
 readme = "README.md"
 license = "MIT"
@@ -24,15 +24,14 @@ classifiers = [
 
 dependencies = [
     "plotly>=5.12.0,<7.0.0",
-    "numpy>=1.26.2,<3.0.0",
-    "pandas>=2.0.1,<3.0.0",
+    "numpy>=1.24.0,<3.0.0",
+    "pandas>=1.5.3,<4.0.0",
     "simpy>=4.0.0,<5.0.0",
     "pydantic>=2.0.0,<3.0.0",
     "webcolors>=24.11.1",
     "graphviz>=0.15,<1.0.0",
     "ipywidgets>=8.0.0",
-    "ipycytoscape>=1.2.0,<2.0.0",
-    "packaging>=21.0"
+    "ipycytoscape>=1.2.0,<2.0.0"
 ]
 
 [project.urls]
@@ -55,6 +54,9 @@ streamlit = [
   "streamlit-javascript==0.1.5",
   "st-cytoscape==0.0.5"
 ]
+stats = [
+  "scipy>=1.10"
+]
 
 [tool.pytest.ini_options]
 pythonpath = [".", "src"]
@@ -64,6 +66,14 @@ markers = [
 ]
 addopts = "-ra"
 
+[tool.ruff]
+# Keep tests/ out of ruff's file discovery (editors, `ruff check .`). The
+# ruff-check pre-commit hook also needs its own `exclude`, because pre-commit
+# passes file paths to ruff explicitly and those bypass this without
+# force-exclude. force-exclude is deliberately left off so `ruff format` still
+# applies to tests/.
+extend-exclude = ["tests","src/vidigi/__init__.py","examples"]
+
 
 [dependency-groups]
 dev = [
@@ -71,7 +81,7 @@ dev = [
     "ciw>=3.2.5,<4.0.0",
     "flake8",
     "greenlet>=3.3.2",
-    "griffe>=0.49.0",
+    "griffe>=0.49.0,<2.0.0",
     "hatch",
     "jupyterlab>=4.2.4",
     "jupyterlab-spellchecker>=0.8.4",
@@ -85,8 +95,11 @@ dev = [
     "pytest-html>=4.1.1",
     "quartodoc>=0.9.1",
     "salabim>=26.0.1",
+    "scipy>=1.10",
     "sim-tools>=0.9.0,<1.0.0",
     "st-cytoscape>=0.0.5,<1.0.0",
     "streamlit>=1.52.2,<2.0.0",
     "tox>=4.25.0,<5.0.0",
+    "pre-commit",
+    "nbstripout"
 ]

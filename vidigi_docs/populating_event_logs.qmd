@@ -11,6 +11,12 @@ filters:
   - quarto
   - line-highlight
 image: populating_event_logs.png
+pub-info:
+    abstract: |
+        A reference guide to the event log format vidigi 0.0.4 and below expects - the required event
+        types, columns and structure for arrivals, queueing and resource use. Kept for anyone still on
+        an older release; current versions of vidigi are better served by the EventLogger-based
+        examples.
 ---
 
 ## Event types
@@ -77,6 +83,10 @@ event_log.append(
 
 :::{.callout-warning}
 These are critical as they are used to determine when patients should first and last appear in the model.
+:::
+
+:::{.callout-tip}
+To avoid retyping these exact strings, current vidigi exposes `vidigi.utils.ARRIVAL`, `vidigi.utils.DEPART` and `vidigi.utils.ARRIVAL_DEPARTURE` for use in hand-built logs, and the `ArrivalPosition` / `ExitPosition` helpers for the matching rows of your event position DataFrame.
 :::
 
 :::{.callout-important}

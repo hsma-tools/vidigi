@@ -1,27 +1,167 @@
 import gc
-import time
-import pandas as pd
-import numpy as np
 import hashlib
+import time
 import warnings
-from typing import Optional, Union
-from vidigi.utils import _enforce_int_params
-from packaging import version
+from typing import Literal, TypeAlias
+
+import numpy as np
+import pandas as pd
+
+from vidigi.utils import (
+    PHANTOM_ICON,
+    QueueDirection,
+    _check_one_arrival_per_entity,
+    _check_single_run,
+    _coerce_event_log,
+    _enforce_int_params,
+    _resolve_direction_sign,
+    _resolve_step_snapshot_overrides,
+    _warn_on_duplicate_event_positions,
+)
+
+# Sentinel so a deprecated parameter can tell "caller passed a value" apart from
+# "caller left it alone", without warning everyone who simply uses the default.
+_UNSET = object()
+
+# Where the snapshot grid counts from when a warm-up period is set. Shared with
+# animation.py so the two signatures cannot drift apart. Editors offer these as
+# completions; the value is still validated at runtime, since annotations are not
+# enforced.
+SnapshotAlignment: TypeAlias = Literal["warm_up", "run_start"]
 
 
-@_enforce_int_params(["every_x_time_units", "limit_duration", "step_snapshot_max"])
+def _warn_on_entities_without_an_arrival(
+    event_log: pd.DataFrame,
+    pivoted_log: pd.DataFrame,
+    entity_col_name: str,
+    event_col_name: str,
+) -> None:
+    """Warn about entities that have events but no 'arrival', so are never drawn.
+
+    Whether an entity is present at a snapshot is decided by comparing its arrival and
+    departure times, so an entity with no arrival row is absent from every frame no
+    matter how many other events it has. Nothing else in the pipeline notices.
+
+    Almost always this means the log has been truncated by time to discard a warm-up
+    period, which strips the arrival rows of everyone who was already in the system.
+    Those are precisely the entities a steady-state animation is meant to show, so the
+    queue is drawn far shorter than the model actually had it.
+
+    A warning rather than an error: a model that legitimately never logs an arrival for
+    some entities is unusual but not impossible, and this does not corrupt anything for
+    the entities that *are* drawn.
+    """
+    entities_with_an_arrival = set(
+        pivoted_log.loc[pivoted_log["arrival"].notna(), entity_col_name]
+    )
+    seen_entities = event_log[entity_col_name].dropna().drop_duplicates()
+
+    # Kept in log order rather than sorted, so mixed id types cannot raise on comparison.
+    missing = [
+        entity for entity in seen_entities if entity not in entities_with_an_arrival
+    ]
+    if not missing:
+        return
+
+    examples = ", ".join(repr(entity) for entity in missing[:5])
+    if len(missing) > 5:
+        examples += ", ..."
+
+    warnings.warn(
+        f"{len(missing)} entities ({examples}) have events in the event log but no "
+        f"'arrival' event, so they will be missing from every frame of the animation.\n"
+        "\n"
+        f"vidigi works out who is present at each snapshot from the arrival and "
+        f"departure rows, so an entity without an arrival is never drawn.\n"
+        "\n"
+        f"The usual cause is discarding a warm-up period by filtering the log, e.g. "
+        f"`event_log[event_log['time'] >= warm_up]`, which removes the arrival rows of "
+        f"everyone already in the system - including entities that are still queuing.\n"
+        "\n"
+        f"To skip a warm-up period, pass the whole event log and set `warm_up` to "
+        f"the end of the warm-up instead. That trims the animation window without "
+        f"discarding the history it needs.",
+        UserWarning,
+        stacklevel=4,
+    )
+
+
+def _warn_on_unpositioned_rendered_events(
+    full_entity_df_plus_pos: pd.DataFrame,
+    entity_col_name: str,
+    event_col_name: str,
+) -> None:
+    """Warn about an event with no `event_position_df` row that got rendered anyway.
+
+    `generate_animation_df` resolves each snapshot's coordinates by left-merging onto
+    `event_position_df` on the event name. An event with no matching row picks up `NaN`
+    x/y - and a point with no coordinates can't be drawn, so it is dropped from that
+    frame outright instead of being placed somewhere sensible. The entity's icon just
+    disappears, then reappears once a positioned event takes over again.
+
+    This deliberately checks the merged, per-snapshot frame rather than the raw event
+    log. Checking the raw log would flag any event name missing from
+    `event_position_df` regardless of whether it is ever actually shown, and models
+    routinely log events - `arrival`, a `resource_use_end` step - at the exact same
+    instant as the very next step. Because only an entity's latest event at or before
+    each snapshot is ever selected for rendering, such an event is never chosen and
+    never needs a position; checking the raw log would warn on every single animation
+    that uses this (extremely common) pattern. Checking here, after the merge and after
+    that selection has already happened, only fires on an event that was actually
+    picked to represent some entity's state and had nothing to show for it.
+    """
+    real_rows = full_entity_df_plus_pos[
+        full_entity_df_plus_pos[entity_col_name].notna()
+    ]
+    unpositioned = real_rows[real_rows["x"].isna()]
+    if unpositioned.empty:
+        return
+
+    affected = (
+        unpositioned.groupby(event_col_name)[entity_col_name]
+        .nunique()
+        .sort_values(ascending=False)
+    )
+    listed = ", ".join(
+        f"{event!r} ({n} entit{'y' if n == 1 else 'ies'})"
+        for event, n in affected.items()
+    )
+    warnings.warn(
+        f"{len(unpositioned)} row(s) across {len(affected)} event(s) with no matching "
+        f"`event_position_df` row were rendered anyway: {listed}.\n"
+        "\n"
+        f"An event with no position gets no coordinates, and a point with no "
+        f"coordinates can't be drawn - the entity's icon disappears for that frame, "
+        f"then flies in from the top-left corner once a positioned event takes over "
+        f"again.\n"
+        "\n"
+        f"Add a row to `event_position_df` for each event listed above.",
+        UserWarning,
+        stacklevel=4,
+    )
+
+
+@_enforce_int_params(
+    ["every_x_time_units", "limit_duration", "step_snapshot_max", "warm_up"],
+    allow_none=["limit_duration"],
+)
 def reshape_for_animations(
     event_log: pd.DataFrame,
     every_x_time_units: int = 10,
-    limit_duration: int = 10 * 60 * 24,
+    limit_duration: int | None = 10 * 60 * 24,
     step_snapshot_max: int = 60,
+    step_snapshot_max_overrides: dict | None = None,
     time_col_name: str = "time",
     entity_col_name: str = "entity_id",
     event_type_col_name: str = "event_type",
     event_col_name: str = "event",
-    pathway_col_name: Optional[str] = None,
+    pathway_col_name: str | None = None,
     debug_mode: bool = False,
-    save_intermediate_outputs: Optional[Union[bool, str]] = False,
+    save_intermediate_outputs: bool | str | None = False,
+    run_number: int | None = None,
+    run_col_name: str | None = "auto",
+    warm_up: int = 0,
+    snapshot_alignment: SnapshotAlignment = "warm_up",
 ) -> pd.DataFrame:
     """
     Reshape event log data for animation purposes.
@@ -31,15 +171,25 @@ def reshape_for_animations(
 
     Parameters
     ----------
-    event_log : pd.DataFrame
+    event_log : pd.DataFrame, EventLogger, or TrialLogger
         The input event log containing entity events and timestamps in the form of a number of time
-        units since the simulation began.
+        units since the simulation began. A `vidigi.logging.EventLogger` or
+        `TrialLogger` may be passed directly, in which case its `.to_dataframe()`
+        is called for you.
     every_x_time_units : int, optional
         The time interval between snapshots in preferred time units (default is 10).
     limit_duration : int, optional
-        The maximum duration to consider in preferred time units (default is 10 days).
+        The time at which the animation stops, in preferred time units (default is 10
+        days). Together with `warm_up` this defines the animation window, which runs
+        from `warm_up` to `limit_duration`.
     step_snapshot_max : int, optional
         The maximum number of entities to include in each snapshot for each event (default is 60).
+        Acts as the fallback for any event not named in `step_snapshot_max_overrides`.
+    step_snapshot_max_overrides : dict, optional
+        A mapping of event name to a per-event `step_snapshot_max`, e.g.
+        ``{"waiting_for_bed": 250}``. Any event not listed uses the scalar
+        `step_snapshot_max`. Default `None` (every event uses `step_snapshot_max`).
+        A key that matches no event in the log raises a warning.
     time_col_name : str, default="time"
         Name of the column in `event_log` that contains the timestamp of each event.
         Timestamps should represent the number of time units since the simulation began.
@@ -63,6 +213,46 @@ def reshape_for_animations(
         If True or a string, output a series of csvs with intermediate transformed dataframes.
         If a string is passed, this will be interpreted as the path to prefix the dataframes with.
         Default is False.
+    run_number : int, optional
+        Selects a single replication from a `TrialLogger` passed as `event_log`.
+        Only valid with a `TrialLogger`: passing it alongside a DataFrame or an
+        `EventLogger` raises `ValueError`, as does passing a multi-run `TrialLogger`
+        without it.
+    run_col_name : str or None, optional
+        Name of the column identifying which simulation run (replication) each row
+        belongs to, used to reject event logs containing more than one replication.
+        Default is "auto", which looks for a column named (case-insensitively) one of
+        'run', 'run_number', 'replication', 'rep' or 'run_id'. Pass an explicit column
+        name to override the search, or `None` to disable the check.
+    warm_up : int, optional
+        The time at which the animation starts, in preferred time units (default is 0,
+        the beginning of the run). Snapshots then run up to `limit_duration`, spaced
+        `every_x_time_units` apart; `snapshot_alignment` controls exactly where that
+        grid falls.
+
+        This is how to discard a warm-up period. Pass the **whole** event log and set
+        `warm_up` to the end of your warm-up; do not filter the log by time first.
+        Filtering removes the 'arrival' rows of every entity that arrived during the
+        warm-up, and since this function works out who is present from arrival and
+        departure rows, those entities then vanish from every frame - including ones
+        still queuing. `warm_up` trims the window while leaving that history intact.
+    snapshot_alignment : {"warm_up", "run_start"}, optional
+        Which point the snapshot grid counts from when `warm_up` is non-zero. Ignored
+        when `warm_up` is 0, as the two are then identical.
+
+        - "warm_up" (default): snapshots are taken at `warm_up`,
+          `warm_up + every_x_time_units`, and so on, so the first frame lands exactly
+          on the boundary and shows the state of the system as the warm-up ends.
+        - "run_start": snapshots stay on the grid that runs from time 0, and those
+          before `warm_up` are simply dropped. Frame times are then the same ones you
+          would get with no warm-up at all, which keeps them round numbers when
+          `warm_up` is not a multiple of `every_x_time_units`. This matches the
+          longstanding workaround of filtering the reshaped frame by `snapshot_time`,
+          except that a snapshot falling exactly on `warm_up` is kept rather than
+          dropped.
+
+        The two produce identical grids whenever `warm_up` is a multiple of
+        `every_x_time_units`.
 
     Returns
     -------
@@ -72,23 +262,65 @@ def reshape_for_animations(
 
     Notes
     -----
+    - **This function animates a single replication only.** An event log containing more
+      than one run is rejected with a `ValueError`, because the runs would otherwise be
+      blended together into an animation representing no run of your model. Filter your
+      log first, e.g. `event_log[event_log["run"] == 1]`.
     - The function creates snapshots of entity positions at specified time intervals.
     - It handles entities who are present in the system at each snapshot time.
     - Entities are ranked within each event based on their arrival order.
     - A maximum number of patients per event can be set to limit the number of entities who will be
-      displayed on screen within any one event type at a time.
+      displayed on screen within any one event type at a time. This is `step_snapshot_max`,
+      optionally overridden per event by `step_snapshot_max_overrides`.
     - This function assumes entities only exist in one place/queue at a time. Simulations where this
       assumption does not hold may display unexpected behaviour.
     - An 'exit' event is added for each entity at the end of their journey.
     - The function uses memory management techniques (del and gc.collect()) to handle large datasets.
+    - Includes a `hidden_run_before` column: for each row, the number of consecutive
+      snapshots immediately before it where the entity was present but hidden by
+      `step_snapshot_max`. `0` for a genuine new arrival and for ordinary continuous
+      movement; positive only where an entity re-emerges as an individually-drawn icon
+      after being capped out. Consumed by `generate_animation_df`'s
+      `step_snapshot_reveal_pop_in`.
+    - **To skip a warm-up period, use `warm_up` rather than filtering the event log.**
+      Presence at each snapshot is derived from arrival and departure rows, so a log
+      truncated with something like `event_log[event_log["time"] >= warm_up]` has lost
+      the arrival row of everyone who was already in the system, and those entities are
+      then absent from every frame. A warning is raised if the log looks truncated this
+      way, but `warm_up` avoids the problem entirely.
 
     TODO
     ----
     - Add behavior for when limit_duration is None.
-    - Consider adding 'first step' and 'last step' parameters.
     - Implement pathway order and precedence columns.
     - Fix the automatic exit at the end of the simulation run for all entities.
     """
+    # Accept an EventLogger / TrialLogger in place of a DataFrame; `run_number`
+    # picks one replication out of a TrialLogger.
+    event_log = _coerce_event_log(event_log, run_number=run_number)
+
+    # Reject multi-replication logs before doing any work. Both checks run: the run
+    # column catches a log whose entity IDs happen to be unique across runs, and the
+    # duplicate-arrival check catches a log whose run column is named something we do
+    # not recognise, or absent entirely.
+    _check_single_run(event_log, run_col_name=run_col_name, frame_arg="event_log")
+    _check_one_arrival_per_entity(
+        event_log,
+        entity_col_name=entity_col_name,
+        event_type_col_name=event_type_col_name,
+        event_col_name=event_col_name,
+        pathway_col_name=pathway_col_name,
+        frame_arg="event_log",
+    )
+
+    # Resolve the per-event snapshot caps once, up front. `caps` is a plain dict of
+    # event name -> cap; any event not in it falls back to the scalar `step_snapshot_max`
+    # inside the loop below.
+    caps = _resolve_step_snapshot_overrides(
+        step_snapshot_max_overrides,
+        valid_events=event_log[event_col_name].unique(),
+    )
+
     # Begin logic
     entity_dfs = []
 
@@ -134,15 +366,75 @@ def reshape_for_animations(
             .copy()
         )
 
+    # The pivot above turns the 'arrival' and 'depart' event names into columns. If the
+    # log contains no arrival_departure rows at all we cannot work out who is present at
+    # any given moment, so say so rather than silently animating nothing.
+    if "arrival" not in pivoted_log.columns:
+        raise ValueError(
+            f"No 'arrival' events were found in the event log. `reshape_for_animations` "
+            f"identifies who is present at each snapshot using rows where "
+            f"`{event_type_col_name}` is 'arrival_departure' and `{event_col_name}` is "
+            f"'arrival' or 'depart'. Check that your event log contains these, and that "
+            f"the `event_type_col_name` and `event_col_name` arguments match your columns."
+        )
+
+    # If nobody has departed - a truncated run, or a model whose entities never leave -
+    # there is no 'depart' column to compare against. Treat every entity as still in the
+    # system, which is what an absent departure means.
+    if "depart" not in pivoted_log.columns:
+        pivoted_log["depart"] = np.nan
+
+    # Presence is decided further down by `pivoted_log["arrival"] <= time_unit`, and
+    # `NaN <= t` is False, so an entity with no arrival row is silently absent from
+    # every frame however many other events it has. The usual cause is a log truncated
+    # by time to discard a warm-up period, which strips the arrival rows of everyone
+    # already in the system - exactly the entities the modeller is trying to look at.
+    _warn_on_entities_without_an_arrival(
+        event_log,
+        pivoted_log,
+        entity_col_name=entity_col_name,
+        event_col_name=event_col_name,
+    )
+
     # Add in behaviour for if limit_duration is None (which strictly speaking it shouldn't be,
     # but should improve behaviour if users try to do this)
     if limit_duration is None:
-        limit_duration = int(round(max(pivoted_log[time_col_name]), 0))
+        limit_duration = int(round(event_log[time_col_name].max(), 0))
         warnings.warn(
             f"`None` was provided for the limit_duration argument."
             f"This is not an officially supported input, so has been set to {limit_duration}.",
             UserWarning,
             stacklevel=3,
+        )
+
+    if warm_up < 0:
+        raise ValueError(
+            f"`warm_up` must not be negative, but {warm_up} was passed. It is the "
+            f"time at which the animation begins, measured from the start of the run."
+        )
+
+    if warm_up > limit_duration:
+        raise ValueError(
+            f"`warm_up` ({warm_up}) is after `limit_duration` ({limit_duration}), "
+            f"so the animation window is empty and no frames can be produced. These "
+            f"bound the window between them: the animation runs from `warm_up` to "
+            f"`limit_duration`."
+        )
+
+    # Which point the snapshot grid counts from. Anchoring on `warm_up` puts the first
+    # frame exactly on the boundary; anchoring on the start of the run keeps the frame
+    # times a caller would have got without a warm-up, and simply drops the early ones.
+    # The two coincide whenever `warm_up` is a multiple of `every_x_time_units`.
+    if snapshot_alignment == "warm_up":
+        grid_origin = warm_up
+    elif snapshot_alignment == "run_start":
+        grid_origin = 0
+    else:
+        raise ValueError(
+            f"Invalid snapshot_alignment option provided: '{snapshot_alignment}'. "
+            f"Valid options are: 'warm_up' (snapshots start exactly at `warm_up`) and "
+            f"'run_start' (snapshots stay on the grid running from time 0, and those "
+            f"before `warm_up` are dropped)."
         )
 
     ################################################################################
@@ -158,32 +450,34 @@ def reshape_for_animations(
     ################################################################################
     # Note that we want to do this for everything up to AND INCLUDING the full duration we've passed
     # as the limit
-    for time_unit in range(limit_duration + every_x_time_units):
+    # By default the snapshot grid is anchored on `warm_up` rather than on zero, so the
+    # first frame lands exactly on the requested start instead of at whichever interval
+    # boundary happens to follow it. At the default `warm_up=0` both alignments give
+    # the same grid as before.
+    for time_unit in range(warm_up, limit_duration + every_x_time_units):
         # Get entities who
         # - arrived before the current minute
         # - and who left the system after the current minute
         # (or arrived but didn't reach the point of being seen before the model run ended)
-        if time_unit % every_x_time_units == 0:
-            try:
-                # Work out which entities - if any - were present in the simulation at the current time
-                # They will have arrived at or before the minute in question, and they will depart at
-                # or after the minute in question, or never depart during our model run
-                # (which can happen if they arrive towards the end, or there is a bottleneck)
-                current_entities_in_moment = pivoted_log[
+        if (time_unit - grid_origin) % every_x_time_units == 0:
+            # Work out which entities - if any - were present in the simulation at the current time
+            # They will have arrived at or before the minute in question, and they will depart at
+            # or after the minute in question, or never depart during our model run
+            # (which can happen if they arrive towards the end, or there is a bottleneck)
+            # Both 'arrival' and 'depart' are guaranteed to exist as columns by this point.
+            current_entities_in_moment = pivoted_log[
+                (
+                    pivoted_log["arrival"] <= time_unit
+                )  # Arrived before or at the current time
+                & (
                     (
-                        pivoted_log["arrival"] <= time_unit
-                    )  # Arrived before or at the current time
-                    & (
-                        (
-                            pivoted_log["depart"] >= time_unit
-                        )  # Left after or at the current time
-                        | (
-                            pivoted_log["depart"].isnull()
-                        )  # Or never left (due to model ending first)
-                    )
-                ][entity_col_name].values
-            except KeyError:
-                current_entities_in_moment = []  # Use an empty list for consistency
+                        pivoted_log["depart"] >= time_unit
+                    )  # Left after or at the current time
+                    | (
+                        pivoted_log["depart"].isnull()
+                    )  # Or never left (due to model ending first)
+                )
+            ][entity_col_name].values
 
             # If we do have any entities, they will have been passed as a list
             # so now just filter our event log down to the events these entities have been
@@ -245,22 +539,52 @@ def reshape_for_animations(
                 excluded_types = ["resource_use", "resource_use_end"]
 
                 # 1. Separate data into what needs capping and what doesn't
-                to_process_mask = ~most_recent_events_time_unit_ungrouped[event_type_col_name].isin(excluded_types)
+                to_process_mask = ~most_recent_events_time_unit_ungrouped[
+                    event_type_col_name
+                ].isin(excluded_types)
 
-                # 2. Filter out rows where rank exceeds step_snapshot_max + 1 (only for non-excluded types)
-                keep_mask = (~to_process_mask) | (most_recent_events_time_unit_ungrouped["rank"] <= (step_snapshot_max + 1))
-                most_recent_events_time_unit_ungrouped = most_recent_events_time_unit_ungrouped[keep_mask].copy()
-
-                # 3. Calculate the 'additional' column value only for the boundary rows
-                # (Re-evaluate masks on the trimmed dataframe)
-                still_processing_mask = ~most_recent_events_time_unit_ungrouped[event_type_col_name].isin(excluded_types)
-                boundary_row_mask = still_processing_mask & (most_recent_events_time_unit_ungrouped["rank"] == float(step_snapshot_max + 1))
-
-                most_recent_events_time_unit_ungrouped.loc[boundary_row_mask, "additional"] = (
-                    most_recent_events_time_unit_ungrouped.loc[boundary_row_mask, "max"] - most_recent_events_time_unit_ungrouped.loc[boundary_row_mask, "rank"]
+                # 2. Filter out rows where rank exceeds the cap + 1 (only for non-excluded
+                # types). The cap is per-event: `step_snapshot_max` unless the event has
+                # an entry in `step_snapshot_max_overrides`.
+                row_cap = (
+                    most_recent_events_time_unit_ungrouped[event_col_name]
+                    .map(caps)
+                    .fillna(step_snapshot_max)
+                )
+                keep_mask = (~to_process_mask) | (
+                    most_recent_events_time_unit_ungrouped["rank"] <= (row_cap + 1)
+                )
+                most_recent_events_time_unit_ungrouped = (
+                    most_recent_events_time_unit_ungrouped[keep_mask].copy()
                 )
 
-                most_recent_events_time_unit_ungrouped = most_recent_events_time_unit_ungrouped.reset_index(drop=True)
+                # 3. Calculate the 'additional' column value only for the boundary rows
+                # (Re-evaluate masks - and the per-event cap - on the trimmed dataframe)
+                still_processing_mask = ~most_recent_events_time_unit_ungrouped[
+                    event_type_col_name
+                ].isin(excluded_types)
+                row_cap = (
+                    most_recent_events_time_unit_ungrouped[event_col_name]
+                    .map(caps)
+                    .fillna(step_snapshot_max)
+                )
+                boundary_row_mask = still_processing_mask & (
+                    most_recent_events_time_unit_ungrouped["rank"]
+                    == (row_cap + 1).astype(float)
+                )
+
+                most_recent_events_time_unit_ungrouped.loc[
+                    boundary_row_mask, "additional"
+                ] = (
+                    most_recent_events_time_unit_ungrouped.loc[boundary_row_mask, "max"]
+                    - most_recent_events_time_unit_ungrouped.loc[
+                        boundary_row_mask, "rank"
+                    ]
+                )
+
+                most_recent_events_time_unit_ungrouped = (
+                    most_recent_events_time_unit_ungrouped.reset_index(drop=True)
+                )
 
                 # Clean up and store snapshot in our list of snapshots, which will all be
                 # concatenated into one large dataframe at the end
@@ -285,6 +609,62 @@ def reshape_for_animations(
     # Join together all entity dfs - so the dataframe created per time snapshot - are put into
     # one large dataframe
     full_entity_df = (pd.concat(entity_dfs, ignore_index=True)).reset_index(drop=True)
+
+    # For each surviving row, how many *consecutive* snapshots immediately before it
+    # was this entity present (per `arrival`/`depart`) but dropped by the
+    # `step_snapshot_max` cap above - i.e. genuinely hidden, not just absent. Used by
+    # `generate_animation_df`'s `step_snapshot_reveal_pop_in` to stop a long-hidden
+    # entity animating in from the top-left of the plot the moment it becomes
+    # individually visible again, the same way it already would for a genuine new
+    # arrival - which is `0` here, and left alone.
+    #
+    # A gap in an entity's own *surviving, individually-rendered* rows only ever
+    # means "capped out": the snapshot loop above places a row for every entity
+    # that is both present and within the cap, and appends an all-NaN placeholder
+    # row for an otherwise-empty snapshot, so every grid snapshot has *some* row -
+    # a real entity's absence from `full_entity_df` at a snapshot it was present
+    # for is only ever the cap's doing.
+    #
+    # "Individually-rendered" excludes the boundary row (`rank == cap + 1` for that
+    # event, marked by a non-null `additional` here already) - `generate_animation_df`
+    # relabels that row's entity id to a stable synthetic overflow id before
+    # drawing it, so an entity playing that role never has *its own* id rendered,
+    # even though its row survives in this dataframe. Left in the continuity chain,
+    # a boundary-role entity that later becomes individually visible would wrongly
+    # look continuous (no gap) and so miss out on a phantom, despite its own icon
+    # appearing on screen for the first time exactly like any other reveal.
+    grid = np.sort(full_entity_df["snapshot_time"].dropna().unique())
+    grid_idx = pd.Series(np.arange(len(grid)), index=grid)
+
+    arrival_grid_idx = pivoted_log.set_index(entity_col_name)["arrival"].apply(
+        lambda a: np.searchsorted(grid, a, side="left")
+    )
+
+    real_rows = full_entity_df[full_entity_df[entity_col_name].notna()]
+    if "additional" in full_entity_df.columns:
+        chain_rows = real_rows[real_rows["additional"].isna()]
+    else:
+        chain_rows = real_rows
+    chain_rows = chain_rows.sort_values([entity_col_name, "snapshot_time"])
+
+    cur_grid_idx = chain_rows["snapshot_time"].map(grid_idx)
+    prev_grid_idx = cur_grid_idx.groupby(chain_rows[entity_col_name]).shift(1)
+
+    is_first_surviving_row = prev_grid_idx.isna()
+    baseline_grid_idx = chain_rows[entity_col_name].map(arrival_grid_idx)
+    hidden_run_before = np.where(
+        is_first_surviving_row,
+        cur_grid_idx - baseline_grid_idx,
+        cur_grid_idx - prev_grid_idx - 1,
+    )
+
+    # Boundary rows are left at `0` - moot regardless, since
+    # `step_snapshot_reveal_pop_in` excludes them from phantom eligibility anyway
+    # (they already have their own stable-id fix for this same problem).
+    full_entity_df["hidden_run_before"] = 0
+    full_entity_df.loc[chain_rows.index, "hidden_run_before"] = np.clip(
+        hidden_run_before, 0, None
+    ).astype(int)
 
     if debug_mode:
         print(
@@ -323,11 +703,21 @@ def reshape_for_animations(
     final_step["snapshot_time"] = final_step["snapshot_time"] + every_x_time_units
     final_step[event_col_name] = "depart"
 
+    # This is a straight copy of each entity's last surviving row, so it would
+    # otherwise carry that row's `hidden_run_before` forward unchanged. If that row
+    # was itself a reveal (hidden_run_before > 0), the copy would spuriously look
+    # like a *second* reveal right before this synthetic exit snapshot, even though
+    # the entity was already individually visible the snapshot before - there is no
+    # real gap here to pop in from.
+    final_step["hidden_run_before"] = 0
+
     # Only keep rows for people whose exit step will happen *before* the simulation end
     final_step = final_step[final_step["snapshot_time"] <= (limit_duration)]
 
-    # Change the event_type of the final step to more accurately reflect what it is
-    final_step["event_type"] = "exit"
+    # Change the event_type of the final step to more accurately reflect what it is.
+    # This must use the caller's event type column - writing to a literal "event_type"
+    # creates a second, mostly-empty type column when a custom name is in use.
+    final_step[event_type_col_name] = "exit"
 
     full_entity_df = pd.concat([full_entity_df, final_step], ignore_index=True)
 
@@ -355,26 +745,31 @@ def reshape_for_animations(
 def generate_animation_df(
     full_entity_df: pd.DataFrame,
     event_position_df: pd.DataFrame,
-    wrap_queues_at: Optional[int] = 20,
-    wrap_resources_at: Optional[int] = 20,
+    wrap_queues_at: int | None = 20,
+    wrap_resources_at: int | None = 20,
     step_snapshot_max: int = 60,
+    step_snapshot_max_overrides: dict | None = None,
     gap_between_entities: int = 10,
     gap_between_resources: int = 10,
     gap_between_resource_rows: int = 30,
     gap_between_queue_rows: int = 30,
+    queue_direction: QueueDirection = "left",
     time_col_name: str = "time",
     entity_col_name: str = "entity_id",
     event_type_col_name: str = "event_type",
     event_col_name: str = "event",
     resource_col_name: str = "resource_id",
     debug_mode: bool = False,
-    custom_entity_icon_list: Optional[list[str]] = None,
+    custom_entity_icon_list: list[str] | None = None,
     include_fun_emojis: bool = False,
-    save_intermediate_outputs: Optional[Union[bool, str]] = False,
-    minimize_output_df: bool = True,
+    save_intermediate_outputs: bool | str | None = False,
+    minimize_output_df=_UNSET,
+    run_col_name: str | None = "auto",
     step_snapshot_limit_gauges=False,
     gauge_segments: int = 10,
-    gauge_max_override: Optional[Union[int, float]] = None,
+    gauge_max_override: float | None = None,
+    step_snapshot_reveal_pop_in: bool = False,
+    spawn_in_from_arrival: bool = True,
 ):
     """
     Generate a DataFrame for animation purposes by adding position information to entity data.
@@ -393,7 +788,14 @@ def generate_animation_df(
     wrap_resources_at : int, optional
         Number of resources to show before wrapping to a new row (default is 20).
     step_snapshot_max : int, optional
-        Maximum number of patients to show in each snapshot (default is 60).
+        Maximum number of patients to show in each snapshot (default is 60). Acts as
+        the fallback for any event not named in `step_snapshot_max_overrides`. Must
+        match the value passed to `reshape_for_animations`.
+    step_snapshot_max_overrides : dict, optional
+        A mapping of event name to a per-event `step_snapshot_max`, used here to
+        place the `+ n more` overflow label. Must match what was passed to
+        `reshape_for_animations`, which is where the row-shedding actually happens.
+        Default `None`.
     gap_between_entities : int, optional
         Horizontal spacing between entities in pixels (default is 10).
     gap_between_resources : int, optional
@@ -402,6 +804,14 @@ def generate_animation_df(
         Vertical spacing between rows in pixels (default is 30).
     gap_between_resource_rows : int, optional
         Vertical spacing between rows in pixels (default is 30).
+    queue_direction : {"left", "right"}, default="left"
+        Which way queues (and rows of resources) build out from their anchor.
+        "left" (the default, and byte-identical to previous versions) stacks
+        entities up to the left of the anchor `x`, so the anchor is the front
+        of the queue / bottom-right corner. "right" mirrors this - the anchor
+        becomes the bottom-left corner and the queue extends rightwards, which
+        suits entity emojis that face right. Overridden per event by a
+        `direction` column on `event_position_df` where one is present.
     time_col_name : str, default="time"
         Name of the column in `event_log` that contains the timestamp of each event.
         Timestamps should represent the number of time units since the simulation began.
@@ -431,9 +841,84 @@ def generate_animation_df(
         If True or a string, output a series of csvs with intermediate transformed dataframes.
         If a string is passed, this will be interpreted as the path to prefix the dataframes with.
         Default is False.
+    minimize_output_df: bool, optional
+        .. deprecated::
+            This parameter has never had any effect and is ignored. All columns are
+            retained regardless of the value passed. Passing it emits a
+            DeprecationWarning. Column dropping is planned for vidigi 3.0.
+    run_col_name : str or None, optional
+        Name of the column identifying which simulation run (replication) each row
+        belongs to, used to reject data containing more than one replication.
+        Default is "auto", which looks for a column named (case-insensitively) one of
+        'run', 'run_number', 'replication', 'rep' or 'run_id'. Pass an explicit column
+        name to override the search, or `None` to disable the check.
     step_snapshot_limit_gauges: bool, optional
         If True, replaces the text '+ x more' with a gauge. The upper limit of the gauge is set
         by the maximum queue length observed across the simulation.
+    step_snapshot_reveal_pop_in : bool, default=False
+        If True, an entity that re-appears as an individually-drawn icon after being
+        hidden by `step_snapshot_max` "pops in" at its queue position instead of
+        visibly flying in from the top-left of the plot - the same top-left fly-in a
+        brand new point always gets from Plotly when it first enters a frame's
+        `text` trace. Works by inserting one invisible phantom row (a zero-width
+        space) for that entity at the snapshot immediately before the reveal, so the
+        point already exists - just invisibly - by the time the real icon appears; it
+        then only needs a content swap, not a position transition, so there is
+        nothing left for Plotly to animate as movement.
+
+        A genuine new arrival is never affected - only entities that were already
+        present but suppressed by the cap (see `hidden_run_before` on
+        `reshape_for_animations`'s output) get a phantom, so arrivals still fly in,
+        which is usually the clearer visual cue for "joining the system". The
+        `+ N more` overflow row is also unaffected - it already has its own
+        stable-identity fix for this same problem.
+
+        Costs exactly one extra row per reveal (not per entity hidden, and not per
+        snapshot an entity spends hidden). Requires `reshape_for_animations`'s
+        `hidden_run_before` column; a `full_entity_df` built by hand without it
+        makes this a silent no-op rather than an error, the same way a missing
+        `opacity` column is handled elsewhere in the pipeline.
+
+        Hover text is **not** blanked on phantom rows - since they are invisible and
+        zero-width, hovering one precisely is unlikely, and doing so would only show
+        accurate (if one-snapshot-early) data for the entity about to appear. An
+        `entity_annotation_by` label, which unlike hover is always visibly rendered,
+        *is* blanked on phantom rows by `generate_animation`.
+
+        The default `False` is a verified no-op - output is byte-identical to
+        omitting the argument. **This default is planned to change to `True` at the
+        next major version (3.0)**, since "pop in" is closer to correct than
+        "fly in" for a reveal; pass it explicitly either way to pin your animation's
+        behaviour across that release.
+    spawn_in_from_arrival : bool, default=True
+        When True (the default), a genuinely new entity glides into the animation
+        from the `event_position_df` anchor named `"arrival"` instead of flying in
+        from the plot's top-left corner (the default Plotly behaviour for any point
+        new to a frame's `text` trace - see `step_snapshot_reveal_pop_in`). This is
+        the arrival-side mirror of how the synthetic `depart` step makes an exit
+        land at a chosen anchor. Pass `False` to restore the pre-2.0.0 top-left
+        fly-in.
+
+        Works by inserting, for each such entity, a visible row at the arrival
+        anchor one snapshot before its first real position (so Plotly animates it
+        moving from there) plus one invisible phantom row (a zero-width space) the
+        snapshot before that (so the spawn row itself has nothing to fly in from).
+        The synthetic rows land on existing snapshot slots, so no new frames are
+        created.
+
+        Only entities that arrive at least two snapshots after the animation window
+        opens are affected - an entity already present when the window opens has no
+        earlier slot to spawn from and keeps the top-left fly-in. An entity that
+        arrives straight into an over-cap queue (represented by the `+ N more`
+        overflow row rather than drawn individually) is likewise unaffected until it
+        emerges, at which point it is a reveal handled by
+        `step_snapshot_reveal_pop_in`, not an arrival.
+
+        Requires an `event_position_df` row with `event == "arrival"` and
+        `reshape_for_animations`'s `hidden_run_before` column; without either this
+        is a silent no-op, so a layout that never positioned `"arrival"` is
+        unaffected. Independent of `step_snapshot_reveal_pop_in` - both may be set.
+        Express backend only (the `go` backend always behaves as `False`).
 
     Returns
     -------
@@ -442,15 +927,48 @@ def generate_animation_df(
 
     Notes
     -----
+    - **This function positions a single replication only.** Data containing more than
+      one run is rejected with a `ValueError`. The run column survives
+      `reshape_for_animations`, so a multi-replication log is caught here as well as
+      there.
     - The function handles both queuing and resource use events differently.
     - It assigns unique icons to entities for visualization.
     - Queues can be wrapped to multiple rows if they exceed a specified length.
     - The function adds a visual indicator for additional entities when exceeding the snapshot limit.
+    - If an event is ever an entity's most-recently-logged step at a rendered snapshot
+      but has no matching row in `event_position_df`, that entity is silently dropped
+      from the frame instead of drawn (it reappears once a positioned event takes
+      over). This function warns automatically when that happens - it only checks
+      events actually selected for rendering, so an event that is always simultaneous
+      with (and so superseded by) its successor, and therefore never rendered, does not
+      trigger it.
 
     TODO
     ----
     - Write a test to ensure that no entity ID appears in multiple places at a single time unit.
     """
+
+    # The run column survives reshape_for_animations, so a multi-replication log that
+    # reached this far - for instance by calling the three pipeline steps by hand - is
+    # still caught here rather than being positioned into a blended animation.
+    _check_single_run(
+        full_entity_df, run_col_name=run_col_name, frame_arg="full_entity_df"
+    )
+
+    # A duplicated event in `event_position_df` fans every snapshot of that event
+    # out to multiple positions on the merge below; identical coordinates for
+    # different events collapse two steps onto one spot. Neither is ever intended,
+    # so warn - handling a hand-built frame, a list of dicts or a dict of columns.
+    _warn_on_duplicate_event_positions(
+        event_position_df, event_col_name=event_col_name, stacklevel=3
+    )
+
+    # Per-event snapshot caps. The row-shedding already happened in
+    # `reshape_for_animations`; here `caps` only feeds the `+ n more` label placement
+    # below. No `valid_events` check - `reshape_for_animations` already warned about
+    # unknown keys on the usual `animate_activity_log` path, and a duplicate warning
+    # would be noise.
+    caps = _resolve_step_snapshot_overrides(step_snapshot_max_overrides)
 
     if save_intermediate_outputs is not False:
         if isinstance(save_intermediate_outputs, str):
@@ -458,23 +976,39 @@ def generate_animation_df(
         else:
             extra_path = ""
 
-    if step_snapshot_max % wrap_queues_at != 0:
-        warnings.warn(
-            f"`step_snapshot_max` is not a multiple of `wrap_queues_at`."
-            f"The animation will display better if this is resolved.",
-            UserWarning,
-            stacklevel=3,
+    # `wrap_queues_at=None` means "do not wrap", which is handled further down. Only
+    # check the multiple when wrapping is actually in use - for the scalar cap and
+    # each per-event override alike.
+    if wrap_queues_at is not None:
+        if step_snapshot_max % wrap_queues_at != 0:
+            warnings.warn(
+                "`step_snapshot_max` is not a multiple of `wrap_queues_at`."
+                "The animation will display better if this is resolved.",
+                UserWarning,
+                stacklevel=3,
+            )
+        off_grid = sorted(
+            event for event, cap in caps.items() if cap % wrap_queues_at != 0
         )
+        if off_grid:
+            listed = ", ".join(repr(event) for event in off_grid)
+            warnings.warn(
+                f"`step_snapshot_max_overrides` values for {listed} are not multiples "
+                f"of `wrap_queues_at`. The animation will display better if this is "
+                f"resolved.",
+                UserWarning,
+                stacklevel=3,
+            )
 
     if debug_mode:
         print(
             f"Placement dataframe started construction at {time.strftime('%H:%M:%S', time.localtime())}"
         )
 
-    # Filter to only a single replication
-
-    # TODO: Write a test  to ensure that no patient ID appears in multiple places at a single time unit
-    # and return an error if it does so
+    # Note: this function does NOT filter to a single replication - it cannot, as the
+    # snapshotting has already happened by this point. A multi-replication log is
+    # rejected up front by the `_check_single_run` call above and in
+    # `reshape_for_animations`.
 
     # 29/09/2025 - consider removing as this is already done in reshape_for_animation function
     # (though method is very slightly different, but should achieve the same output)
@@ -486,6 +1020,12 @@ def generate_animation_df(
     full_entity_df_plus_pos = full_entity_df.merge(
         event_position_df, on=event_col_name, how="left"
     ).sort_values([event_col_name, "snapshot_time", time_col_name])
+
+    _warn_on_unpositioned_rendered_events(
+        full_entity_df_plus_pos,
+        entity_col_name=entity_col_name,
+        event_col_name=event_col_name,
+    )
 
     # Separate the empty snapshots from the entity data
     # We can identify them as rows where the entity ID is null.
@@ -512,8 +1052,13 @@ def generate_animation_df(
 
     if len(resource_use) > 0:
         resource_use = resource_use.rename(columns={"y": "y_final"})
+        # -1 builds the row leftwards from the anchor (the historic behaviour),
+        # +1 builds it rightwards. Resolved per row from a `direction` column
+        # where present, otherwise from the animation-wide `queue_direction`.
+        sign_r = _resolve_direction_sign(resource_use, queue_direction)
         resource_use["x_final"] = (
-            resource_use["x"] - resource_use[resource_col_name] * gap_between_resources
+            resource_use["x"]
+            + sign_r * resource_use[resource_col_name] * gap_between_resources
         )
 
         # If we want resources to wrap at a certain queue length, do this here
@@ -526,8 +1071,9 @@ def generate_animation_df(
 
             resource_use["x_final"] = (
                 resource_use["x_final"]
-                + (wrap_resources_at * resource_use["row"] * gap_between_resources)
-                + gap_between_resources
+                - sign_r
+                * (wrap_resources_at * resource_use["row"] * gap_between_resources)
+                - sign_r * gap_between_resources
             )
 
             resource_use["y_final"] = resource_use["y_final"] + (
@@ -539,7 +1085,12 @@ def generate_animation_df(
 
     # queues['y_final'] =  queues['y']
     queues = queues.rename(columns={"y": "y_final"})
-    queues["x_final"] = queues["x"] - queues["rank"] * gap_between_entities
+    # -1 builds the queue leftwards from the anchor (the historic behaviour, where
+    # the anchor is the front of the queue), +1 builds it rightwards (the anchor
+    # becomes the bottom-left corner). Resolved per row from a `direction` column
+    # where present, otherwise from the animation-wide `queue_direction`.
+    sign = _resolve_direction_sign(queues, queue_direction)
+    queues["x_final"] = queues["x"] + sign * queues["rank"] * gap_between_entities
 
     # If we want people to wrap at a certain queue length, do this here
     # They'll wrap at the defined point and then the queue will start expanding upwards
@@ -549,17 +1100,27 @@ def generate_animation_df(
 
         queues["x_final"] = (
             queues["x_final"]
-            + (wrap_queues_at * queues["row"] * gap_between_entities)
-            + gap_between_entities
+            - sign * (wrap_queues_at * queues["row"] * gap_between_entities)
+            - sign * gap_between_entities
         )
 
         queues["y_final"] = queues["y_final"] + (queues["row"] * gap_between_queue_rows)
 
-    queues["x_final"] = np.where(
-        queues["rank"] != step_snapshot_max + 1,
-        queues["x_final"],
-        queues["x_final"] - (gap_between_entities * (wrap_queues_at / 2)),
-    )
+    # Nudge the overflow row's "+ x more" label towards the middle of the queue row so it
+    # does not sit flush against the front of the queue. With no wrapping there is no row
+    # to centre it within, so it stays where its rank puts it.
+    # np.where evaluates both branches, so the division must be guarded rather than
+    # relying on the condition to short-circuit it.
+    if wrap_queues_at is not None:
+        # The overflow row sits at rank `cap + 1`, where `cap` is this event's
+        # per-event override or the scalar `step_snapshot_max`.
+        overflow_rank = queues[event_col_name].map(caps).fillna(step_snapshot_max) + 1
+        queues["x_final"] = np.where(
+            queues["rank"] != overflow_rank.to_numpy(),
+            queues["x_final"],
+            queues["x_final"]
+            + sign.to_numpy() * (gap_between_entities * (wrap_queues_at / 2)),
+        )
 
     # Deal with the exit steps
     exit_steps = entity_data[entity_data[event_type_col_name] == "exit"].copy()
@@ -734,12 +1295,12 @@ def generate_animation_df(
             # so there is a consistent length that they can be used to compare across
             max_count = max(exceeded_snapshot_limit["additional"])
 
-            # If step snapshot max is very low, we don't want to display the icon as '+ x more' -
-            # we simply want to display it as 'x'
-            if step_snapshot_max <= 1:
-                display_fig_string = "raw"
-            else:
-                display_fig_string = "more"
+            # If this event's snapshot cap is very low, we don't want to display the
+            # icon as '+ x more' - we simply want to display it as 'x'. Decided per
+            # event from its override (or the scalar `step_snapshot_max`).
+            def _display_fig_string(event):
+                cap = caps.get(event, step_snapshot_max)
+                return "raw" if cap <= 1 else "more"
 
             # Update the icon column conditionally
             exceeded_snapshot_limit["icon"] = exceeded_snapshot_limit.apply(
@@ -751,7 +1312,7 @@ def generate_animation_df(
                     ),
                     bar_length=gauge_segments,
                     display_count_as_fig=True,
-                    count_string_format=display_fig_string,
+                    count_string_format=_display_fig_string(row[event_col_name]),
                 ),
                 axis=1,
             )
@@ -777,6 +1338,169 @@ def generate_animation_df(
             ignore_index=True,
         )
 
+    # `step_snapshot_reveal_pop_in`: give a reveal (an entity that was hidden by
+    # `step_snapshot_max` and has just re-emerged as an individually-drawn icon) a
+    # phantom row one snapshot earlier, at the same position, carrying an invisible
+    # `PHANTOM_ICON`. The point then already exists - just invisibly - when
+    # the real icon appears, so Plotly only has a content swap to do, not a position
+    # transition, and the entity pops in rather than flying in from the plot's
+    # top-left the way any point new to a frame's `text` trace otherwise would (see
+    # the `step_snapshot_reveal_pop_in` docstring for the full mechanism). Mirrors
+    # the overflow-row handling just above, which solves the exact same problem for
+    # the '+ N more' label via a different mechanism (a stable synthetic id, since
+    # unlike a reveal that label exists in every frame, just under different names).
+    if step_snapshot_reveal_pop_in:
+        # Always added when the flag is on, whether or not any reveal actually
+        # occurs in this particular animation, so downstream code can rely on the
+        # column's presence rather than on there having been a reveal.
+        full_entity_df_plus_pos["_phantom"] = False
+
+        if "hidden_run_before" in full_entity_df_plus_pos.columns:
+            if "additional" in full_entity_df_plus_pos.columns:
+                # The overflow row already has its own stable-id fix for this same
+                # problem (see above) - excluded here so it doesn't also get a
+                # phantom, which would be redundant at best.
+                _not_overflow = full_entity_df_plus_pos["additional"].isna()
+            else:
+                _not_overflow = pd.Series(True, index=full_entity_df_plus_pos.index)
+
+            _reveal_mask = (
+                (full_entity_df_plus_pos["hidden_run_before"] >= 1)
+                & _not_overflow
+                & full_entity_df_plus_pos[entity_col_name].notna()
+            )
+
+            if _reveal_mask.any():
+                _grid = np.sort(
+                    full_entity_df_plus_pos["snapshot_time"].dropna().unique()
+                )
+                _grid_pos = pd.Series(np.arange(len(_grid)), index=_grid)
+
+                _reveal_rows = full_entity_df_plus_pos.loc[_reveal_mask].copy()
+                _reveal_grid_idx = _reveal_rows["snapshot_time"].map(_grid_pos)
+
+                # A reveal at the very first grid slot has no preceding slot to pop
+                # in from - nothing to do for it. This can only happen for an
+                # entity whose very first drawn row is already a "reveal", e.g. it
+                # was already mid-queue, beyond the cap, right as the animation
+                # window opens.
+                _has_lead = (_reveal_grid_idx > 0).to_numpy()
+                _reveal_rows = _reveal_rows[_has_lead]
+                _reveal_grid_idx = _reveal_grid_idx[_has_lead]
+
+                if len(_reveal_rows):
+                    _phantom_rows = _reveal_rows.copy()
+                    _phantom_rows["snapshot_time"] = _grid[
+                        (_reveal_grid_idx - 1).to_numpy()
+                    ]
+                    _phantom_rows["icon"] = PHANTOM_ICON
+                    _phantom_rows["_phantom"] = True
+
+                    full_entity_df_plus_pos = pd.concat(
+                        [full_entity_df_plus_pos, _phantom_rows], ignore_index=True
+                    )
+
+    # `spawn_in_from_arrival`: the arrival-side mirror of the synthetic `depart`
+    # step. A genuinely new entity otherwise flies in from the plot's top-left the
+    # first frame it is drawn (the same Plotly `text`-trace behaviour the reveal
+    # phantom above fixes). When this is on and `event_position_df` names an
+    # `"arrival"` anchor, give each new entity a visible row at that anchor one
+    # snapshot before its first real position - so Plotly animates it moving from
+    # there - plus an invisible `PHANTOM_ICON` phantom the snapshot before that, so
+    # the spawn row itself has nothing to fly in from. Both land on existing
+    # snapshot slots, so no frames are added.
+    if spawn_in_from_arrival:
+        if "_phantom" not in full_entity_df_plus_pos.columns:
+            full_entity_df_plus_pos["_phantom"] = False
+
+        _arrival_anchor = event_position_df[
+            event_position_df[event_col_name] == "arrival"
+        ]
+
+        if (
+            len(_arrival_anchor)
+            and _arrival_anchor[["x", "y"]].notna().to_numpy().all()
+            and "hidden_run_before" in full_entity_df_plus_pos.columns
+        ):
+            _x_arrival = _arrival_anchor["x"].iloc[0]
+            _y_arrival = _arrival_anchor["y"].iloc[0]
+
+            if "additional" in full_entity_df_plus_pos.columns:
+                _not_overflow = full_entity_df_plus_pos["additional"].isna()
+            else:
+                _not_overflow = pd.Series(True, index=full_entity_df_plus_pos.index)
+
+            # Individually-drawn rows under an entity's own id (the overflow /
+            # boundary row carries a synthetic id and `additional`, and the
+            # phantom rows just added above are excluded so they cannot be picked
+            # as an entity's "first" row).
+            _drawn_mask = (
+                _not_overflow
+                & full_entity_df_plus_pos[entity_col_name].notna()
+                & (~full_entity_df_plus_pos["_phantom"].fillna(False))
+            )
+
+            if _drawn_mask.any():
+                _grid = np.sort(
+                    full_entity_df_plus_pos["snapshot_time"].dropna().unique()
+                )
+                _grid_pos = pd.Series(np.arange(len(_grid)), index=_grid)
+
+                _candidates = full_entity_df_plus_pos.loc[_drawn_mask]
+                _first_idx = _candidates.groupby(entity_col_name)[
+                    "snapshot_time"
+                ].idxmin()
+                _first_rows = full_entity_df_plus_pos.loc[_first_idx].copy()
+
+                # A genuine new arrival's first drawn row carries
+                # `hidden_run_before == 0`; if it is `>= 1` the entity was already
+                # present but capped out of view, so its first appearance is a
+                # reveal (`step_snapshot_reveal_pop_in`'s job) rather than an
+                # arrival, and it gets no spawn row.
+                _first_rows = _first_rows[_first_rows["hidden_run_before"] == 0]
+                _first_grid_idx = (
+                    _first_rows["snapshot_time"].map(_grid_pos).astype(int)
+                )
+
+                # Need two free earlier slots: one for the visible spawn row, one
+                # for its phantom. An entity already present when the window opens
+                # (or one snapshot in) has nowhere to spawn from and keeps the
+                # top-left fly-in.
+                _has_lead = (_first_grid_idx >= 2).to_numpy()
+                _first_rows = _first_rows[_has_lead]
+                _first_grid_idx = _first_grid_idx[_has_lead]
+
+                if len(_first_rows):
+                    _spawn_rows = _first_rows.copy()
+                    _spawn_rows["snapshot_time"] = _grid[
+                        (_first_grid_idx - 1).to_numpy()
+                    ]
+                    _spawn_rows["x_final"] = _x_arrival
+                    _spawn_rows["y_final"] = _y_arrival
+                    _spawn_rows["_phantom"] = False
+                    # Present the row as the arrival step it visually is: sitting
+                    # at the arrival anchor, it should resolve its icon flip, hover
+                    # text and stage from `"arrival"` - not from the first queue it
+                    # was copied from (whose name, "Queue Position", and any
+                    # per-event `flip_icons` would otherwise leak onto it).
+                    _spawn_rows[event_col_name] = "arrival"
+                    _spawn_rows[event_type_col_name] = "arrival_departure"
+                    if "label" in _arrival_anchor.columns:
+                        _spawn_rows["label"] = _arrival_anchor["label"].iloc[0]
+
+                    # The phantom is the spawn row one snapshot earlier, invisible.
+                    _spawn_phantoms = _spawn_rows.copy()
+                    _spawn_phantoms["snapshot_time"] = _grid[
+                        (_first_grid_idx - 2).to_numpy()
+                    ]
+                    _spawn_phantoms["icon"] = PHANTOM_ICON
+                    _spawn_phantoms["_phantom"] = True
+
+                    full_entity_df_plus_pos = pd.concat(
+                        [full_entity_df_plus_pos, _spawn_rows, _spawn_phantoms],
+                        ignore_index=True,
+                    )
+
     full_entity_df_plus_pos["opacity"] = 1.0
 
     full_entity_df_plus_pos = full_entity_df_plus_pos.sort_values(
@@ -792,11 +1516,19 @@ def generate_animation_df(
             index=True,
         )
 
-    # Drop any columns that are no longer strictly necessary (but may be useful to retain for debugging)
-    if minimize_output_df:
-        for col in ["opacity", "x", "y", "index", "run"]:
-            if col in full_entity_df_plus_pos.columns:
-                full_entity_df_plus_pos.drop(columns=col)
+    # `minimize_output_df` has never had any effect: the loop that was meant to implement
+    # it called .drop() without assigning the result, so every column was retained
+    # regardless. Rather than start dropping columns now - which would change the output
+    # of every existing caller, including removing `run` - the parameter is deprecated and
+    # left inert. Columns will be dropped in 3.0.
+    if minimize_output_df is not _UNSET:
+        warnings.warn(
+            "`minimize_output_df` has never had any effect and is deprecated. It is "
+            "currently ignored, and all columns are retained. Column dropping will be "
+            "introduced in vidigi 3.0; pass no value to keep the current behaviour.",
+            DeprecationWarning,
+            stacklevel=3,
+        )
 
     return full_entity_df_plus_pos.dropna(axis=1, how="all")
 
