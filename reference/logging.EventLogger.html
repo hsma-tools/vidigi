@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.9.37">
+<meta name="generator" content="quarto-1.10.18">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -12,10 +12,13 @@
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
 */
-code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
-div.columns{display: flex; gap: min(4vw, 1.5em);}
-div.column{flex: auto; overflow-x: auto;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
 div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
 ul.task-list{list-style: none;}
 ul.task-list li input[type="checkbox"] {
@@ -74,12 +77,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="../site_libs/quarto-html/anchor.min.js"></script>
 <link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting-7f8f88aac4f3542376d5c11b86a4c14d.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting-dark-d0ae9245876894da5ac7e18953ecc5cc.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-dark-b85bc7c33db8c58e0ec93c3465666fed.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-b1129199255cbdaa6ba7196f7625bb51.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="../site_libs/bootstrap/bootstrap-dark-160e0e8b9df999724eb46a759f5c953c.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../site_libs/bootstrap/bootstrap-daa4999fdbd6c2f5170fc895806a103e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-dark-1a58831b5b536d8abf17f9ba280142c3.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -113,7 +116,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link rel="stylesheet" href="../vidigi_docs/styles.css">
 </head>
 
-<body class="nav-sidebar floating nav-fixed fullcontent quarto-dark"><script id="quarto-html-before-body" type="application/javascript">
+<body class="nav-sidebar docked nav-fixed fullcontent quarto-dark"><script id="quarto-html-before-body" type="application/javascript">
     const toggleBodyColorMode = (bsSheetEl) => {
       const mode = bsSheetEl.getAttribute("data-mode");
       const bodyEl = window.document.querySelector("body");
@@ -291,16 +294,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav navbar-nav-scroll me-auto">
   <li class="nav-item">
-    <a class="nav-link" href="../vidigi_docs/index.html"> 
-<span class="menu-text">Home</span></a>
-  </li>  
-  <li class="nav-item">
     <a class="nav-link" href="../vidigi_docs/getting_started.html"> 
 <span class="menu-text">Getting Started</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../examples/examples.html"> 
-<span class="menu-text">Examples</span></a>
+    <a class="nav-link" href="../vidigi_docs/customising_animations.html"> 
+<span class="menu-text">Customising Animations</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../examples/feature_breakdowns.html"> 
@@ -311,14 +310,26 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">API Reference</span></a>
   </li>  
   <li class="nav-item">
+    <a class="nav-link" href="../examples/examples.html"> 
+<span class="menu-text">Example Models</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../vidigi_docs/migrating_to_2_0_0.html"> 
+<span class="menu-text">Migrating to 2.0.0</span></a>
+  </li>  
+  <li class="nav-item">
     <a class="nav-link" href="../vidigi_docs/changelog.html"> 
 <span class="menu-text">Changelog</span></a>
   </li>  
   <li class="nav-item dropdown ">
-    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-package-details" role="link" data-bs-toggle="dropdown" aria-expanded="false">
- <span class="menu-text">Package Details</span>
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-about" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">About</span>
     </a>
-    <ul class="dropdown-menu" aria-labelledby="nav-menu-package-details">    
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-about">    
+        <li>
+    <a class="dropdown-item" href="../vidigi_docs/citation.html">
+ <span class="dropdown-text">Citing vidigi</span></a>
+  </li>  
         <li>
     <a class="dropdown-item" href="../vidigi_docs/licence.html">
  <span class="dropdown-text">Licence</span></a>
@@ -329,7 +340,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>  
         <li>
     <a class="dropdown-item" href="../vidigi_docs/attribution_for_examples.html">
- <span class="dropdown-text">Attribution for models used as examples</span></a>
+ <span class="dropdown-text">Attribution for Models used as Examples</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../vidigi_docs/contributing.html">
+ <span class="dropdown-text">Contributing to Vidigi</span></a>
   </li>  
     </ul>
   </li>
@@ -366,7 +381,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <!-- content -->
 <div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
-  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation docked overflow-auto">
     <div class="sidebar-menu-container"> 
     <ul class="list-unstyled mt-1">
         <li class="sidebar-item">
@@ -436,6 +451,24 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">animation.add_repeating_overlay</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/animation.add_subplot_panels.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">animation.add_subplot_panels</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/animation.add_synchronised_trace.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">animation.add_synchronised_trace</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/animation.add_synchronised_trace_from_dataframe.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">animation.add_synchronised_trace_from_dataframe</span></a>
+  </div>
+</li>
       </ul>
   </li>
         <li class="sidebar-item sidebar-item-section">
@@ -499,7 +532,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
             <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true">
- <span class="menu-text">Event Positioning Utility Functions and Classes</span></a>
+ <span class="menu-text">Analysis Functions</span></a>
           <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
@@ -507,8 +540,198 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.event_durations.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.event_durations</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.entity_metric_by_arrival.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.entity_metric_by_arrival</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.replication_means.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.replication_means</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.mean_confidence_interval.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.mean_confidence_interval</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.replication_precision.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.replication_precision</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.queue_size_over_time.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.queue_size_over_time</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.resource_use_intervals.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.resource_use_intervals</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.resource_utilisation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.resource_utilisation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.resource_occupancy_over_time.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.resource_occupancy_over_time</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.activity_occupancy_stats.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.activity_occupancy_stats</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.welch_moving_average.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.welch_moving_average</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.compare_replication_values.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.compare_replication_values</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.flag_outlier_runs.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.flag_outlier_runs</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.event_occurrence_rate.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.event_occurrence_rate</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="true">
+ <span class="menu-text">Analysis Plots</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-7" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/plots.plot_queue_size.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">plots.plot_queue_size</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/plots.plot_duration_distribution.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">plots.plot_duration_distribution</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/plots.plot_metric_bar.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">plots.plot_metric_bar</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/plots.plot_metric.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">plots.plot_metric</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/plots.plot_resource_utilisation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">plots.plot_resource_utilisation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/plots.plot_resource_utilisation_over_time.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">plots.plot_resource_utilisation_over_time</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/plots.plot_warm_up_diagnostic.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">plots.plot_warm_up_diagnostic</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/plots.plot_replication_analysis.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">plots.plot_replication_analysis</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/plots.plot_outlier_runs.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">plots.plot_outlier_runs</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/plots.plot_metric_vs_arrival_time.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">plots.plot_metric_vs_arrival_time</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/plots.plot_scenario_comparison.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">plots.plot_scenario_comparison</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/plots.plot_resource_utilisation_comparison.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">plots.plot_resource_utilisation_comparison</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-8" role="navigation" aria-expanded="true">
+ <span class="menu-text">Event Positioning Utility Functions and Classes</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-8" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-8" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../reference/utils.EventPosition.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">utils.EventPosition</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/utils.ArrivalPosition.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">utils.ArrivalPosition</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/utils.ExitPosition.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">utils.ExitPosition</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -521,13 +744,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="true">
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-9" role="navigation" aria-expanded="true">
  <span class="menu-text">Process Map-Style Outputs</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="true" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-9" role="navigation" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-7" class="collapse list-unstyled sidebar-section depth1 show">  
+      <ul id="quarto-sidebar-section-9" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../reference/process_mapping.add_sim_timestamp.html" class="sidebar-item-text sidebar-link">
@@ -568,13 +791,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-8" role="navigation" aria-expanded="true">
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-10" role="navigation" aria-expanded="true">
  <span class="menu-text">Streamlit Utility Functions</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-8" role="navigation" aria-expanded="true" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-10" role="navigation" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-8" class="collapse list-unstyled sidebar-section depth1 show">  
+      <ul id="quarto-sidebar-section-10" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../reference/utils.streamlit_play_all.html" class="sidebar-item-text sidebar-link">
@@ -585,30 +808,42 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-9" role="navigation" aria-expanded="true">
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-11" role="navigation" aria-expanded="true">
  <span class="menu-text">ciw Utility Functions</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-9" role="navigation" aria-expanded="true" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-11" role="navigation" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-9" class="collapse list-unstyled sidebar-section depth1 show">  
+      <ul id="quarto-sidebar-section-11" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../reference/ciw.event_log_from_ciw_recs.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">ciw.event_log_from_ciw_recs</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/ciw.event_logger_from_ciw_recs.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">ciw.event_logger_from_ciw_recs</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/ciw.trial_logger_from_ciw_recs.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">ciw.trial_logger_from_ciw_recs</span></a>
+  </div>
+</li>
       </ul>
   </li>
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-10" role="navigation" aria-expanded="true">
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-12" role="navigation" aria-expanded="true">
  <span class="menu-text">legacy Functions</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-10" role="navigation" aria-expanded="true" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-12" role="navigation" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-10" class="collapse list-unstyled sidebar-section depth1 show">  
+      <ul id="quarto-sidebar-section-12" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../reference/resources.VidigiPriorityStoreLegacy.html" class="sidebar-item-text sidebar-link">
@@ -632,7 +867,48 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <section id="vidigi.logging.EventLogger" class="level1">
 <h1>logging.EventLogger</h1>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger(event_model<span class="op">=</span>BaseEvent, env<span class="op">=</span><span class="va">None</span>, run_number<span class="op">=</span><span class="va">None</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger(</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    event_model<span class="op">=</span>BaseEvent,</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    env<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    run_number<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    scenario<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    label<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Records simulation events for later reshaping into animations and statistics.</p>
+<section id="parameters" class="level2 doc-section doc-section-parameters">
+<h2 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 3%">
+<col style="width: 2%">
+<col style="width: 90%">
+<col style="width: 3%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>env</td>
+<td>optional</td>
+<td>A simulation environment with a <code>.now</code> attribute or method (e.g.&nbsp;a simpy or salabim <code>Environment</code>). When given, every <code>log_*</code> call below may omit <code>time</code> - it is read from <code>env.now</code> at call time. Without an <code>env</code>, <code>time</code> becomes a required argument on every <code>log_*</code> call, and omitting it raises <code>ValueError</code>.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>run_number</td>
+<td>int</td>
+<td>Run/replication number to stamp on every event by default. When given, every <code>log_*</code> call below may omit <code>run_number</code> - it is filled in from this value. Without it, <code>run_number</code> is left off events unless supplied per-call.</td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table>
+</section>
 <section id="methods" class="level2">
 <h2 class="anchored" data-anchor-id="methods">Methods</h2>
 <table class="caption-top table">
@@ -644,87 +920,179 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
+<td><a href="#vidigi.logging.EventLogger.animate_activity_log">animate_activity_log</a></td>
+<td>Build an animated visualisation of the entities in this event log.</td>
+</tr>
+<tr class="even">
 <td><a href="#vidigi.logging.EventLogger.generate_dfg">generate_dfg</a></td>
 <td>Generate a Directly-Follows Graph (DFG) from the simulation data.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#vidigi.logging.EventLogger.get_events_by_entity">get_events_by_entity</a></td>
 <td>Return all events associated with a specific entity_id.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#vidigi.logging.EventLogger.get_events_by_event_name">get_events_by_event_name</a></td>
 <td>Return all events of a specific event_type.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#vidigi.logging.EventLogger.get_events_by_event_type">get_events_by_event_type</a></td>
 <td>Return all events of a specific event_type.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#vidigi.logging.EventLogger.get_events_by_run">get_events_by_run</a></td>
 <td>Return all events associated with a specific entity_id.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#vidigi.logging.EventLogger.log_arrival">log_arrival</a></td>
 <td>Helper to log an arrival event with the correct event_type and event fields.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#vidigi.logging.EventLogger.log_custom_event">log_custom_event</a></td>
 <td>Log a custom event. The ‘event’ here can be any string describing the queue event.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#vidigi.logging.EventLogger.log_departure">log_departure</a></td>
 <td>Helper to log a departure event with the correct event_type and event fields.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#vidigi.logging.EventLogger.log_queue">log_queue</a></td>
 <td>Log a queue event. The ‘event’ here can be any string describing the queue event.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#vidigi.logging.EventLogger.log_resource_use_end">log_resource_use_end</a></td>
 <td>Log the end of resource use. Requires resource_id.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#vidigi.logging.EventLogger.log_resource_use_start">log_resource_use_start</a></td>
 <td>Log the start of resource use. Requires resource_id.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#vidigi.logging.EventLogger.plot_entity_timeline">plot_entity_timeline</a></td>
 <td>Plot a timeline of events for a given entity.</td>
 </tr>
+<tr class="even">
+<td><a href="#vidigi.logging.EventLogger.read_pickle">read_pickle</a></td>
+<td>Load an <code>EventLogger</code> previously written with <code>to_pickle</code>.</td>
+</tr>
 <tr class="odd">
+<td><a href="#vidigi.logging.EventLogger.reshape_for_animations">reshape_for_animations</a></td>
+<td>Reshape this event log into the per-snapshot frame the animation uses.</td>
+</tr>
+<tr class="even">
 <td><a href="#vidigi.logging.EventLogger.to_csv">to_csv</a></td>
 <td>Write the log to a CSV file.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#vidigi.logging.EventLogger.to_dataframe">to_dataframe</a></td>
 <td>Convert the event log to a pandas DataFrame.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#vidigi.logging.EventLogger.to_json">to_json</a></td>
 <td>Write the event log to a JSON file or file-like buffer.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#vidigi.logging.EventLogger.to_json_string">to_json_string</a></td>
 <td>Return the event log as a pretty JSON string.</td>
 </tr>
+<tr class="even">
+<td><a href="#vidigi.logging.EventLogger.to_pickle">to_pickle</a></td>
+<td>Pickle this <code>EventLogger</code> to a file path or writable binary buffer.</td>
+</tr>
 </tbody>
 </table>
-<section id="vidigi.logging.EventLogger.generate_dfg" class="level3">
-<h3 class="anchored" data-anchor-id="vidigi.logging.EventLogger.generate_dfg">generate_dfg</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.generate_dfg(</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    output_format<span class="op">=</span><span class="st">'graphviz-object'</span>,</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    input_time_format<span class="op">=</span><span class="st">'minutes'</span>,</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Generate a Directly-Follows Graph (DFG) from the simulation data.</p>
-<p>This method converts the object to a dataframe, appends simulation timestamps, discovers transitions between activities, and renders the result using the specified visualization backend.</p>
-<section id="parameters" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h4>
+<section id="vidigi.logging.EventLogger.animate_activity_log" class="level3">
+<h3 class="anchored" data-anchor-id="vidigi.logging.EventLogger.animate_activity_log">animate_activity_log</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.animate_activity_log(</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    event_position_df,</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    scenario<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Build an animated visualisation of the entities in this event log.</p>
+<p>Thin wrapper over <code>vidigi.animation.animate_activity_log</code>, called on this logger directly (no <code>.to_dataframe()</code> step needed). See that function for the full parameter list.</p>
+<section id="parameters-1" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters</h4>
 <table class="caption-top table">
 <colgroup>
-<col style="width: 4%">
+<col style="width: 8%">
+<col style="width: 8%">
+<col style="width: 77%">
+<col style="width: 5%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>event_position_df</td>
+<td>pandas.DataFrame</td>
+<td>The layout: an <code>x</code>/<code>y</code> position per event. Build it with <code>vidigi.utils.create_event_position_df</code> / <code>EventPosition</code>.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>scenario</td>
+<td>object or dict</td>
+<td>The parameters object (or <code>{name: count}</code> dict) that produced the run, used to draw one icon per available resource unit.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="odd">
+<td>**kwargs</td>
+<td></td>
+<td>Additional keyword arguments forwarded to <code>vidigi.animation.animate_activity_log</code> (e.g.&nbsp;<code>every_x_time_units</code>, <code>limit_duration</code>, <code>plotly_height</code>, the appearance arguments).</td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>plotly.graph_objects.Figure</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="see-also" class="level4 doc-section doc-section-see-also">
+<h4 class="doc-section doc-section-see-also anchored" data-anchor-id="see-also">See Also</h4>
+<p>vidigi.animation.animate_activity_log : The underlying implementation. reshape_for_animations : The first step, if you want to run the pipeline yourself.</p>
+</section>
+</section>
+<section id="vidigi.logging.EventLogger.generate_dfg" class="level3">
+<h3 class="anchored" data-anchor-id="vidigi.logging.EventLogger.generate_dfg">generate_dfg</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.generate_dfg(</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    output_format<span class="op">=</span><span class="st">'graphviz-object'</span>,</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    input_time_format<span class="op">=</span><span class="st">'minutes'</span>,</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    warm_up<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    occupancy_metrics<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    occupancy_snapshot_interval<span class="op">=</span><span class="dv">1</span>,</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Generate a Directly-Follows Graph (DFG) from the simulation data.</p>
+<p>This method converts the object to a dataframe, appends simulation timestamps, discovers transitions between activities, and renders the result using the specified visualization backend.</p>
+<section id="parameters-2" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-2">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 6%">
 <col style="width: 2%">
-<col style="width: 88%">
+<col style="width: 86%">
 <col style="width: 4%">
 </colgroup>
 <thead>
@@ -749,6 +1117,24 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td><code>'minutes'</code></td>
 </tr>
 <tr class="odd">
+<td>warm_up</td>
+<td>float</td>
+<td>Discard a warm-up period before the graph is built, by dropping events at or before this simulation time. Default is <code>None</code>, which keeps every event. See :func:<code>vidigi.process_mapping.add_sim_timestamp</code> for what this does and does not affect.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>occupancy_metrics</td>
+<td>bool</td>
+<td>If True, annotate each queue and resource node with the mean, minimum and maximum number of entities present at that step, via :func:<code>vidigi.analysis.activity_occupancy_stats</code>. Off by default because the queue calculation runs <code>reshape_for_animations</code> once per run, which is slow on a long log. <code>warm_up</code> is applied to this the same way.</td>
+<td><code>False</code></td>
+</tr>
+<tr class="odd">
+<td>occupancy_snapshot_interval</td>
+<td>float</td>
+<td>Snapshot granularity for <code>occupancy_metrics</code>, in <code>input_time_format</code> units. A larger value is faster and coarser.</td>
+<td><code>1</code></td>
+</tr>
+<tr class="even">
 <td>**kwargs</td>
 <td></td>
 <td>Arbitrary keyword arguments passed to the underlying rendering functions (<code>dfg_to_graphviz</code>, <code>dfg_to_cytoscape</code>, etc.).</td>
@@ -757,8 +1143,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tbody>
 </table>
 </section>
-<section id="returns" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h4>
+<section id="returns-1" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-1">Returns</h4>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 5%">
@@ -818,112 +1204,347 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="vidigi.logging.EventLogger.get_events_by_entity" class="level3">
 <h3 class="anchored" data-anchor-id="vidigi.logging.EventLogger.get_events_by_entity">get_events_by_entity</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.get_events_by_entity(entity_id, as_dataframe<span class="op">=</span><span class="va">True</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.get_events_by_entity(entity_id, as_dataframe<span class="op">=</span><span class="va">True</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Return all events associated with a specific entity_id.</p>
 </section>
 <section id="vidigi.logging.EventLogger.get_events_by_event_name" class="level3">
 <h3 class="anchored" data-anchor-id="vidigi.logging.EventLogger.get_events_by_event_name">get_events_by_event_name</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.get_events_by_event_name(event_name, as_dataframe<span class="op">=</span><span class="va">True</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.get_events_by_event_name(event_name, as_dataframe<span class="op">=</span><span class="va">True</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Return all events of a specific event_type.</p>
 </section>
 <section id="vidigi.logging.EventLogger.get_events_by_event_type" class="level3">
 <h3 class="anchored" data-anchor-id="vidigi.logging.EventLogger.get_events_by_event_type">get_events_by_event_type</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.get_events_by_event_type(event_type, as_dataframe<span class="op">=</span><span class="va">True</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.get_events_by_event_type(event_type, as_dataframe<span class="op">=</span><span class="va">True</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Return all events of a specific event_type.</p>
 </section>
 <section id="vidigi.logging.EventLogger.get_events_by_run" class="level3">
 <h3 class="anchored" data-anchor-id="vidigi.logging.EventLogger.get_events_by_run">get_events_by_run</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.get_events_by_run(run_number, as_dataframe<span class="op">=</span><span class="va">True</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.get_events_by_run(run_number, as_dataframe<span class="op">=</span><span class="va">True</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Return all events associated with a specific entity_id.</p>
 </section>
 <section id="vidigi.logging.EventLogger.log_arrival" class="level3">
 <h3 class="anchored" data-anchor-id="vidigi.logging.EventLogger.log_arrival">log_arrival</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.log_arrival(</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    entity_id,</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    time<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    pathway<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    run_number<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>extra_fields,</span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.log_arrival(</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    entity_id,</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    time<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    pathway<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    run_number<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>extra_fields,</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Helper to log an arrival event with the correct event_type and event fields.</p>
+<p><code>entity_id</code> must be unique per arrival/departure within a run - logging a second arrival under the same <code>entity_id</code> raises a <code>ValueError</code> when the log is reshaped for animation.</p>
+<section id="parameters-3" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-3">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 5%">
+<col style="width: 78%">
+<col style="width: 7%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>time</td>
+<td>float</td>
+<td>Simulation time of the event. Defaults to <code>env.now</code> if <code>env</code> was passed to <code>EventLogger(...)</code>; required otherwise.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>run_number</td>
+<td>int</td>
+<td>Run/replication number. Defaults to the <code>run_number</code> passed to <code>EventLogger(...)</code>, if any.</td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="vidigi.logging.EventLogger.log_custom_event" class="level3">
 <h3 class="anchored" data-anchor-id="vidigi.logging.EventLogger.log_custom_event">log_custom_event</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.log_custom_event(</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    entity_id,</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    event_type,</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    event,</span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    time<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    pathway<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    run_number<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>extra_fields,</span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.log_custom_event(</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    entity_id,</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    event_type,</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    event,</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    time<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    pathway<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    run_number<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>extra_fields,</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Log a custom event. The ‘event’ here can be any string describing the queue event. An ‘event_type’ must also be passed, but can be any string of the user’s choosing.</p>
+<section id="parameters-4" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-4">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 5%">
+<col style="width: 78%">
+<col style="width: 7%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>time</td>
+<td>float</td>
+<td>Simulation time of the event. Defaults to <code>env.now</code> if <code>env</code> was passed to <code>EventLogger(...)</code>; required otherwise.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>run_number</td>
+<td>int</td>
+<td>Run/replication number. Defaults to the <code>run_number</code> passed to <code>EventLogger(...)</code>, if any.</td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="vidigi.logging.EventLogger.log_departure" class="level3">
 <h3 class="anchored" data-anchor-id="vidigi.logging.EventLogger.log_departure">log_departure</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.log_departure(</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    entity_id,</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    time<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    pathway<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    run_number<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>extra_fields,</span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.log_departure(</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    entity_id,</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    time<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    pathway<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    run_number<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>extra_fields,</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Helper to log a departure event with the correct event_type and event fields.</p>
+<p><code>entity_id</code> must be unique per arrival/departure within a run - logging a second departure under the same <code>entity_id</code> raises a <code>ValueError</code> when the log is reshaped for animation.</p>
+<section id="parameters-5" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-5">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 5%">
+<col style="width: 78%">
+<col style="width: 7%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>time</td>
+<td>float</td>
+<td>Simulation time of the event. Defaults to <code>env.now</code> if <code>env</code> was passed to <code>EventLogger(...)</code>; required otherwise.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>run_number</td>
+<td>int</td>
+<td>Run/replication number. Defaults to the <code>run_number</code> passed to <code>EventLogger(...)</code>, if any.</td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="vidigi.logging.EventLogger.log_queue" class="level3">
 <h3 class="anchored" data-anchor-id="vidigi.logging.EventLogger.log_queue">log_queue</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.log_queue(</span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    entity_id,</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    event,</span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    time<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    pathway<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    run_number<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>extra_fields,</span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Log a queue event. The ‘event’ here can be any string describing the queue event.</p>
-</section>
-<section id="vidigi.logging.EventLogger.log_resource_use_end" class="level3">
-<h3 class="anchored" data-anchor-id="vidigi.logging.EventLogger.log_resource_use_end">log_resource_use_end</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.log_resource_use_end(</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.log_queue(</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    entity_id,</span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    resource_id,</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    event,</span>
 <span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    time<span class="op">=</span><span class="va">None</span>,</span>
 <span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    pathway<span class="op">=</span><span class="va">None</span>,</span>
 <span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>    run_number<span class="op">=</span><span class="va">None</span>,</span>
 <span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>extra_fields,</span>
 <span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Log a queue event. The ‘event’ here can be any string describing the queue event.</p>
+<section id="parameters-6" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-6">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 5%">
+<col style="width: 78%">
+<col style="width: 7%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>time</td>
+<td>float</td>
+<td>Simulation time of the event. Defaults to <code>env.now</code> if <code>env</code> was passed to <code>EventLogger(...)</code>; required otherwise.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>run_number</td>
+<td>int</td>
+<td>Run/replication number. Defaults to the <code>run_number</code> passed to <code>EventLogger(...)</code>, if any.</td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="vidigi.logging.EventLogger.log_resource_use_end" class="level3">
+<h3 class="anchored" data-anchor-id="vidigi.logging.EventLogger.log_resource_use_end">log_resource_use_end</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.log_resource_use_end(</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    entity_id,</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    resource_id,</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    event<span class="op">=</span><span class="st">'end'</span>,</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    time<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    pathway<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    run_number<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>extra_fields,</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Log the end of resource use. Requires resource_id.</p>
+<section id="parameters-7" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-7">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 4%">
+<col style="width: 2%">
+<col style="width: 90%">
+<col style="width: 2%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>event</td>
+<td>str</td>
+<td>Name of the specific step, e.g.&nbsp;<code>"treatment_ends"</code>. Only used as a label by <code>vidigi.analysis.resource_use_intervals</code> - grouping uses the matching <code>log_resource_use_start</code> call’s <code>event</code> instead - but still worth naming distinctly for readability.</td>
+<td><code>"end"</code></td>
+</tr>
+<tr class="even">
+<td>time</td>
+<td>float</td>
+<td>Simulation time of the event. Defaults to <code>env.now</code> if <code>env</code> was passed to <code>EventLogger(...)</code>; required otherwise.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="odd">
+<td>run_number</td>
+<td>int</td>
+<td>Run/replication number. Defaults to the <code>run_number</code> passed to <code>EventLogger(...)</code>, if any.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>**extra_fields</td>
+<td></td>
+<td>Any further keyword arguments are recorded on the event as extra columns in the log, e.g.&nbsp;an <code>outcome=...</code> known only once the resource is released, or <code>unique_resource_id=resource.unique_id</code>. When resource use is auto-logged via <code>VidigiStore(logger=...)</code>, the same passthrough is available on <code>VidigiStore.put()</code>/<code>return_item()</code>.</td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="notes-1" class="level4 doc-section doc-section-notes">
+<h4 class="doc-section doc-section-notes anchored" data-anchor-id="notes-1">Notes</h4>
+<p>This was already possible by passing <code>event=...</code> as an extra keyword argument - it silently overrode the literal <code>"end"</code> above, since <code>**extra_fields</code> is applied last. <code>event</code> is now an explicit, documented parameter instead; behaviour for existing callers is unchanged either way.</p>
+</section>
 </section>
 <section id="vidigi.logging.EventLogger.log_resource_use_start" class="level3">
 <h3 class="anchored" data-anchor-id="vidigi.logging.EventLogger.log_resource_use_start">log_resource_use_start</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.log_resource_use_start(</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    entity_id,</span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    resource_id,</span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    time<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    pathway<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    run_number<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>extra_fields,</span>
-<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.log_resource_use_start(</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    entity_id,</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    resource_id,</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    event<span class="op">=</span><span class="st">'start'</span>,</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    time<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>    pathway<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>    run_number<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>extra_fields,</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Log the start of resource use. Requires resource_id.</p>
+<section id="parameters-8" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-8">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 3%">
+<col style="width: 1%">
+<col style="width: 91%">
+<col style="width: 2%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>event</td>
+<td>str</td>
+<td>Name of the specific step, e.g.&nbsp;<code>"treatment_begins"</code>. The default of <code>"start"</code> is fine for a model with only one resource-use step; with more than one, a distinct name per step is what lets <code>vidigi.analysis.resource_use_intervals</code>/<code>resource_utilisation</code> report them separately rather than pooling every resource together under one name.</td>
+<td><code>"start"</code></td>
+</tr>
+<tr class="even">
+<td>time</td>
+<td>float</td>
+<td>Simulation time of the event. Defaults to <code>env.now</code> if <code>env</code> was passed to <code>EventLogger(...)</code>; required otherwise.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="odd">
+<td>run_number</td>
+<td>int</td>
+<td>Run/replication number. Defaults to the <code>run_number</code> passed to <code>EventLogger(...)</code>, if any.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>**extra_fields</td>
+<td></td>
+<td>Any further keyword arguments are recorded on the event as extra columns in the log, e.g.&nbsp;<code>acuity=3</code>, <code>arrival_mode="ambulance"</code>, <code>unique_resource_id=resource.unique_id</code>. Useful for attaching entity-level attributes for later analysis. When resource use is auto-logged via <code>VidigiStore(logger=...)</code>, the same passthrough is available on <code>VidigiStore.request()</code>/<code>get_direct()</code>.</td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="notes-2" class="level4 doc-section doc-section-notes">
+<h4 class="doc-section doc-section-notes anchored" data-anchor-id="notes-2">Notes</h4>
+<p>This was already possible by passing <code>event=...</code> as an extra keyword argument - it silently overrode the literal <code>"start"</code> above, since <code>**extra_fields</code> is applied last. <code>event</code> is now an explicit, documented parameter instead; behaviour for existing callers is unchanged either way.</p>
+</section>
 </section>
 <section id="vidigi.logging.EventLogger.plot_entity_timeline" class="level3">
 <h3 class="anchored" data-anchor-id="vidigi.logging.EventLogger.plot_entity_timeline">plot_entity_timeline</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.plot_entity_timeline(</span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    entity_id,</span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    split_by_entity_type<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    show_labels<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.plot_entity_timeline(</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    entity_id,</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    split_by_entity_type<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    show_labels<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    return_fig<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Plot a timeline of events for a given entity.</p>
 <p>This method visualizes the sequence of events for a specified entity from the event log as a scatter plot. The timeline is plotted using Plotly, with events displayed along the time axis. Events can be split vertically by their type or shown by event labels. Optionally, labels can be displayed directly on the plot.</p>
-<section id="parameters-1" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters</h4>
+<section id="parameters-9" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-9">Parameters</h4>
 <table class="caption-top table">
 <colgroup>
-<col style="width: 14%">
-<col style="width: 5%">
-<col style="width: 73%">
-<col style="width: 7%">
+<col style="width: 6%">
+<col style="width: 2%">
+<col style="width: 88%">
+<col style="width: 3%">
 </colgroup>
 <thead>
 <tr class="header">
@@ -951,6 +1572,36 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>bool</td>
 <td>If True, the event labels are displayed as text on the plot. If False, no labels are shown.</td>
 <td><code>False</code></td>
+</tr>
+<tr class="even">
+<td>return_fig</td>
+<td>bool</td>
+<td>If True, return the Plotly figure instead of calling <code>fig.show()</code>. Use this to customise the figure further or export it (e.g.&nbsp;<code>fig.write_image(...)</code>). Defaults to False for backwards compatibility; this default will flip to True in vidigi 3.0, at which point the method will stop calling <code>fig.show()</code> itself.</td>
+<td><code>False</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-2" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-2">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 5%">
+<col style="width: 23%">
+<col style="width: 70%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>plotly.graph_objects.Figure or None</td>
+<td>The figure if <code>return_fig=True</code>, otherwise None (the figure is displayed via <code>fig.show()</code> and not returned).</td>
 </tr>
 </tbody>
 </table>
@@ -984,38 +1635,117 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tbody>
 </table>
 </section>
-<section id="see-also" class="level4 doc-section doc-section-see-also">
-<h4 class="doc-section doc-section-see-also anchored" data-anchor-id="see-also">See Also</h4>
+<section id="see-also-1" class="level4 doc-section doc-section-see-also">
+<h4 class="doc-section doc-section-see-also anchored" data-anchor-id="see-also-1">See Also</h4>
 <p>to_dataframe : Convert the event log into a DataFrame for analysis.</p>
 </section>
-<section id="notes-1" class="level4 doc-section doc-section-notes">
-<h4 class="doc-section doc-section-notes anchored" data-anchor-id="notes-1">Notes</h4>
+<section id="notes-3" class="level4 doc-section doc-section-notes">
+<h4 class="doc-section doc-section-notes anchored" data-anchor-id="notes-3">Notes</h4>
 <ul>
-<li>The plot is displayed using <code>plotly.express.scatter</code>.</li>
+<li>The plot is built using <code>plotly.express.scatter</code>.</li>
 <li>The y-axis is treated as categorical to improve readability.</li>
 <li>Marker styling includes a fixed size and outline color for clarity.</li>
 </ul>
 </section>
 </section>
+<section id="vidigi.logging.EventLogger.read_pickle" class="level3">
+<h3 class="anchored" data-anchor-id="vidigi.logging.EventLogger.read_pickle">read_pickle</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.read_pickle(path_or_buffer)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Load an <code>EventLogger</code> previously written with <code>to_pickle</code>.</p>
+</section>
+<section id="vidigi.logging.EventLogger.reshape_for_animations" class="level3">
+<h3 class="anchored" data-anchor-id="vidigi.logging.EventLogger.reshape_for_animations">reshape_for_animations</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.reshape_for_animations(<span class="op">**</span>kwargs)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Reshape this event log into the per-snapshot frame the animation uses.</p>
+<p>Thin wrapper over <code>vidigi.prep.reshape_for_animations</code>, called on this logger directly (no <code>.to_dataframe()</code> step needed). See that function for the full parameter list.</p>
+<p>This is the first of the three steps <code>animate_activity_log</code> runs for you. Call it yourself only when you want to inspect or tweak the intermediate frame before continuing:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>full_entity_df <span class="op">=</span> logger.reshape_for_animations(every_x_time_units<span class="op">=</span><span class="dv">5</span>)</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>full_entity_df_plus_pos <span class="op">=</span> generate_animation_df(</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    full_entity_df, event_position_df</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> generate_animation(full_entity_df_plus_pos, event_position_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><code>generate_animation_df</code> and <code>generate_animation</code> stay as functions in <code>vidigi.prep</code> / <code>vidigi.animation</code> - they act on the intermediate DataFrame, not on the logger.</p>
+<section id="parameters-10" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-10">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 6%">
+<col style="width: 4%">
+<col style="width: 82%">
+<col style="width: 6%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>**kwargs</td>
+<td></td>
+<td>Keyword arguments forwarded to <code>vidigi.prep.reshape_for_animations</code> (e.g.&nbsp;<code>every_x_time_units</code>, <code>limit_duration</code>, <code>step_snapshot_max</code>).</td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-3" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-3">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 7%">
+<col style="width: 17%">
+<col style="width: 74%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>pandas.DataFrame</td>
+<td>One row per (entity, snapshot time) - the input to <code>generate_animation_df</code>.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="see-also-2" class="level4 doc-section doc-section-see-also">
+<h4 class="doc-section doc-section-see-also anchored" data-anchor-id="see-also-2">See Also</h4>
+<p>vidigi.prep.reshape_for_animations : The underlying implementation. animate_activity_log : Run all three steps in one call.</p>
+</section>
+</section>
 <section id="vidigi.logging.EventLogger.to_csv" class="level3">
 <h3 class="anchored" data-anchor-id="vidigi.logging.EventLogger.to_csv">to_csv</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.to_csv(path_or_buffer)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.to_csv(path_or_buffer)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Write the log to a CSV file.</p>
 </section>
 <section id="vidigi.logging.EventLogger.to_dataframe" class="level3">
 <h3 class="anchored" data-anchor-id="vidigi.logging.EventLogger.to_dataframe">to_dataframe</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.to_dataframe()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.to_dataframe()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Convert the event log to a pandas DataFrame.</p>
 </section>
 <section id="vidigi.logging.EventLogger.to_json" class="level3">
 <h3 class="anchored" data-anchor-id="vidigi.logging.EventLogger.to_json">to_json</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.to_json(path_or_buffer, indent<span class="op">=</span><span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.to_json(path_or_buffer, indent<span class="op">=</span><span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Write the event log to a JSON file or file-like buffer.</p>
 </section>
 <section id="vidigi.logging.EventLogger.to_json_string" class="level3">
 <h3 class="anchored" data-anchor-id="vidigi.logging.EventLogger.to_json_string">to_json_string</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.to_json_string(indent<span class="op">=</span><span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.to_json_string(indent<span class="op">=</span><span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Return the event log as a pretty JSON string.</p>
+</section>
+<section id="vidigi.logging.EventLogger.to_pickle" class="level3">
+<h3 class="anchored" data-anchor-id="vidigi.logging.EventLogger.to_pickle">to_pickle</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>logging.EventLogger.to_pickle(path_or_buffer)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Pickle this <code>EventLogger</code> to a file path or writable binary buffer.</p>
+<p>The event log and any attached <code>scenario</code> / <code>label</code> are pickled; the simulation <code>env</code> is not (it holds live generators), so a restored logger has <code>env=None</code> and cannot log new events - it is a finished record. An attached <code>scenario</code> must itself be picklable.</p>
 
 
 </section>

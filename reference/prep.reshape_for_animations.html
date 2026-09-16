@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.9.37">
+<meta name="generator" content="quarto-1.10.18">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -12,10 +12,13 @@
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
 */
-code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
-div.columns{display: flex; gap: min(4vw, 1.5em);}
-div.column{flex: auto; overflow-x: auto;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
 div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
 ul.task-list{list-style: none;}
 ul.task-list li input[type="checkbox"] {
@@ -74,12 +77,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="../site_libs/quarto-html/anchor.min.js"></script>
 <link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting-7f8f88aac4f3542376d5c11b86a4c14d.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting-dark-d0ae9245876894da5ac7e18953ecc5cc.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-dark-b85bc7c33db8c58e0ec93c3465666fed.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-b1129199255cbdaa6ba7196f7625bb51.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="../site_libs/bootstrap/bootstrap-dark-160e0e8b9df999724eb46a759f5c953c.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../site_libs/bootstrap/bootstrap-daa4999fdbd6c2f5170fc895806a103e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-dark-1a58831b5b536d8abf17f9ba280142c3.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -113,7 +116,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link rel="stylesheet" href="../vidigi_docs/styles.css">
 </head>
 
-<body class="nav-sidebar floating nav-fixed fullcontent quarto-dark"><script id="quarto-html-before-body" type="application/javascript">
+<body class="nav-sidebar docked nav-fixed fullcontent quarto-dark"><script id="quarto-html-before-body" type="application/javascript">
     const toggleBodyColorMode = (bsSheetEl) => {
       const mode = bsSheetEl.getAttribute("data-mode");
       const bodyEl = window.document.querySelector("body");
@@ -291,16 +294,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav navbar-nav-scroll me-auto">
   <li class="nav-item">
-    <a class="nav-link" href="../vidigi_docs/index.html"> 
-<span class="menu-text">Home</span></a>
-  </li>  
-  <li class="nav-item">
     <a class="nav-link" href="../vidigi_docs/getting_started.html"> 
 <span class="menu-text">Getting Started</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../examples/examples.html"> 
-<span class="menu-text">Examples</span></a>
+    <a class="nav-link" href="../vidigi_docs/customising_animations.html"> 
+<span class="menu-text">Customising Animations</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../examples/feature_breakdowns.html"> 
@@ -311,14 +310,26 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">API Reference</span></a>
   </li>  
   <li class="nav-item">
+    <a class="nav-link" href="../examples/examples.html"> 
+<span class="menu-text">Example Models</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../vidigi_docs/migrating_to_2_0_0.html"> 
+<span class="menu-text">Migrating to 2.0.0</span></a>
+  </li>  
+  <li class="nav-item">
     <a class="nav-link" href="../vidigi_docs/changelog.html"> 
 <span class="menu-text">Changelog</span></a>
   </li>  
   <li class="nav-item dropdown ">
-    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-package-details" role="link" data-bs-toggle="dropdown" aria-expanded="false">
- <span class="menu-text">Package Details</span>
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-about" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">About</span>
     </a>
-    <ul class="dropdown-menu" aria-labelledby="nav-menu-package-details">    
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-about">    
+        <li>
+    <a class="dropdown-item" href="../vidigi_docs/citation.html">
+ <span class="dropdown-text">Citing vidigi</span></a>
+  </li>  
         <li>
     <a class="dropdown-item" href="../vidigi_docs/licence.html">
  <span class="dropdown-text">Licence</span></a>
@@ -329,7 +340,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>  
         <li>
     <a class="dropdown-item" href="../vidigi_docs/attribution_for_examples.html">
- <span class="dropdown-text">Attribution for models used as examples</span></a>
+ <span class="dropdown-text">Attribution for Models used as Examples</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../vidigi_docs/contributing.html">
+ <span class="dropdown-text">Contributing to Vidigi</span></a>
   </li>  
     </ul>
   </li>
@@ -366,7 +381,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <!-- content -->
 <div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
-  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation docked overflow-auto">
     <div class="sidebar-menu-container"> 
     <ul class="list-unstyled mt-1">
         <li class="sidebar-item">
@@ -436,6 +451,24 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">animation.add_repeating_overlay</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/animation.add_subplot_panels.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">animation.add_subplot_panels</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/animation.add_synchronised_trace.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">animation.add_synchronised_trace</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/animation.add_synchronised_trace_from_dataframe.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">animation.add_synchronised_trace_from_dataframe</span></a>
+  </div>
+</li>
       </ul>
   </li>
         <li class="sidebar-item sidebar-item-section">
@@ -499,7 +532,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
             <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true">
- <span class="menu-text">Event Positioning Utility Functions and Classes</span></a>
+ <span class="menu-text">Analysis Functions</span></a>
           <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
@@ -507,8 +540,198 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.event_durations.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.event_durations</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.entity_metric_by_arrival.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.entity_metric_by_arrival</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.replication_means.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.replication_means</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.mean_confidence_interval.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.mean_confidence_interval</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.replication_precision.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.replication_precision</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.queue_size_over_time.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.queue_size_over_time</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.resource_use_intervals.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.resource_use_intervals</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.resource_utilisation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.resource_utilisation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.resource_occupancy_over_time.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.resource_occupancy_over_time</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.activity_occupancy_stats.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.activity_occupancy_stats</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.welch_moving_average.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.welch_moving_average</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.compare_replication_values.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.compare_replication_values</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.flag_outlier_runs.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.flag_outlier_runs</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.event_occurrence_rate.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.event_occurrence_rate</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="true">
+ <span class="menu-text">Analysis Plots</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-7" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/plots.plot_queue_size.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">plots.plot_queue_size</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/plots.plot_duration_distribution.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">plots.plot_duration_distribution</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/plots.plot_metric_bar.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">plots.plot_metric_bar</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/plots.plot_metric.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">plots.plot_metric</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/plots.plot_resource_utilisation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">plots.plot_resource_utilisation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/plots.plot_resource_utilisation_over_time.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">plots.plot_resource_utilisation_over_time</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/plots.plot_warm_up_diagnostic.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">plots.plot_warm_up_diagnostic</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/plots.plot_replication_analysis.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">plots.plot_replication_analysis</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/plots.plot_outlier_runs.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">plots.plot_outlier_runs</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/plots.plot_metric_vs_arrival_time.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">plots.plot_metric_vs_arrival_time</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/plots.plot_scenario_comparison.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">plots.plot_scenario_comparison</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/plots.plot_resource_utilisation_comparison.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">plots.plot_resource_utilisation_comparison</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-8" role="navigation" aria-expanded="true">
+ <span class="menu-text">Event Positioning Utility Functions and Classes</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-8" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-8" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../reference/utils.EventPosition.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">utils.EventPosition</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/utils.ArrivalPosition.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">utils.ArrivalPosition</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/utils.ExitPosition.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">utils.ExitPosition</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -521,13 +744,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="true">
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-9" role="navigation" aria-expanded="true">
  <span class="menu-text">Process Map-Style Outputs</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="true" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-9" role="navigation" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-7" class="collapse list-unstyled sidebar-section depth1 show">  
+      <ul id="quarto-sidebar-section-9" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../reference/process_mapping.add_sim_timestamp.html" class="sidebar-item-text sidebar-link">
@@ -568,13 +791,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-8" role="navigation" aria-expanded="true">
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-10" role="navigation" aria-expanded="true">
  <span class="menu-text">Streamlit Utility Functions</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-8" role="navigation" aria-expanded="true" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-10" role="navigation" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-8" class="collapse list-unstyled sidebar-section depth1 show">  
+      <ul id="quarto-sidebar-section-10" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../reference/utils.streamlit_play_all.html" class="sidebar-item-text sidebar-link">
@@ -585,30 +808,42 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-9" role="navigation" aria-expanded="true">
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-11" role="navigation" aria-expanded="true">
  <span class="menu-text">ciw Utility Functions</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-9" role="navigation" aria-expanded="true" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-11" role="navigation" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-9" class="collapse list-unstyled sidebar-section depth1 show">  
+      <ul id="quarto-sidebar-section-11" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../reference/ciw.event_log_from_ciw_recs.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">ciw.event_log_from_ciw_recs</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/ciw.event_logger_from_ciw_recs.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">ciw.event_logger_from_ciw_recs</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/ciw.trial_logger_from_ciw_recs.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">ciw.trial_logger_from_ciw_recs</span></a>
+  </div>
+</li>
       </ul>
   </li>
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-10" role="navigation" aria-expanded="true">
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-12" role="navigation" aria-expanded="true">
  <span class="menu-text">legacy Functions</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-10" role="navigation" aria-expanded="true" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-12" role="navigation" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-10" class="collapse list-unstyled sidebar-section depth1 show">  
+      <ul id="quarto-sidebar-section-12" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../reference/resources.VidigiPriorityStoreLegacy.html" class="sidebar-item-text sidebar-link">
@@ -637,24 +872,29 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    every_x_time_units<span class="op">=</span><span class="dv">10</span>,</span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    limit_duration<span class="op">=</span><span class="dv">10</span> <span class="op">*</span> <span class="dv">60</span> <span class="op">*</span> <span class="dv">24</span>,</span>
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    step_snapshot_max<span class="op">=</span><span class="dv">60</span>,</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    time_col_name<span class="op">=</span><span class="st">'time'</span>,</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    entity_col_name<span class="op">=</span><span class="st">'entity_id'</span>,</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    event_type_col_name<span class="op">=</span><span class="st">'event_type'</span>,</span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    event_col_name<span class="op">=</span><span class="st">'event'</span>,</span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    pathway_col_name<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    debug_mode<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    save_intermediate_outputs<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    step_snapshot_max_overrides<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    time_col_name<span class="op">=</span><span class="st">'time'</span>,</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    entity_col_name<span class="op">=</span><span class="st">'entity_id'</span>,</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    event_type_col_name<span class="op">=</span><span class="st">'event_type'</span>,</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    event_col_name<span class="op">=</span><span class="st">'event'</span>,</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    pathway_col_name<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    debug_mode<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    save_intermediate_outputs<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    run_number<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    run_col_name<span class="op">=</span><span class="st">'auto'</span>,</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    warm_up<span class="op">=</span><span class="dv">0</span>,</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    snapshot_alignment<span class="op">=</span><span class="st">'warm_up'</span>,</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Reshape event log data for animation purposes.</p>
 <p>This function processes an event log to create a series of snapshots at regular time intervals, suitable for creating animations of patient flow through a system.</p>
 <section id="parameters" class="level2 doc-section doc-section-parameters">
 <h2 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h2>
 <table class="caption-top table">
 <colgroup>
-<col style="width: 9%">
-<col style="width: 10%">
-<col style="width: 74%">
-<col style="width: 5%">
+<col style="width: 2%">
+<col style="width: 4%">
+<col style="width: 91%">
+<col style="width: 1%">
 </colgroup>
 <thead>
 <tr class="header">
@@ -667,8 +907,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tbody>
 <tr class="odd">
 <td>event_log</td>
-<td>pd.DataFrame</td>
-<td>The input event log containing entity events and timestamps in the form of a number of time units since the simulation began.</td>
+<td>pd.DataFrame, EventLogger, or TrialLogger</td>
+<td>The input event log containing entity events and timestamps in the form of a number of time units since the simulation began. A <code>vidigi.logging.EventLogger</code> or <code>TrialLogger</code> may be passed directly, in which case its <code>.to_dataframe()</code> is called for you.</td>
 <td><em>required</em></td>
 </tr>
 <tr class="even">
@@ -680,56 +920,86 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tr class="odd">
 <td>limit_duration</td>
 <td>int</td>
-<td>The maximum duration to consider in preferred time units (default is 10 days).</td>
+<td>The time at which the animation stops, in preferred time units (default is 10 days). Together with <code>warm_up</code> this defines the animation window, which runs from <code>warm_up</code> to <code>limit_duration</code>.</td>
 <td><code>10 * 60 * 24</code></td>
 </tr>
 <tr class="even">
 <td>step_snapshot_max</td>
 <td>int</td>
-<td>The maximum number of entities to include in each snapshot for each event (default is 60).</td>
+<td>The maximum number of entities to include in each snapshot for each event (default is 60). Acts as the fallback for any event not named in <code>step_snapshot_max_overrides</code>.</td>
 <td><code>60</code></td>
 </tr>
 <tr class="odd">
+<td>step_snapshot_max_overrides</td>
+<td>dict</td>
+<td>A mapping of event name to a per-event <code>step_snapshot_max</code>, e.g.&nbsp;<code>{"waiting_for_bed": 250}</code>. Any event not listed uses the scalar <code>step_snapshot_max</code>. Default <code>None</code> (every event uses <code>step_snapshot_max</code>). A key that matches no event in the log raises a warning.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
 <td>time_col_name</td>
 <td>str</td>
 <td>Name of the column in <code>event_log</code> that contains the timestamp of each event. Timestamps should represent the number of time units since the simulation began.</td>
 <td><code>"time"</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>entity_col_name</td>
 <td>str</td>
 <td>Name of the column in <code>event_log</code> that contains the unique identifier for each entity (e.g., “entity_id”, “entity”, “patient”, “patient_id”, “customer”, “ID”).</td>
 <td><code>"entity_id"</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>event_type_col_name</td>
 <td>str</td>
 <td>Name of the column in <code>event_log</code> that specifies the category of the event. Supported event types include ‘arrival_departure’, ‘resource_use’, ‘resource_use_end’, and ‘queue’.</td>
 <td><code>"event_type"</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>event_col_name</td>
 <td>str</td>
 <td>Name of the column in <code>event_log</code> that specifies the actual event that occurred.</td>
 <td><code>"event"</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>pathway_col_name</td>
 <td>str</td>
 <td>Name of the column in <code>event_log</code> that identifies the specific pathway or process flow the entity is following. If <code>None</code>, it is assumed that pathway information is not present.</td>
 <td><code>None</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>debug_mode</td>
 <td>bool</td>
 <td>If True, print debug information during processing (default is False).</td>
 <td><code>False</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>save_intermediate_outputs</td>
-<td>Optional[Union[bool, str]]</td>
+<td>bool | str | None</td>
 <td>For debugging purposes. If True or a string, output a series of csvs with intermediate transformed dataframes. If a string is passed, this will be interpreted as the path to prefix the dataframes with. Default is False.</td>
 <td><code>False</code></td>
+</tr>
+<tr class="odd">
+<td>run_number</td>
+<td>int</td>
+<td>Selects a single replication from a <code>TrialLogger</code> passed as <code>event_log</code>. Only valid with a <code>TrialLogger</code>: passing it alongside a DataFrame or an <code>EventLogger</code> raises <code>ValueError</code>, as does passing a multi-run <code>TrialLogger</code> without it.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>run_col_name</td>
+<td>str or None</td>
+<td>Name of the column identifying which simulation run (replication) each row belongs to, used to reject event logs containing more than one replication. Default is “auto”, which looks for a column named (case-insensitively) one of ‘run’, ‘run_number’, ‘replication’, ‘rep’ or ‘run_id’. Pass an explicit column name to override the search, or <code>None</code> to disable the check.</td>
+<td><code>'auto'</code></td>
+</tr>
+<tr class="odd">
+<td>warm_up</td>
+<td>int</td>
+<td>The time at which the animation starts, in preferred time units (default is 0, the beginning of the run). Snapshots then run up to <code>limit_duration</code>, spaced <code>every_x_time_units</code> apart; <code>snapshot_alignment</code> controls exactly where that grid falls. This is how to discard a warm-up period. Pass the <strong>whole</strong> event log and set <code>warm_up</code> to the end of your warm-up; do not filter the log by time first. Filtering removes the ‘arrival’ rows of every entity that arrived during the warm-up, and since this function works out who is present from arrival and departure rows, those entities then vanish from every frame - including ones still queuing. <code>warm_up</code> trims the window while leaving that history intact.</td>
+<td><code>0</code></td>
+</tr>
+<tr class="even">
+<td>snapshot_alignment</td>
+<td>(warm_up, run_start)</td>
+<td>Which point the snapshot grid counts from when <code>warm_up</code> is non-zero. Ignored when <code>warm_up</code> is 0, as the two are then identical. - “warm_up” (default): snapshots are taken at <code>warm_up</code>, <code>warm_up + every_x_time_units</code>, and so on, so the first frame lands exactly on the boundary and shows the state of the system as the warm-up ends. - “run_start”: snapshots stay on the grid that runs from time 0, and those before <code>warm_up</code> are simply dropped. Frame times are then the same ones you would get with no warm-up at all, which keeps them round numbers when <code>warm_up</code> is not a multiple of <code>every_x_time_units</code>. This matches the longstanding workaround of filtering the reshaped frame by <code>snapshot_time</code>, except that a snapshot falling exactly on <code>warm_up</code> is kept rather than dropped. The two produce identical grids whenever <code>warm_up</code> is a multiple of <code>every_x_time_units</code>.</td>
+<td><code>"warm_up"</code></td>
 </tr>
 </tbody>
 </table>
@@ -761,20 +1031,22 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="notes" class="level2 doc-section doc-section-notes">
 <h2 class="doc-section doc-section-notes anchored" data-anchor-id="notes">Notes</h2>
 <ul>
+<li><strong>This function animates a single replication only.</strong> An event log containing more than one run is rejected with a <code>ValueError</code>, because the runs would otherwise be blended together into an animation representing no run of your model. Filter your log first, e.g.&nbsp;<code>event_log[event_log["run"] == 1]</code>.</li>
 <li>The function creates snapshots of entity positions at specified time intervals.</li>
 <li>It handles entities who are present in the system at each snapshot time.</li>
 <li>Entities are ranked within each event based on their arrival order.</li>
-<li>A maximum number of patients per event can be set to limit the number of entities who will be displayed on screen within any one event type at a time.</li>
+<li>A maximum number of patients per event can be set to limit the number of entities who will be displayed on screen within any one event type at a time. This is <code>step_snapshot_max</code>, optionally overridden per event by <code>step_snapshot_max_overrides</code>.</li>
 <li>This function assumes entities only exist in one place/queue at a time. Simulations where this assumption does not hold may display unexpected behaviour.</li>
 <li>An ‘exit’ event is added for each entity at the end of their journey.</li>
 <li>The function uses memory management techniques (del and gc.collect()) to handle large datasets.</li>
+<li>Includes a <code>hidden_run_before</code> column: for each row, the number of consecutive snapshots immediately before it where the entity was present but hidden by <code>step_snapshot_max</code>. <code>0</code> for a genuine new arrival and for ordinary continuous movement; positive only where an entity re-emerges as an individually-drawn icon after being capped out. Consumed by <code>generate_animation_df</code>’s <code>step_snapshot_reveal_pop_in</code>.</li>
+<li><strong>To skip a warm-up period, use <code>warm_up</code> rather than filtering the event log.</strong> Presence at each snapshot is derived from arrival and departure rows, so a log truncated with something like <code>event_log[event_log["time"] &gt;= warm_up]</code> has lost the arrival row of everyone who was already in the system, and those entities are then absent from every frame. A warning is raised if the log looks truncated this way, but <code>warm_up</code> avoids the problem entirely.</li>
 </ul>
 </section>
 <section id="todo" class="level2 doc-section doc-section-todo">
 <h2 class="doc-section doc-section-todo anchored" data-anchor-id="todo">TODO</h2>
 <ul>
 <li>Add behavior for when limit_duration is None.</li>
-<li>Consider adding ‘first step’ and ‘last step’ parameters.</li>
 <li>Implement pathway order and precedence columns.</li>
 <li>Fix the automatic exit at the end of the simulation run for all entities.</li>
 </ul>

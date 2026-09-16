@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.9.37">
+<meta name="generator" content="quarto-1.10.18">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -12,10 +12,13 @@
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
 */
-code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
-div.columns{display: flex; gap: min(4vw, 1.5em);}
-div.column{flex: auto; overflow-x: auto;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
 div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
 ul.task-list{list-style: none;}
 ul.task-list li input[type="checkbox"] {
@@ -74,12 +77,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="../site_libs/quarto-html/anchor.min.js"></script>
 <link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting-7f8f88aac4f3542376d5c11b86a4c14d.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting-dark-d0ae9245876894da5ac7e18953ecc5cc.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-dark-b85bc7c33db8c58e0ec93c3465666fed.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-b1129199255cbdaa6ba7196f7625bb51.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="../site_libs/bootstrap/bootstrap-dark-160e0e8b9df999724eb46a759f5c953c.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../site_libs/bootstrap/bootstrap-daa4999fdbd6c2f5170fc895806a103e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-dark-1a58831b5b536d8abf17f9ba280142c3.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
 <link href="../site_libs/quarto-contrib/line-highlight-1.0.0/line-highlight.css" rel="stylesheet">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
@@ -292,16 +295,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav navbar-nav-scroll me-auto">
   <li class="nav-item">
-    <a class="nav-link" href="../vidigi_docs/index.html"> 
-<span class="menu-text">Home</span></a>
-  </li>  
-  <li class="nav-item">
     <a class="nav-link" href="../vidigi_docs/getting_started.html"> 
 <span class="menu-text">Getting Started</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../examples/examples.html"> 
-<span class="menu-text">Examples</span></a>
+    <a class="nav-link" href="../vidigi_docs/customising_animations.html"> 
+<span class="menu-text">Customising Animations</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../examples/feature_breakdowns.html"> 
@@ -312,14 +311,26 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">API Reference</span></a>
   </li>  
   <li class="nav-item">
+    <a class="nav-link" href="../examples/examples.html"> 
+<span class="menu-text">Example Models</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../vidigi_docs/migrating_to_2_0_0.html"> 
+<span class="menu-text">Migrating to 2.0.0</span></a>
+  </li>  
+  <li class="nav-item">
     <a class="nav-link" href="../vidigi_docs/changelog.html"> 
 <span class="menu-text">Changelog</span></a>
   </li>  
   <li class="nav-item dropdown ">
-    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-package-details" role="link" data-bs-toggle="dropdown" aria-expanded="false">
- <span class="menu-text">Package Details</span>
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-about" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">About</span>
     </a>
-    <ul class="dropdown-menu" aria-labelledby="nav-menu-package-details">    
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-about">    
+        <li>
+    <a class="dropdown-item" href="../vidigi_docs/citation.html">
+ <span class="dropdown-text">Citing vidigi</span></a>
+  </li>  
         <li>
     <a class="dropdown-item" href="../vidigi_docs/licence.html">
  <span class="dropdown-text">Licence</span></a>
@@ -330,7 +341,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>  
         <li>
     <a class="dropdown-item" href="../vidigi_docs/attribution_for_examples.html">
- <span class="dropdown-text">Attribution for models used as examples</span></a>
+ <span class="dropdown-text">Attribution for Models used as Examples</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../vidigi_docs/contributing.html">
+ <span class="dropdown-text">Contributing to Vidigi</span></a>
   </li>  
     </ul>
   </li>
@@ -434,7 +449,7 @@ Important
 <p>‘event’: ‘arrival’</p>
 </div>
 </div>
-<div id="3696e236" class="cell" data-execution_count="1">
+<div id="e91303eb" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>event_log.append(</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>      {<span class="st">'patient'</span>: unique_entity_identifier,</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>      <span class="st">'pathway'</span>: <span class="st">'Revision'</span>,</span>
@@ -461,7 +476,7 @@ Important
 <p>‘event’: ‘depart’</p>
 </div>
 </div>
-<div id="3a31ff3e" class="cell" data-execution_count="2">
+<div id="0da0d492" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>event_log.append(</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>      {<span class="st">'patient'</span>: unique_entity_identifier,</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>      <span class="st">'pathway'</span>: <span class="st">'Revision'</span>,</span>
@@ -481,6 +496,19 @@ Warning
 </div>
 <div class="callout-body-container callout-body">
 <p>These are critical as they are used to determine when patients should first and last appear in the model.</p>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>To avoid retyping these exact strings, current vidigi exposes <code>vidigi.utils.ARRIVAL</code>, <code>vidigi.utils.DEPART</code> and <code>vidigi.utils.ARRIVAL_DEPARTURE</code> for use in hand-built logs, and the <code>ArrivalPosition</code> / <code>ExitPosition</code> helpers for the matching rows of your event position DataFrame.</p>
 </div>
 </div>
 <div class="callout callout-style-default callout-important callout-titled">
@@ -506,7 +534,7 @@ Important
 <p>Patients will be ordered by the point at which they are added to the queue, with the first entries appearing at the front (bottom-right) of the queue.</p>
 <p>Record the time the entity begins queueing for a resource with an event_type of ‘queue’.</p>
 <p>You may use whatever string you wish to for the <code>event</code> name.</p>
-<div id="30c34eab" class="cell" data-execution_count="3">
+<div id="527db52e" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>event_log.append(</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>            {<span class="st">'patient'</span>: unique_entity_identifier,</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>             <span class="st">'pathway'</span>: <span class="st">'High intensity'</span>,</span>
@@ -524,7 +552,7 @@ Important
 <p>In addition to the other fields, this also requires you to pass a <code>resource_id</code> argument. If you have set up your simpy store using the <code>populate_store</code> function from the <code>utils</code> module of the vidigi package, then your resources will have an ID attribute you can access in the way shown below after you have requested the resource with <code>.get()</code></p>
 <p>Record the time the resource begins use with an event_type of ‘resource_use’.</p>
 <p>You may use whatever string you wish to for the <code>event</code> name.</p>
-<div id="69f4692c" class="cell" data-execution_count="4">
+<div id="80442f09" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4" data-source-line-numbers="nil" data-code-line-numbers="4,5,6,7,8,9,10,11,12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># request the resource</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>my_resource <span class="op">=</span> <span class="cf">yield</span> my_resource_store.get()</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -542,7 +570,7 @@ Important
 <p>Again, you may use whatever string you wish to for the <code>event</code> name.</p>
 <p>Once again, you must record the ID of the resource that is being freed up.</p>
 <p>You can do this before or after putting the resource back in the store.</p>
-<div id="711ec191" class="cell" data-execution_count="5">
+<div id="62df69bb" class="cell" data-execution_count="5">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5" data-source-line-numbers="nil" data-code-line-numbers="1,2,3,4,5,6,7,8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>event_log.append( </span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>            {<span class="st">'patient'</span>: unique_entity_identifier, </span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>             <span class="st">'pathway'</span>: <span class="st">'My Pathway Name'</span>, </span>

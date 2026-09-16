@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.9.37">
+<meta name="generator" content="quarto-1.10.18">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -12,10 +12,13 @@
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
 */
-code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
-div.columns{display: flex; gap: min(4vw, 1.5em);}
-div.column{flex: auto; overflow-x: auto;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
 div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
 ul.task-list{list-style: none;}
 ul.task-list li input[type="checkbox"] {
@@ -41,12 +44,12 @@ ul.task-list li input[type="checkbox"] {
 <script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="../site_libs/quarto-html/anchor.min.js"></script>
 <link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting-7f8f88aac4f3542376d5c11b86a4c14d.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting-dark-d0ae9245876894da5ac7e18953ecc5cc.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-dark-b85bc7c33db8c58e0ec93c3465666fed.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-b1129199255cbdaa6ba7196f7625bb51.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="../site_libs/bootstrap/bootstrap-dark-160e0e8b9df999724eb46a759f5c953c.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../site_libs/bootstrap/bootstrap-daa4999fdbd6c2f5170fc895806a103e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-dark-1a58831b5b536d8abf17f9ba280142c3.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -77,20 +80,104 @@ ul.task-list li input[type="checkbox"] {
 <script>
 
   window.document.addEventListener("DOMContentLoaded", function (_event) {
-    const listingTargetEl = window.document.querySelector('#listing-feature_breakdowns .list');
+    const listingTargetEl = window.document.querySelector('#listing-logging_plotting_helpers .list');
     if (!listingTargetEl) {
       // No listing discovered, do not attach.
       return; 
     }
 
     const options = {
-      valueNames: ['listing-project','listing-website','listing-quartodoc','listing-format','listing-engines','listing-language','listing-image','listing-execute','listing-title','listing-path','listing-outputHref','listing-author','listing-description','listing-filename','listing-file-modified','listing-reading-time','listing-word-count','listing-toc',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-file-modified-sort'] },{ data: ['listing-reading-time-sort'] },{ data: ['listing-word-count-sort'] }],
+      valueNames: ['listing-project','listing-website','listing-quartodoc','listing-format','listing-engines','listing-language','listing-toc','listing-image','listing-pub-info','listing-execute','listing-filters','listing-title','listing-path','listing-outputHref','listing-author','listing-description','listing-filename','listing-file-modified','listing-reading-time','listing-word-count','listing-subtitle','listing-toc-expand',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-file-modified-sort'] },{ data: ['listing-reading-time-sort'] },{ data: ['listing-word-count-sort'] }],
       
-      searchColumns: ["listing-project","listing-website","listing-quartodoc","listing-format","listing-engines","listing-language","listing-image","listing-execute","listing-title","listing-path","listing-outputHref","listing-author","listing-description","listing-filename","listing-file-modified","listing-reading-time","listing-word-count","listing-toc"],
+      searchColumns: ["listing-project","listing-website","listing-quartodoc","listing-format","listing-engines","listing-language","listing-toc","listing-image","listing-pub-info","listing-execute","listing-filters","listing-title","listing-path","listing-outputHref","listing-author","listing-description","listing-filename","listing-file-modified","listing-reading-time","listing-word-count","listing-subtitle","listing-toc-expand"],
     };
 
     window['quarto-listings'] = window['quarto-listings'] || {};
-    window['quarto-listings']['listing-feature_breakdowns'] = new List('listing-feature_breakdowns', options);
+    window['quarto-listings']['listing-logging_plotting_helpers'] = new List('listing-logging_plotting_helpers', options);
+
+    if (window['quarto-listing-loaded']) {
+      window['quarto-listing-loaded']();
+    }
+  });
+
+  window.addEventListener('hashchange',() => {
+    if (window['quarto-listing-loaded']) {
+      window['quarto-listing-loaded']();
+    }
+  })
+  
+
+  window.document.addEventListener("DOMContentLoaded", function (_event) {
+    const listingTargetEl = window.document.querySelector('#listing-modelling_helpers .list');
+    if (!listingTargetEl) {
+      // No listing discovered, do not attach.
+      return; 
+    }
+
+    const options = {
+      valueNames: ['listing-project','listing-website','listing-quartodoc','listing-format','listing-engines','listing-language','listing-toc','listing-image','listing-pub-info','listing-execute','listing-title','listing-path','listing-outputHref','listing-author','listing-description','listing-filename','listing-file-modified','listing-reading-time','listing-word-count',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-file-modified-sort'] },{ data: ['listing-reading-time-sort'] },{ data: ['listing-word-count-sort'] }],
+      
+      searchColumns: ["listing-project","listing-website","listing-quartodoc","listing-format","listing-engines","listing-language","listing-toc","listing-image","listing-pub-info","listing-execute","listing-title","listing-path","listing-outputHref","listing-author","listing-description","listing-filename","listing-file-modified","listing-reading-time","listing-word-count"],
+    };
+
+    window['quarto-listings'] = window['quarto-listings'] || {};
+    window['quarto-listings']['listing-modelling_helpers'] = new List('listing-modelling_helpers', options);
+
+    if (window['quarto-listing-loaded']) {
+      window['quarto-listing-loaded']();
+    }
+  });
+
+  window.addEventListener('hashchange',() => {
+    if (window['quarto-listing-loaded']) {
+      window['quarto-listing-loaded']();
+    }
+  })
+  
+
+  window.document.addEventListener("DOMContentLoaded", function (_event) {
+    const listingTargetEl = window.document.querySelector('#listing-advanced_vidigi_resource_class_use .list');
+    if (!listingTargetEl) {
+      // No listing discovered, do not attach.
+      return; 
+    }
+
+    const options = {
+      valueNames: ['listing-project','listing-website','listing-quartodoc','listing-format','listing-engines','listing-language','listing-toc','listing-image','listing-pub-info','listing-execute','listing-title','listing-path','listing-outputHref','listing-author','listing-description','listing-filename','listing-file-modified','listing-reading-time','listing-word-count',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-file-modified-sort'] },{ data: ['listing-reading-time-sort'] },{ data: ['listing-word-count-sort'] }],
+      
+      searchColumns: ["listing-project","listing-website","listing-quartodoc","listing-format","listing-engines","listing-language","listing-toc","listing-image","listing-pub-info","listing-execute","listing-title","listing-path","listing-outputHref","listing-author","listing-description","listing-filename","listing-file-modified","listing-reading-time","listing-word-count"],
+    };
+
+    window['quarto-listings'] = window['quarto-listings'] || {};
+    window['quarto-listings']['listing-advanced_vidigi_resource_class_use'] = new List('listing-advanced_vidigi_resource_class_use', options);
+
+    if (window['quarto-listing-loaded']) {
+      window['quarto-listing-loaded']();
+    }
+  });
+
+  window.addEventListener('hashchange',() => {
+    if (window['quarto-listing-loaded']) {
+      window['quarto-listing-loaded']();
+    }
+  })
+  
+
+  window.document.addEventListener("DOMContentLoaded", function (_event) {
+    const listingTargetEl = window.document.querySelector('#listing-advanced_animation_tweaks .list');
+    if (!listingTargetEl) {
+      // No listing discovered, do not attach.
+      return; 
+    }
+
+    const options = {
+      valueNames: ['listing-project','listing-website','listing-quartodoc','listing-format','listing-engines','listing-language','listing-toc','listing-image','listing-pub-info','listing-execute','listing-title','listing-path','listing-outputHref','listing-author','listing-description','listing-filename','listing-file-modified','listing-reading-time','listing-word-count',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-file-modified-sort'] },{ data: ['listing-reading-time-sort'] },{ data: ['listing-word-count-sort'] }],
+      
+      searchColumns: ["listing-project","listing-website","listing-quartodoc","listing-format","listing-engines","listing-language","listing-toc","listing-image","listing-pub-info","listing-execute","listing-title","listing-path","listing-outputHref","listing-author","listing-description","listing-filename","listing-file-modified","listing-reading-time","listing-word-count"],
+    };
+
+    window['quarto-listings'] = window['quarto-listings'] || {};
+    window['quarto-listings']['listing-advanced_animation_tweaks'] = new List('listing-advanced_animation_tweaks', options);
 
     if (window['quarto-listing-loaded']) {
       window['quarto-listing-loaded']();
@@ -106,7 +193,7 @@ ul.task-list li input[type="checkbox"] {
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
   <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
-  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
 
 <script type="text/javascript">
 const typesetMath = (el) => {
@@ -316,16 +403,12 @@ window.Quarto = {
           <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav navbar-nav-scroll me-auto">
   <li class="nav-item">
-    <a class="nav-link" href="../vidigi_docs/index.html"> 
-<span class="menu-text">Home</span></a>
-  </li>  
-  <li class="nav-item">
     <a class="nav-link" href="../vidigi_docs/getting_started.html"> 
 <span class="menu-text">Getting Started</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../examples/examples.html"> 
-<span class="menu-text">Examples</span></a>
+    <a class="nav-link" href="../vidigi_docs/customising_animations.html"> 
+<span class="menu-text">Customising Animations</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link active" href="../examples/feature_breakdowns.html" aria-current="page"> 
@@ -336,14 +419,26 @@ window.Quarto = {
 <span class="menu-text">API Reference</span></a>
   </li>  
   <li class="nav-item">
+    <a class="nav-link" href="../examples/examples.html"> 
+<span class="menu-text">Example Models</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../vidigi_docs/migrating_to_2_0_0.html"> 
+<span class="menu-text">Migrating to 2.0.0</span></a>
+  </li>  
+  <li class="nav-item">
     <a class="nav-link" href="../vidigi_docs/changelog.html"> 
 <span class="menu-text">Changelog</span></a>
   </li>  
   <li class="nav-item dropdown ">
-    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-package-details" role="link" data-bs-toggle="dropdown" aria-expanded="false">
- <span class="menu-text">Package Details</span>
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-about" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">About</span>
     </a>
-    <ul class="dropdown-menu" aria-labelledby="nav-menu-package-details">    
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-about">    
+        <li>
+    <a class="dropdown-item" href="../vidigi_docs/citation.html">
+ <span class="dropdown-text">Citing vidigi</span></a>
+  </li>  
         <li>
     <a class="dropdown-item" href="../vidigi_docs/licence.html">
  <span class="dropdown-text">Licence</span></a>
@@ -354,7 +449,11 @@ window.Quarto = {
   </li>  
         <li>
     <a class="dropdown-item" href="../vidigi_docs/attribution_for_examples.html">
- <span class="dropdown-text">Attribution for models used as examples</span></a>
+ <span class="dropdown-text">Attribution for Models used as Examples</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../vidigi_docs/contributing.html">
+ <span class="dropdown-text">Contributing to Vidigi</span></a>
   </li>  
     </ul>
   </li>
@@ -407,60 +506,97 @@ window.Quarto = {
 </header>
 
 
-<section id="feature-breakdowns" class="level2">
-<h2 class="anchored" data-anchor-id="feature-breakdowns">Feature Breakdowns</h2>
-<p>The examples below dive into a particular feature of the vidigi package.</p>
-<div id="listing-feature_breakdowns" class="quarto-listing quarto-listing-container-custom">
+<section id="logging-and-plotting-helpers" class="level2">
+<h2 class="anchored" data-anchor-id="logging-and-plotting-helpers">Logging and Plotting Helpers</h2>
+<div id="listing-logging_plotting_helpers" class="quarto-listing quarto-listing-container-custom">
 <div class="list grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 450px)); gap: 20px;">
 
   
-    <div class="custom-grid-card border-2 rounded-3" data-index="0" data-listing-file-modified-sort="1779208175501" data-listing-reading-time-sort="3" data-listing-word-count-sort="443">
+    <div class="custom-grid-card border-2 rounded-3" data-index="0" data-listing-file-modified-sort="1789551972358" data-listing-reading-time-sort="5" data-listing-word-count-sort="967">
           <div class="main-card-content">
             
-              <a href="../examples/feat_changing_sim_time/feat_changing_sim_time.html">
-                <img class="card-img" src="../examples/feat_changing_sim_time/example.png" alt="Feature Breakdown: Changing how the date and time are displayed">
+              <a href="../examples/feat_event_logger/feat_event_logger.html">
+                <img class="card-img" src="../examples/feat_event_logger/example.png" alt="Feature Example: Event Logging Helpers">
               </a>
               
 
               <div class="listing-title">
-                <h5 class="no-anchor card-title listing-title">Feature Breakdown: Changing how the date and time are displayed</h5>
+                <h5 class="no-anchor card-title listing-title">Feature Example: Event Logging Helpers</h5>
             </div>
 
             
+              <p class="listing-abstract">A closer look at the EventLogger class and its helper methods, which simplify building the
+event logs vidigi needs for animation.
+</p>
+
+                
 
               </div>
 
                 <div class="details-listing">
-                  <button class="link-listing-button"><a href="../examples/feat_changing_sim_time/feat_changing_sim_time.html"><i class="fa fa-info-circle"></i> Details </a></button>
+                  <button class="link-listing-button"><a href="../examples/feat_event_logger/feat_event_logger.html"><i class="fa fa-info-circle"></i> Details </a></button>
                 </div>
 
               </div>
 
             
-    <div class="custom-grid-card border-2 rounded-3" data-index="1" data-listing-file-modified-sort="1779208175502" data-listing-reading-time-sort="3" data-listing-word-count-sort="585">
+    <div class="custom-grid-card border-2 rounded-3" data-index="1" data-listing-file-modified-sort="1789551972411" data-listing-reading-time-sort="14" data-listing-word-count-sort="2641">
           <div class="main-card-content">
             
-              <a href="../examples/feat_gauge_only_animations/feat_gauge_only_animations.html">
-                <img class="card-img" src="../examples/feat_gauge_only_animations/example.gif" alt="Feature Breakdown: Comparing gauge, hybrid and gaugeless animations for simulations with high entity volumes">
-              </a>
-              
 
               <div class="listing-title">
-                <h5 class="no-anchor card-title listing-title">Feature Breakdown: Comparing gauge, hybrid and gaugeless animations for simulations with high entity volumes</h5>
+                <h5 class="no-anchor card-title listing-title">Feature Example: The TrialLogger Class</h5>
             </div>
 
             
+              <p class="listing-abstract">A closer look at the TrialLogger class, which wraps the EventLoggers from every run of a
+trial to give trial-level statistics, duration distributions, and resource utilisation - most
+of vidigi's non-animation plotting lives here.
+</p>
+
+                
 
               </div>
 
                 <div class="details-listing">
-                  <button class="link-listing-button"><a href="../examples/feat_gauge_only_animations/feat_gauge_only_animations.html"><i class="fa fa-info-circle"></i> Details </a></button>
+                  <button class="link-listing-button"><a href="../examples/feat_trial_logger/feat_trial_logger.html"><i class="fa fa-info-circle"></i> Details </a></button>
                 </div>
 
               </div>
 
             
-    <div class="custom-grid-card border-2 rounded-3" data-index="2" data-listing-file-modified-sort="1779208175539" data-listing-reading-time-sort="6" data-listing-word-count-sort="1183">
+    <div class="custom-grid-card border-2 rounded-3" data-index="2" data-listing-file-modified-sort="1789551972361" data-listing-reading-time-sort="5" data-listing-word-count-sort="993">
+          <div class="main-card-content">
+            
+              <a href="../examples/feat_metric_vs_arrival_time/feat_metric_vs_arrival_time.html">
+                <img class="card-img" src="../examples/feat_metric_vs_arrival_time/example.png" alt="Feature Example: Does This Metric Drift Over the Simulation?">
+              </a>
+              
+
+              <div class="listing-title">
+                <h5 class="no-anchor card-title listing-title">Feature Example: Does This Metric Drift Over the Simulation?</h5>
+            </div>
+
+            
+              <p class="listing-abstract">Does a metric drift over the course of a run - a warm-up transient, a
+time-of-day load effect, a non-stationary arrival process? This walks through
+`plot_metric_vs_arrival_time()` and `entity_metric_by_arrival()`, which plot a
+duration against when the entity arrived rather than against replication
+count or time-in-system, to make that visible.
+</p>
+
+                
+
+              </div>
+
+                <div class="details-listing">
+                  <button class="link-listing-button"><a href="../examples/feat_metric_vs_arrival_time/feat_metric_vs_arrival_time.html"><i class="fa fa-info-circle"></i> Details </a></button>
+                </div>
+
+              </div>
+
+            
+    <div class="custom-grid-card border-2 rounded-3" data-index="3" data-listing-file-modified-sort="1789551972397" data-listing-reading-time-sort="9" data-listing-word-count-sort="1779">
           <div class="main-card-content">
             
               <a href="../examples/feat_process_maps/process_maps.html">
@@ -473,6 +609,13 @@ window.Quarto = {
             </div>
 
             
+              <p class="listing-abstract">Borrows an idea from process mining - the directly-follows graph - to turn a vidigi event log
+into a process-map style diagram of your model. It's a useful complement to the animation itself
+for communicating a process to non-technical stakeholders, and for verifying and debugging a
+model's logic.
+</p>
+
+                
 
               </div>
 
@@ -483,7 +626,311 @@ window.Quarto = {
               </div>
 
             
-    <div class="custom-grid-card border-2 rounded-3" data-index="3" data-listing-file-modified-sort="1779208175545" data-listing-reading-time-sort="1" data-listing-word-count-sort="44">
+    <div class="custom-grid-card border-2 rounded-3" data-index="4" data-listing-file-modified-sort="1789551972442" data-listing-reading-time-sort="5" data-listing-word-count-sort="814">
+          <div class="main-card-content">
+            
+
+              <div class="listing-title">
+                <h5 class="no-anchor card-title listing-title">Choosing how to summarise across replications</h5>
+            </div>
+
+            
+
+              </div>
+
+                <div class="details-listing">
+                  <button class="link-listing-button"><a href="../vidigi_docs/choosing_how_to_average.html"><i class="fa fa-info-circle"></i> Details </a></button>
+                </div>
+
+              </div>
+
+            
+          </div>
+
+<div class="listing-no-matching d-none">No matching items</div>
+</div>
+</section>
+<section id="modelling-helpers" class="level2">
+<h2 class="anchored" data-anchor-id="modelling-helpers">Modelling Helpers</h2>
+<div id="listing-modelling_helpers" class="quarto-listing quarto-listing-container-custom">
+<div class="list grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 450px)); gap: 20px;">
+
+  
+    <div class="custom-grid-card border-2 rounded-3" data-index="0" data-listing-file-modified-sort="1789551972406" data-listing-reading-time-sort="9" data-listing-word-count-sort="1604">
+          <div class="main-card-content">
+            
+              <a href="../examples/feat_replication_analysis/feat_replication_analysis.html">
+                <img class="card-img" src="../examples/feat_replication_analysis/example.png" alt="Feature Example: How Many Replications Are Enough?">
+              </a>
+              
+
+              <div class="listing-title">
+                <h5 class="no-anchor card-title listing-title">Feature Example: How Many Replications Are Enough?</h5>
+            </div>
+
+            
+              <p class="listing-abstract">Confidence-interval replication analysis gives a way to answer "have I run enough
+replications?" with a number, rather than a guess. This walks through
+`plot_replication_analysis()` and `replication_precision()`, and how the
+`deviation_threshold=` recommendation should (and should not) be read.
+</p>
+
+                
+
+              </div>
+
+                <div class="details-listing">
+                  <button class="link-listing-button"><a href="../examples/feat_replication_analysis/feat_replication_analysis.html"><i class="fa fa-info-circle"></i> Details </a></button>
+                </div>
+
+              </div>
+
+            
+    <div class="custom-grid-card border-2 rounded-3" data-index="1" data-listing-file-modified-sort="1789551972411" data-listing-reading-time-sort="8" data-listing-word-count-sort="1579">
+          <div class="main-card-content">
+            
+              <a href="../examples/feat_warm_up/feat_warm_up.html">
+                <img class="card-img" src="../examples/feat_warm_up/example.png" alt="Feature Example: Choosing a Warm-up Length with Welch's Procedure">
+              </a>
+              
+
+              <div class="listing-title">
+                <h5 class="no-anchor card-title listing-title">Feature Example: Choosing a Warm-up Length with Welch's Procedure</h5>
+            </div>
+
+            
+              <p class="listing-abstract">Welch's procedure gives a visual way to decide how much of a simulation run to
+discard as warm-up, rather than guessing. This walks through
+`plot_warm_up_diagnostic()` and `welch_moving_average()`, then shows how to feed
+the length you read off back into `event_durations`, `resource_utilisation` and
+`queue_size_over_time`'s own `warm_up=` parameters.
+</p>
+
+                
+
+              </div>
+
+                <div class="details-listing">
+                  <button class="link-listing-button"><a href="../examples/feat_warm_up/feat_warm_up.html"><i class="fa fa-info-circle"></i> Details </a></button>
+                </div>
+
+              </div>
+
+            
+          </div>
+
+<div class="listing-no-matching d-none">No matching items</div>
+</div>
+</section>
+<section id="advanced-vidigi-resource-class-features" class="level2">
+<h2 class="anchored" data-anchor-id="advanced-vidigi-resource-class-features">Advanced Vidigi Resource Class Features</h2>
+<div id="listing-advanced_vidigi_resource_class_use" class="quarto-listing quarto-listing-container-custom">
+<div class="list grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 450px)); gap: 20px;">
+
+  
+    <div class="custom-grid-card border-2 rounded-3" data-index="0" data-listing-file-modified-sort="1789551972359" data-listing-reading-time-sort="5" data-listing-word-count-sort="885">
+          <div class="main-card-content">
+            
+              <a href="../examples/feat_filtered_resource_requests/index.html">
+                <img class="card-img" src="../examples/feat_filtered_resource_requests/image.png" alt="Feature Example: Filtering which resource a request is granted">
+              </a>
+              
+
+              <div class="listing-title">
+                <h5 class="no-anchor card-title listing-title">Feature Example: Filtering which resource a request is granted</h5>
+            </div>
+
+            
+              <p class="listing-abstract">VidigiStore and VidigiPriorityStore normally hand over whichever unit of a pool is
+free. `filter_fn=` lets a request insist on a *particular kind* of unit - a senior
+nurse, an isolation-capable bed - and wait for one if none is free. This notebook
+builds a heterogeneous nurse pool, shows how `filter_fn` changes who waits, and how
+it combines with `priority=` on VidigiPriorityStore.
+</p>
+
+                
+
+              </div>
+
+                <div class="details-listing">
+                  <button class="link-listing-button"><a href="../examples/feat_filtered_resource_requests/index.html"><i class="fa fa-info-circle"></i> Details </a></button>
+                </div>
+
+              </div>
+
+            
+          </div>
+
+<div class="listing-no-matching d-none">No matching items</div>
+</div>
+</section>
+<section id="advanced-animation-techniques-and-helpers" class="level2">
+<h2 class="anchored" data-anchor-id="advanced-animation-techniques-and-helpers">Advanced Animation Techniques and Helpers</h2>
+<div id="listing-advanced_animation_tweaks" class="quarto-listing quarto-listing-container-custom">
+<div class="list grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 450px)); gap: 20px;">
+
+  
+    <div class="custom-grid-card border-2 rounded-3" data-index="0" data-listing-file-modified-sort="1789551972356" data-listing-reading-time-sort="3" data-listing-word-count-sort="509">
+          <div class="main-card-content">
+            
+              <a href="../examples/feat_animation_warm_up/feat_animation_warm_up.html">
+                <img class="card-img" src="../examples/feat_animation_warm_up/example.png" alt="Feature Example: Discarding a Warm-up Period from an Animation">
+              </a>
+              
+
+              <div class="listing-title">
+                <h5 class="no-anchor card-title listing-title">Feature Example: Discarding a Warm-up Period from an Animation</h5>
+            </div>
+
+            
+              <p class="listing-abstract">A simulation that starts empty is not yet representative of steady-state
+behaviour, so it's standard practice to discard an initial warm-up period from
+reported results. Filtering the event log by time to do this quietly breaks an
+animation, though - it deletes the arrival record of everyone already in the
+system, so they vanish from every frame, including ones still queuing. This
+walks through `reshape_for_animations`/`animate_activity_log`'s `warm_up=` and
+`snapshot_alignment=` parameters, which trim the animation window instead of
+the log, so that history stays intact.
+</p>
+
+                
+
+              </div>
+
+                <div class="details-listing">
+                  <button class="link-listing-button"><a href="../examples/feat_animation_warm_up/feat_animation_warm_up.html"><i class="fa fa-info-circle"></i> Details </a></button>
+                </div>
+
+              </div>
+
+            
+    <div class="custom-grid-card border-2 rounded-3" data-index="1" data-listing-file-modified-sort="1789551972357" data-listing-reading-time-sort="3" data-listing-word-count-sort="446">
+          <div class="main-card-content">
+            
+              <a href="../examples/feat_changing_sim_time/feat_changing_sim_time.html">
+                <img class="card-img" src="../examples/feat_changing_sim_time/example.png" alt="Feature Breakdown: Changing how the date and time are displayed">
+              </a>
+              
+
+              <div class="listing-title">
+                <h5 class="no-anchor card-title listing-title">Feature Breakdown: Changing how the date and time are displayed</h5>
+            </div>
+
+            
+              <p class="listing-abstract">Simulation clocks usually run in abstract time units, but your audience thinks in real dates
+and clock times. This example shows how to set a simulation's start date/time so the animation
+displays a realistic calendar and time-of-day rather than a raw elapsed-time counter.
+</p>
+
+                
+
+              </div>
+
+                <div class="details-listing">
+                  <button class="link-listing-button"><a href="../examples/feat_changing_sim_time/feat_changing_sim_time.html"><i class="fa fa-info-circle"></i> Details </a></button>
+                </div>
+
+              </div>
+
+            
+    <div class="custom-grid-card border-2 rounded-3" data-index="2" data-listing-file-modified-sort="1789551972357" data-listing-reading-time-sort="8" data-listing-word-count-sort="1585">
+          <div class="main-card-content">
+            
+              <a href="../examples/feat_custom_icons/feat_custom_icons.html">
+                <img class="card-img" src="../examples/feat_custom_icons/example.gif" alt="Feature Example: Icon fonts, per-entity colour, and per-resource icons">
+              </a>
+              
+
+              <div class="listing-title">
+                <h5 class="no-anchor card-title listing-title">Feature Example: Icon fonts, per-entity colour, and per-resource icons</h5>
+            </div>
+
+            
+              <p class="listing-abstract">Entity icons have always been emoji, which caps the icon vocabulary and,
+being colour fonts, ignore any colour you set on them. This walks through
+`entity_icon_font` (rendering icons in an icon font instead), the
+`entity_colour_by` this then unlocks (colouring entities by an event-log
+column, with a legend), `entity_annotation_by` (a second, independently-
+styled text trace for annotating an icon without either of those breaking
+it), `resource_icon` (a custom icon per resource - a glyph or an image -
+set on the event position and overriding `custom_resource_icon` for that
+stage), and `resource_icon_font` (rendering glyph resource icons in an
+icon font, independently of `entity_icon_font`).
+</p>
+
+                
+
+              </div>
+
+                <div class="details-listing">
+                  <button class="link-listing-button"><a href="../examples/feat_custom_icons/feat_custom_icons.html"><i class="fa fa-info-circle"></i> Details </a></button>
+                </div>
+
+              </div>
+
+            
+    <div class="custom-grid-card border-2 rounded-3" data-index="3" data-listing-file-modified-sort="1789551972361" data-listing-reading-time-sort="6" data-listing-word-count-sort="1036">
+          <div class="main-card-content">
+            
+              <a href="../examples/feat_gauge_only_animations/feat_gauge_only_animations.html">
+                <img class="card-img" src="../examples/feat_gauge_only_animations/example.gif" alt="Feature Breakdown: Comparing gauge, hybrid and gaugeless animations for simulations with high entity volumes">
+              </a>
+              
+
+              <div class="listing-title">
+                <h5 class="no-anchor card-title listing-title">Feature Breakdown: Comparing gauge, hybrid and gaugeless animations for simulations with high entity volumes</h5>
+            </div>
+
+            
+              <p class="listing-abstract">vidigi was originally built with small numbers of entities in mind, and Plotly animations
+start to strain once you're tracking hundreds or thousands at once. Using a triage-assess-treat
+model as a worked example, this compares the standard entity-icon view against gauge and hybrid
+displays that stay readable at much higher entity volumes.
+</p>
+
+                
+
+              </div>
+
+                <div class="details-listing">
+                  <button class="link-listing-button"><a href="../examples/feat_gauge_only_animations/feat_gauge_only_animations.html"><i class="fa fa-info-circle"></i> Details </a></button>
+                </div>
+
+              </div>
+
+            
+    <div class="custom-grid-card border-2 rounded-3" data-index="4" data-listing-file-modified-sort="1789551972402" data-listing-reading-time-sort="3" data-listing-word-count-sort="408">
+          <div class="main-card-content">
+            
+              <a href="../examples/feat_queue_direction/feat_queue_direction.html">
+                <img class="card-img" src="../examples/feat_queue_direction/example.gif" alt="Feature Example: Choosing which way a queue builds">
+              </a>
+              
+
+              <div class="listing-title">
+                <h5 class="no-anchor card-title listing-title">Feature Example: Choosing which way a queue builds</h5>
+            </div>
+
+            
+              <p class="listing-abstract">By default a vidigi queue builds out to the *left* of its anchor point, so the
+first person in line sits at the bottom-right. Many entity emojis face the other
+way, which makes the front of the queue read better at the bottom-left. This
+walks through `queue_direction`, which flips a whole animation, and the per-event
+`direction` column, which flips one stage at a time.
+</p>
+
+                
+
+              </div>
+
+                <div class="details-listing">
+                  <button class="link-listing-button"><a href="../examples/feat_queue_direction/feat_queue_direction.html"><i class="fa fa-info-circle"></i> Details </a></button>
+                </div>
+
+              </div>
+
+            
+    <div class="custom-grid-card border-2 rounded-3" data-index="5" data-listing-file-modified-sort="1789551972405" data-listing-reading-time-sort="1" data-listing-word-count-sort="47">
           <div class="main-card-content">
             
               <a href="../examples/feat_repeating_overlay/feat_repeating_overlay.html">
@@ -496,6 +943,12 @@ window.Quarto = {
             </div>
 
             
+              <p class="listing-abstract">Some periods in a simulation deserve to stand out - for instance, a clinic being closed
+overnight. This example shows how to add a repeating overlay to the animation that highlights
+those recurring periods automatically as the viewer scrubs through the timeline.
+</p>
+
+                
 
               </div>
 
@@ -506,47 +959,32 @@ window.Quarto = {
               </div>
 
             
-    <div class="custom-grid-card border-2 rounded-3" data-index="4" data-listing-file-modified-sort="1779208175546" data-listing-reading-time-sort="3" data-listing-word-count-sort="437">
+    <div class="custom-grid-card border-2 rounded-3" data-index="6" data-listing-file-modified-sort="1789551972410" data-listing-reading-time-sort="4" data-listing-word-count-sort="713">
           <div class="main-card-content">
             
-              <a href="../examples/feat_vidigi_logging_class/feat_example_logging_class.html">
-                <img class="card-img" src="../examples/feat_vidigi_logging_class/example.png" alt="Feature Example: Event Logging Helpers">
+              <a href="../examples/feat_synchronised_traces/index.html">
+                <img class="card-img" src="../examples/feat_synchronised_traces/example.gif" alt="Adding synchronised traces to an animation">
               </a>
               
 
               <div class="listing-title">
-                <h5 class="no-anchor card-title listing-title">Feature Example: Event Logging Helpers</h5>
+                <h5 class="no-anchor card-title listing-title">Adding synchronised traces to an animation</h5>
             </div>
 
             
+              <p class="listing-abstract">A vidigi animation is a plain Plotly figure, and you can add your own charts and
+annotations to it - a running total, a per-frame bar panel, a live caption. The tricky
+part is keeping them in step with the animation frames without losing the stage labels
+or resource icons. `add_subplot_panels`, `add_synchronised_trace` and
+`add_synchronised_trace_from_dataframe` do that for you.
+</p>
+
+                
 
               </div>
 
                 <div class="details-listing">
-                  <button class="link-listing-button"><a href="../examples/feat_vidigi_logging_class/feat_example_logging_class.html"><i class="fa fa-info-circle"></i> Details </a></button>
-                </div>
-
-              </div>
-
-            
-    <div class="custom-grid-card border-2 rounded-3" data-index="5" data-listing-file-modified-sort="1779208175501" data-listing-reading-time-sort="1" data-listing-word-count-sort="128">
-          <div class="main-card-content">
-            
-              <a href="../examples/feat_frame_speed_post_hoc/feat_frame_speed_post_hoc.html">
-                <img class="card-img" src="../examples/feat_frame_speed_post_hoc/example.png" alt="Changing the play speed (frame duration and frame transition duration) without regenerating the animation">
-              </a>
-              
-
-              <div class="listing-title">
-                <h5 class="no-anchor card-title listing-title">Changing the play speed (frame duration and frame transition duration) without regenerating the animation</h5>
-            </div>
-
-            
-
-              </div>
-
-                <div class="details-listing">
-                  <button class="link-listing-button"><a href="../examples/feat_frame_speed_post_hoc/feat_frame_speed_post_hoc.html"><i class="fa fa-info-circle"></i> Details </a></button>
+                  <button class="link-listing-button"><a href="../examples/feat_synchronised_traces/index.html"><i class="fa fa-info-circle"></i> Details </a></button>
                 </div>
 
               </div>
@@ -555,6 +993,13 @@ window.Quarto = {
           </div>
 
 <div class="listing-no-matching d-none">No matching items</div>
+</div>
+</section>
+<section id="major-release-showcases" class="level2">
+<h2 class="anchored" data-anchor-id="major-release-showcases">Major Release Showcases</h2>
+<p>The examples below showcase significant new features added as part of major releases.</p>
+<div id="release_showcase">
+
 </div>
 
 

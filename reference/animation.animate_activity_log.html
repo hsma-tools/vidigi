@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.9.37">
+<meta name="generator" content="quarto-1.10.18">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -12,10 +12,13 @@
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
 */
-code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
-div.columns{display: flex; gap: min(4vw, 1.5em);}
-div.column{flex: auto; overflow-x: auto;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
 div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
 ul.task-list{list-style: none;}
 ul.task-list li input[type="checkbox"] {
@@ -74,12 +77,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="../site_libs/quarto-html/anchor.min.js"></script>
 <link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting-7f8f88aac4f3542376d5c11b86a4c14d.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting-dark-d0ae9245876894da5ac7e18953ecc5cc.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-dark-b85bc7c33db8c58e0ec93c3465666fed.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-b1129199255cbdaa6ba7196f7625bb51.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="../site_libs/bootstrap/bootstrap-dark-160e0e8b9df999724eb46a759f5c953c.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../site_libs/bootstrap/bootstrap-daa4999fdbd6c2f5170fc895806a103e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-dark-1a58831b5b536d8abf17f9ba280142c3.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -113,7 +116,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link rel="stylesheet" href="../vidigi_docs/styles.css">
 </head>
 
-<body class="nav-sidebar floating nav-fixed fullcontent quarto-dark"><script id="quarto-html-before-body" type="application/javascript">
+<body class="nav-sidebar docked nav-fixed fullcontent quarto-dark"><script id="quarto-html-before-body" type="application/javascript">
     const toggleBodyColorMode = (bsSheetEl) => {
       const mode = bsSheetEl.getAttribute("data-mode");
       const bodyEl = window.document.querySelector("body");
@@ -291,16 +294,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav navbar-nav-scroll me-auto">
   <li class="nav-item">
-    <a class="nav-link" href="../vidigi_docs/index.html"> 
-<span class="menu-text">Home</span></a>
-  </li>  
-  <li class="nav-item">
     <a class="nav-link" href="../vidigi_docs/getting_started.html"> 
 <span class="menu-text">Getting Started</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../examples/examples.html"> 
-<span class="menu-text">Examples</span></a>
+    <a class="nav-link" href="../vidigi_docs/customising_animations.html"> 
+<span class="menu-text">Customising Animations</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../examples/feature_breakdowns.html"> 
@@ -311,14 +310,26 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">API Reference</span></a>
   </li>  
   <li class="nav-item">
+    <a class="nav-link" href="../examples/examples.html"> 
+<span class="menu-text">Example Models</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../vidigi_docs/migrating_to_2_0_0.html"> 
+<span class="menu-text">Migrating to 2.0.0</span></a>
+  </li>  
+  <li class="nav-item">
     <a class="nav-link" href="../vidigi_docs/changelog.html"> 
 <span class="menu-text">Changelog</span></a>
   </li>  
   <li class="nav-item dropdown ">
-    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-package-details" role="link" data-bs-toggle="dropdown" aria-expanded="false">
- <span class="menu-text">Package Details</span>
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-about" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">About</span>
     </a>
-    <ul class="dropdown-menu" aria-labelledby="nav-menu-package-details">    
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-about">    
+        <li>
+    <a class="dropdown-item" href="../vidigi_docs/citation.html">
+ <span class="dropdown-text">Citing vidigi</span></a>
+  </li>  
         <li>
     <a class="dropdown-item" href="../vidigi_docs/licence.html">
  <span class="dropdown-text">Licence</span></a>
@@ -329,7 +340,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>  
         <li>
     <a class="dropdown-item" href="../vidigi_docs/attribution_for_examples.html">
- <span class="dropdown-text">Attribution for models used as examples</span></a>
+ <span class="dropdown-text">Attribution for Models used as Examples</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../vidigi_docs/contributing.html">
+ <span class="dropdown-text">Contributing to Vidigi</span></a>
   </li>  
     </ul>
   </li>
@@ -366,7 +381,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <!-- content -->
 <div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
-  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation docked overflow-auto">
     <div class="sidebar-menu-container"> 
     <ul class="list-unstyled mt-1">
         <li class="sidebar-item">
@@ -436,6 +451,24 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">animation.add_repeating_overlay</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/animation.add_subplot_panels.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">animation.add_subplot_panels</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/animation.add_synchronised_trace.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">animation.add_synchronised_trace</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/animation.add_synchronised_trace_from_dataframe.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">animation.add_synchronised_trace_from_dataframe</span></a>
+  </div>
+</li>
       </ul>
   </li>
         <li class="sidebar-item sidebar-item-section">
@@ -499,7 +532,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
             <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true">
- <span class="menu-text">Event Positioning Utility Functions and Classes</span></a>
+ <span class="menu-text">Analysis Functions</span></a>
           <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
@@ -507,8 +540,198 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.event_durations.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.event_durations</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.entity_metric_by_arrival.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.entity_metric_by_arrival</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.replication_means.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.replication_means</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.mean_confidence_interval.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.mean_confidence_interval</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.replication_precision.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.replication_precision</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.queue_size_over_time.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.queue_size_over_time</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.resource_use_intervals.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.resource_use_intervals</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.resource_utilisation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.resource_utilisation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.resource_occupancy_over_time.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.resource_occupancy_over_time</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.activity_occupancy_stats.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.activity_occupancy_stats</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.welch_moving_average.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.welch_moving_average</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.compare_replication_values.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.compare_replication_values</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.flag_outlier_runs.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.flag_outlier_runs</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.event_occurrence_rate.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.event_occurrence_rate</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="true">
+ <span class="menu-text">Analysis Plots</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-7" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/plots.plot_queue_size.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">plots.plot_queue_size</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/plots.plot_duration_distribution.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">plots.plot_duration_distribution</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/plots.plot_metric_bar.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">plots.plot_metric_bar</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/plots.plot_metric.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">plots.plot_metric</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/plots.plot_resource_utilisation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">plots.plot_resource_utilisation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/plots.plot_resource_utilisation_over_time.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">plots.plot_resource_utilisation_over_time</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/plots.plot_warm_up_diagnostic.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">plots.plot_warm_up_diagnostic</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/plots.plot_replication_analysis.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">plots.plot_replication_analysis</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/plots.plot_outlier_runs.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">plots.plot_outlier_runs</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/plots.plot_metric_vs_arrival_time.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">plots.plot_metric_vs_arrival_time</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/plots.plot_scenario_comparison.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">plots.plot_scenario_comparison</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/plots.plot_resource_utilisation_comparison.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">plots.plot_resource_utilisation_comparison</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-8" role="navigation" aria-expanded="true">
+ <span class="menu-text">Event Positioning Utility Functions and Classes</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-8" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-8" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../reference/utils.EventPosition.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">utils.EventPosition</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/utils.ArrivalPosition.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">utils.ArrivalPosition</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/utils.ExitPosition.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">utils.ExitPosition</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -521,13 +744,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="true">
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-9" role="navigation" aria-expanded="true">
  <span class="menu-text">Process Map-Style Outputs</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="true" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-9" role="navigation" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-7" class="collapse list-unstyled sidebar-section depth1 show">  
+      <ul id="quarto-sidebar-section-9" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../reference/process_mapping.add_sim_timestamp.html" class="sidebar-item-text sidebar-link">
@@ -568,13 +791,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-8" role="navigation" aria-expanded="true">
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-10" role="navigation" aria-expanded="true">
  <span class="menu-text">Streamlit Utility Functions</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-8" role="navigation" aria-expanded="true" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-10" role="navigation" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-8" class="collapse list-unstyled sidebar-section depth1 show">  
+      <ul id="quarto-sidebar-section-10" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../reference/utils.streamlit_play_all.html" class="sidebar-item-text sidebar-link">
@@ -585,30 +808,42 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-9" role="navigation" aria-expanded="true">
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-11" role="navigation" aria-expanded="true">
  <span class="menu-text">ciw Utility Functions</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-9" role="navigation" aria-expanded="true" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-11" role="navigation" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-9" class="collapse list-unstyled sidebar-section depth1 show">  
+      <ul id="quarto-sidebar-section-11" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../reference/ciw.event_log_from_ciw_recs.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">ciw.event_log_from_ciw_recs</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/ciw.event_logger_from_ciw_recs.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">ciw.event_logger_from_ciw_recs</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/ciw.trial_logger_from_ciw_recs.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">ciw.trial_logger_from_ciw_recs</span></a>
+  </div>
+</li>
       </ul>
   </li>
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-10" role="navigation" aria-expanded="true">
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-12" role="navigation" aria-expanded="true">
  <span class="menu-text">legacy Functions</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-10" role="navigation" aria-expanded="true" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-12" role="navigation" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-10" class="collapse list-unstyled sidebar-section depth1 show">  
+      <ul id="quarto-sidebar-section-12" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../reference/resources.VidigiPriorityStoreLegacy.html" class="sidebar-item-text sidebar-link">
@@ -647,42 +882,67 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    wrap_queues_at<span class="op">=</span><span class="dv">20</span>,</span>
 <span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    wrap_resources_at<span class="op">=</span><span class="dv">20</span>,</span>
 <span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    step_snapshot_max<span class="op">=</span><span class="dv">60</span>,</span>
-<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    limit_duration<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    plotly_height<span class="op">=</span><span class="dv">900</span>,</span>
-<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    plotly_width<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>    include_play_button<span class="op">=</span><span class="va">True</span>,</span>
-<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>    add_background_image<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>    display_stage_labels<span class="op">=</span><span class="va">True</span>,</span>
-<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>    entity_icon_size<span class="op">=</span><span class="dv">24</span>,</span>
-<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>    text_size<span class="op">=</span><span class="dv">24</span>,</span>
-<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>    resource_icon_size<span class="op">=</span><span class="dv">24</span>,</span>
-<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>    hover_text_entity<span class="op">=</span><span class="st">'default'</span>,</span>
-<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>    custom_hover_data<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>    gap_between_entities<span class="op">=</span><span class="dv">10</span>,</span>
-<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>    gap_between_queue_rows<span class="op">=</span><span class="dv">30</span>,</span>
-<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>    gap_between_resource_rows<span class="op">=</span><span class="dv">30</span>,</span>
-<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>    gap_between_resources<span class="op">=</span><span class="dv">10</span>,</span>
-<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>    resource_opacity<span class="op">=</span><span class="fl">0.8</span>,</span>
-<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>    custom_resource_icon<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>    override_x_max<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>    override_y_max<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>    start_date<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>    start_time<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>    time_display_units<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>    setup_mode<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>    frame_duration<span class="op">=</span><span class="dv">400</span>,</span>
-<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a>    frame_transition_duration<span class="op">=</span><span class="dv">600</span>,</span>
-<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a>    debug_mode<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>    custom_entity_icon_list<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a>    debug_write_intermediate_objects<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a>    background_image_opacity<span class="op">=</span><span class="fl">0.5</span>,</span>
-<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a>    overflow_text_color<span class="op">=</span><span class="st">'black'</span>,</span>
-<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a>    stage_label_text_colour<span class="op">=</span><span class="st">'black'</span>,</span>
-<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a>    backend<span class="op">=</span><span class="st">'express'</span>,</span>
-<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a>    step_snapshot_limit_gauges<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a>    gauge_segments<span class="op">=</span><span class="dv">10</span>,</span>
-<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a>    gauge_max_override<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    step_snapshot_max_overrides<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    limit_duration<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    plotly_height<span class="op">=</span><span class="dv">900</span>,</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>    plotly_width<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>    include_play_button<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>    add_background_image<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>    display_stage_labels<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>    entity_icon_size<span class="op">=</span><span class="dv">24</span>,</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>    text_size<span class="op">=</span><span class="dv">24</span>,</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>    resource_icon_size<span class="op">=</span><span class="dv">24</span>,</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>    hover_text_entity<span class="op">=</span><span class="st">'default'</span>,</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>    custom_hover_data<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>    gap_between_entities<span class="op">=</span><span class="dv">10</span>,</span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>    gap_between_queue_rows<span class="op">=</span><span class="dv">30</span>,</span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>    gap_between_resource_rows<span class="op">=</span><span class="dv">30</span>,</span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>    gap_between_resources<span class="op">=</span><span class="dv">10</span>,</span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>    queue_direction<span class="op">=</span><span class="st">'left'</span>,</span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>    flip_entity_icons<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>    entity_icon_font<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>    entity_icon_font_weight<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>    resource_icon_font<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>    resource_icon_font_weight<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>    entity_colour_by<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>    entity_colour_map<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a>    show_entity_legend<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a>    entity_annotation_by<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>    entity_annotation_size<span class="op">=</span><span class="dv">14</span>,</span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a>    entity_annotation_color<span class="op">=</span><span class="st">'black'</span>,</span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a>    entity_annotation_offset_y<span class="op">=-</span><span class="dv">15</span>,</span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a>    resource_image_size<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a>    entity_resource_offset_y<span class="op">=-</span><span class="dv">10</span>,</span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a>    resource_opacity<span class="op">=</span><span class="fl">0.8</span>,</span>
+<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a>    custom_resource_icon<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a>    override_x_max<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a>    override_y_max<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a>    start_date<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a>    start_time<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-53"><a href="#cb1-53" aria-hidden="true" tabindex="-1"></a>    time_display_units<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-54"><a href="#cb1-54" aria-hidden="true" tabindex="-1"></a>    setup_mode<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb1-55"><a href="#cb1-55" aria-hidden="true" tabindex="-1"></a>    frame_duration<span class="op">=</span><span class="dv">400</span>,</span>
+<span id="cb1-56"><a href="#cb1-56" aria-hidden="true" tabindex="-1"></a>    frame_transition_duration<span class="op">=</span><span class="dv">600</span>,</span>
+<span id="cb1-57"><a href="#cb1-57" aria-hidden="true" tabindex="-1"></a>    debug_mode<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb1-58"><a href="#cb1-58" aria-hidden="true" tabindex="-1"></a>    custom_entity_icon_list<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-59"><a href="#cb1-59" aria-hidden="true" tabindex="-1"></a>    debug_write_intermediate_objects<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb1-60"><a href="#cb1-60" aria-hidden="true" tabindex="-1"></a>    background_image_opacity<span class="op">=</span><span class="fl">0.5</span>,</span>
+<span id="cb1-61"><a href="#cb1-61" aria-hidden="true" tabindex="-1"></a>    overflow_text_color<span class="op">=</span><span class="st">'black'</span>,</span>
+<span id="cb1-62"><a href="#cb1-62" aria-hidden="true" tabindex="-1"></a>    stage_label_text_colour<span class="op">=</span><span class="st">'black'</span>,</span>
+<span id="cb1-63"><a href="#cb1-63" aria-hidden="true" tabindex="-1"></a>    stage_label_offset<span class="op">=</span><span class="dv">10</span>,</span>
+<span id="cb1-64"><a href="#cb1-64" aria-hidden="true" tabindex="-1"></a>    plot_bgcolor<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-65"><a href="#cb1-65" aria-hidden="true" tabindex="-1"></a>    paper_bgcolor<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-66"><a href="#cb1-66" aria-hidden="true" tabindex="-1"></a>    backend<span class="op">=</span><span class="st">'express'</span>,</span>
+<span id="cb1-67"><a href="#cb1-67" aria-hidden="true" tabindex="-1"></a>    step_snapshot_limit_gauges<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb1-68"><a href="#cb1-68" aria-hidden="true" tabindex="-1"></a>    gauge_segments<span class="op">=</span><span class="dv">10</span>,</span>
+<span id="cb1-69"><a href="#cb1-69" aria-hidden="true" tabindex="-1"></a>    gauge_max_override<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-70"><a href="#cb1-70" aria-hidden="true" tabindex="-1"></a>    step_snapshot_reveal_pop_in<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb1-71"><a href="#cb1-71" aria-hidden="true" tabindex="-1"></a>    spawn_in_from_arrival<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb1-72"><a href="#cb1-72" aria-hidden="true" tabindex="-1"></a>    run_number<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-73"><a href="#cb1-73" aria-hidden="true" tabindex="-1"></a>    run_col_name<span class="op">=</span><span class="st">'auto'</span>,</span>
+<span id="cb1-74"><a href="#cb1-74" aria-hidden="true" tabindex="-1"></a>    warm_up<span class="op">=</span><span class="dv">0</span>,</span>
+<span id="cb1-75"><a href="#cb1-75" aria-hidden="true" tabindex="-1"></a>    snapshot_alignment<span class="op">=</span><span class="st">'warm_up'</span>,</span>
+<span id="cb1-76"><a href="#cb1-76" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Generate an animated visualization of patient flow through a system.</p>
 <p>This function processes event log data, adds positional information, and creates an interactive Plotly animation representing patient movement through various stages.</p>
 <section id="parameters" class="level2 doc-section doc-section-parameters">
@@ -690,8 +950,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <table class="caption-top table">
 <colgroup>
 <col style="width: 2%">
-<col style="width: 1%">
-<col style="width: 94%">
+<col style="width: 3%">
+<col style="width: 92%">
 <col style="width: 1%">
 </colgroup>
 <thead>
@@ -705,20 +965,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tbody>
 <tr class="odd">
 <td>event_log</td>
-<td>pd.DataFrame</td>
-<td>The log of events to be animated, containing patient activities.</td>
+<td>pd.DataFrame, EventLogger, or TrialLogger</td>
+<td>The log of events to be animated, containing patient activities. A <code>vidigi.logging.EventLogger</code> or <code>TrialLogger</code> may be passed directly, in which case its <code>.to_dataframe()</code> is called for you.</td>
 <td><em>required</em></td>
 </tr>
 <tr class="even">
 <td>event_position_df</td>
 <td>pd.DataFrame</td>
-<td>DataFrame specifying the positions of different events, with columns ‘event’, ‘x’, and ‘y’.</td>
+<td>DataFrame specifying the positions of different events, with columns ‘event’, ‘x’, and ‘y’ (plus optional ‘label’, ‘resource’, ‘direction’ - see <code>queue_direction</code> - ‘flip_icons’ - see <code>flip_entity_icons</code> - and ‘resource_icon’, which overrides <code>custom_resource_icon</code> per event and can name an image instead of a text glyph - see <code>EventPosition</code>).</td>
 <td><em>required</em></td>
 </tr>
 <tr class="odd">
 <td>scenario</td>
-<td>object</td>
-<td>An object containing attributes for resource counts at different steps.</td>
+<td>object or dict</td>
+<td>Object whose attributes - or dict whose keys - give the number of each resource available at a step, e.g.&nbsp;<code>scenario.n_nurses</code> or <code>scenario={"n_nurses": 2}</code> (default is None). Used for two independent things: - Drawing the resource-availability icons at each stage. This also needs a <code>resource</code> column on <code>event_position_df</code> naming the attribute or key to read for that step (e.g.&nbsp;<code>resource="n_nurses"</code>). If an event declares a <code>resource</code> but no <code>scenario</code> is passed, a warning is raised and those icons are skipped. - Appending the resource identifier column (<code>resource_col_name</code>, “resource_id” by default) to the hover <code>customdata</code>, so a custom <code>hover_text_entity</code> template can display it. This happens only when the event log actually contains that column, i.e.&nbsp;the model logged resource use via <code>log_resource_use_start</code> / <code>log_resource_use_end</code>. The built-in default template does not reference it, and a scenario passed for a model with no resource-use logging is harmless - the column is simply not appended.</td>
 <td><code>None</code></td>
 </tr>
 <tr class="even">
@@ -759,7 +1019,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="even">
 <td>simulation_time_unit</td>
-<td>str</td>
+<td>SimulationTimeUnit</td>
 <td>Time unit used within the simulation (default is minutes). Possible values are ‘seconds’, ‘minutes’, ‘hours’, ‘days’, ‘weeks’, ‘years’</td>
 <td><code>'minutes'</code></td>
 </tr>
@@ -784,98 +1044,194 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tr class="even">
 <td>step_snapshot_max</td>
 <td>int</td>
-<td>Maximum number of patients to show in each snapshot per event (default is 60).</td>
+<td>Maximum number of patients to show in each snapshot per event (default is 60). Any entities beyond this are collapsed into a <code>+ n more</code> label (or a gauge, see <code>step_snapshot_limit_gauges</code>). Acts as the fallback for any event not named in <code>step_snapshot_max_overrides</code>.</td>
 <td><code>60</code></td>
 </tr>
 <tr class="odd">
-<td>limit_duration</td>
-<td>int</td>
-<td>Maximum duration to animate in minutes (default is None, which auto-adjusts to the maximum time in the provided event log).</td>
+<td>step_snapshot_max_overrides</td>
+<td>dict</td>
+<td>A mapping of event name to a per-event <code>step_snapshot_max</code>, e.g.&nbsp;<code>{"waiting_for_bed": 250}</code> to show a long bottleneck queue in full while keeping every other step capped at <code>step_snapshot_max</code>. Any event not listed uses the scalar <code>step_snapshot_max</code>. Default <code>None</code>. A key that matches no event in the log raises a warning.</td>
 <td><code>None</code></td>
 </tr>
 <tr class="even">
+<td>limit_duration</td>
+<td>int</td>
+<td>The time at which the animation stops (default is None, which auto-adjusts to the maximum time in the provided event log). Together with <code>warm_up</code> this bounds the animation window.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="odd">
 <td>plotly_height</td>
 <td>int</td>
 <td>Height of the Plotly figure in pixels (default is 900).</td>
 <td><code>900</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>plotly_width</td>
 <td>int</td>
 <td>Width of the Plotly figure in pixels (default is None, which auto-adjusts).</td>
 <td><code>None</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>include_play_button</td>
 <td>bool</td>
 <td>Whether to include a play button in the animation (default is True).</td>
 <td><code>True</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>add_background_image</td>
 <td>str</td>
 <td>Path to a background image file to add to the animation (default is None).</td>
 <td><code>None</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>display_stage_labels</td>
 <td>bool</td>
 <td>Whether to display labels for each stage (default is True).</td>
 <td><code>True</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>entity_icon_size</td>
 <td>int</td>
 <td>Size of entity icons in the animation (default is 24).</td>
 <td><code>24</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>text_size</td>
 <td>int</td>
 <td>Size of text labels in the animation (default is 24).</td>
 <td><code>24</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>resource_icon_size</td>
 <td>int</td>
 <td>Size of resource icons in the animation (default is 24).</td>
 <td><code>24</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>hover_text_entity</td>
-<td>Optional[str]</td>
+<td>str | None</td>
 <td>String to define the hover text. If None, hover on entity icons will be disabled. Default will display the entity ID, their current time in the system, etc. Must be provided in the format “%{some_column_name} some text” etc. See https://plotly.com/python/hover-text-and-formatting/#customizing-hover-text-with-a-hovertemplate for full details. All columns present in the initial dataframe are available to access by referencing their name in the format “%{some_column_name}”</td>
 <td><code>'default'</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>custom_hover_data</td>
-<td>Optional[list[str]]</td>
-<td>A list of column names, which must be defined as strings. If provided, becomes a list of additional columns that can be accessed as part of the string defined within hover_text_entity. customdata[0] is the first column specified, customdata[1] is the second, etc. So e.g.&nbsp;if you pass in [“widgets_created_cumulative”] as your custom_hover_data, your hover_text_entity may be “Widgets created so far: %{customdata[0]}”.</td>
+<td>list[str] | None</td>
+<td>A list of column names, which must be defined as strings. If provided, becomes a list of additional columns that can be accessed as part of the string defined within hover_text_entity. customdata[0] is the first column specified, customdata[1] is the second, etc. So e.g.&nbsp;if you pass in [“widgets_created_cumulative”] as your custom_hover_data, your hover_text_entity may be “Widgets created so far: %{customdata[0]}”. When <code>scenario</code> is set and the event log has a <code>resource_col_name</code> column, that column is appended to the list automatically, landing at <code>customdata[len(custom_hover_data)]</code>. Because <code>custom_hover_data</code> replaces the fixed column list the default <code>hover_text_entity</code> template indexes, you must also pass your own <code>hover_text_entity</code> string - supplying <code>custom_hover_data</code> while leaving <code>hover_text_entity</code> at its default raises <code>ValueError</code>.</td>
 <td><code>None</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>gap_between_entities</td>
 <td>int</td>
 <td>Horizontal spacing between entities in pixels (default is 10).</td>
 <td><code>10</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>gap_between_queue_rows</td>
 <td>int</td>
 <td>Vertical spacing between rows in pixels (default is 30).</td>
 <td><code>30</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>gap_between_resource_rows</td>
 <td>int</td>
 <td>Vertical spacing between rows in pixels (default is 30).</td>
 <td><code>30</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>gap_between_resources</td>
 <td>int</td>
 <td>Horizontal spacing between resources in pixels (default is 10).</td>
 <td><code>10</code></td>
+</tr>
+<tr class="odd">
+<td>queue_direction</td>
+<td>(left, right)</td>
+<td>Which way queues (and rows of resources) build out from their anchor. “left” (the default, and byte-identical to previous versions) makes the anchor the front of the queue, with entities stacking up to its left. “right” mirrors this - the anchor becomes the bottom-left corner and the queue extends rightwards, which reads better with entity emojis that face right. Stage labels move to the opposite side of a right-building queue. Set this per event instead with a <code>direction</code> column on <code>event_position_df</code> (or <code>EventPosition(..., direction=...)</code>), which overrides the animation-wide value.</td>
+<td><code>"left"</code></td>
+</tr>
+<tr class="even">
+<td>flip_entity_icons</td>
+<td>bool</td>
+<td>Mirror entity icons (and a <code>custom_resource_icon</code>) horizontally - useful when an emoji faces the wrong way for a particular layout, independently of <code>queue_direction</code>. Set this per event instead with a <code>flip_icons</code> column on <code>event_position_df</code> (or <code>EventPosition(..., flip_icons=...)</code>), which overrides the animation-wide value. Requires CSS to reach the page - this is injected automatically (see <code>vidigi.utils.inject_icon_flip_css</code>) whenever any icon actually resolves to flipped; embedding the figure a different way may need <code>vidigi.utils.entity_icon_flip_css()</code> added explicitly. Does not affect a static export via <code>fig.write_image()</code>.</td>
+<td><code>False</code></td>
+</tr>
+<tr class="odd">
+<td>entity_icon_font</td>
+<td>str</td>
+<td>Render entity icons in an icon font instead of emoji, so an icon can be any glyph the font provides - one of <code>vidigi.utils.ICON_FONT_PRESETS</code> (<code>"font-awesome"</code>, <code>"bootstrap-icons"</code>, <code>"material-symbols"</code>), or any CSS font-family name already available on the page. <code>custom_entity_icon_list</code> then supplies that font’s codepoints instead of emoji. Resource glyphs have their own <code>resource_icon_font</code>. See <code>generate_animation</code>’s docstring for the overflow-icon exemption and <code>vidigi.utils.entity_icon_font_css</code> for what reaching the page involves; the CSS is injected automatically, as for <code>flip_entity_icons</code>.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>entity_icon_font_weight</td>
+<td>int</td>
+<td>Overrides a preset’s default weight. Ignored for a raw custom family.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="odd">
+<td>resource_icon_font</td>
+<td>str</td>
+<td>Render glyph resource icons (<code>custom_resource_icon</code>, and any text-glyph <code>resource_icon</code>) in an icon font, independently of <code>entity_icon_font</code> - each side can be in its own font, or one left on emoji. Same accepted values and automatic CSS injection; the codepoint goes straight into <code>custom_resource_icon</code> / <code>resource_icon</code>. Animation-wide. See <code>generate_animation</code>’s docstring for detail.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>resource_icon_font_weight</td>
+<td>int</td>
+<td>Overrides a preset’s default weight for <code>resource_icon_font</code>.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="odd">
+<td>entity_colour_by</td>
+<td>str</td>
+<td>Name of a column - typically one already on your event log - to colour entity icons by. Only visible together with <code>entity_icon_font</code>, since emoji are colour fonts and ignore <code>textfont.color</code> entirely.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>entity_colour_map</td>
+<td>dict</td>
+<td>Maps values of <code>entity_colour_by</code> to specific colours; an uncovered value falls back to Plotly’s default qualitative palette.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="odd">
+<td>show_entity_legend</td>
+<td>bool</td>
+<td>Show a legend for <code>entity_colour_by</code>. Ignored when it is not set.</td>
+<td><code>True</code></td>
+</tr>
+<tr class="even">
+<td>entity_annotation_by</td>
+<td>str</td>
+<td>Name of a column to draw as offset text below each entity’s icon - e.g.&nbsp;a running length-of-stay figure. Express backend only. See <code>generate_animation</code>’s docstring for the full trade-off against appending text directly onto <code>icon</code> yourself: prefer appending when <code>flip_entity_icons</code>/<code>entity_icon_font</code> aren’t in play, and reach for this only once they are.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="odd">
+<td>entity_annotation_size</td>
+<td>int</td>
+<td>Font size (in points) of the <code>entity_annotation_by</code> text.</td>
+<td><code>14</code></td>
+</tr>
+<tr class="even">
+<td>entity_annotation_color</td>
+<td>str</td>
+<td>Colour of the <code>entity_annotation_by</code> text.</td>
+<td><code>"black"</code></td>
+</tr>
+<tr class="odd">
+<td>entity_annotation_offset_y</td>
+<td>float</td>
+<td>Vertical offset, in data units, of <code>entity_annotation_by</code> text below (negative) or above (positive) each entity’s icon.</td>
+<td><code>-15</code></td>
+</tr>
+<tr class="even">
+<td>resource_image_size</td>
+<td>float</td>
+<td>Size, in data units, of an image <code>resource_icon</code> (see <code>EventPosition.resource_icon</code>). Defaults to <code>resource_icon_size</code>, kept independent of <code>gap_between_resources</code> so changing the spacing between resources doesn’t also change their size.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="odd">
+<td>entity_resource_offset_y</td>
+<td>float</td>
+<td>Vertical offset, in data units, of each resource icon relative to the entity using it - negative below (the historic default), positive above. Applies to the default dot, a glyph <code>custom_resource_icon</code> / <code>resource_icon</code>, and an image <code>resource_icon</code> alike.</td>
+<td><code>-10</code></td>
 </tr>
 <tr class="even">
 <td>resource_opacity</td>
@@ -892,13 +1248,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tr class="even">
 <td>override_x_max</td>
 <td>int</td>
-<td>Override the maximum x-coordinate of the plot (default is None).</td>
+<td>Override the maximum x-coordinate of the plot (default is None). The figure margin already auto-expands to fit auto-generated stage labels, so this is only needed to reframe a layout the auto-sizing gets wrong. The axis then runs exactly <code>[0, override_x_max]</code>; a <code>UserWarning</code> is raised if any event anchor falls outside that, as its queue / resources would be drawn off-canvas.</td>
 <td><code>None</code></td>
 </tr>
 <tr class="odd">
 <td>override_y_max</td>
 <td>int</td>
-<td>Override the maximum y-coordinate of the plot (default is None).</td>
+<td>Override the maximum y-coordinate of the plot (default is None). Same off-canvas <code>UserWarning</code> as <code>override_x_max</code>.</td>
 <td><code>None</code></td>
 </tr>
 <tr class="even">
@@ -945,7 +1301,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="odd">
 <td>custom_entity_icon_list</td>
-<td>Optional[list[str]]</td>
+<td>list[str] | None</td>
 <td>If given, overrides the default list of emojis used to represent entities</td>
 <td><code>None</code></td>
 </tr>
@@ -974,28 +1330,82 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td><code>'black'</code></td>
 </tr>
 <tr class="even">
-<td>backend</td>
+<td>stage_label_offset</td>
+<td>float</td>
+<td>Gap, in data units, between a stage label and the front of its queue/resources (the event anchor point) when display_stage_labels is True (default is 10). Increase this for larger icon sizes so labels don’t crowd the icons.</td>
+<td><code>10</code></td>
+</tr>
+<tr class="odd">
+<td>plot_bgcolor</td>
 <td>str</td>
+<td>Background colour of the plotting area (inside the axes), passed straight to <code>fig.update_layout(plot_bgcolor=...)</code>. Accepts any CSS colour string, e.g.&nbsp;“white” or “#f5f5f5”. If None (default), Plotly’s template default is left untouched.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>paper_bgcolor</td>
+<td>str</td>
+<td>Background colour of the area surrounding the plotting area (behind the title, play button and timeline), passed straight to <code>fig.update_layout(paper_bgcolor=...)</code>. Accepts any CSS colour string. If None (default), Plotly’s template default is left untouched.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="odd">
+<td>backend</td>
+<td>AnimationBackend</td>
 <td>EXPERIMENTAL. Whether to use the plotly express backend for the initial plot (default), or the experimental plotly go backend. The go approach is currently unstable and much slower. Use at your own risk.</td>
 <td><code>'express'</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>step_snapshot_limit_gauges</td>
 <td>bool</td>
 <td>If True, replaces the text ‘+ x more’ with a gauge. The upper limit of the gauge is set by the maximum queue length observed across the simulation.</td>
 <td><code>False</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>gauge_segments</td>
 <td>int</td>
 <td>Number of discrete segments used when rendering queue length gauges in the animation. Higher values give a finer-grained visual indication of queue length, while lower values produce chunkier segments.</td>
 <td><code>10</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>gauge_max_override</td>
 <td>int | float</td>
 <td>Manually specified maximum value for queue length gauges. If <code>None</code>, the upper limit is determined from the maximum queue length observed in the simulation when <code>step_snapshot_limit_gauges</code> is <code>True</code>.</td>
 <td><code>None</code></td>
+</tr>
+<tr class="odd">
+<td>step_snapshot_reveal_pop_in</td>
+<td>bool</td>
+<td>If True, an entity that re-appears as an individually-drawn icon after being hidden by <code>step_snapshot_max</code> “pops in” at its queue position instead of visibly flying in from the top-left of the plot. See <code>generate_animation_df</code>’s docstring for the full mechanism and cost. The default <code>False</code> is a verified no-op; <strong>planned to change to <code>True</code> at the next major version (3.0)</strong>.</td>
+<td><code>False</code></td>
+</tr>
+<tr class="even">
+<td>spawn_in_from_arrival</td>
+<td>bool</td>
+<td>When True (the default), a genuinely new entity glides into the animation from the <code>event_position_df</code> anchor named <code>"arrival"</code> instead of flying in from the plot’s top-left corner - the arrival-side mirror of how the synthetic <code>depart</code> step makes an exit land at a chosen anchor. Only affects entities that arrive at least two snapshots after the animation window opens; an entity already present when it opens keeps the top-left fly-in, as does a layout with no <code>"arrival"</code> row in <code>event_position_df</code>. Pass <code>False</code> to restore the pre-2.0.0 top-left fly-in. Independent of <code>step_snapshot_reveal_pop_in</code>. See <code>generate_animation_df</code>’s docstring for the full mechanism.</td>
+<td><code>True</code></td>
+</tr>
+<tr class="odd">
+<td>run_number</td>
+<td>int</td>
+<td>Selects a single replication from a <code>TrialLogger</code> passed as <code>event_log</code>. Only valid with a <code>TrialLogger</code>: passing it alongside a DataFrame or an <code>EventLogger</code> raises <code>ValueError</code>, as does passing a multi-run <code>TrialLogger</code> without it.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>run_col_name</td>
+<td>str or None</td>
+<td>Name of the column identifying which simulation run (replication) each row belongs to, used to reject event logs containing more than one replication. Default is “auto”, which looks for a column named (case-insensitively) one of ‘run’, ‘run_number’, ‘replication’, ‘rep’ or ‘run_id’. Pass an explicit column name to override the search, or <code>None</code> to disable the check.</td>
+<td><code>'auto'</code></td>
+</tr>
+<tr class="odd">
+<td>warm_up</td>
+<td>int</td>
+<td>The time at which the animation starts, in simulation time units (default is 0, the beginning of the run). Not to be confused with <code>start_time</code> above, which is a time of day used only for labelling frames as clock times. This is how to discard a warm-up period. Pass the <strong>whole</strong> event log and set <code>warm_up</code> to the end of your warm-up; do not filter the log by time first. Filtering removes the ‘arrival’ rows of every entity that arrived during the warm-up, and since presence is worked out from arrival and departure rows, those entities then vanish from every frame - including ones still queuing, which is exactly what a steady-state animation is meant to show. <code>warm_up</code> trims the window while leaving that history intact.</td>
+<td><code>0</code></td>
+</tr>
+<tr class="even">
+<td>snapshot_alignment</td>
+<td>(warm_up, run_start)</td>
+<td>Which point the snapshot grid counts from when <code>warm_up</code> is non-zero. Ignored when <code>warm_up</code> is 0. - “warm_up” (default): the first frame lands exactly on the boundary, showing the state of the system as the warm-up ends. - “run_start”: frame times stay on the grid running from time 0 and the early ones are dropped, so they remain the same times you would get with no warm-up at all. The two are identical whenever <code>warm_up</code> is a multiple of <code>every_x_time_units</code>.</td>
+<td><code>"warm_up"</code></td>
 </tr>
 </tbody>
 </table>
@@ -1027,6 +1437,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="notes" class="level2 doc-section doc-section-notes">
 <h2 class="doc-section doc-section-notes anchored" data-anchor-id="notes">Notes</h2>
 <ul>
+<li><strong>Pass a single replication only.</strong> An event log containing more than one run is rejected with a <code>ValueError</code>. Passing several runs does not raise on its own - it silently blends them into an animation that represents no run of your model - so this is checked before any work is done. Filter first, e.g.&nbsp;<code>event_log[event_log["run"] == 1]</code>.</li>
 <li>This function uses helper functions: reshape_for_animations, generate_animation_df, and generate_animation.</li>
 <li>The animation supports customization of icon sizes, resource representation, and animation speed.</li>
 <li>Time can be displayed as actual dates or as model time units.</li>

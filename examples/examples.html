@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.9.37">
+<meta name="generator" content="quarto-1.10.18">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -12,10 +12,13 @@
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
 */
-code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
-div.columns{display: flex; gap: min(4vw, 1.5em);}
-div.column{flex: auto; overflow-x: auto;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
 div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
 ul.task-list{list-style: none;}
 ul.task-list li input[type="checkbox"] {
@@ -41,12 +44,12 @@ ul.task-list li input[type="checkbox"] {
 <script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="../site_libs/quarto-html/anchor.min.js"></script>
 <link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting-7f8f88aac4f3542376d5c11b86a4c14d.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting-dark-d0ae9245876894da5ac7e18953ecc5cc.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-dark-b85bc7c33db8c58e0ec93c3465666fed.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-b1129199255cbdaa6ba7196f7625bb51.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="../site_libs/bootstrap/bootstrap-dark-160e0e8b9df999724eb46a759f5c953c.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../site_libs/bootstrap/bootstrap-daa4999fdbd6c2f5170fc895806a103e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-dark-1a58831b5b536d8abf17f9ba280142c3.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -84,9 +87,9 @@ ul.task-list li input[type="checkbox"] {
     }
 
     const options = {
-      valueNames: ['listing-project','listing-website','listing-quartodoc','listing-format','listing-engines','listing-language','listing-filters','listing-image','listing-path','listing-outputHref','listing-title','listing-author','listing-description','listing-filename','listing-file-modified','listing-reading-time','listing-word-count','listing-execute',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-file-modified-sort'] },{ data: ['listing-reading-time-sort'] },{ data: ['listing-word-count-sort'] }],
+      valueNames: ['listing-project','listing-website','listing-quartodoc','listing-format','listing-engines','listing-language','listing-filters','listing-image','listing-pub-info','listing-path','listing-outputHref','listing-title','listing-author','listing-description','listing-filename','listing-file-modified','listing-reading-time','listing-word-count','listing-execute',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-file-modified-sort'] },{ data: ['listing-reading-time-sort'] },{ data: ['listing-word-count-sort'] }],
       
-      searchColumns: ["listing-project","listing-website","listing-quartodoc","listing-format","listing-engines","listing-language","listing-filters","listing-image","listing-path","listing-outputHref","listing-title","listing-author","listing-description","listing-filename","listing-file-modified","listing-reading-time","listing-word-count","listing-execute"],
+      searchColumns: ["listing-project","listing-website","listing-quartodoc","listing-format","listing-engines","listing-language","listing-filters","listing-image","listing-pub-info","listing-path","listing-outputHref","listing-title","listing-author","listing-description","listing-filename","listing-file-modified","listing-reading-time","listing-word-count","listing-execute"],
     };
 
     window['quarto-listings'] = window['quarto-listings'] || {};
@@ -112,9 +115,9 @@ ul.task-list li input[type="checkbox"] {
     }
 
     const options = {
-      valueNames: ['listing-project','listing-website','listing-quartodoc','listing-format','listing-engines','listing-language','listing-image','listing-execute','listing-title','listing-path','listing-outputHref','listing-author','listing-description','listing-filename','listing-file-modified','listing-reading-time','listing-word-count',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-file-modified-sort'] },{ data: ['listing-reading-time-sort'] },{ data: ['listing-word-count-sort'] }],
+      valueNames: ['listing-project','listing-website','listing-quartodoc','listing-format','listing-engines','listing-language','listing-image','listing-pub-info','listing-execute','listing-title','listing-path','listing-outputHref','listing-author','listing-description','listing-filename','listing-file-modified','listing-reading-time','listing-word-count',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-file-modified-sort'] },{ data: ['listing-reading-time-sort'] },{ data: ['listing-word-count-sort'] }],
       
-      searchColumns: ["listing-project","listing-website","listing-quartodoc","listing-format","listing-engines","listing-language","listing-image","listing-execute","listing-title","listing-path","listing-outputHref","listing-author","listing-description","listing-filename","listing-file-modified","listing-reading-time","listing-word-count"],
+      searchColumns: ["listing-project","listing-website","listing-quartodoc","listing-format","listing-engines","listing-language","listing-image","listing-pub-info","listing-execute","listing-title","listing-path","listing-outputHref","listing-author","listing-description","listing-filename","listing-file-modified","listing-reading-time","listing-word-count"],
     };
 
     window['quarto-listings'] = window['quarto-listings'] || {};
@@ -140,41 +143,13 @@ ul.task-list li input[type="checkbox"] {
     }
 
     const options = {
-      valueNames: ['listing-project','listing-website','listing-quartodoc','listing-format','listing-engines','listing-language','listing-title','listing-image','listing-filters','listing-path','listing-outputHref','listing-author','listing-description','listing-filename','listing-file-modified','listing-reading-time','listing-word-count',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-file-modified-sort'] },{ data: ['listing-reading-time-sort'] },{ data: ['listing-word-count-sort'] }],
+      valueNames: ['listing-project','listing-website','listing-quartodoc','listing-format','listing-engines','listing-language','listing-title','listing-image','listing-pub-info','listing-filters','listing-path','listing-outputHref','listing-author','listing-description','listing-filename','listing-file-modified','listing-reading-time','listing-word-count',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-file-modified-sort'] },{ data: ['listing-reading-time-sort'] },{ data: ['listing-word-count-sort'] }],
       
-      searchColumns: ["listing-project","listing-website","listing-quartodoc","listing-format","listing-engines","listing-language","listing-title","listing-image","listing-filters","listing-path","listing-outputHref","listing-author","listing-description","listing-filename","listing-file-modified","listing-reading-time","listing-word-count"],
+      searchColumns: ["listing-project","listing-website","listing-quartodoc","listing-format","listing-engines","listing-language","listing-title","listing-image","listing-pub-info","listing-filters","listing-path","listing-outputHref","listing-author","listing-description","listing-filename","listing-file-modified","listing-reading-time","listing-word-count"],
     };
 
     window['quarto-listings'] = window['quarto-listings'] || {};
     window['quarto-listings']['listing-salabim-examples'] = new List('listing-salabim-examples', options);
-
-    if (window['quarto-listing-loaded']) {
-      window['quarto-listing-loaded']();
-    }
-  });
-
-  window.addEventListener('hashchange',() => {
-    if (window['quarto-listing-loaded']) {
-      window['quarto-listing-loaded']();
-    }
-  })
-  
-
-  window.document.addEventListener("DOMContentLoaded", function (_event) {
-    const listingTargetEl = window.document.querySelector('#listing-advanced-examples .list');
-    if (!listingTargetEl) {
-      // No listing discovered, do not attach.
-      return; 
-    }
-
-    const options = {
-      valueNames: ['listing-project','listing-website','listing-quartodoc','listing-format','listing-engines','listing-language','listing-image','listing-execute','listing-title','listing-path','listing-outputHref','listing-author','listing-description','listing-filename','listing-file-modified','listing-reading-time','listing-word-count','listing-pub-info','listing-filters',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-file-modified-sort'] },{ data: ['listing-reading-time-sort'] },{ data: ['listing-word-count-sort'] }],
-      
-      searchColumns: ["listing-project","listing-website","listing-quartodoc","listing-format","listing-engines","listing-language","listing-image","listing-execute","listing-title","listing-path","listing-outputHref","listing-author","listing-description","listing-filename","listing-file-modified","listing-reading-time","listing-word-count","listing-pub-info","listing-filters"],
-    };
-
-    window['quarto-listings'] = window['quarto-listings'] || {};
-    window['quarto-listings']['listing-advanced-examples'] = new List('listing-advanced-examples', options);
 
     if (window['quarto-listing-loaded']) {
       window['quarto-listing-loaded']();
@@ -196,13 +171,41 @@ ul.task-list li input[type="checkbox"] {
     }
 
     const options = {
-      valueNames: ['listing-project','listing-website','listing-quartodoc','listing-format','listing-engines','listing-language','listing-image','listing-execute','listing-title','listing-path','listing-outputHref','listing-author','listing-description','listing-filename','listing-file-modified','listing-reading-time','listing-word-count',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-file-modified-sort'] },{ data: ['listing-reading-time-sort'] },{ data: ['listing-word-count-sort'] }],
+      valueNames: ['listing-project','listing-website','listing-quartodoc','listing-format','listing-engines','listing-language','listing-image','listing-pub-info','listing-execute','listing-title','listing-path','listing-outputHref','listing-author','listing-description','listing-filename','listing-file-modified','listing-reading-time','listing-word-count',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-file-modified-sort'] },{ data: ['listing-reading-time-sort'] },{ data: ['listing-word-count-sort'] }],
       
-      searchColumns: ["listing-project","listing-website","listing-quartodoc","listing-format","listing-engines","listing-language","listing-image","listing-execute","listing-title","listing-path","listing-outputHref","listing-author","listing-description","listing-filename","listing-file-modified","listing-reading-time","listing-word-count"],
+      searchColumns: ["listing-project","listing-website","listing-quartodoc","listing-format","listing-engines","listing-language","listing-image","listing-pub-info","listing-execute","listing-title","listing-path","listing-outputHref","listing-author","listing-description","listing-filename","listing-file-modified","listing-reading-time","listing-word-count"],
     };
 
     window['quarto-listings'] = window['quarto-listings'] || {};
     window['quarto-listings']['listing-abs-examples'] = new List('listing-abs-examples', options);
+
+    if (window['quarto-listing-loaded']) {
+      window['quarto-listing-loaded']();
+    }
+  });
+
+  window.addEventListener('hashchange',() => {
+    if (window['quarto-listing-loaded']) {
+      window['quarto-listing-loaded']();
+    }
+  })
+  
+
+  window.document.addEventListener("DOMContentLoaded", function (_event) {
+    const listingTargetEl = window.document.querySelector('#listing-advanced-examples .list');
+    if (!listingTargetEl) {
+      // No listing discovered, do not attach.
+      return; 
+    }
+
+    const options = {
+      valueNames: ['listing-project','listing-website','listing-quartodoc','listing-format','listing-engines','listing-language','listing-image','listing-pub-info','listing-execute','listing-title','listing-path','listing-outputHref','listing-author','listing-description','listing-filename','listing-file-modified','listing-reading-time','listing-word-count','listing-filters',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-file-modified-sort'] },{ data: ['listing-reading-time-sort'] },{ data: ['listing-word-count-sort'] }],
+      
+      searchColumns: ["listing-project","listing-website","listing-quartodoc","listing-format","listing-engines","listing-language","listing-image","listing-pub-info","listing-execute","listing-title","listing-path","listing-outputHref","listing-author","listing-description","listing-filename","listing-file-modified","listing-reading-time","listing-word-count","listing-filters"],
+    };
+
+    window['quarto-listings'] = window['quarto-listings'] || {};
+    window['quarto-listings']['listing-advanced-examples'] = new List('listing-advanced-examples', options);
 
     if (window['quarto-listing-loaded']) {
       window['quarto-listing-loaded']();
@@ -224,9 +227,9 @@ ul.task-list li input[type="checkbox"] {
     }
 
     const options = {
-      valueNames: ['listing-project','listing-website','listing-quartodoc','listing-format','listing-engines','listing-language','listing-title','listing-execute','listing-filters','listing-image','listing-path','listing-outputHref','listing-author','listing-description','listing-filename','listing-file-modified','listing-reading-time','listing-word-count',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-file-modified-sort'] },{ data: ['listing-reading-time-sort'] },{ data: ['listing-word-count-sort'] }],
+      valueNames: ['listing-project','listing-website','listing-quartodoc','listing-format','listing-engines','listing-language','listing-title','listing-execute','listing-filters','listing-image','listing-pub-info','listing-path','listing-outputHref','listing-author','listing-description','listing-filename','listing-file-modified','listing-reading-time','listing-word-count',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-file-modified-sort'] },{ data: ['listing-reading-time-sort'] },{ data: ['listing-word-count-sort'] }],
       
-      searchColumns: ["listing-project","listing-website","listing-quartodoc","listing-format","listing-engines","listing-language","listing-title","listing-execute","listing-filters","listing-image","listing-path","listing-outputHref","listing-author","listing-description","listing-filename","listing-file-modified","listing-reading-time","listing-word-count"],
+      searchColumns: ["listing-project","listing-website","listing-quartodoc","listing-format","listing-engines","listing-language","listing-title","listing-execute","listing-filters","listing-image","listing-pub-info","listing-path","listing-outputHref","listing-author","listing-description","listing-filename","listing-file-modified","listing-reading-time","listing-word-count"],
     };
 
     window['quarto-listings'] = window['quarto-listings'] || {};
@@ -246,7 +249,7 @@ ul.task-list li input[type="checkbox"] {
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
   <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
-  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
 
 <script type="text/javascript">
 const typesetMath = (el) => {
@@ -456,16 +459,12 @@ window.Quarto = {
           <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav navbar-nav-scroll me-auto">
   <li class="nav-item">
-    <a class="nav-link" href="../vidigi_docs/index.html"> 
-<span class="menu-text">Home</span></a>
-  </li>  
-  <li class="nav-item">
     <a class="nav-link" href="../vidigi_docs/getting_started.html"> 
 <span class="menu-text">Getting Started</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link active" href="../examples/examples.html" aria-current="page"> 
-<span class="menu-text">Examples</span></a>
+    <a class="nav-link" href="../vidigi_docs/customising_animations.html"> 
+<span class="menu-text">Customising Animations</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../examples/feature_breakdowns.html"> 
@@ -476,14 +475,26 @@ window.Quarto = {
 <span class="menu-text">API Reference</span></a>
   </li>  
   <li class="nav-item">
+    <a class="nav-link active" href="../examples/examples.html" aria-current="page"> 
+<span class="menu-text">Example Models</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../vidigi_docs/migrating_to_2_0_0.html"> 
+<span class="menu-text">Migrating to 2.0.0</span></a>
+  </li>  
+  <li class="nav-item">
     <a class="nav-link" href="../vidigi_docs/changelog.html"> 
 <span class="menu-text">Changelog</span></a>
   </li>  
   <li class="nav-item dropdown ">
-    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-package-details" role="link" data-bs-toggle="dropdown" aria-expanded="false">
- <span class="menu-text">Package Details</span>
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-about" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">About</span>
     </a>
-    <ul class="dropdown-menu" aria-labelledby="nav-menu-package-details">    
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-about">    
+        <li>
+    <a class="dropdown-item" href="../vidigi_docs/citation.html">
+ <span class="dropdown-text">Citing vidigi</span></a>
+  </li>  
         <li>
     <a class="dropdown-item" href="../vidigi_docs/licence.html">
  <span class="dropdown-text">Licence</span></a>
@@ -494,7 +505,11 @@ window.Quarto = {
   </li>  
         <li>
     <a class="dropdown-item" href="../vidigi_docs/attribution_for_examples.html">
- <span class="dropdown-text">Attribution for models used as examples</span></a>
+ <span class="dropdown-text">Attribution for Models used as Examples</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../vidigi_docs/contributing.html">
+ <span class="dropdown-text">Contributing to Vidigi</span></a>
   </li>  
     </ul>
   </li>
@@ -530,8 +545,8 @@ window.Quarto = {
   <li><a href="#simpy-examples" id="toc-simpy-examples" class="nav-link active" data-scroll-target="#simpy-examples">SimPy Examples</a></li>
   <li><a href="#ciw-examples" id="toc-ciw-examples" class="nav-link" data-scroll-target="#ciw-examples">Ciw Examples</a></li>
   <li><a href="#salabim-examples" id="toc-salabim-examples" class="nav-link" data-scroll-target="#salabim-examples">Salabim Examples</a></li>
-  <li><a href="#advanced-examples" id="toc-advanced-examples" class="nav-link" data-scroll-target="#advanced-examples">Advanced Examples</a></li>
   <li><a href="#agent-based-simulation-abs-examples" id="toc-agent-based-simulation-abs-examples" class="nav-link" data-scroll-target="#agent-based-simulation-abs-examples">Agent Based Simulation (ABS) Examples</a></li>
+  <li><a href="#advanced-examples" id="toc-advanced-examples" class="nav-link" data-scroll-target="#advanced-examples">Advanced Examples</a></li>
   <li><a href="#legacy-examples" id="toc-legacy-examples" class="nav-link" data-scroll-target="#legacy-examples">Legacy Examples</a></li>
   </ul>
 </nav>
@@ -567,53 +582,7 @@ window.Quarto = {
 <div class="list grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 450px)); gap: 20px;">
 
   
-    <div class="custom-grid-card border-2 rounded-3" data-index="0" data-listing-file-modified-sort="1779208175469" data-listing-reading-time-sort="1" data-listing-word-count-sort="84">
-          <div class="main-card-content">
-            
-              <a href="../examples/example_1_simplest_case/ex_1_simplest_case.html">
-                <img class="card-img" src="../examples/example_1_simplest_case/example.gif" alt="A Simple Animation of a One-step SimPy Model">
-              </a>
-              
-
-              <div class="listing-title">
-                <h5 class="no-anchor card-title listing-title">A Simple Animation of a One-step SimPy Model</h5>
-            </div>
-
-            
-
-              </div>
-
-                <div class="details-listing">
-                  <button class="link-listing-button"><a href="../examples/example_1_simplest_case/ex_1_simplest_case.html"><i class="fa fa-info-circle"></i> Details </a></button>
-                </div>
-
-              </div>
-
-            
-    <div class="custom-grid-card border-2 rounded-3" data-index="1" data-listing-file-modified-sort="1779208175568" data-listing-reading-time-sort="6" data-listing-word-count-sort="1177">
-          <div class="main-card-content">
-            
-              <a href="../vidigi_docs/basic_example_with_vidigi_logger_helpers_multiple_servers.html">
-                <img class="card-img" src="../vidigi_docs/basic_example_with_vidigi_logger_helpers_multiple_servers.gif" alt="A slightly more complex example with multiple servers">
-              </a>
-              
-
-              <div class="listing-title">
-                <h5 class="no-anchor card-title listing-title">A slightly more complex example with multiple servers</h5>
-            </div>
-
-            
-
-              </div>
-
-                <div class="details-listing">
-                  <button class="link-listing-button"><a href="../vidigi_docs/basic_example_with_vidigi_logger_helpers_multiple_servers.html"><i class="fa fa-info-circle"></i> Details </a></button>
-                </div>
-
-              </div>
-
-            
-    <div class="custom-grid-card border-2 rounded-3" data-index="2" data-listing-file-modified-sort="1779208175562" data-listing-reading-time-sort="6" data-listing-word-count-sort="1081">
+    <div class="custom-grid-card border-2 rounded-3" data-index="0" data-listing-file-modified-sort="1789551972436" data-listing-reading-time-sort="7" data-listing-word-count-sort="1230">
           <div class="main-card-content">
             
               <a href="../vidigi_docs/basic_example_with_vidigi_logger_helpers.html">
@@ -626,6 +595,12 @@ window.Quarto = {
             </div>
 
             
+              <p class="listing-abstract">The simplest possible starting point - a single-step SimPy model with just one server.
+This example walks through using vidigi's EventLogger helper class to capture arrivals,
+queueing and resource use with the minimum of code changes to an existing model.
+</p>
+
+                
 
               </div>
 
@@ -636,7 +611,37 @@ window.Quarto = {
               </div>
 
             
-    <div class="custom-grid-card border-2 rounded-3" data-index="3" data-listing-file-modified-sort="1779208175561" data-listing-reading-time-sort="6" data-listing-word-count-sort="1047">
+    <div class="custom-grid-card border-2 rounded-3" data-index="1" data-listing-file-modified-sort="1789551972442" data-listing-reading-time-sort="14" data-listing-word-count-sort="2649">
+          <div class="main-card-content">
+            
+              <a href="../vidigi_docs/basic_example_with_vidigi_logger_helpers_multiple_servers.html">
+                <img class="card-img" src="../vidigi_docs/basic_example_with_vidigi_logger_helpers_multiple_servers.gif" alt="A slightly more complex example with multiple servers">
+              </a>
+              
+
+              <div class="listing-title">
+                <h5 class="no-anchor card-title listing-title">A slightly more complex example with multiple servers</h5>
+            </div>
+
+            
+              <p class="listing-abstract">Building on the single-server example, this model introduces multiple servers, so we need a
+way to track which specific resource each entity is using. Here we bring in vidigi's
+VidigiStore class, a drop-in replacement for SimPy's Resource that keeps this tracking
+automatic.
+</p>
+
+                
+
+              </div>
+
+                <div class="details-listing">
+                  <button class="link-listing-button"><a href="../vidigi_docs/basic_example_with_vidigi_logger_helpers_multiple_servers.html"><i class="fa fa-info-circle"></i> Details </a></button>
+                </div>
+
+              </div>
+
+            
+    <div class="custom-grid-card border-2 rounded-3" data-index="2" data-listing-file-modified-sort="1789551972435" data-listing-reading-time-sort="6" data-listing-word-count-sort="1047">
           <div class="main-card-content">
             
               <a href="../vidigi_docs/basic_example_minimal_required_vidigi_functions.html">
@@ -649,6 +654,12 @@ window.Quarto = {
             </div>
 
             
+              <p class="listing-abstract">Not everyone wants to use vidigi's EventLogger helper class. This example strips things back
+to show the minimal set of columns and events vidigi actually needs, so you can build and
+populate your own event log by hand if that fits your model better.
+</p>
+
+                
 
               </div>
 
@@ -659,7 +670,37 @@ window.Quarto = {
               </div>
 
             
-    <div class="custom-grid-card border-2 rounded-3" data-index="4" data-listing-file-modified-sort="1779208175471" data-listing-reading-time-sort="1" data-listing-word-count-sort="67">
+    <div class="custom-grid-card border-2 rounded-3" data-index="3" data-listing-file-modified-sort="1789551972323" data-listing-reading-time-sort="2" data-listing-word-count-sort="233">
+          <div class="main-card-content">
+            
+              <a href="../examples/example_1_simplest_case/ex_1_simplest_case.html">
+                <img class="card-img" src="../examples/example_1_simplest_case/example.gif" alt="A Simple Animation of a One-step SimPy Model">
+              </a>
+              
+
+              <div class="listing-title">
+                <h5 class="no-anchor card-title listing-title">A Simple Animation of a One-step SimPy Model</h5>
+            </div>
+
+            
+              <p class="listing-abstract">The simplest possible vidigi animation - a single-step SimPy model with one queue and one
+resource. It's a good first stop for seeing the full logging-to-animation pipeline, and also
+shows what happens - and how to display it more clearly - when a queue grows larger than the
+space available to show it. This animation also makes use of a custom background.
+</p>
+
+                
+
+              </div>
+
+                <div class="details-listing">
+                  <button class="link-listing-button"><a href="../examples/example_1_simplest_case/ex_1_simplest_case.html"><i class="fa fa-info-circle"></i> Details </a></button>
+                </div>
+
+              </div>
+
+            
+    <div class="custom-grid-card border-2 rounded-3" data-index="4" data-listing-file-modified-sort="1789551972325" data-listing-reading-time-sort="1" data-listing-word-count-sort="79">
           <div class="main-card-content">
             
               <a href="../examples/example_2_branching_multistep/ex_2_branching_multistep_case.html">
@@ -672,6 +713,12 @@ window.Quarto = {
             </div>
 
             
+              <p class="listing-abstract">A more realistic pathway, where entities can branch down different routes and pass through
+multiple queueing and resource-use steps. Also demonstrates 'setup_mode', which overlays a
+coordinate grid on your background image to help you place resources and queues accurately.
+</p>
+
+                
 
               </div>
 
@@ -682,30 +729,7 @@ window.Quarto = {
               </div>
 
             
-    <div class="custom-grid-card border-2 rounded-3" data-index="5" data-listing-file-modified-sort="1779208175365" data-listing-reading-time-sort="1" data-listing-word-count-sort="45">
-          <div class="main-card-content">
-            
-              <a href="../examples/example_14_carwash/carwash.html">
-                <img class="card-img" src="../examples/example_14_carwash/example.gif" alt="Examples from Outside of Healthcare: Carwash">
-              </a>
-              
-
-              <div class="listing-title">
-                <h5 class="no-anchor card-title listing-title">Examples from Outside of Healthcare: Carwash</h5>
-            </div>
-
-            
-
-              </div>
-
-                <div class="details-listing">
-                  <button class="link-listing-button"><a href="../examples/example_14_carwash/carwash.html"><i class="fa fa-info-circle"></i> Details </a></button>
-                </div>
-
-              </div>
-
-            
-    <div class="custom-grid-card border-2 rounded-3" data-index="6" data-listing-file-modified-sort="1779208175497" data-listing-reading-time-sort="2" data-listing-word-count-sort="274">
+    <div class="custom-grid-card border-2 rounded-3" data-index="5" data-listing-file-modified-sort="1789551972353" data-listing-reading-time-sort="2" data-listing-word-count-sort="239">
           <div class="main-card-content">
             
               <a href="../examples/example_7_simplest_case_priority_resource_storewrapper/ex_7_simplest_case_priority_resource.html">
@@ -718,6 +742,12 @@ window.Quarto = {
             </div>
 
             
+              <p class="listing-abstract">Extends the VidigiStore approach to priority-based resource requests, using
+VidigiPriorityStore. Entities with a higher priority can jump the queue for a resource while
+keeping the same familiar 'with ... request()' syntax.
+</p>
+
+                
 
               </div>
 
@@ -728,24 +758,30 @@ window.Quarto = {
               </div>
 
             
-    <div class="custom-grid-card border-2 rounded-3" data-index="7" data-listing-file-modified-sort="1779208175497" data-listing-reading-time-sort="1" data-listing-word-count-sort="153">
+    <div class="custom-grid-card border-2 rounded-3" data-index="6" data-listing-file-modified-sort="1789551972258" data-listing-reading-time-sort="1" data-listing-word-count-sort="48">
           <div class="main-card-content">
             
-              <a href="../examples/example_6_simplest_case_storewrapper/ex_6_simplest_case.html">
-                <img class="card-img" src="../examples/example_6_simplest_case_storewrapper/image.png" alt="Using the VidigiStore to Simplify Model Code Changes">
+              <a href="../examples/example_14_carwash/carwash.html">
+                <img class="card-img" src="../examples/example_14_carwash/example.gif" alt="Examples from Outside of Healthcare: Carwash">
               </a>
               
 
               <div class="listing-title">
-                <h5 class="no-anchor card-title listing-title">Using the VidigiStore to Simplify Model Code Changes</h5>
+                <h5 class="no-anchor card-title listing-title">Examples from Outside of Healthcare: Carwash</h5>
             </div>
 
             
+              <p class="listing-abstract">A vidigi-animated version of the classic carwash example from the SimPy documentation. It's
+a good demonstration of how little needs to change to bring logging and animation to a model
+built entirely outside a healthcare context.
+</p>
+
+                
 
               </div>
 
                 <div class="details-listing">
-                  <button class="link-listing-button"><a href="../examples/example_6_simplest_case_storewrapper/ex_6_simplest_case.html"><i class="fa fa-info-circle"></i> Details </a></button>
+                  <button class="link-listing-button"><a href="../examples/example_14_carwash/carwash.html"><i class="fa fa-info-circle"></i> Details </a></button>
                 </div>
 
               </div>
@@ -763,7 +799,7 @@ window.Quarto = {
 <div class="list grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 450px)); gap: 20px;">
 
   
-    <div class="custom-grid-card border-2 rounded-3" data-index="0" data-listing-file-modified-sort="1779208175209" data-listing-reading-time-sort="2" data-listing-word-count-sort="267">
+    <div class="custom-grid-card border-2 rounded-3" data-index="0" data-listing-file-modified-sort="1789551972216" data-listing-reading-time-sort="2" data-listing-word-count-sort="299">
           <div class="main-card-content">
             
               <a href="../examples/example_10_advanced_ciw/ex_10_ciw.html">
@@ -776,6 +812,12 @@ window.Quarto = {
             </div>
 
             
+              <p class="listing-abstract">A more involved Ciw model, taken from the official Ciw tutorial, animated with a custom
+background image. Shows how vidigi's Ciw helpers scale up to handle more complex
+network-of-queues models.
+</p>
+
+                
 
               </div>
 
@@ -786,19 +828,25 @@ window.Quarto = {
               </div>
 
             
-    <div class="custom-grid-card border-2 rounded-3" data-index="1" data-listing-file-modified-sort="1779208175488" data-listing-reading-time-sort="3" data-listing-word-count-sort="444">
+    <div class="custom-grid-card border-2 rounded-3" data-index="1" data-listing-file-modified-sort="1789551972344" data-listing-reading-time-sort="4" data-listing-word-count-sort="637">
           <div class="main-card-content">
             
               <a href="../examples/example_4_ciw/ex_4_ciw.html">
-                <img class="card-img" src="../examples/example_4_ciw/example.gif" alt="A Simple Ciw Model">
+                <img class="card-img" src="../examples/example_4_ciw/example.gif" alt="A ciw 2.x example">
               </a>
               
 
               <div class="listing-title">
-                <h5 class="no-anchor card-title listing-title">A Simple Ciw Model</h5>
+                <h5 class="no-anchor card-title listing-title">A ciw 2.x example</h5>
             </div>
 
             
+              <p class="listing-abstract">A simple queueing model built with Ciw rather than SimPy, showing how to convert Ciw's own
+simulation records into a vidigi-compatible event log. Based on a published reproducible Ciw
+model example from Monks, Harper &amp; Heather (2023).
+</p>
+
+                
 
               </div>
 
@@ -821,7 +869,7 @@ window.Quarto = {
 <div class="list grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 450px)); gap: 20px;">
 
   
-    <div class="custom-grid-card border-2 rounded-3" data-index="0" data-listing-file-modified-sort="1779208175552" data-listing-reading-time-sort="7" data-listing-word-count-sort="1254">
+    <div class="custom-grid-card border-2 rounded-3" data-index="0" data-listing-file-modified-sort="1789551972418" data-listing-reading-time-sort="7" data-listing-word-count-sort="1258">
           <div class="main-card-content">
             
               <a href="../examples/salabim_bank/salabim_bank.html">
@@ -834,11 +882,58 @@ window.Quarto = {
             </div>
 
             
+              <p class="listing-abstract">vidigi isn't tied to SimPy - here it's paired with Salabim instead. Using the classic 'bank
+with three clerks' example from the Salabim documentation, we show that the same logging and
+animation approach carries across to a different simulation engine with only minor changes.
+</p>
+
+                
 
               </div>
 
                 <div class="details-listing">
                   <button class="link-listing-button"><a href="../examples/salabim_bank/salabim_bank.html"><i class="fa fa-info-circle"></i> Details </a></button>
+                </div>
+
+              </div>
+
+            
+          </div>
+
+<div class="listing-no-matching d-none">No matching items</div>
+</div>
+</section>
+<section id="agent-based-simulation-abs-examples" class="level2">
+<h2 class="anchored" data-anchor-id="agent-based-simulation-abs-examples">Agent Based Simulation (ABS) Examples</h2>
+<p>These examples look at how vidigi could be used for agent based simulation instead.</p>
+<div id="listing-abs-examples" class="quarto-listing quarto-listing-container-custom">
+<div class="list grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 450px)); gap: 20px;">
+
+  
+    <div class="custom-grid-card border-2 rounded-3" data-index="0" data-listing-file-modified-sort="1789551972321" data-listing-reading-time-sort="5" data-listing-word-count-sort="816">
+          <div class="main-card-content">
+            
+              <a href="../examples/example_18_vidigi_with_mesa_abs/vidigi_abs.html">
+                <img class="card-img" src="../examples/example_18_vidigi_with_mesa_abs/example.gif" alt="Using Vidigi to Visualise an Agent-Based Simulation (ABS)">
+              </a>
+              
+
+              <div class="listing-title">
+                <h5 class="no-anchor card-title listing-title">Using Vidigi to Visualise an Agent-Based Simulation (ABS)</h5>
+            </div>
+
+            
+              <p class="listing-abstract">vidigi isn't built for agent-based simulation, but with a little creativity it can still
+animate one - here using the Mesa package. Shows how to capture agent positions at each step of
+an ABS model so vidigi can render them like any other simulation.
+</p>
+
+                
+
+              </div>
+
+                <div class="details-listing">
+                  <button class="link-listing-button"><a href="../examples/example_18_vidigi_with_mesa_abs/vidigi_abs.html"><i class="fa fa-info-circle"></i> Details </a></button>
                 </div>
 
               </div>
@@ -856,191 +951,7 @@ window.Quarto = {
 <div class="list grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 450px)); gap: 20px;">
 
   
-    <div class="custom-grid-card border-2 rounded-3" data-index="0" data-listing-file-modified-sort="1779208175364" data-listing-reading-time-sort="1" data-listing-word-count-sort="192">
-          <div class="main-card-content">
-            
-              <a href="../examples/example_13_additional_synchronised_traces_method_1/synchronised_traces.html">
-                <img class="card-img" src="../examples/example_13_additional_synchronised_traces_method_1/example.gif" alt="Additional Synchronised Traces - Orthopaedic Ward - Hospital Efficiency Project">
-              </a>
-              
-
-              <div class="listing-title">
-                <h5 class="no-anchor card-title listing-title">Additional Synchronised Traces - Orthopaedic Ward - Hospital Efficiency Project</h5>
-            </div>
-
-            
-
-              </div>
-
-                <div class="details-listing">
-                  <button class="link-listing-button"><a href="../examples/example_13_additional_synchronised_traces_method_1/synchronised_traces.html"><i class="fa fa-info-circle"></i> Details </a></button>
-                </div>
-
-              </div>
-
-            
-    <div class="custom-grid-card border-2 rounded-3" data-index="1" data-listing-file-modified-sort="1779208175499" data-listing-reading-time-sort="1" data-listing-word-count-sort="1">
-          <div class="main-card-content">
-            
-              <a href="../examples/example_9_wide_resource_spacing_multiple/ex_9_model.html">
-                <img class="card-img" src="../examples/example_9_wide_resource_spacing_multiple/example.gif" alt="Creative Layouts - Multiple Ward Example">
-              </a>
-              
-
-              <div class="listing-title">
-                <h5 class="no-anchor card-title listing-title">Creative Layouts - Multiple Ward Example</h5>
-            </div>
-
-            
-
-              </div>
-
-                <div class="details-listing">
-                  <button class="link-listing-button"><a href="../examples/example_9_wide_resource_spacing_multiple/ex_9_model.html"><i class="fa fa-info-circle"></i> Details </a></button>
-                </div>
-
-              </div>
-
-            
-    <div class="custom-grid-card border-2 rounded-3" data-index="2" data-listing-file-modified-sort="1779208175499" data-listing-reading-time-sort="1" data-listing-word-count-sort="1">
-          <div class="main-card-content">
-            
-              <a href="../examples/example_8_wide_resource_spacing/ex_8_model.html">
-                <img class="card-img" src="../examples/example_8_wide_resource_spacing/example.gif" alt="Creative Layouts - Single Hospital Ward Example">
-              </a>
-              
-
-              <div class="listing-title">
-                <h5 class="no-anchor card-title listing-title">Creative Layouts - Single Hospital Ward Example</h5>
-            </div>
-
-            
-
-              </div>
-
-                <div class="details-listing">
-                  <button class="link-listing-button"><a href="../examples/example_8_wide_resource_spacing/ex_8_model.html"><i class="fa fa-info-circle"></i> Details </a></button>
-                </div>
-
-              </div>
-
-            
-    <div class="custom-grid-card border-2 rounded-3" data-index="3" data-listing-file-modified-sort="1779208175417" data-listing-reading-time-sort="4" data-listing-word-count-sort="734">
-          <div class="main-card-content">
-            
-              <a href="../examples/example_17_resourceless_larger_queues/resourceless_longer_queues.html">
-                <img class="card-img" src="../examples/example_17_resourceless_larger_queues/example.gif" alt="Deep Dive: Ways of visualising larger queues">
-              </a>
-              
-
-              <div class="listing-title">
-                <h5 class="no-anchor card-title listing-title">Deep Dive: Ways of visualising larger queues</h5>
-            </div>
-
-            
-
-              </div>
-
-                <div class="details-listing">
-                  <button class="link-listing-button"><a href="../examples/example_17_resourceless_larger_queues/resourceless_longer_queues.html"><i class="fa fa-info-circle"></i> Details </a></button>
-                </div>
-
-              </div>
-
-            
-    <div class="custom-grid-card border-2 rounded-3" data-index="4" data-listing-file-modified-sort="1779208175491" data-listing-reading-time-sort="1" data-listing-word-count-sort="87">
-          <div class="main-card-content">
-            
-              <a href="../examples/example_5_simplest_case_wrapped_resources/ex_5_simplest_case_wrapped_resource.html">
-                <img class="card-img" src="../examples/example_5_simplest_case_wrapped_resources/example.gif" alt="Managing Higher Numbers of Resources with Resource Wrapping">
-              </a>
-              
-
-              <div class="listing-title">
-                <h5 class="no-anchor card-title listing-title">Managing Higher Numbers of Resources with Resource Wrapping</h5>
-            </div>
-
-            
-
-              </div>
-
-                <div class="details-listing">
-                  <button class="link-listing-button"><a href="../examples/example_5_simplest_case_wrapped_resources/ex_5_simplest_case_wrapped_resource.html"><i class="fa fa-info-circle"></i> Details </a></button>
-                </div>
-
-              </div>
-
-            
-    <div class="custom-grid-card border-2 rounded-3" data-index="5" data-listing-file-modified-sort="1779208175340" data-listing-reading-time-sort="2" data-listing-word-count-sort="260">
-          <div class="main-card-content">
-            
-              <a href="../examples/example_11_resourceless_animation/ex_11_resourceless.html">
-                <img class="card-img" src="../examples/example_11_resourceless_animation/example.gif" alt="Mental Health - Appointment Booking Model">
-              </a>
-              
-
-              <div class="listing-title">
-                <h5 class="no-anchor card-title listing-title">Mental Health - Appointment Booking Model</h5>
-            </div>
-
-            
-
-              </div>
-
-                <div class="details-listing">
-                  <button class="link-listing-button"><a href="../examples/example_11_resourceless_animation/ex_11_resourceless.html"><i class="fa fa-info-circle"></i> Details </a></button>
-                </div>
-
-              </div>
-
-            
-    <div class="custom-grid-card border-2 rounded-3" data-index="6" data-listing-file-modified-sort="1779208175355" data-listing-reading-time-sort="2" data-listing-word-count-sort="262">
-          <div class="main-card-content">
-            
-              <a href="../examples/example_12_resourceless_with_back_and_forth/ex_12_resourceless_advanced.html">
-                <img class="card-img" src="../examples/example_12_resourceless_with_back_and_forth/example.gif" alt="More Resourceless Queues - Community Service Repeat Appointment Booking Model with Variable Follow-ups">
-              </a>
-              
-
-              <div class="listing-title">
-                <h5 class="no-anchor card-title listing-title">More Resourceless Queues - Community Service Repeat Appointment Booking Model with Variable Follow-ups</h5>
-            </div>
-
-            
-
-              </div>
-
-                <div class="details-listing">
-                  <button class="link-listing-button"><a href="../examples/example_12_resourceless_with_back_and_forth/ex_12_resourceless_advanced.html"><i class="fa fa-info-circle"></i> Details </a></button>
-                </div>
-
-              </div>
-
-            
-    <div class="custom-grid-card border-2 rounded-3" data-index="7" data-listing-file-modified-sort="1779208175410" data-listing-reading-time-sort="2" data-listing-word-count-sort="232">
-          <div class="main-card-content">
-            
-              <a href="../examples/example_16_packing_robot/packing_robot.html">
-                <img class="card-img" src="../examples/example_16_packing_robot/example.gif" alt="Precalculated pathing">
-              </a>
-              
-
-              <div class="listing-title">
-                <h5 class="no-anchor card-title listing-title">Precalculated pathing</h5>
-            </div>
-
-            
-
-              </div>
-
-                <div class="details-listing">
-                  <button class="link-listing-button"><a href="../examples/example_16_packing_robot/packing_robot.html"><i class="fa fa-info-circle"></i> Details </a></button>
-                </div>
-
-              </div>
-
-            
-    <div class="custom-grid-card border-2 rounded-3" data-index="8" data-listing-file-modified-sort="1779208175487" data-listing-reading-time-sort="1" data-listing-word-count-sort="200">
+    <div class="custom-grid-card border-2 rounded-3" data-index="0" data-listing-file-modified-sort="1789551972342" data-listing-reading-time-sort="2" data-listing-word-count-sort="227">
           <div class="main-card-content">
             
               <a href="../examples/example_3_simplest_case_priority_resource/ex_3_simplest_case_priority_resource.html">
@@ -1053,6 +964,12 @@ window.Quarto = {
             </div>
 
             
+              <p class="listing-abstract">Shows how to visualise entities with different priorities competing for the same resource,
+using VidigiPriorityStore. Higher-priority entities are served first, and the animation makes
+that queue-jumping visible at a glance.
+</p>
+
+                
 
               </div>
 
@@ -1063,7 +980,271 @@ window.Quarto = {
               </div>
 
             
-    <div class="custom-grid-card border-2 rounded-3" data-index="9" data-listing-file-modified-sort="1779208175468" data-listing-reading-time-sort="7" data-listing-word-count-sort="1335">
+    <div class="custom-grid-card border-2 rounded-3" data-index="1" data-listing-file-modified-sort="1789551972347" data-listing-reading-time-sort="1" data-listing-word-count-sort="90">
+          <div class="main-card-content">
+            
+              <a href="../examples/example_5_simplest_case_wrapped_resources/ex_5_simplest_case_wrapped_resource.html">
+                <img class="card-img" src="../examples/example_5_simplest_case_wrapped_resources/example.gif" alt="Managing Higher Numbers of Resources with Resource Wrapping">
+              </a>
+              
+
+              <div class="listing-title">
+                <h5 class="no-anchor card-title listing-title">Managing Higher Numbers of Resources with Resource Wrapping</h5>
+            </div>
+
+            
+              <p class="listing-abstract">Looks at what goes wrong when you have a larger number of identical resources that haven't
+been wrapped for vidigi tracking, then shows how wrapping them fixes it. Useful when scaling a
+model up from a handful of servers to many.
+</p>
+
+                
+
+              </div>
+
+                <div class="details-listing">
+                  <button class="link-listing-button"><a href="../examples/example_5_simplest_case_wrapped_resources/ex_5_simplest_case_wrapped_resource.html"><i class="fa fa-info-circle"></i> Details </a></button>
+                </div>
+
+              </div>
+
+            
+    <div class="custom-grid-card border-2 rounded-3" data-index="2" data-listing-file-modified-sort="1789551972354" data-listing-reading-time-sort="1" data-listing-word-count-sort="4">
+          <div class="main-card-content">
+            
+              <a href="../examples/example_8_wide_resource_spacing/ex_8_model.html">
+                <img class="card-img" src="../examples/example_8_wide_resource_spacing/example.gif" alt="Creative Layouts - Single Hospital Ward Example">
+              </a>
+              
+
+              <div class="listing-title">
+                <h5 class="no-anchor card-title listing-title">Creative Layouts - Single Hospital Ward Example</h5>
+            </div>
+
+            
+              <p class="listing-abstract">A single hospital ward laid out on a custom background image, with resource icons spaced out
+to match the real positions of bays and beds. Demonstrates how much creative control you have
+over entity and resource placement beyond the default grid layout.
+</p>
+
+                
+
+              </div>
+
+                <div class="details-listing">
+                  <button class="link-listing-button"><a href="../examples/example_8_wide_resource_spacing/ex_8_model.html"><i class="fa fa-info-circle"></i> Details </a></button>
+                </div>
+
+              </div>
+
+            
+    <div class="custom-grid-card border-2 rounded-3" data-index="3" data-listing-file-modified-sort="1789551972355" data-listing-reading-time-sort="1" data-listing-word-count-sort="4">
+          <div class="main-card-content">
+            
+              <a href="../examples/example_9_wide_resource_spacing_multiple/ex_9_model.html">
+                <img class="card-img" src="../examples/example_9_wide_resource_spacing_multiple/example.gif" alt="Creative Layouts - Multiple Ward Example">
+              </a>
+              
+
+              <div class="listing-title">
+                <h5 class="no-anchor card-title listing-title">Creative Layouts - Multiple Ward Example</h5>
+            </div>
+
+            
+              <p class="listing-abstract">Extends the single-ward layout example to multiple wards on the same background image, each
+with its own set of spaced-out resources. Shows how a wider, more elaborate custom layout can
+represent a whole department rather than a single area.
+</p>
+
+                
+
+              </div>
+
+                <div class="details-listing">
+                  <button class="link-listing-button"><a href="../examples/example_9_wide_resource_spacing_multiple/ex_9_model.html"><i class="fa fa-info-circle"></i> Details </a></button>
+                </div>
+
+              </div>
+
+            
+    <div class="custom-grid-card border-2 rounded-3" data-index="4" data-listing-file-modified-sort="1789551972233" data-listing-reading-time-sort="2" data-listing-word-count-sort="263">
+          <div class="main-card-content">
+            
+              <a href="../examples/example_11_resourceless_animation/ex_11_resourceless.html">
+                <img class="card-img" src="../examples/example_11_resourceless_animation/example.gif" alt="Mental Health - Appointment Booking Model">
+              </a>
+              
+
+              <div class="listing-title">
+                <h5 class="no-anchor card-title listing-title">Mental Health - Appointment Booking Model</h5>
+            </div>
+
+            
+              <p class="listing-abstract">Not every model needs a literal 'resource' to track - here, a mental health
+appointment-booking pathway is animated using queue steps alone. It's a good example of using
+vidigi to visualise the buildup and clearing of a queue for something more abstract, like
+appointment slots.
+</p>
+
+                
+
+              </div>
+
+                <div class="details-listing">
+                  <button class="link-listing-button"><a href="../examples/example_11_resourceless_animation/ex_11_resourceless.html"><i class="fa fa-info-circle"></i> Details </a></button>
+                </div>
+
+              </div>
+
+            
+    <div class="custom-grid-card border-2 rounded-3" data-index="5" data-listing-file-modified-sort="1789551972248" data-listing-reading-time-sort="2" data-listing-word-count-sort="265">
+          <div class="main-card-content">
+            
+              <a href="../examples/example_12_resourceless_with_back_and_forth/ex_12_resourceless_advanced.html">
+                <img class="card-img" src="../examples/example_12_resourceless_with_back_and_forth/example.gif" alt="More Resourceless Queues - Community Service Repeat Appointment Booking Model with Variable Follow-ups">
+              </a>
+              
+
+              <div class="listing-title">
+                <h5 class="no-anchor card-title listing-title">More Resourceless Queues - Community Service Repeat Appointment Booking Model with Variable Follow-ups</h5>
+            </div>
+
+            
+              <p class="listing-abstract">A resourceless community appointment-booking model where clients have an initial appointment
+followed by a variable number of follow-ups with the same clinician. Demonstrates how to
+animate continuity-of-care patterns that are awkward to represent with standard SimPy
+resources.
+</p>
+
+                
+
+              </div>
+
+                <div class="details-listing">
+                  <button class="link-listing-button"><a href="../examples/example_12_resourceless_with_back_and_forth/ex_12_resourceless_advanced.html"><i class="fa fa-info-circle"></i> Details </a></button>
+                </div>
+
+              </div>
+
+            
+    <div class="custom-grid-card border-2 rounded-3" data-index="6" data-listing-file-modified-sort="1789551972257" data-listing-reading-time-sort="2" data-listing-word-count-sort="388">
+          <div class="main-card-content">
+            
+              <a href="../examples/example_13_additional_synchronised_traces_method_1/synchronised_traces.html">
+                <img class="card-img" src="../examples/example_13_additional_synchronised_traces_method_1/example.gif" alt="Additional Synchronised Traces - Orthopaedic Ward - Hospital Efficiency Project">
+              </a>
+              
+
+              <div class="listing-title">
+                <h5 class="no-anchor card-title listing-title">Additional Synchronised Traces - Orthopaedic Ward - Hospital Efficiency Project</h5>
+            </div>
+
+            
+              <p class="listing-abstract">An orthopaedic ward model from the Hospital Efficiency Project, paired with a synchronised
+subplot that tracks an additional metric - such as bed occupancy - alongside the main entity
+animation. Shows how to keep a secondary chart moving in step with the animation timeline.
+</p>
+
+                
+
+              </div>
+
+                <div class="details-listing">
+                  <button class="link-listing-button"><a href="../examples/example_13_additional_synchronised_traces_method_1/synchronised_traces.html"><i class="fa fa-info-circle"></i> Details </a></button>
+                </div>
+
+              </div>
+
+            
+    <div class="custom-grid-card border-2 rounded-3" data-index="7" data-listing-file-modified-sort="1789551972280" data-listing-reading-time-sort="3" data-listing-word-count-sort="471">
+          <div class="main-card-content">
+            
+              <a href="../examples/example_15_gas_station_refuelling/gas_station.html">
+                <img class="card-img" src="../examples/example_15_gas_station_refuelling/example.gif" alt="Visualising a more complex status alongside entity icons - gas station with individual fuel tank level">
+              </a>
+              
+
+              <div class="listing-title">
+                <h5 class="no-anchor card-title listing-title">Visualising a more complex status alongside entity icons - gas station with individual fuel tank level</h5>
+            </div>
+
+            
+              <p class="listing-abstract">A gas station model where each fuel pump/resource has its own continuously changing status -
+the tank's fuel level - shown alongside the entity icons. Demonstrates visualising a more
+complex, numeric resource state rather than just 'busy' or 'free'.
+</p>
+
+                
+
+              </div>
+
+                <div class="details-listing">
+                  <button class="link-listing-button"><a href="../examples/example_15_gas_station_refuelling/gas_station.html"><i class="fa fa-info-circle"></i> Details </a></button>
+                </div>
+
+              </div>
+
+            
+    <div class="custom-grid-card border-2 rounded-3" data-index="8" data-listing-file-modified-sort="1789551972303" data-listing-reading-time-sort="2" data-listing-word-count-sort="235">
+          <div class="main-card-content">
+            
+              <a href="../examples/example_16_packing_robot/packing_robot.html">
+                <img class="card-img" src="../examples/example_16_packing_robot/example.gif" alt="Precalculated pathing">
+              </a>
+              
+
+              <div class="listing-title">
+                <h5 class="no-anchor card-title listing-title">Precalculated pathing</h5>
+            </div>
+
+            
+              <p class="listing-abstract">A packing robot model comparing two ways of moving entities between steps: vidigi's default
+interpolated pathing, versus precalculated paths for when the interpolated route would cut
+across a background image awkwardly. Useful once your layout gets complex enough that a
+straight line between steps stops looking right.
+</p>
+
+                
+
+              </div>
+
+                <div class="details-listing">
+                  <button class="link-listing-button"><a href="../examples/example_16_packing_robot/packing_robot.html"><i class="fa fa-info-circle"></i> Details </a></button>
+                </div>
+
+              </div>
+
+            
+    <div class="custom-grid-card border-2 rounded-3" data-index="9" data-listing-file-modified-sort="1789551972310" data-listing-reading-time-sort="4" data-listing-word-count-sort="737">
+          <div class="main-card-content">
+            
+              <a href="../examples/example_17_resourceless_larger_queues/resourceless_longer_queues.html">
+                <img class="card-img" src="../examples/example_17_resourceless_larger_queues/example.gif" alt="Deep Dive: Ways of visualising larger queues">
+              </a>
+              
+
+              <div class="listing-title">
+                <h5 class="no-anchor card-title listing-title">Deep Dive: Ways of visualising larger queues</h5>
+            </div>
+
+            
+              <p class="listing-abstract">Compares several ways of visualising queues that grow too large to show as individual icons,
+going beyond the default '+ x more' text. A deep dive for anyone whose model produces queues
+large enough to make the standard display hard to read at a glance.
+</p>
+
+                
+
+              </div>
+
+                <div class="details-listing">
+                  <button class="link-listing-button"><a href="../examples/example_17_resourceless_larger_queues/resourceless_longer_queues.html"><i class="fa fa-info-circle"></i> Details </a></button>
+                </div>
+
+              </div>
+
+            
+    <div class="custom-grid-card border-2 rounded-3" data-index="10" data-listing-file-modified-sort="1789551972322" data-listing-reading-time-sort="7" data-listing-word-count-sort="1338">
           <div class="main-card-content">
             
               <a href="../examples/example_19_moving_resource/moving_resource.html">
@@ -1093,64 +1274,6 @@ move between rooms as they are needed.
               </div>
 
             
-    <div class="custom-grid-card border-2 rounded-3" data-index="10" data-listing-file-modified-sort="1779208175387" data-listing-reading-time-sort="2" data-listing-word-count-sort="291">
-          <div class="main-card-content">
-            
-              <a href="../examples/example_15_gas_station_refuelling/gas_station.html">
-                <img class="card-img" src="../examples/example_15_gas_station_refuelling/example.gif" alt="Visualising a more complex status alongside entity icons - gas station with individual fuel tank level">
-              </a>
-              
-
-              <div class="listing-title">
-                <h5 class="no-anchor card-title listing-title">Visualising a more complex status alongside entity icons - gas station with individual fuel tank level</h5>
-            </div>
-
-            
-
-              </div>
-
-                <div class="details-listing">
-                  <button class="link-listing-button"><a href="../examples/example_15_gas_station_refuelling/gas_station.html"><i class="fa fa-info-circle"></i> Details </a></button>
-                </div>
-
-              </div>
-
-            
-          </div>
-
-<div class="listing-no-matching d-none">No matching items</div>
-</div>
-</section>
-<section id="agent-based-simulation-abs-examples" class="level2">
-<h2 class="anchored" data-anchor-id="agent-based-simulation-abs-examples">Agent Based Simulation (ABS) Examples</h2>
-<p>These examples look at how vidigi could be used for agent based simulation instead.</p>
-<div id="listing-abs-examples" class="quarto-listing quarto-listing-container-custom">
-<div class="list grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 450px)); gap: 20px;">
-
-  
-    <div class="custom-grid-card border-2 rounded-3" data-index="0" data-listing-file-modified-sort="1779208175428" data-listing-reading-time-sort="5" data-listing-word-count-sort="813">
-          <div class="main-card-content">
-            
-              <a href="../examples/example_18_vidigi_with_mesa_abs/vidigi_abs.html">
-                <img class="card-img" src="../examples/example_18_vidigi_with_mesa_abs/example.gif" alt="Using Vidigi to Visualise an Agent-Based Simulation (ABS)">
-              </a>
-              
-
-              <div class="listing-title">
-                <h5 class="no-anchor card-title listing-title">Using Vidigi to Visualise an Agent-Based Simulation (ABS)</h5>
-            </div>
-
-            
-
-              </div>
-
-                <div class="details-listing">
-                  <button class="link-listing-button"><a href="../examples/example_18_vidigi_with_mesa_abs/vidigi_abs.html"><i class="fa fa-info-circle"></i> Details </a></button>
-                </div>
-
-              </div>
-
-            
           </div>
 
 <div class="listing-no-matching d-none">No matching items</div>
@@ -1158,12 +1281,12 @@ move between rooms as they are needed.
 </section>
 <section id="legacy-examples" class="level2">
 <h2 class="anchored" data-anchor-id="legacy-examples">Legacy Examples</h2>
-<p>Old examples aimed at those using vidigi 0.0.4 and below.</p>
+<p>Old examples aimed at those using earlier versions of vidigi.</p>
 <div id="listing-legacy-examples" class="quarto-listing quarto-listing-container-custom">
 <div class="list grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 450px)); gap: 20px;">
 
   
-    <div class="custom-grid-card border-2 rounded-3" data-index="0" data-listing-file-modified-sort="1779208175560" data-listing-reading-time-sort="48" data-listing-word-count-sort="9475">
+    <div class="custom-grid-card border-2 rounded-3" data-index="0" data-listing-file-modified-sort="1789551972433" data-listing-reading-time-sort="48" data-listing-word-count-sort="9475">
           <div class="main-card-content">
             
               <a href="../vidigi_docs/adding_vidigi_to_a_simple_simpy_model_hsma_structure_old.html">
@@ -1176,6 +1299,12 @@ move between rooms as they are needed.
             </div>
 
             
+              <p class="listing-abstract">The original version of the HSMA-structure walkthrough, kept for anyone still running vidigi
+0.0.4 or earlier. If you're on a current release, see the updated version of this example
+instead.
+</p>
+
+                
 
               </div>
 
@@ -1186,7 +1315,37 @@ move between rooms as they are needed.
               </div>
 
             
-    <div class="custom-grid-card border-2 rounded-3" data-index="1" data-listing-file-modified-sort="1779208175641" data-listing-reading-time-sort="5" data-listing-word-count-sort="812">
+    <div class="custom-grid-card border-2 rounded-3" data-index="1" data-listing-file-modified-sort="1789551972433" data-listing-reading-time-sort="53" data-listing-word-count-sort="10546">
+          <div class="main-card-content">
+            
+              <a href="../vidigi_docs/adding_vidigi_to_a_simple_simpy_model_hsma_structure_1_0_0_1_3_1.html">
+                <img class="card-img" src="../vidigi_docs/adding_vidigi_to_a_simple_simpy_model_hsma_structure.gif" alt="Adding Vidigi to a Simple simpy Model (HSMA Structure) - vidigi 1.0.0 to 1.3.1">
+              </a>
+              
+
+              <div class="listing-title">
+                <h5 class="no-anchor card-title listing-title">Adding Vidigi to a Simple simpy Model (HSMA Structure) - vidigi 1.0.0 to 1.3.1</h5>
+            </div>
+
+            
+              <p class="listing-abstract">A step-by-step walkthrough of retrofitting vidigi onto an existing SimPy model written in the
+style taught on the Health Service Modelling Associates (HSMA) programme. The core steps -
+adding logging, swapping in vidigi's resource classes, and building the animation - apply
+just as well if your model is structured differently.
+</p>
+
+                
+
+              </div>
+
+                <div class="details-listing">
+                  <button class="link-listing-button"><a href="../vidigi_docs/adding_vidigi_to_a_simple_simpy_model_hsma_structure_1_0_0_1_3_1.html"><i class="fa fa-info-circle"></i> Details </a></button>
+                </div>
+
+              </div>
+
+            
+    <div class="custom-grid-card border-2 rounded-3" data-index="2" data-listing-file-modified-sort="1789551972443" data-listing-reading-time-sort="5" data-listing-word-count-sort="844">
           <div class="main-card-content">
             
               <a href="../vidigi_docs/populating_event_logs.html">
@@ -1199,11 +1358,48 @@ move between rooms as they are needed.
             </div>
 
             
+              <p class="listing-abstract">A reference guide to the event log format vidigi 0.0.4 and below expects - the required event
+types, columns and structure for arrivals, queueing and resource use. Kept for anyone still on
+an older release; current versions of vidigi are better served by the EventLogger-based
+examples.
+</p>
+
+                
 
               </div>
 
                 <div class="details-listing">
                   <button class="link-listing-button"><a href="../vidigi_docs/populating_event_logs.html"><i class="fa fa-info-circle"></i> Details </a></button>
+                </div>
+
+              </div>
+
+            
+    <div class="custom-grid-card border-2 rounded-3" data-index="3" data-listing-file-modified-sort="1789551972352" data-listing-reading-time-sort="1" data-listing-word-count-sort="167">
+          <div class="main-card-content">
+            
+              <a href="../examples/example_6_simplest_case_storewrapper/ex_6_simplest_case.html">
+                <img class="card-img" src="../examples/example_6_simplest_case_storewrapper/image.png" alt="Using the VidigiStore to Simplify Model Code Changes">
+              </a>
+              
+
+              <div class="listing-title">
+                <h5 class="no-anchor card-title listing-title">Using the VidigiStore to Simplify Model Code Changes</h5>
+            </div>
+
+            
+              <p class="listing-abstract">Revisits the simplest one-resource model to show off VidigiStore, a class that lets you
+request and release resources using the same 'with ... request()' pattern as a standard SimPy
+Resource. It cuts down the amount of rewriting needed to bring vidigi's resource tracking into
+an existing model.
+</p>
+
+                
+
+              </div>
+
+                <div class="details-listing">
+                  <button class="link-listing-button"><a href="../examples/example_6_simplest_case_storewrapper/ex_6_simplest_case.html"><i class="fa fa-info-circle"></i> Details </a></button>
                 </div>
 
               </div>

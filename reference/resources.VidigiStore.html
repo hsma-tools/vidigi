@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.9.37">
+<meta name="generator" content="quarto-1.10.18">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -12,10 +12,13 @@
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
 */
-code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
-div.columns{display: flex; gap: min(4vw, 1.5em);}
-div.column{flex: auto; overflow-x: auto;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
 div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
 ul.task-list{list-style: none;}
 ul.task-list li input[type="checkbox"] {
@@ -74,12 +77,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="../site_libs/quarto-html/anchor.min.js"></script>
 <link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting-7f8f88aac4f3542376d5c11b86a4c14d.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting-dark-d0ae9245876894da5ac7e18953ecc5cc.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-dark-b85bc7c33db8c58e0ec93c3465666fed.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-b1129199255cbdaa6ba7196f7625bb51.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="../site_libs/bootstrap/bootstrap-dark-160e0e8b9df999724eb46a759f5c953c.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../site_libs/bootstrap/bootstrap-daa4999fdbd6c2f5170fc895806a103e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-dark-1a58831b5b536d8abf17f9ba280142c3.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -113,7 +116,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link rel="stylesheet" href="../vidigi_docs/styles.css">
 </head>
 
-<body class="nav-sidebar floating nav-fixed fullcontent quarto-dark"><script id="quarto-html-before-body" type="application/javascript">
+<body class="nav-sidebar docked nav-fixed fullcontent quarto-dark"><script id="quarto-html-before-body" type="application/javascript">
     const toggleBodyColorMode = (bsSheetEl) => {
       const mode = bsSheetEl.getAttribute("data-mode");
       const bodyEl = window.document.querySelector("body");
@@ -291,16 +294,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav navbar-nav-scroll me-auto">
   <li class="nav-item">
-    <a class="nav-link" href="../vidigi_docs/index.html"> 
-<span class="menu-text">Home</span></a>
-  </li>  
-  <li class="nav-item">
     <a class="nav-link" href="../vidigi_docs/getting_started.html"> 
 <span class="menu-text">Getting Started</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../examples/examples.html"> 
-<span class="menu-text">Examples</span></a>
+    <a class="nav-link" href="../vidigi_docs/customising_animations.html"> 
+<span class="menu-text">Customising Animations</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../examples/feature_breakdowns.html"> 
@@ -311,14 +310,26 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">API Reference</span></a>
   </li>  
   <li class="nav-item">
+    <a class="nav-link" href="../examples/examples.html"> 
+<span class="menu-text">Example Models</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../vidigi_docs/migrating_to_2_0_0.html"> 
+<span class="menu-text">Migrating to 2.0.0</span></a>
+  </li>  
+  <li class="nav-item">
     <a class="nav-link" href="../vidigi_docs/changelog.html"> 
 <span class="menu-text">Changelog</span></a>
   </li>  
   <li class="nav-item dropdown ">
-    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-package-details" role="link" data-bs-toggle="dropdown" aria-expanded="false">
- <span class="menu-text">Package Details</span>
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-about" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">About</span>
     </a>
-    <ul class="dropdown-menu" aria-labelledby="nav-menu-package-details">    
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-about">    
+        <li>
+    <a class="dropdown-item" href="../vidigi_docs/citation.html">
+ <span class="dropdown-text">Citing vidigi</span></a>
+  </li>  
         <li>
     <a class="dropdown-item" href="../vidigi_docs/licence.html">
  <span class="dropdown-text">Licence</span></a>
@@ -329,7 +340,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>  
         <li>
     <a class="dropdown-item" href="../vidigi_docs/attribution_for_examples.html">
- <span class="dropdown-text">Attribution for models used as examples</span></a>
+ <span class="dropdown-text">Attribution for Models used as Examples</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../vidigi_docs/contributing.html">
+ <span class="dropdown-text">Contributing to Vidigi</span></a>
   </li>  
     </ul>
   </li>
@@ -366,7 +381,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <!-- content -->
 <div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
-  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation docked overflow-auto">
     <div class="sidebar-menu-container"> 
     <ul class="list-unstyled mt-1">
         <li class="sidebar-item">
@@ -436,6 +451,24 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">animation.add_repeating_overlay</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/animation.add_subplot_panels.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">animation.add_subplot_panels</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/animation.add_synchronised_trace.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">animation.add_synchronised_trace</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/animation.add_synchronised_trace_from_dataframe.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">animation.add_synchronised_trace_from_dataframe</span></a>
+  </div>
+</li>
       </ul>
   </li>
         <li class="sidebar-item sidebar-item-section">
@@ -499,7 +532,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
             <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true">
- <span class="menu-text">Event Positioning Utility Functions and Classes</span></a>
+ <span class="menu-text">Analysis Functions</span></a>
           <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
@@ -507,8 +540,198 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.event_durations.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.event_durations</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.entity_metric_by_arrival.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.entity_metric_by_arrival</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.replication_means.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.replication_means</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.mean_confidence_interval.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.mean_confidence_interval</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.replication_precision.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.replication_precision</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.queue_size_over_time.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.queue_size_over_time</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.resource_use_intervals.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.resource_use_intervals</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.resource_utilisation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.resource_utilisation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.resource_occupancy_over_time.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.resource_occupancy_over_time</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.activity_occupancy_stats.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.activity_occupancy_stats</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.welch_moving_average.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.welch_moving_average</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.compare_replication_values.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.compare_replication_values</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.flag_outlier_runs.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.flag_outlier_runs</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/analysis.event_occurrence_rate.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis.event_occurrence_rate</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="true">
+ <span class="menu-text">Analysis Plots</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-7" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/plots.plot_queue_size.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">plots.plot_queue_size</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/plots.plot_duration_distribution.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">plots.plot_duration_distribution</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/plots.plot_metric_bar.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">plots.plot_metric_bar</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/plots.plot_metric.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">plots.plot_metric</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/plots.plot_resource_utilisation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">plots.plot_resource_utilisation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/plots.plot_resource_utilisation_over_time.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">plots.plot_resource_utilisation_over_time</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/plots.plot_warm_up_diagnostic.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">plots.plot_warm_up_diagnostic</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/plots.plot_replication_analysis.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">plots.plot_replication_analysis</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/plots.plot_outlier_runs.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">plots.plot_outlier_runs</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/plots.plot_metric_vs_arrival_time.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">plots.plot_metric_vs_arrival_time</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/plots.plot_scenario_comparison.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">plots.plot_scenario_comparison</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/plots.plot_resource_utilisation_comparison.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">plots.plot_resource_utilisation_comparison</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-8" role="navigation" aria-expanded="true">
+ <span class="menu-text">Event Positioning Utility Functions and Classes</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-8" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-8" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../reference/utils.EventPosition.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">utils.EventPosition</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/utils.ArrivalPosition.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">utils.ArrivalPosition</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/utils.ExitPosition.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">utils.ExitPosition</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -521,13 +744,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="true">
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-9" role="navigation" aria-expanded="true">
  <span class="menu-text">Process Map-Style Outputs</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="true" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-9" role="navigation" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-7" class="collapse list-unstyled sidebar-section depth1 show">  
+      <ul id="quarto-sidebar-section-9" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../reference/process_mapping.add_sim_timestamp.html" class="sidebar-item-text sidebar-link">
@@ -568,13 +791,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-8" role="navigation" aria-expanded="true">
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-10" role="navigation" aria-expanded="true">
  <span class="menu-text">Streamlit Utility Functions</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-8" role="navigation" aria-expanded="true" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-10" role="navigation" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-8" class="collapse list-unstyled sidebar-section depth1 show">  
+      <ul id="quarto-sidebar-section-10" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../reference/utils.streamlit_play_all.html" class="sidebar-item-text sidebar-link">
@@ -585,30 +808,42 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-9" role="navigation" aria-expanded="true">
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-11" role="navigation" aria-expanded="true">
  <span class="menu-text">ciw Utility Functions</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-9" role="navigation" aria-expanded="true" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-11" role="navigation" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-9" class="collapse list-unstyled sidebar-section depth1 show">  
+      <ul id="quarto-sidebar-section-11" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../reference/ciw.event_log_from_ciw_recs.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">ciw.event_log_from_ciw_recs</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/ciw.event_logger_from_ciw_recs.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">ciw.event_logger_from_ciw_recs</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/ciw.trial_logger_from_ciw_recs.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">ciw.trial_logger_from_ciw_recs</span></a>
+  </div>
+</li>
       </ul>
   </li>
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-10" role="navigation" aria-expanded="true">
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-12" role="navigation" aria-expanded="true">
  <span class="menu-text">legacy Functions</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-10" role="navigation" aria-expanded="true" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-12" role="navigation" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-10" class="collapse list-unstyled sidebar-section depth1 show">  
+      <ul id="quarto-sidebar-section-12" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../reference/resources.VidigiPriorityStoreLegacy.html" class="sidebar-item-text sidebar-link">
@@ -632,10 +867,19 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <section id="vidigi.resources.VidigiStore" class="level1">
 <h1>resources.VidigiStore</h1>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>resources.VidigiStore(env, num_resources<span class="op">=</span><span class="va">None</span>, capacity<span class="op">=</span><span class="bu">float</span>(<span class="st">'inf'</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>resources.VidigiStore(</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    env,</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    num_resources<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    capacity<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    label<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    logger<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    extra_attributes<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    strict_capacity<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>A wrapper around SimPy’s Store that allows using a context manager pattern similar to resource requests.</p>
 <p>This allows code like:</p>
 <p>with store.request() as req: yield req # Use the item that was obtained yield env.timeout(10) # Item is automatically returned when exiting the context</p>
+<p>For a pool built with <code>num_resources=</code> / <code>populate()</code>, the <code>count</code>, <code>capacity</code> (== <code>num_resources</code>) and <code>n_waiting</code> properties mirror <code>simpy.Resource.count</code> / <code>.capacity</code> / <code>.queue</code>, and returning more units than the pool holds raises <code>ValueError</code> (see <code>strict_capacity</code>).</p>
 <p>AI USE DISCLOSURE: This code was generated by Claude 3.7 Sonnet. It has been evaluated and tested by a human.</p>
 <section id="attributes" class="level2">
 <h2 class="anchored" data-anchor-id="attributes">Attributes</h2>
@@ -649,11 +893,23 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tbody>
 <tr class="odd">
 <td><a href="#vidigi.resources.VidigiStore.capacity">capacity</a></td>
-<td>Get the capacity of the store</td>
+<td>Maximum number of units this pool holds, mirroring <code>simpy.Resource.capacity</code>.</td>
 </tr>
 <tr class="even">
+<td><a href="#vidigi.resources.VidigiStore.count">count</a></td>
+<td>Number of units currently in use, mimicking <code>simpy.Resource.count</code>.</td>
+</tr>
+<tr class="odd">
 <td><a href="#vidigi.resources.VidigiStore.items">items</a></td>
 <td>Get all items currently in the store</td>
+</tr>
+<tr class="even">
+<td><a href="#vidigi.resources.VidigiStore.n_waiting">n_waiting</a></td>
+<td>Number of get requests currently queued waiting for a unit.</td>
+</tr>
+<tr class="odd">
+<td><a href="#vidigi.resources.VidigiStore.num_resources">num_resources</a></td>
+<td>Number of resource units in this pool.</td>
 </tr>
 </tbody>
 </table>
@@ -702,33 +958,89 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h3 class="anchored" data-anchor-id="vidigi.resources.VidigiStore.cancel_get">cancel_get</h3>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>resources.VidigiStore.cancel_get(get_event)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Cancels a pending get request by removing it from the queue.</p>
-</section>
-<section id="vidigi.resources.VidigiStore.get" class="level3">
-<h3 class="anchored" data-anchor-id="vidigi.resources.VidigiStore.get">get</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>resources.VidigiStore.get()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Alias for request() to maintain compatibility with both patterns.</p>
-<p>Returns: A context manager for getting an item</p>
-</section>
-<section id="vidigi.resources.VidigiStore.get_direct" class="level3">
-<h3 class="anchored" data-anchor-id="vidigi.resources.VidigiStore.get_direct">get_direct</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>resources.VidigiStore.get_direct()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Get an item from the store without the context manager. Use this if you don’t want to automatically return the item.</p>
-<p>Returns: A get event that can be yielded</p>
-</section>
-<section id="vidigi.resources.VidigiStore.populate" class="level3">
-<h3 class="anchored" data-anchor-id="vidigi.resources.VidigiStore.populate">populate</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>resources.VidigiStore.populate(num_resources)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Populate this VidigiStore with VidigiResource objects.</p>
-<p>Creates <code>num_resources</code> VidigiResource objects and adds them to this store.</p>
-<p>Each VidigiResource is initialized with a capacity of 1 and a unique ID starting at 1.</p>
+<p>Useful for modelling reneging, where an entity gives up waiting.</p>
+<p>Note that if the request has already been fulfilled, the item has already left the store. Cancelling does not put it back, so the caller should return it with <code>put()</code> in that case - pass the item the get event yielded, not the get event itself, or <code>put()</code> raises <code>TypeError</code>.</p>
 <section id="parameters" class="level4 doc-section doc-section-parameters">
 <h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h4>
 <table class="caption-top table">
 <colgroup>
-<col style="width: 14%">
-<col style="width: 7%">
+<col style="width: 6%">
+<col style="width: 19%">
 <col style="width: 66%">
-<col style="width: 11%">
+<col style="width: 7%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>get_event</td>
+<td>simpy.resources.store.StoreGet</td>
+<td>The event returned by <code>get_direct()</code> / <code>request_direct()</code>, or yielded by the <code>request()</code> context manager.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="vidigi.resources.VidigiStore.get" class="level3">
+<h3 class="anchored" data-anchor-id="vidigi.resources.VidigiStore.get">get</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>resources.VidigiStore.get(</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    entity_id<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    start_event<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    end_event<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    pathway<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    auto_log<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    filter_fn<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>extra_fields,</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Alias for request() to maintain compatibility with both patterns.</p>
+<p>See <code>request()</code> for the full parameter list, including automatic resource-use logging and <code>filter_fn</code>.</p>
+<p>Returns: A context manager for getting an item</p>
+</section>
+<section id="vidigi.resources.VidigiStore.get_direct" class="level3">
+<h3 class="anchored" data-anchor-id="vidigi.resources.VidigiStore.get_direct">get_direct</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>resources.VidigiStore.get_direct(</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    entity_id<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    event<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    pathway<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    auto_log<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    filter_fn<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>extra_fields,</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Get an item from the store without the context manager. Use this if you don’t want to automatically return the item.</p>
+<section id="automatic-resource-use-logging" class="level4 doc-section doc-section-automatic-resource-use-logging">
+<h4 class="doc-section doc-section-automatic-resource-use-logging anchored" data-anchor-id="automatic-resource-use-logging">Automatic resource-use logging</h4>
+<p>If this store was constructed with <code>logger=</code> and <code>entity_id</code> is passed here, a <code>resource_use</code> event is logged automatically once the item is actually granted (not when it’s requested). Pair this with a matching <code>put(entity_id=..., event=...)</code> call to also auto-log the <code>resource_use_end</code> event when the item is returned. If a logger is configured but <code>entity_id</code> is omitted, auto-logging is silently skipped for this call (after a one-time warning per store); pass <code>auto_log=False</code> to opt out deliberately with no warning.</p>
+<p>Args: entity_id: Identifier of the entity making this request, for auto-logging. event: Event name for the auto-logged <code>resource_use</code> start event. Defaults to <code>f"{label}_start"</code> (or <code>"start"</code> if this pool has no <code>label</code>). pathway: Optional <code>pathway</code> value forwarded to the auto-logged event. auto_log: Default <code>True</code>. Set <code>False</code> to skip auto-logging for this call even though the store has a <code>logger</code>, with no “entity_id was not passed” warning - for pairing with a hand-written <code>EventLogger.log_resource_use_start</code> call instead. filter_fn: Optional callable taking one pool item and returning <code>True</code> to accept it - only a matching unit is granted, and the get queues until one is available. <code>None</code> (the default) accepts any unit. See <code>request()</code>. **extra_fields: Any further keyword arguments are forwarded to the auto-logged <code>resource_use</code> event as extra columns in the log, the same as passing them to <code>EventLogger.log_resource_use_start</code> directly. The paired <code>put()</code>/ <code>return_item()</code> call takes its own separate <code>**extra_fields</code> for the end event.</p>
+<p>Returns: A get event that can be yielded</p>
+</section>
+</section>
+<section id="vidigi.resources.VidigiStore.populate" class="level3">
+<h3 class="anchored" data-anchor-id="vidigi.resources.VidigiStore.populate">populate</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>resources.VidigiStore.populate(</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    num_resources,</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    label<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    extra_attributes<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    _stacklevel<span class="op">=</span><span class="dv">3</span>,</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Populate this VidigiStore with VidigiResource objects.</p>
+<p>Creates <code>num_resources</code> VidigiResource objects and adds them to this store.</p>
+<p>Each VidigiResource is initialized with a capacity of 1 and a unique ID starting at 1.</p>
+<section id="parameters-1" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 2%">
+<col style="width: 0%">
+<col style="width: 95%">
+<col style="width: 1%">
 </colgroup>
 <thead>
 <tr class="header">
@@ -744,6 +1056,24 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>int</td>
 <td>The number of VidigiResource objects to create and add to the store.</td>
 <td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>label</td>
+<td>str</td>
+<td>A name for this pool of resources, e.g.&nbsp;<code>"triage"</code>. When given, each resource also gets <code>.unique_id_attribute</code> (<code>f"{label}_{id_attribute}"</code>) - unique across pools when every pool is given a distinct label, unlike <code>id_attribute</code> alone, which restarts at 1 in every pool. Omitting it (the default) changes nothing about the resources produced, but warns that <code>label</code> will become mandatory at vidigi 3.0 - see <code>vidigi.analysis.resource_utilisation</code>’s <code>by="resource"</code> docs for why. Also updates <code>self.label</code> (used to derive automatic resource-use logging event names - see <code>__init__</code>’s <code>logger=</code>) when given - a no-arg top-up call (<code>store.populate(5)</code>, adding resources to an already-running pool) leaves <code>self.label</code> and therefore every default event name for the whole store untouched.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="odd">
+<td>extra_attributes</td>
+<td>dict</td>
+<td>Further attributes to set on every resource in this pool, e.g.&nbsp;<code>{"staff_type": "nurse"}</code> - each becomes <code>resource.staff_type</code> etc., readable by your model code (break scheduling, skill mix, …) and otherwise inert. <code>VidigiResource</code> has always accepted arbitrary keyword attributes directly; this just threads them through the bulk populate path so you do not have to build the pool by hand. Cannot set <code>id_attribute</code>/<code>id</code>/<code>label</code>/<code>unique_id_attribute</code>/<code>unique_id</code> (managed by the pool) - that raises <code>ValueError</code>.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>_stacklevel</td>
+<td>int</td>
+<td>Internal - how many frames up from <code>_new_pool_resource</code> the missing-<code>label</code> warning should attribute to. <code>__init__</code> calling this internally passes <code>4</code> to still land on the caller’s <code>VidigiStore(...)</code> line rather than on this method.</td>
+<td><code>3</code></td>
 </tr>
 </tbody>
 </table>
@@ -770,21 +1100,60 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="vidigi.resources.VidigiStore.put" class="level3">
 <h3 class="anchored" data-anchor-id="vidigi.resources.VidigiStore.put">put</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>resources.VidigiStore.put(item)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>resources.VidigiStore.put(</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    item,</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    entity_id<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    event<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    pathway<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    auto_log<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>extra_fields,</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Put an item into the store.</p>
-<p>Args: item: The item to put in the store</p>
+<section id="automatic-resource-use-logging-1" class="level4 doc-section doc-section-automatic-resource-use-logging">
+<h4 class="doc-section doc-section-automatic-resource-use-logging anchored" data-anchor-id="automatic-resource-use-logging-1">Automatic resource-use logging</h4>
+<p>If this store was constructed with <code>logger=</code> and <code>entity_id</code> is passed here, a <code>resource_use_end</code> event is logged automatically for <code>item</code> before it’s returned to the store - pairs with a matching <code>get_direct(entity_id=..., event=...)</code> call. If a logger is configured but <code>entity_id</code> is omitted, auto-logging is silently skipped for this call (after a one-time warning per store); pass <code>auto_log=False</code> to opt out deliberately with no warning.</p>
+<p>Args: item: The item to put in the store entity_id: Identifier of the entity releasing this item, for auto-logging. event: Event name for the auto-logged <code>resource_use_end</code> event. Defaults to <code>f"{label}_end"</code> (or <code>"end"</code> if this pool has no <code>label</code>). pathway: Optional <code>pathway</code> value forwarded to the auto-logged event. auto_log: Default <code>True</code>. Set <code>False</code> to skip auto-logging for this call even though the store has a <code>logger</code>, with no “entity_id was not passed” warning - for pairing with a hand-written <code>EventLogger.log_resource_use_end</code> call instead. **extra_fields: Any further keyword arguments are forwarded to the auto-logged <code>resource_use_end</code> event as extra columns in the log, the same as passing them to <code>EventLogger.log_resource_use_end</code> directly. Because this is a separate call from the paired <code>get_direct()</code>, its fields are independent of the start event’s and are evaluated now - the place to record a value only known once the resource is released.</p>
+<p>Raises: TypeError: If <code>item</code> is a SimPy event object or <code>None</code> rather than a resource - almost always a reneging / conditional-request branch passing the get event back instead of the item it yielded.</p>
+</section>
 </section>
 <section id="vidigi.resources.VidigiStore.request" class="level3">
 <h3 class="anchored" data-anchor-id="vidigi.resources.VidigiStore.request">request</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>resources.VidigiStore.request()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>resources.VidigiStore.request(</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    entity_id<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    start_event<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    end_event<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    pathway<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    auto_log<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    filter_fn<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>extra_fields,</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Request context manager for getting an item from the store. The item is automatically returned when exiting the context.</p>
 <p>Usage: with store.request() as req: yield req # This yields the get event # Now we have the item from the store yield env.timeout(10) # Item is automatically returned when exiting the context</p>
+<p>The <code>as req: yield req</code> is not optional. Exiting the <code>with</code> block without ever yielding the request means the entity never actually waits for or holds the resource; the pending request is then granted to it later, after it has moved on. This is now flagged with a <code>UserWarning</code> and the abandoned request is released rather than silently corrupting the event log.</p>
+<section id="filtering-which-unit-is-granted" class="level4 doc-section doc-section-filtering-which-unit-is-granted">
+<h4 class="doc-section doc-section-filtering-which-unit-is-granted anchored" data-anchor-id="filtering-which-unit-is-granted">Filtering which unit is granted</h4>
+<p>Pass <code>filter_fn</code> (a callable taking one pool item, returning <code>True</code> to accept it) to be granted only a matching unit - e.g.&nbsp;<code>filter_fn=lambda r: r.grade == "senior"</code> on a pool whose resources carry a <code>grade</code> attribute. With no match currently in the store the request queues until a matching unit is returned; other units being returned in the meantime do not satisfy it. <code>None</code> (the default) accepts any unit, exactly as before this parameter existed. A <code>filter_fn</code> that never matches waits forever, like any unsatisfiable get.</p>
+</section>
+<section id="automatic-resource-use-logging-2" class="level4 doc-section doc-section-automatic-resource-use-logging">
+<h4 class="doc-section doc-section-automatic-resource-use-logging anchored" data-anchor-id="automatic-resource-use-logging-2">Automatic resource-use logging</h4>
+<p>If this store was constructed with <code>logger=</code> and <code>entity_id</code> is passed here, a <code>resource_use</code> event is logged automatically once the item is actually granted (not when it’s requested - if the request has to queue, the logged time reflects the grant, not the request), and a matching <code>resource_use_end</code> event is logged automatically in <code>__exit__</code>, right before the item is returned to the store. This replaces the need to call <code>EventLogger.log_resource_use_start</code>/ <code>log_resource_use_end</code> by hand.</p>
+<p>If a logger is configured on this store but <code>entity_id</code> is omitted here, auto-logging is silently skipped for this call (after a one-time warning per store) - so a model can still mix auto-logging with manual <code>EventLogger</code> calls per call. Pass <code>auto_log=False</code> to opt this call out deliberately, with no warning - see that argument below.</p>
+<p>Args: entity_id: Identifier of the entity making this request, for auto-logging. Only meaningful when this store was constructed with <code>logger=</code>. start_event: Event name for the auto-logged <code>resource_use</code> start event. Defaults to <code>f"{label}_start"</code> (or <code>"start"</code> if this pool has no <code>label</code>). end_event: Event name for the auto-logged <code>resource_use_end</code> event. Defaults to <code>f"{label}_end"</code> (or <code>"end"</code> if this pool has no <code>label</code>). pathway: Optional <code>pathway</code> value forwarded to both auto-logged events. auto_log: Default <code>True</code>. Set <code>False</code> to skip auto-logging for this one request even though the store has a <code>logger</code> - for bracketing it with hand-written <code>EventLogger.log_resource_use_start</code>/<code>log_resource_use_end</code> calls instead (for example to record a value only known when the resource is released), while keeping the context manager’s automatic item return. Unlike simply omitting <code>entity_id</code>, this does not emit the “entity_id was not passed” warning. filter_fn: Optional callable taking one pool item and returning <code>True</code> to accept it - only a matching unit is granted. <code>None</code> (the default) accepts any unit. See “Filtering which unit is granted” above. **extra_fields: Any further keyword arguments are forwarded to both auto-logged events as extra columns in the log, exactly as passing them to <code>EventLogger.log_resource_use_start</code>/<code>log_resource_use_end</code> by hand would - e.g.&nbsp;<code>acuity=3</code>, <code>arrival_mode="ambulance"</code>. The same values go on both the <code>resource_use</code> and the <code>resource_use_end</code> event; to put different fields on each side, or a value only known at release time, use <code>get_direct()</code>/<code>put()</code> or <code>auto_log=False</code> plus manual logging. <code>unique_resource_id</code> is added on top automatically when this pool has a <code>label</code>.</p>
 <p>Returns: A context manager that returns the get event and handles returning the item</p>
+</section>
 </section>
 <section id="vidigi.resources.VidigiStore.request_direct" class="level3">
 <h3 class="anchored" data-anchor-id="vidigi.resources.VidigiStore.request_direct">request_direct</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>resources.VidigiStore.request_direct()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>resources.VidigiStore.request_direct(</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    entity_id<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    event<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    pathway<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    auto_log<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    filter_fn<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>extra_fields,</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Alias for get_direct() to maintain consistent API with SimPy resources.</p>
+<p>See <code>get_direct()</code> for the full parameter list, including automatic resource-use logging and <code>filter_fn</code>.</p>
 <p>Returns: A get event that can be yielded</p>
 
 

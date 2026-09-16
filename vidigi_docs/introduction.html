@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.9.37">
+<meta name="generator" content="quarto-1.10.18">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -12,10 +12,13 @@
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
 */
-code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
-div.columns{display: flex; gap: min(4vw, 1.5em);}
-div.column{flex: auto; overflow-x: auto;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
 div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
 ul.task-list{list-style: none;}
 ul.task-list li input[type="checkbox"] {
@@ -74,12 +77,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="../site_libs/quarto-html/anchor.min.js"></script>
 <link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting-7f8f88aac4f3542376d5c11b86a4c14d.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting-dark-d0ae9245876894da5ac7e18953ecc5cc.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-dark-b85bc7c33db8c58e0ec93c3465666fed.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-b1129199255cbdaa6ba7196f7625bb51.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="../site_libs/bootstrap/bootstrap-dark-160e0e8b9df999724eb46a759f5c953c.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../site_libs/bootstrap/bootstrap-daa4999fdbd6c2f5170fc895806a103e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-dark-1a58831b5b536d8abf17f9ba280142c3.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -291,16 +294,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav navbar-nav-scroll me-auto">
   <li class="nav-item">
-    <a class="nav-link" href="../vidigi_docs/index.html"> 
-<span class="menu-text">Home</span></a>
-  </li>  
-  <li class="nav-item">
     <a class="nav-link" href="../vidigi_docs/getting_started.html"> 
 <span class="menu-text">Getting Started</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../examples/examples.html"> 
-<span class="menu-text">Examples</span></a>
+    <a class="nav-link" href="../vidigi_docs/customising_animations.html"> 
+<span class="menu-text">Customising Animations</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../examples/feature_breakdowns.html"> 
@@ -311,14 +310,26 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">API Reference</span></a>
   </li>  
   <li class="nav-item">
+    <a class="nav-link" href="../examples/examples.html"> 
+<span class="menu-text">Example Models</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../vidigi_docs/migrating_to_2_0_0.html"> 
+<span class="menu-text">Migrating to 2.0.0</span></a>
+  </li>  
+  <li class="nav-item">
     <a class="nav-link" href="../vidigi_docs/changelog.html"> 
 <span class="menu-text">Changelog</span></a>
   </li>  
   <li class="nav-item dropdown ">
-    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-package-details" role="link" data-bs-toggle="dropdown" aria-expanded="false">
- <span class="menu-text">Package Details</span>
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-about" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">About</span>
     </a>
-    <ul class="dropdown-menu" aria-labelledby="nav-menu-package-details">    
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-about">    
+        <li>
+    <a class="dropdown-item" href="../vidigi_docs/citation.html">
+ <span class="dropdown-text">Citing vidigi</span></a>
+  </li>  
         <li>
     <a class="dropdown-item" href="../vidigi_docs/licence.html">
  <span class="dropdown-text">Licence</span></a>
@@ -329,7 +340,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>  
         <li>
     <a class="dropdown-item" href="../vidigi_docs/attribution_for_examples.html">
- <span class="dropdown-text">Attribution for models used as examples</span></a>
+ <span class="dropdown-text">Attribution for Models used as Examples</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../vidigi_docs/contributing.html">
+ <span class="dropdown-text">Contributing to Vidigi</span></a>
   </li>  
     </ul>
   </li>
@@ -367,35 +382,57 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <section id="step-by-step-guide-for-simpy" class="level2">
 <h2 class="anchored" data-anchor-id="step-by-step-guide-for-simpy">Step-by-step guide for SimPy</h2>
-<section id="step-1.-back-up-your-model" class="level3">
-<h3 class="anchored" data-anchor-id="step-1.-back-up-your-model">Step 1. Back up your model</h3>
+<section id="step-1.-back-up-your-existing-model" class="level3">
+<h3 class="anchored" data-anchor-id="step-1.-back-up-your-existing-model">Step 1. Back up your existing model!</h3>
 <p>Before adding Vidigi to your model, make sure to <strong>back up your current version first</strong>.</p>
 <p>While vidigi has been tested to ensure that it’s special resource classes work the same as existing SimPy resource classes, it’s still possible to accidentally change your model. There’s also a chance that the vidigi classes don’t work identically to SimPy classes in more complex scenarios with reneging, baulking, or other conditional logic around resource allocation.</p>
 <p>Therefore, it’s highly advisable to <strong>check the key output metrics from your model before and after incorporating vidigi</strong>!</p>
+<p>Even better, consider writing some formal <a href="">backtests</a> with pytest or your preferred testing framework.</p>
 </section>
-<section id="step-2.-replace-your-resources" class="level3">
-<h3 class="anchored" data-anchor-id="step-2.-replace-your-resources">Step 2. Replace your resources</h3>
-<p>SimPy resources need to be replaced with SimPy stores containing a custom <code>.id_attribute</code>, so that vidigi can track which specific resource each entity uses. This can have wider benefits for monitoring individual resource utilisation within your model as well.</p>
-<p>Vidigi provides two helper classes to support with this: <code>VidigiStore</code> and <code>VidigiPriorityStore</code>.</p>
-<p><strong>Replace this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>nurses <span class="op">=</span> simpy.Resource(env, capacity<span class="op">=</span><span class="dv">5</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p><strong>With this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> vidigi.resources <span class="im">import</span> VidigiStore</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>nurses <span class="op">=</span> VidigiStore(env, num_resources<span class="op">=</span><span class="dv">5</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>This becomes slightly more complex with conditional requesting (for example, where a resource request is made but if it cannot be fulfilled in time, the requester will renege). This is covered to some extent in some of the provided examples, but further demonstrations of this are planned.</p>
-</section>
-<section id="step-3.-log-events" class="level3">
-<h3 class="anchored" data-anchor-id="step-3.-log-events">Step 3. Log events</h3>
-<p>Use the <code>EventLogger</code> class to record key moments:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> vidigi.logging <span class="im">import</span> EventLogger</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>logger <span class="op">=</span> EventLogger(env<span class="op">=</span>env, run_number<span class="op">=</span><span class="dv">1</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>You must always log <strong>arrivals</strong> and <strong>departures</strong>, and you must also log when entities <strong>wait</strong> somewhere. You can choose whether to represent time in service using only <code>queue</code> events, or by adding explicit <code>resource_use</code> and <code>resource_use_end</code> events.</p>
+<section id="step-2.-log-arrivals-queues-and-departures" class="level3">
+<h3 class="anchored" data-anchor-id="step-2.-log-arrivals-queues-and-departures">Step 2. Log arrivals, queues, and departures</h3>
+<p>At its simplest, vidigi needs to know three things about each entity to be able to create an animation:</p>
 <ul>
-<li>With only queues, entities “move through” each stage, and you see when they join each queue and when they leave it.</li>
-<li>With resource_use events, an entity stays visibly attached to the same resource for the whole time it is being used, which makes it easier to see how long that resource is busy with that entity, and how many resources are in use or idle at each stage</li>
+<li>when they arrived</li>
+<li>when they started an event</li>
+<li>when they left</li>
 </ul>
+<p>Vidigi has support for two key event types: queues, and resource use.</p>
+</section>
+<div class="columns">
+<div class="column" style="width:50%;">
+<section id="queues" class="level3">
+<h3 class="anchored" data-anchor-id="queues">Queues</h3>
+<p>In a queue, entities will move from left to right across the screen as the people in front of them leave the event. This is the default; passing <code>queue_direction="right"</code> (or setting it per event) mirrors the queue so it builds out to the <em>right</em> of its anchor instead, which reads better with entity emojis that face right — see <a href="#step-3-determining-event-positioning-in-the-animation">Step 3</a>.</p>
+<p><img src="assets/Photos_vyBrApu62l.gif" class="img-fluid"></p>
+</section>
+</div><div class="column" style="width:50%;">
+<section id="resource-use" class="level3">
+<h3 class="anchored" data-anchor-id="resource-use">Resource Use</h3>
+<p>When resource use event types are added, entities will go to a particular resource and stay in that position until the event completes, as well as displaying an icon for each individual resource at all times throughout the simulation. This makes it easier to see how long that resource is busy with that entity, and how many resources are in use or idle at each stage</p>
+<p><img src="assets/Photos_TtlkAx9wcB.gif" class="img-fluid"></p>
+</section>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>When setting up your first animation, we would recommend just using queues to begin with.</p>
+<p>This allows you to create a basic animation quickly and easily, with minimal changes to your code.</p>
+<p>You can then easily swap out queues for resource use once you have the core model layout and structure implemented.</p>
+</div>
+</div>
+<p>We would recommend using the <code>EventLogger</code> class to record key moments.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> vidigi.logging <span class="im">import</span> EventLogger</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>logger <span class="op">=</span> EventLogger(env<span class="op">=</span>env, run_number<span class="op">=</span><span class="dv">1</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>For arrivals and departures you only need the entity ID; for queues you also provide an event name; for resource use (start and end) you provide an event name and a resource identifier so vidigi can track which specific resource is in use. These arrival and departure events are used to decide when entities first appear and finally leave the animation; missing departures will slow things down as the log grows indefinitely.</p>
 <p>You can capture these using <code>EventLogger</code>:</p>
 <table class="caption-top table">
@@ -435,17 +472,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>This will create an event log in the required format for vidigi’s animation functions - for example:</p>
 <table class="caption-top table">
 <colgroup>
-<col style="width: 10%">
 <col style="width: 12%">
-<col style="width: 22%">
-<col style="width: 31%">
-<col style="width: 7%">
-<col style="width: 15%">
+<col style="width: 26%">
+<col style="width: 35%">
+<col style="width: 8%">
+<col style="width: 17%">
 </colgroup>
 <thead>
 <tr class="header">
 <th>patient</th>
-<th>pathway</th>
 <th>event_type</th>
 <th>event</th>
 <th>time</th>
@@ -455,7 +490,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tbody>
 <tr class="odd">
 <td>15</td>
-<td>Primary</td>
 <td>arrival_departure</td>
 <td>arrival</td>
 <td>1.22</td>
@@ -463,7 +497,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="even">
 <td>15</td>
-<td>Primary</td>
 <td>queue</td>
 <td>enter_queue_for_bed</td>
 <td>1.35</td>
@@ -471,7 +504,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="odd">
 <td>27</td>
-<td>Revision</td>
 <td>arrival_departure</td>
 <td>arrival</td>
 <td>1.47</td>
@@ -479,7 +511,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="even">
 <td>27</td>
-<td>Revision</td>
 <td>queue</td>
 <td>enter_queue_for_bed</td>
 <td>1.58</td>
@@ -487,7 +518,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="odd">
 <td>12</td>
-<td>Primary</td>
 <td>resource_use_end</td>
 <td>post_surgery_stay_ends</td>
 <td>1.9</td>
@@ -495,7 +525,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="even">
 <td>15</td>
-<td>Revision</td>
 <td>resource_use</td>
 <td>post_survery_stay_begins</td>
 <td>1.9</td>
@@ -503,179 +532,84 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 </tbody>
 </table>
-<div class="callout callout-style-simple callout-none no-icon callout-titled" title="Click to see an alternative to EventLogger: using dictionaries">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
-<i class="callout-icon no-icon"></i>
+<i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-<span class="screen-reader-only">None</span>Click to see an alternative to EventLogger: using dictionaries
+Warning
 </div>
-<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-1" class="callout-1-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<p>You can instead achieve this is by appending dictionaries to a list at each important point in the process. For example:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>event_log <span class="op">=</span> []</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>...</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>...</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>event_log.append(</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    {</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>        <span class="st">"patient"</span>: <span class="bu">id</span>,</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>        <span class="st">"pathway"</span>: <span class="st">"Revision"</span>,</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>        <span class="st">"event_type"</span>: <span class="st">"resource_use"</span>,</span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>        <span class="st">"event"</span>: <span class="st">"post_surgery_stay_begins"</span>,</span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>        <span class="st">"time"</span>: simpy_environment.now,</span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>        <span class="st">"resource_id"</span>: bed.id_attribute</span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    }</span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>The list of dictionaries could then be converted to a pandas DataFrame using:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>pd.DataFrame(event_log)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>And passed to the animation function where required. You can add extra keys to each log row if you want to reuse the event log for other analyses; vidigi will ignore columns it does not need.</p>
+<p>Each entity needs exactly one <code>arrival</code> and one <code>depart</code> event per run. Reusing an <code>entity_id</code> for a second arrival or departure - for example logging a recurring thing like a staff break under the same shared ID each time it happens - doesn’t just mean “the last one wins”. <code>reshape_for_animations</code> pivots the arrival/departure rows to work out when each entity was present, and duplicates are <em>averaged together</em>, giving the entity a time it was never actually at.</p>
+<p>vidigi raises a <code>ValueError</code> naming the offending <code>entity_id</code> when this happens, so it fails loudly rather than quietly producing a wrong animation. If you need to log something that recurs, give each occurrence its own unique ID, or log it as a queue/resource-use event instead of an arrival/departure.</p>
 </div>
 </div>
-</div>
-<p><strong>Example in your simulation:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Patient arrives</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>logger.log_arrival(entity_id<span class="op">=</span>patient.identifier)</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Patient waits for treatment</span></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>logger.log_queue(entity_id<span class="op">=</span>patient.identifier, event<span class="op">=</span><span class="st">"treatment_wait_begins"</span>)</span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Patient receives treatment</span></span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> treatment_cubicles.request() <span class="im">as</span> req:</span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    treatment_cubicle <span class="op">=</span> <span class="cf">yield</span> req</span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    logger.log_resource_use_start(</span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>        entity_id<span class="op">=</span>patient.identifier,</span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>        event<span class="op">=</span><span class="st">"treatment_begins"</span>,</span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>        resource_id<span class="op">=</span>treatment_cubicle.id_attribute</span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">yield</span> env.timeout(treatment_time)</span>
-<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>    logger.log_resource_use_end(</span>
-<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>        entity_id<span class="op">=</span>patient.identifier,</span>
-<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>        event<span class="op">=</span><span class="st">"treatment_complete"</span>,</span>
-<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>        resource_id<span class="op">=</span>treatment_cubicle.id_attribute</span>
-<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a><span class="co"># Patient leaves</span></span>
-<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>logger.log_departure(entity_id<span class="op">=</span>patient.identifier)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="callout callout-style-simple callout-none no-icon callout-titled" title="Click to see how we'd do this with a dictionary instead">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-2-contents" aria-controls="callout-2" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
-<i class="callout-icon no-icon"></i>
+<i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-<span class="screen-reader-only">None</span>Click to see how we’d do this with a dictionary instead
+Tip
 </div>
-<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-2" class="callout-2-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Patient arrives</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>event_log.append(</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    {</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>        <span class="st">"patient"</span>: patient.identifier,</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>        <span class="st">"pathway"</span>: <span class="st">"Treatment"</span>,</span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>        <span class="st">"event_type"</span>: <span class="st">"arrival_departure"</span>,</span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>        <span class="st">"event"</span>: <span class="st">"arrival"</span>,</span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>        <span class="st">"time"</span>: env.now,</span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    }</span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Patient waits for treatment</span></span>
-<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>event_log.append(</span>
-<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>    {</span>
-<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>        <span class="st">"patient"</span>: patient.identifier,</span>
-<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>        <span class="st">"pathway"</span>: <span class="st">"Treatment"</span>,</span>
-<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>        <span class="st">"event_type"</span>: <span class="st">"queue"</span>,</span>
-<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>        <span class="st">"event"</span>: <span class="st">"treatment_wait_begins"</span>,</span>
-<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>        <span class="st">"time"</span>: env.now,</span>
-<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>    }</span>
-<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a><span class="co"># Patient receives treatment</span></span>
-<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> treatment_cubicles.request() <span class="im">as</span> req:</span>
-<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Make sure we assign the result of the yield to a variable. Assuming we</span></span>
-<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>    <span class="co"># are using a VidigiStore or VidigiPriorityStore, this will allow us to</span></span>
-<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a>    <span class="co"># access the useful ID attribute of the returned resource</span></span>
-<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a>    treatment_cubicle <span class="op">=</span> <span class="cf">yield</span> req</span>
-<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a>    event_log.append(</span>
-<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a>        {</span>
-<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a>            <span class="st">"patient"</span>: patient.identifier,</span>
-<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a>            <span class="st">"pathway"</span>: <span class="st">"Treatment"</span>,</span>
-<span id="cb7-34"><a href="#cb7-34" aria-hidden="true" tabindex="-1"></a>            <span class="st">"event_type"</span>: <span class="st">"resource_use"</span>,</span>
-<span id="cb7-35"><a href="#cb7-35" aria-hidden="true" tabindex="-1"></a>            <span class="st">"event"</span>: <span class="st">"treatment_begins"</span>,</span>
-<span id="cb7-36"><a href="#cb7-36" aria-hidden="true" tabindex="-1"></a>            <span class="st">"time"</span>: env.now,</span>
-<span id="cb7-37"><a href="#cb7-37" aria-hidden="true" tabindex="-1"></a>            <span class="st">"resource_id"</span>: treatment_cubicle.id_attribute,</span>
-<span id="cb7-38"><a href="#cb7-38" aria-hidden="true" tabindex="-1"></a>        }</span>
-<span id="cb7-39"><a href="#cb7-39" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb7-40"><a href="#cb7-40" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-41"><a href="#cb7-41" aria-hidden="true" tabindex="-1"></a>    <span class="cf">yield</span> env.timeout(treatment_time)</span>
-<span id="cb7-42"><a href="#cb7-42" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-43"><a href="#cb7-43" aria-hidden="true" tabindex="-1"></a>    event_log.append(</span>
-<span id="cb7-44"><a href="#cb7-44" aria-hidden="true" tabindex="-1"></a>        {</span>
-<span id="cb7-45"><a href="#cb7-45" aria-hidden="true" tabindex="-1"></a>            <span class="st">"patient"</span>: patient.identifier,</span>
-<span id="cb7-46"><a href="#cb7-46" aria-hidden="true" tabindex="-1"></a>            <span class="st">"pathway"</span>: <span class="st">"Treatment"</span>,</span>
-<span id="cb7-47"><a href="#cb7-47" aria-hidden="true" tabindex="-1"></a>            <span class="st">"event_type"</span>: <span class="st">"resource_use_end"</span>,</span>
-<span id="cb7-48"><a href="#cb7-48" aria-hidden="true" tabindex="-1"></a>            <span class="st">"event"</span>: <span class="st">"treatment_complete"</span>,</span>
-<span id="cb7-49"><a href="#cb7-49" aria-hidden="true" tabindex="-1"></a>            <span class="st">"time"</span>: env.now,</span>
-<span id="cb7-50"><a href="#cb7-50" aria-hidden="true" tabindex="-1"></a>            <span class="st">"resource_id"</span>: treatment_cubicle.id_attribute,</span>
-<span id="cb7-51"><a href="#cb7-51" aria-hidden="true" tabindex="-1"></a>        }</span>
-<span id="cb7-52"><a href="#cb7-52" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb7-53"><a href="#cb7-53" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-54"><a href="#cb7-54" aria-hidden="true" tabindex="-1"></a><span class="co"># Patient leaves</span></span>
-<span id="cb7-55"><a href="#cb7-55" aria-hidden="true" tabindex="-1"></a>event_log.append(</span>
-<span id="cb7-56"><a href="#cb7-56" aria-hidden="true" tabindex="-1"></a>    {</span>
-<span id="cb7-57"><a href="#cb7-57" aria-hidden="true" tabindex="-1"></a>        <span class="st">"patient"</span>: patient.identifier,</span>
-<span id="cb7-58"><a href="#cb7-58" aria-hidden="true" tabindex="-1"></a>        <span class="st">"pathway"</span>: <span class="st">"Treatment"</span>,</span>
-<span id="cb7-59"><a href="#cb7-59" aria-hidden="true" tabindex="-1"></a>        <span class="st">"event_type"</span>: <span class="st">"arrival_departure"</span>,</span>
-<span id="cb7-60"><a href="#cb7-60" aria-hidden="true" tabindex="-1"></a>        <span class="st">"event"</span>: <span class="st">"depart"</span>,</span>
-<span id="cb7-61"><a href="#cb7-61" aria-hidden="true" tabindex="-1"></a>        <span class="st">"time"</span>: env.now,</span>
-<span id="cb7-62"><a href="#cb7-62" aria-hidden="true" tabindex="-1"></a>    }</span>
-<span id="cb7-63"><a href="#cb7-63" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>You can again include any extra fields you find useful for downstream analysis; vidigi only relies on the core columns shown above.</p>
+<p>If you are adding vidigi to an existing model, you may have already created some form of logging for your animation.</p>
+<p><code>animate_activity_log()</code> and <code>reshape_for_animations()</code> accept a vidigi <code>EventLogger</code> or <code>TrialLogger</code> directly, or a plain <code>pandas</code> DataFrame. If you keep your own logging, you don’t have to switch to <code>EventLogger</code> - reshape your records into a DataFrame with the columns shown above (<code>entity_id</code>, <code>event_type</code>, <code>event</code>, <code>time</code>, plus <code>resource_id</code> for resource-use steps) and pass that instead.</p>
+<p>Passing a <code>TrialLogger</code>? Add <code>run_number=</code> to pick the replication to animate - vidigi animates one run at a time.</p>
 </div>
 </div>
-</div>
-</section>
-<section id="step-4.-ensure-you-have-a-class-with-resource-counts" class="level3">
-<h3 class="anchored" data-anchor-id="step-4.-ensure-you-have-a-class-with-resource-counts">Step 4. Ensure you have a class with resource counts</h3>
-<p>When you later define event positions for <code>resource_use</code> steps, you will also need to provide an identifier for the resource (for example a parameter such as <code>n_treatment_cubicles</code>) so vidigi knows how many resources to draw at that step. This, in turn, requires a small class or object to hold your resource counts that you can pass into the animation function.</p>
-<p>If you are following the <a href="https://des.hsma.co.uk/">HSMA SimPy structure</a>, this object will usually be your <code>g</code> class. Otherwise, you can create a simple parameters class to hold your resource counts and pass it to the animation function:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ModelParams:</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>):</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.n_triage_resources <span class="op">=</span> <span class="dv">3</span></span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.n_treatment_cubicles <span class="op">=</span> <span class="dv">5</span></span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>params <span class="op">=</span> ModelParams()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</section>
-<section id="step-5.-determining-event-positioning-in-the-animation" class="level3">
-<h3 class="anchored" data-anchor-id="step-5.-determining-event-positioning-in-the-animation">Step 5. Determining event positioning in the animation</h3>
-<p>You need to tell vidigi where each queue and resource should appear in the animation. The easiest way is to create a DataFrame with one row per event position. The required columns are:</p>
+<section id="step-3.-determining-event-positioning-in-the-animation" class="level3">
+<h3 class="anchored" data-anchor-id="step-3.-determining-event-positioning-in-the-animation">Step 3. Determining event positioning in the animation</h3>
+<p>You need to tell vidigi where each queue and resource should appear in the animation. The easiest way is to create a DataFrame with one row per event position. The minimum required columns are:</p>
 <ul>
-<li><code>event</code>: Must match the event name used in the event log.</li>
-<li><code>x</code>: X co-ordinate of the event for the animation. This will correspond to the bottom-right hand corner of a queue, or the rightmost resource.</li>
+<li><code>event</code>: Must match the event name used in the event log. Each event must appear on exactly one row — a repeated event name places every entity at that step in several positions at once, so they appear to jump between them at random. <code>create_event_position_df</code> and <code>generate_animation_df</code> warn if they spot this (or two different events sharing the same <code>x</code>/<code>y</code>).</li>
+<li><code>x</code>: X co-ordinate of the event for the animation. This will correspond to the bottom-right hand corner of a queue, or the rightmost resource (or the bottom-<em>left</em> corner / leftmost resource when that event builds to the right — see <code>direction</code> below).</li>
 <li><code>y</code>: Y co-ordinate of the event for the animation. This will correspond to the lowest row of a queue, or the central point of the resources.</li>
 <li><code>label</code>: Text label for the stage. This can be hidden at a later step if you opt to use a background image with labels built-in. Use <code>&lt;br&gt;</code> for line breaks.</li>
-<li><code>resource</code> (optional): Only needed if the step is a <code>resource_use</code> step. This should match an attribute name on the <code>scenario</code> object passed to <code>animate_activity_log()</code> and give the number of resources at that step.</li>
+<li><code>direction</code> (optional): <code>"left"</code> (the default) builds the queue out to the left of <code>x</code>; <code>"right"</code> builds it out to the right, mirroring the layout so the anchor becomes the bottom-left corner. Leave it unset to follow the animation-wide <code>queue_direction</code>.</li>
 </ul>
-<p>Vidigi provides helper classes and functions for setting this up. For SimPy or manually created logs, we need to make sure the <code>event</code> name matches the event log:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> vidigi.utils <span class="im">import</span> create_event_position_df, EventPosition</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>event_position_df <span class="op">=</span> create_event_position_df([</span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    EventPosition(event<span class="op">=</span><span class="st">"arrival"</span>, x<span class="op">=</span><span class="dv">50</span>, y<span class="op">=</span><span class="dv">450</span>, label<span class="op">=</span><span class="st">"Arrival"</span>),</span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    EventPosition(event<span class="op">=</span><span class="st">"treatment_wait_begins"</span>, x<span class="op">=</span><span class="dv">205</span>, y<span class="op">=</span><span class="dv">275</span>,</span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>                  label<span class="op">=</span><span class="st">"Waiting for Treatment"</span>),</span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    EventPosition(event<span class="op">=</span><span class="st">"treatment_begins"</span>, x<span class="op">=</span><span class="dv">205</span>, y<span class="op">=</span><span class="dv">175</span>,</span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>                  label<span class="op">=</span><span class="st">"Being Treated"</span>, resource<span class="op">=</span><span class="st">"n_cubicles"</span>),</span>
-<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    EventPosition(event<span class="op">=</span><span class="st">"depart"</span>, x<span class="op">=</span><span class="dv">270</span>, y<span class="op">=</span><span class="dv">70</span>, label<span class="op">=</span><span class="st">"Exit"</span>),</span>
-<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Vidigi provides helper classes and functions for setting this up. For SimPy or manually created logs, we need to make sure the <code>event</code> name matches the event log. Every entity must log an <code>arrival</code> and a <code>depart</code> event (see <a href="../vidigi_docs/populating_event_logs.html">Populating Event Logs</a>); <code>ArrivalPosition</code> and <code>ExitPosition</code> are <code>EventPosition</code> subclasses that fill in those two names (and a default <code>label</code>) so you don’t have to:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> vidigi.utils <span class="im">import</span> (</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    create_event_position_df, EventPosition, ArrivalPosition, ExitPosition</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>event_position_df <span class="op">=</span> create_event_position_df([</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    ArrivalPosition(x<span class="op">=</span><span class="dv">50</span>, y<span class="op">=</span><span class="dv">450</span>),</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    EventPosition(event<span class="op">=</span><span class="st">"treatment_wait_begins"</span>, x<span class="op">=</span><span class="dv">205</span>, y<span class="op">=</span><span class="dv">275</span>,</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>                  label<span class="op">=</span><span class="st">"Waiting for Treatment"</span>),</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    EventPosition(event<span class="op">=</span><span class="st">"treatment_begins"</span>, x<span class="op">=</span><span class="dv">205</span>, y<span class="op">=</span><span class="dv">175</span>,</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>                  label<span class="op">=</span><span class="st">"Being Treated"</span>),</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    ExitPosition(x<span class="op">=</span><span class="dv">270</span>, y<span class="op">=</span><span class="dv">70</span>),</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Warning
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Every event name your log can produce needs a row here, or entities using it vanish from the animation rather than moving to it. <code>generate_animation_df</code> looks up each snapshot’s coordinates by merging on <code>event</code>; an event with no match gets no coordinates, and Plotly drops it from that frame instead of drawing it somewhere sensible — the entity just disappears, then flies in from the top-left corner once a positioned event takes over again.</p>
+<p>It’s easy to miss because some events are safe to leave out in practice: if a step is always logged at the exact same instant as the very next one (a common pattern for <code>resource_use_end</code>), it’s never actually selected as an entity’s current state, so it’s never rendered. That’s a coincidence of how your model logs events, though, not something vidigi guarantees — when in doubt, give every event a position. <code>generate_animation_df</code> now warns automatically whenever a gap like this is actually rendered, so you don’t need to check for it by hand.</p>
+</div>
+</div>
+<p>By default every queue builds out to the left of its anchor. To flip the whole animation, pass <code>queue_direction="right"</code> to <code>animate_activity_log()</code> (or <code>generate_animation_df()</code> / <code>generate_animation()</code>). To flip just one stage, give that <code>EventPosition</code> its own <code>direction</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>event_position_df <span class="op">=</span> create_event_position_df([</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    ArrivalPosition(x<span class="op">=</span><span class="dv">50</span>, y<span class="op">=</span><span class="dv">450</span>),</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    EventPosition(event<span class="op">=</span><span class="st">"treatment_wait_begins"</span>, x<span class="op">=</span><span class="dv">205</span>, y<span class="op">=</span><span class="dv">275</span>,</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>                  label<span class="op">=</span><span class="st">"Waiting for Treatment"</span>, direction<span class="op">=</span><span class="st">"right"</span>),</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    EventPosition(event<span class="op">=</span><span class="st">"treatment_begins"</span>, x<span class="op">=</span><span class="dv">205</span>, y<span class="op">=</span><span class="dv">175</span>,</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>                  label<span class="op">=</span><span class="st">"Being Treated"</span>),</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    ExitPosition(x<span class="op">=</span><span class="dv">270</span>, y<span class="op">=</span><span class="dv">70</span>),</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>A per-event <code>direction</code> always wins over the animation-wide <code>queue_direction</code>. Stage labels automatically move to the clear side of a right-building queue.</p>
 <div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-3-contents" aria-controls="callout-3" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-5-contents" aria-controls="callout-5" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
@@ -684,55 +618,248 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-3" class="callout-3-contents callout-collapse collapse">
+<div id="callout-5" class="callout-5-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <p>If you prefer not to use the helpers, you can create the DataFrame directly from a list of dictionaries:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>event_position_df <span class="op">=</span> pd.DataFrame([</span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Triage</span></span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    {<span class="st">"event"</span>: <span class="st">"triage_wait_begins"</span>,</span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>     <span class="st">"x"</span>: <span class="dv">160</span>, <span class="st">"y"</span>: <span class="dv">400</span>, <span class="st">"label"</span>: <span class="st">"Waiting for&lt;br&gt;Triage"</span>},</span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    {<span class="st">"event"</span>: <span class="st">"triage_begins"</span>,</span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>     <span class="st">"x"</span>: <span class="dv">160</span>, <span class="st">"y"</span>: <span class="dv">315</span>, <span class="st">"resource"</span>: <span class="st">"n_triage"</span>, <span class="st">"label"</span>: <span class="st">"Being Triaged"</span>},</span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Trauma pathway</span></span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>    {<span class="st">"event"</span>: <span class="st">"TRAUMA_stabilisation_wait_begins"</span>,</span>
-<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>     <span class="st">"x"</span>: <span class="dv">300</span>, <span class="st">"y"</span>: <span class="dv">560</span>, <span class="st">"label"</span>: <span class="st">"Waiting for&lt;br&gt;Stabilisation"</span>},</span>
-<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>    {<span class="st">"event"</span>: <span class="st">"TRAUMA_stabilisation_begins"</span>,</span>
-<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>     <span class="st">"x"</span>: <span class="dv">300</span>, <span class="st">"y"</span>: <span class="dv">500</span>, <span class="st">"resource"</span>: <span class="st">"n_trauma"</span>, <span class="st">"label"</span>: <span class="st">"Being&lt;br&gt;Stabilised"</span>},</span>
-<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>    {<span class="st">"event"</span>: <span class="st">"TRAUMA_treatment_wait_begins"</span>,</span>
-<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>     <span class="st">"x"</span>: <span class="dv">630</span>, <span class="st">"y"</span>: <span class="dv">560</span>, <span class="st">"label"</span>: <span class="st">"Waiting for&lt;br&gt;Treatment"</span>},</span>
-<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>    {<span class="st">"event"</span>: <span class="st">"TRAUMA_treatment_begins"</span>,</span>
-<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>     <span class="st">"x"</span>: <span class="dv">630</span>, <span class="st">"y"</span>: <span class="dv">500</span>, <span class="st">"resource"</span>: <span class="st">"n_cubicles"</span>, <span class="st">"label"</span>: <span class="st">"Being&lt;br&gt;Treated"</span>},</span>
-<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>    {<span class="st">"event"</span>: <span class="st">"depart"</span>,</span>
-<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>     <span class="st">"x"</span>: <span class="dv">670</span>, <span class="st">"y"</span>: <span class="dv">330</span>, <span class="st">"label"</span>: <span class="st">"Exit"</span>},</span>
-<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>event_position_df <span class="op">=</span> pd.DataFrame([</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Triage</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    {<span class="st">"event"</span>: <span class="st">"triage_wait_begins"</span>,</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>     <span class="st">"x"</span>: <span class="dv">160</span>, <span class="st">"y"</span>: <span class="dv">400</span>, <span class="st">"label"</span>: <span class="st">"Waiting for&lt;br&gt;Triage"</span>},</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    {<span class="st">"event"</span>: <span class="st">"triage_begins"</span>,</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>     <span class="st">"x"</span>: <span class="dv">160</span>, <span class="st">"y"</span>: <span class="dv">315</span>, <span class="st">"resource"</span>: <span class="st">"n_triage"</span>, <span class="st">"label"</span>: <span class="st">"Being Triaged"</span>},</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Trauma pathway</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    {<span class="st">"event"</span>: <span class="st">"TRAUMA_stabilisation_wait_begins"</span>,</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>     <span class="st">"x"</span>: <span class="dv">300</span>, <span class="st">"y"</span>: <span class="dv">560</span>, <span class="st">"label"</span>: <span class="st">"Waiting for&lt;br&gt;Stabilisation"</span>},</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    {<span class="st">"event"</span>: <span class="st">"TRAUMA_stabilisation_begins"</span>,</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>     <span class="st">"x"</span>: <span class="dv">300</span>, <span class="st">"y"</span>: <span class="dv">500</span>, <span class="st">"resource"</span>: <span class="st">"n_trauma"</span>, <span class="st">"label"</span>: <span class="st">"Being&lt;br&gt;Stabilised"</span>},</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>    {<span class="st">"event"</span>: <span class="st">"TRAUMA_treatment_wait_begins"</span>,</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>     <span class="st">"x"</span>: <span class="dv">630</span>, <span class="st">"y"</span>: <span class="dv">560</span>, <span class="st">"label"</span>: <span class="st">"Waiting for&lt;br&gt;Treatment"</span>},</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>    {<span class="st">"event"</span>: <span class="st">"TRAUMA_treatment_begins"</span>,</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>     <span class="st">"x"</span>: <span class="dv">630</span>, <span class="st">"y"</span>: <span class="dv">500</span>, <span class="st">"resource"</span>: <span class="st">"n_cubicles"</span>, <span class="st">"label"</span>: <span class="st">"Being&lt;br&gt;Treated"</span>},</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>    {<span class="st">"event"</span>: <span class="st">"depart"</span>,</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>     <span class="st">"x"</span>: <span class="dv">670</span>, <span class="st">"y"</span>: <span class="dv">330</span>, <span class="st">"label"</span>: <span class="st">"Exit"</span>},</span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </div>
 </div>
 </section>
-<section id="step-6.-create-the-animation" class="level3">
-<h3 class="anchored" data-anchor-id="step-6.-create-the-animation">Step 6. Create the animation</h3>
+<section id="step-4.-create-the-animation" class="level3">
+<h3 class="anchored" data-anchor-id="step-4.-create-the-animation">Step 4. Create the animation</h3>
 <p>There are two main ways to create the animation:</p>
 <ul>
 <li><p>Use the <strong>one-step</strong> function <code>animate_activity_log()</code> See <a href="../examples/example_1_simplest_case/ex_1_simplest_case.html">this simple example</a> or <a href="../examples/example_2_branching_multistep/ex_2_branching_multistep_case.html">this slightly more complex example</a> for a demonstration of this.</p></li>
 <li><p>Use <code>reshape_for_animations()</code>, <code>generate_animation_df()</code> and <code>generate_animation()</code> separately, passing the output of each to the next step. This allows more customisation (for example different icons for different patient classes). See <a href="../examples/example_3_simplest_case_priority_resource/ex_3_simplest_case_priority_resource.html">this priority queueing example</a> for a demonstration of this.</p></li>
 </ul>
+<p>Both functions take the same set of appearance arguments - background colour and image, icon sizes, stage labels, spacing, playback speed and more. See <a href="../vidigi_docs/customising_animations.html">Customising the animation</a> for the full list grouped by what each one changes.</p>
+<p><code>animate_activity_log()</code> and <code>reshape_for_animations()</code> accept your event log as a <code>pandas</code> DataFrame, a vidigi <a href="../reference/logging.EventLogger.html"><code>EventLogger</code></a>, or a <a href="../reference/logging.TrialLogger.html"><code>TrialLogger</code></a> - a logger is converted with <code>.to_dataframe()</code> for you. With a <code>TrialLogger</code>, pass <code>run_number=</code> to choose which replication to animate; passing one with more than one run and no <code>run_number</code> raises an error that lists the runs available.</p>
+</section>
+</section>
+<section id="adding-details-of-resource-use" class="level2">
+<h2 class="anchored" data-anchor-id="adding-details-of-resource-use">Adding details of resource use</h2>
+<section id="step-5.-replace-your-resources" class="level3">
+<h3 class="anchored" data-anchor-id="step-5.-replace-your-resources">Step 5. Replace your resources</h3>
+<p>SimPy resources need to be replaced with SimPy stores containing resources that carry a custom <code>.id</code> (also available under its older name <code>.id_attribute</code>), so that vidigi can track which specific resource each entity uses. This can have wider benefits for monitoring individual resource utilisation within your model as well.</p>
+<p>Vidigi provides two helper classes to support with this: <code>VidigiStore</code> and <code>VidigiPriorityStore</code>.</p>
+<p><strong>Replace this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>nurses <span class="op">=</span> simpy.Resource(env, capacity<span class="op">=</span><span class="dv">5</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><strong>With this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> vidigi.resources <span class="im">import</span> VidigiStore</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>nurses <span class="op">=</span> VidigiStore(env, num_resources<span class="op">=</span><span class="dv">5</span>, label<span class="op">=</span><span class="st">"nurse"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Note that <code>capacity</code> on <code>VidigiStore</code> doesn’t mean the same thing it did on <code>simpy.Resource</code> - it isn’t the pool size (that’s <code>num_resources</code>). It bounds the underlying store container instead, and you normally don’t need to pass it: left unset, <code>.capacity</code> automatically mirrors <code>num_resources</code>, matching <code>simpy.Resource.capacity</code>’s behaviour. Only pass <code>capacity</code> explicitly if you deliberately want a bounded container for other items alongside the resources - doing so also disables the built-in guard against accidentally returning a resource twice (<code>strict_capacity</code>).</p>
+<p>Always pass a <code>label</code> that is unique to this pool of resources. Each <code>VidigiStore</code> numbers its own resources <code>1, 2, 3, ...</code>, so if your model has more than one pool (for example <code>nurses</code> and <code>treatment_cubicles</code>), two different physical resources can end up sharing the same <code>resource_id</code>. <code>label</code> gives each resource a <code>.unique_id</code> (e.g.&nbsp;<code>"nurse_1"</code>; also available as <code>.unique_id_attribute</code>) that stays distinct across pools, which matters if you want to analyse individual resource utilisation later with <code>vidigi.analysis.resource_utilisation(by="resource")</code>. Omitting <code>label</code> still works today but emits a <code>DeprecationWarning</code> - it is expected to become mandatory in a future major version.</p>
+<p>If your model needs each resource to carry extra information - a staff type for break scheduling, a skill grade, a home location - pass <code>extra_attributes</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>nurses <span class="op">=</span> VidigiStore(env, num_resources<span class="op">=</span><span class="dv">5</span>, label<span class="op">=</span><span class="st">"nurse"</span>,</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>                     extra_attributes<span class="op">=</span>{<span class="st">"staff_type"</span>: <span class="st">"nurse"</span>})</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="co"># every resource in the pool now has `.staff_type == "nurse"`</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Your model code reads these back off the resource it is handed (<code>resource.staff_type</code>); vidigi itself ignores them. <code>VidigiPriorityStore</code> takes the same arguments.</p>
+<p>This becomes slightly more complex with conditional requesting (for example, where a resource request is made but if it cannot be fulfilled in time, the requester will renege). This is covered to some extent in some of the provided examples, but further demonstrations of this are planned.</p>
+</section>
+<section id="step-6.-log-resource-use" class="level3">
+<h3 class="anchored" data-anchor-id="step-6.-log-resource-use">Step 6. Log resource use</h3>
+<p>We can now swap</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>When</th>
+<th>Method</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Starts using resource</td>
+<td><code>logger.log_resource_use_start(entity_id, event="nurse_begins", resource_id)</code></td>
+</tr>
+<tr class="even">
+<td>Finishes using resource</td>
+<td><code>logger.log_resource_use_end(entity_id, event="nurse_ends", resource_id)</code></td>
+</tr>
+</tbody>
+</table>
+<p>This will create an event log in the required format for vidigi’s animation functions - for example:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 12%">
+<col style="width: 26%">
+<col style="width: 35%">
+<col style="width: 8%">
+<col style="width: 17%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>patient</th>
+<th>event_type</th>
+<th>event</th>
+<th>time</th>
+<th>resource_id</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>15</td>
+<td>arrival_departure</td>
+<td>arrival</td>
+<td>1.22</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>15</td>
+<td>queue</td>
+<td>enter_queue_for_bed</td>
+<td>1.35</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>27</td>
+<td>arrival_departure</td>
+<td>arrival</td>
+<td>1.47</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>27</td>
+<td>queue</td>
+<td>enter_queue_for_bed</td>
+<td>1.58</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>12</td>
+<td>resource_use_end</td>
+<td>post_surgery_stay_ends</td>
+<td>1.9</td>
+<td>4</td>
+</tr>
+<tr class="even">
+<td>15</td>
+<td>resource_use</td>
+<td>post_survery_stay_begins</td>
+<td>1.9</td>
+<td>4</td>
+</tr>
+</tbody>
+</table>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>A simpler way to log resource use
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>If you’re using <code>VidigiStore</code> or <code>VidigiPriorityStore</code>, you don’t have to call <code>log_resource_use_start</code>/<code>log_resource_use_end</code> by hand as shown above. Pass <code>logger=</code> when you create the store, then <code>entity_id=</code> when you request a resource, and both events are logged for you automatically. See <a href="../vidigi_docs/basic_example_with_vidigi_logger_helpers_multiple_servers.html#automatic-resource-use-logging">Automatic resource-use logging</a> for a worked example.</p>
+</div>
+</div>
+</section>
+<section id="step-7.-ensure-you-have-somewhere-to-hold-your-resource-counts" class="level3">
+<h3 class="anchored" data-anchor-id="step-7.-ensure-you-have-somewhere-to-hold-your-resource-counts">Step 7. Ensure you have somewhere to hold your resource counts</h3>
+<p>When you later define event positions for <code>resource_use</code> steps, you will also need to provide an identifier for the resource (for example a name such as <code>n_cubicles</code>) so vidigi knows how many resources to draw at that step. This means you need something to hold your resource counts to pass into the animation function as <code>scenario</code>. A plain dictionary is enough:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>scenario <span class="op">=</span> {<span class="st">"n_cubicles"</span>: <span class="dv">5</span>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>A small class or object works just as well, so an existing parameters object can be reused directly:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ModelParams:</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>):</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.n_cubicles <span class="op">=</span> <span class="dv">5</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>scenario <span class="op">=</span> ModelParams()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Whichever you use, the names (<code>n_cubicles</code> here) must match the <code>resource</code> values you give your <code>EventPosition</code>s in the next step.</p>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>If you are following the <a href="https://des.hsma.co.uk/">HSMA SimPy structure</a>, this will usually be your <code>g</code> class.</p>
+<p>If you are following the <a href="https://pythonhealthdatascience.github.io/des_rap_book/">DES RAP Book structure</a>, this will usually be your <code>Params</code> class.</p>
+<p>Otherwise, a dictionary or a small parameters class like the one above is all you need.</p>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>If you record runs with an <code>EventLogger</code> / <code>TrialLogger</code>, you can attach this same object when you build the logger — <code>TrialLogger(event_logs, scenario=g(), label="base case")</code> (or pass <code>scenario=</code> to <code>EventLogger</code>). The <code>TrialLogger</code> resource-utilisation helpers (<code>get_resource_utilisation</code>, <code>plot_resource_utilisation</code>, <code>plot_resource_utilisation_over_time</code>) then use it automatically, so you don’t have to pass <code>scenario=</code> again on every call, and the parameters travel with the logger when you <code>to_pickle()</code> it.</p>
+</div>
+</div>
+</section>
+<section id="step-8.-update-your-event-position-dataframe" class="level3">
+<h3 class="anchored" data-anchor-id="step-8.-update-your-event-position-dataframe">Step 8. Update your event position dataframe</h3>
+<ul>
+<li><code>resource</code> (optional): Only needed if the step is a <code>resource_use</code> step. This should match an attribute name (or dictionary key) on the <code>scenario</code> passed to <code>animate_activity_log()</code> and give the number of resources at that step.</li>
+</ul>
+<p>Here, we’ve added the ‘resource’ parameter to our <code>EventPosition</code> for <code>treatment_begins</code>.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> vidigi.utils <span class="im">import</span> (</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    create_event_position_df, EventPosition, ArrivalPosition, ExitPosition</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>event_position_df <span class="op">=</span> create_event_position_df([</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    ArrivalPosition(x<span class="op">=</span><span class="dv">50</span>, y<span class="op">=</span><span class="dv">450</span>),</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    EventPosition(event<span class="op">=</span><span class="st">"treatment_wait_begins"</span>, x<span class="op">=</span><span class="dv">205</span>, y<span class="op">=</span><span class="dv">275</span>,</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>                  label<span class="op">=</span><span class="st">"Waiting for Treatment"</span>),</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>    EventPosition(event<span class="op">=</span><span class="st">"treatment_begins"</span>, x<span class="op">=</span><span class="dv">205</span>, y<span class="op">=</span><span class="dv">175</span>,</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>                  label<span class="op">=</span><span class="st">"Being Treated"</span>,</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>                  resource<span class="op">=</span><span class="st">"n_cubicles"</span>),</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>    ExitPosition(x<span class="op">=</span><span class="dv">270</span>, y<span class="op">=</span><span class="dv">70</span>),</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 </section>
 <section id="usage-instructions-with-ciw" class="level2">
 <h2 class="anchored" data-anchor-id="usage-instructions-with-ciw">Usage Instructions with Ciw</h2>
 <section id="event-logging-with-ciw" class="level3">
 <h3 class="anchored" data-anchor-id="event-logging-with-ciw">Event logging with Ciw</h3>
-<p>With Ciw, you do not need to manually add log statements. Instead, use the <code>event_log_from_ciw_recs</code> helper function from <code>vidigi.utils</code> to reshape Ciw’s logs into the format vidigi requires.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> vidigi.utils <span class="im">import</span> event_log_from_ciw_recs</span>
+<p>With Ciw, you do not need to manually add log statements. Instead, use the <code>event_log_from_ciw_recs</code> helper function from <code>vidigi.ciw</code> to reshape Ciw’s logs into the format vidigi requires.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> vidigi.ciw <span class="im">import</span> event_log_from_ciw_recs</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>event_log_test <span class="op">=</span> event_log_from_ciw_recs(</span>
 <span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    logs_run_1,</span>
 <span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    node_name_list<span class="op">=</span>[<span class="st">"operator"</span>, <span class="st">"nurse"</span>],</span>
 <span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>For each node, we provide a name (e.g., <code>operator</code>, <code>nurse</code>). Vidigi uses these to generate event names (adding <code>_begins</code> and <code>_ends</code>), to infer arrivals and departures, and to create resource IDs so it can show utilisation correctly.</p>
+<p><code>event_log_from_ciw_recs</code> returns a plain <code>pandas</code> DataFrame. If you also want vidigi’s post-run analysis tools, two sibling helpers in <code>vidigi.ciw</code> do the same conversion but return logging objects instead:</p>
+<ul>
+<li><code>event_logger_from_ciw_recs(recs, node_name_list=...)</code> returns an <a href="../reference/logging.EventLogger.html"><code>EventLogger</code></a> for one run - adding event querying, JSON/CSV export, <code>plot_entity_timeline</code> and <code>generate_dfg</code>.</li>
+<li><code>trial_logger_from_ciw_recs(list_of_recs, node_name_list=...)</code> returns a <a href="../reference/logging.TrialLogger.html"><code>TrialLogger</code></a> built from several runs’ records, for multi-run duration, resource-utilisation, queue-size and replication analysis.</li>
+</ul>
+<p>Both feed the animation functions the same way via <code>.to_dataframe()</code>.</p>
 <p>We then just need to create a suitable class to pass in the resource counts to the animation function.</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ModelParams:</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>):</span>
@@ -759,7 +886,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    EventPosition(event<span class="op">=</span><span class="st">"operator_begins"</span>, x<span class="op">=</span><span class="dv">210</span>, y<span class="op">=</span><span class="dv">210</span>, resource<span class="op">=</span><span class="st">"n_operators"</span>, label<span class="op">=</span><span class="st">"Speaking to Operator"</span>),</span>
 <span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    EventPosition(event<span class="op">=</span><span class="st">"nurse_wait_begins"</span>, x<span class="op">=</span><span class="dv">205</span>, y<span class="op">=</span><span class="dv">110</span>, label<span class="op">=</span><span class="st">"Waiting for Nurse"</span>),</span>
 <span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    EventPosition(event<span class="op">=</span><span class="st">"nurse_begins"</span>, x<span class="op">=</span><span class="dv">210</span>, y<span class="op">=</span><span class="dv">50</span>, resource<span class="op">=</span><span class="st">"n_nurses"</span>, label<span class="op">=</span><span class="st">"Speaking to Nurse"</span>),</span>
-<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>    EventPosition(event<span class="op">=</span><span class="st">"depart"</span>, x<span class="op">=</span><span class="dv">270</span>, y<span class="op">=</span><span class="dv">10</span>, label<span class="op">=</span><span class="st">"Exit"</span>),</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>    ExitPosition(x<span class="op">=</span><span class="dv">270</span>, y<span class="op">=</span><span class="dv">10</span>),</span>
 <span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 </section>
