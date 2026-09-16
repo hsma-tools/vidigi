@@ -11,6 +11,7 @@ tests/outputs/simple_funcs_run/*test*
 htmlcov/
 *.coverage
 .cache/
+.venv/
 
 .vscode
 
