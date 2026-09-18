@@ -1,0 +1,12 @@
+---
+title: Vidigi docs
+title-block-banner: resources/banner.png
+include-back-link: false
+format:
+  html:
+    include-in-header:
+      - text: |
+            <meta http-equiv="refresh" content='0; URL=https://hsma-tools.github.io/vidigi'></meta>
+---
+
+Redirecting to the new vidigi documentation homepage. If you are not redirected within 3 seconds, click [here](https://hsma-tools.github.io/vidigi) to go to the page.

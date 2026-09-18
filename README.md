@@ -26,7 +26,7 @@ With just a minimal set of logs - with helper functions provided to make that ea
 
 ## Getting started
 
-Head to the [documentation](https://hsma-tools.github.io/vidigi/vidigi_docs/) to find out how to create an animated version of your model.
+Head to the [documentation](https://hsma-tools.github.io/vidigi/) to find out how to create an animated version of your model.
 
 You can install vidigi from PyPi with the command `pip install vidigi`.
 
