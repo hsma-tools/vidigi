@@ -1223,12 +1223,12 @@ Name: count, dtype: int64</code></pre>
 <span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a>    display_stage_labels<span class="op">=</span><span class="va">True</span>,</span>
 <span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre data-code-line-numbers=""><code>Animation function called at 15:31:26
-Iteration through time-unit-by-time-unit logs complete 15:31:39
-Snapshot df concatenation complete at 15:31:39
-Reshaped animation dataframe finished construction at 15:31:39
-Placement dataframe started construction at 15:31:39
-Placement dataframe finished construction at 15:31:39</code></pre>
+<pre data-code-line-numbers=""><code>Animation function called at 10:31:01
+Iteration through time-unit-by-time-unit logs complete 10:31:14
+Snapshot df concatenation complete at 10:31:14
+Reshaped animation dataframe finished construction at 10:31:14
+Placement dataframe started construction at 10:31:14
+Placement dataframe finished construction at 10:31:14</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
 <pre data-code-line-numbers=""><code>/home/runner/work/vidigi/vidigi/src/vidigi/animation.py:2609: UserWarning: 7254 row(s) across 3 event(s) with no matching `event_position_df` row were rendered anyway: 'nurse_wait_begins' (66 entities), 'nurse_at_desk' (2 entities), 'nurse_treatment_begins' (2 entities).
@@ -1243,8 +1243,8 @@ The animation's x axis is fixed to that range, so these steps are drawn off-canv
   return func(*bound.args, **bound.kwargs)</code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
-<pre data-code-line-numbers=""><code>Output animation generation complete at 15:31:47
-Total Time Elapsed: 20.73 seconds</code></pre>
+<pre data-code-line-numbers=""><code>Output animation generation complete at 10:31:22
+Total Time Elapsed: 21.06 seconds</code></pre>
 </div>
 <div class="cell-output cell-output-display">
 <iframe scrolling="no" width="1220px" height="720" src="iframe_figures/figure_13.html" frameborder="0" allowfullscreen=""></iframe>
@@ -1278,12 +1278,12 @@ Total Time Elapsed: 20.73 seconds</code></pre>
 <span id="cb17-22"><a href="#cb17-22" aria-hidden="true" tabindex="-1"></a>    display_stage_labels<span class="op">=</span><span class="va">True</span>,</span>
 <span id="cb17-23"><a href="#cb17-23" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre data-code-line-numbers=""><code>Animation function called at 15:31:48
-Iteration through time-unit-by-time-unit logs complete 15:32:01
-Snapshot df concatenation complete at 15:32:01
-Reshaped animation dataframe finished construction at 15:32:01
-Placement dataframe started construction at 15:32:01
-Placement dataframe finished construction at 15:32:01</code></pre>
+<pre data-code-line-numbers=""><code>Animation function called at 10:31:23
+Iteration through time-unit-by-time-unit logs complete 10:31:35
+Snapshot df concatenation complete at 10:31:36
+Reshaped animation dataframe finished construction at 10:31:36
+Placement dataframe started construction at 10:31:36
+Placement dataframe finished construction at 10:31:36</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
 <pre data-code-line-numbers=""><code>/home/runner/work/vidigi/vidigi/src/vidigi/animation.py:2609: UserWarning: 2882 row(s) across 1 event(s) with no matching `event_position_df` row were rendered anyway: 'arrival' (2 entities).
@@ -1298,8 +1298,8 @@ The animation's x axis is fixed to that range, so these steps are drawn off-canv
   return func(*bound.args, **bound.kwargs)</code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
-<pre data-code-line-numbers=""><code>Output animation generation complete at 15:32:09
-Total Time Elapsed: 20.85 seconds</code></pre>
+<pre data-code-line-numbers=""><code>Output animation generation complete at 10:31:44
+Total Time Elapsed: 20.94 seconds</code></pre>
 </div>
 <div class="cell-output cell-output-display">
 <iframe scrolling="no" width="1220px" height="720" src="iframe_figures/figure_14.html" frameborder="0" allowfullscreen=""></iframe>
@@ -1345,7 +1345,7 @@ Note
 <span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>full_entity_df_plus_pos.head()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stderr">
-<pre data-code-line-numbers=""><code>/tmp/ipykernel_4351/2755800900.py:1: UserWarning: 2882 row(s) across 1 event(s) with no matching `event_position_df` row were rendered anyway: 'arrival' (2 entities).
+<pre data-code-line-numbers=""><code>/tmp/ipykernel_4364/2755800900.py:1: UserWarning: 2882 row(s) across 1 event(s) with no matching `event_position_df` row were rendered anyway: 'arrival' (2 entities).
 
 An event with no position gets no coordinates, and a point with no coordinates can't be drawn - the entity's icon disappears for that frame, then flies in from the top-left corner once a positioned event takes over again.
 
@@ -1620,7 +1620,7 @@ Tip
 <span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>    gap_between_queue_rows<span class="op">=</span><span class="dv">25</span>,</span>
 <span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stderr">
-<pre data-code-line-numbers=""><code>/tmp/ipykernel_4351/4079021033.py:1: UserWarning: 6985 row(s) across 2 event(s) with no matching `event_position_df` row were rendered anyway: 'nurse_wait_begins' (66 entities), 'nurse_treatment_begins' (2 entities).
+<pre data-code-line-numbers=""><code>/tmp/ipykernel_4364/4079021033.py:1: UserWarning: 6985 row(s) across 2 event(s) with no matching `event_position_df` row were rendered anyway: 'nurse_wait_begins' (66 entities), 'nurse_treatment_begins' (2 entities).
 
 An event with no position gets no coordinates, and a point with no coordinates can't be drawn - the entity's icon disappears for that frame, then flies in from the top-left corner once a positioned event takes over again.
 
@@ -5605,7 +5605,7 @@ The animation's x axis is fixed to that range, so these steps are drawn off-canv
   return func(*bound.args, **bound.kwargs)</code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
-<pre data-code-line-numbers=""><code>Output animation generation complete at 15:32:44</code></pre>
+<pre data-code-line-numbers=""><code>Output animation generation complete at 10:32:19</code></pre>
 </div>
 <div class="cell-output cell-output-display">
 <iframe scrolling="no" width="1220px" height="720" src="iframe_figures/figure_35.html" frameborder="0" allowfullscreen=""></iframe>
