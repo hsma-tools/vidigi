@@ -24,21 +24,24 @@ Vidigi has support for two key event types: queues, and resource use.
 
 :::: {.columns}
 
-::: {.column width='50%'}
+::: {.column width='45%'}
 ### Queues
 
 In a queue, entities will move from left to right across the screen as the people in front of them leave the event. This is the default; passing `queue_direction="right"` (or setting it per event) mirrors the queue so it builds out to the *right* of its anchor instead, which reads better with entity emojis that face right — see [Step 3](#step-3-determining-event-positioning-in-the-animation).
 
-![](assets/Photos_vyBrApu62l.gif)
+![](assets/Photos_TtlkAx9wcB.gif)
 
 :::
 
-::: {.column width='50%'}
+::: {.column width='10%'}
+:::
+
+::: {.column width='45%'}
 ### Resource Use
 
 When resource use event types are added, entities will go to a particular resource and stay in that position until the event completes, as well as displaying an icon for each individual resource at all times throughout the simulation. This makes it easier to see how long that resource is busy with that entity, and how many resources are in use or idle at each stage
 
-![](assets/Photos_TtlkAx9wcB.gif)
+![](assets/Photos_vyBrApu62l.gif)
 
 :::
 
