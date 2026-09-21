@@ -28,8 +28,8 @@ authors:
 repository-code: "https://github.com/hsma-tools/vidigi"
 url: "https://hsma-tools.github.io/vidigi/vidigi_docs/"
 license: MIT
-version: 1.3.1
-date-released: "2026-05-19"
+version: 2.0.0
+date-released: "2026-09-16"
 doi: 10.5281/zenodo.14635602
 keywords:
   - discrete event simulation

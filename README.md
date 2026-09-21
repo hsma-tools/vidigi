@@ -2,12 +2,12 @@
 
 | | |
 | --- | --- |
-| **Project info:** | ![Code licence](https://img.shields.io/badge/Licence-MIT-A6CE39?&labelColor=gray)  [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14635602.svg)](https://doi.org/10.5281/zenodo.14635602)   [![ORCID](https://img.shields.io/badge/ORCID_Sammi_Rosser-0000--0002--9552--8988-A6CE39?&logo=orcid&logoColor=white)](https://orcid.org/0000-0002-9552-8988)  [![All Contributors](https://img.shields.io/github/all-contributors/hsma-tools/vidigi?color=ee8449&style=flat-square)](#contributors)  |
+| **Project info:** | ![Code licence](https://img.shields.io/badge/Licence-MIT-A6CE39?&labelColor=gray)  [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14635602.svg)](https://doi.org/10.5281/zenodo.14635602)   [![Paper DOI](https://img.shields.io/badge/Paper-10.1080%2F17477778.2026.2663849-blue)](https://doi.org/10.1080/17477778.2026.2663849)   [![Docs](https://img.shields.io/badge/Docs-hsma--tools.github.io%2Fvidigi-blue)](https://hsma-tools.github.io/vidigi/)   [![ORCID](https://img.shields.io/badge/ORCID_Sammi_Rosser-0000--0002--9552--8988-A6CE39?&logo=orcid&logoColor=white)](https://orcid.org/0000-0002-9552-8988)  [![All Contributors](https://img.shields.io/github/all-contributors/hsma-tools/vidigi?color=ee8449&style=flat-square)](#contributors)  |
 | **Installation:** | [![PyPI](https://img.shields.io/pypi/v/vidigi?&labelColor=gray)](https://pypi.org/project/vidigi/)     [![Anaconda-Server Badge](https://anaconda.org/conda-forge/vidigi/badges/version.svg)](https://anaconda.org/conda-forge/vidigi) |
 | **Metrics:** | [![PyPI downloads all time](https://static.pepy.tech/badge/vidigi)](https://pepy.tech/project/vidigi)    [![PyPI downloads monthly](https://static.pepy.tech/badge/vidigi/month)](https://pepy.tech/project/vidigi)    [![PyPI downloads weekly](https://static.pepy.tech/badge/vidigi/week)](https://pepy.tech/project/vidigi)    ![Conda Downloads](https://img.shields.io/conda/d/conda-forge/vidigi)    ![GitHub Repo stars](https://img.shields.io/github/stars/hsma-tools/vidigi)     |
 | **Activity:** | ![GitHub forks](https://img.shields.io/github/forks/hsma-tools/vidigi)    ![GitHub last commit](https://img.shields.io/github/last-commit/hsma-tools/vidigi)    ![GitHub Release Date](https://img.shields.io/github/release-date/hsma-tools/vidigi) [![GitHub open-pull-requests](https://badgen.net/github/open-prs/hsma-tools/vidigi)](https://GitHub.com/hsma-tools/vidigi/pulls?q=is%3Aopen) |
-| **Build & quality status:** | [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)    [![Tests](https://github.com/hsma-tools/vidigi/actions/workflows/tests.yml/badge.svg)](https://github.com/hsma-tools/vidigi/actions/workflows/tests.yml)   [![Documentation](https://github.com/hsma-tools/vidigi/actions/workflows/documentation_deploy.yml/badge.svg)](https://github.com/hsma-tools/vidigi/actions/workflows/documentation_deploy.yml) [![Dogfooding-by-docs](https://github.com/hsma-tools/vidigi/actions/workflows/documentation_as_tests.yml/badge.svg)](https://github.com/hsma-tools/vidigi/actions/workflows/documentation_as_tests.yml) [![Documentation Against PyPI Release](https://github.com/hsma-tools/vidigi/actions/workflows/documentation_as_tests_pypi.yml/badge.svg)](https://github.com/hsma-tools/vidigi/actions/workflows/documentation_as_tests_pypi.yml)  |
-| **Supported platforms:** | ![3.10\|3.11\|3.12\|3.13\|3.14](https://img.shields.io/badge/Python-3.10%7C3.11%7C3.12%7C3.13%7C3.14-blue)    ![OS](https://img.shields.io/badge/OS-Windows%20%7C%20Linux%20%7C%20macOS-blue?logo=windows&logo=linux&logo=apple) |
+| **Build & quality status:** | [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)    [![Tests](https://github.com/hsma-tools/vidigi/actions/workflows/tests.yml/badge.svg)](https://github.com/hsma-tools/vidigi/actions/workflows/tests.yml)   [![Documentation](https://github.com/hsma-tools/vidigi/actions/workflows/documentation_deploy.yml/badge.svg)](https://github.com/hsma-tools/vidigi/actions/workflows/documentation_deploy.yml) [![Dogfooding-by-docs](https://github.com/hsma-tools/vidigi/actions/workflows/documentation_as_tests.yml/badge.svg)](https://github.com/hsma-tools/vidigi/actions/workflows/documentation_as_tests.yml) [![Documentation Against PyPI Release](https://github.com/hsma-tools/vidigi/actions/workflows/documentation_as_tests_pypi.yml/badge.svg)](https://github.com/hsma-tools/vidigi/actions/workflows/documentation_as_tests_pypi.yml)   [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)  |
+| **Supported platforms:** | [![Python versions](https://img.shields.io/pypi/pyversions/vidigi)](https://pypi.org/project/vidigi/)    ![OS](https://img.shields.io/badge/OS-Windows%20%7C%20Linux%20%7C%20macOS-blue?logo=windows&logo=linux&logo=apple) |
 
 
 ---
@@ -68,32 +68,52 @@ https://github.com/Bergam0t/simpy_visualisation/assets/29951987/1cfe48cf-310d-4d
 
 # Test Coverage
 
-Vidigi is still in relatively early development, with test coverage being limited. More tests are being written all the time - but for now, please continue to sense-check your outputs!
+Vidigi has an extensive test suite, which runs in CI across Python 3.10-3.14 and both Plotly 5 and Plotly 6, plus a minimum-dependency and a latest-dependency configuration.
 
-Fancy helping out? Consider submitting a pull request with some tests! It's a great way to get to know the codebase better.
+The badges below are the maintainers' judgement of how well each part of the package is tested - they are not a measured coverage percentage. They were last reviewed for vidigi 2.0.0. Even where coverage is good, please continue to sense-check your outputs!
+
+Fancy helping out? Consider submitting a pull request with some tests, particularly for anything marked as partially or not covered! It's a great way to get to know the codebase better.
 
 ## Animation Functions
 
-![](https://img.shields.io/badge/vidigi.animation.animate__activity__log()-Not%20covered-orange?style=for-the-badge&logo=pytest)
-![](https://img.shields.io/badge/vidigi.animation.generate__animation()-Not%20covered-orange?style=for-the-badge&logo=pytest)
-![](https://img.shields.io/badge/vidigi.prep.generation__animation__df()-Not%20covered-orange?style=for-the-badge&logo=pytest)
-![](https://img.shields.io/badge/vidigi.prep.reshape__for__animation-Partially%20Covered-f6d661?style=for-the-badge&logo=pytest)
+![](https://img.shields.io/badge/vidigi.animation.animate__activity__log()-Good%20Coverage-7ff661?style=for-the-badge&logo=pytest)
+![](https://img.shields.io/badge/vidigi.animation.generate__animation()-Good%20Coverage-7ff661?style=for-the-badge&logo=pytest)
+![](https://img.shields.io/badge/vidigi.prep.generate__animation__df()-Good%20Coverage-7ff661?style=for-the-badge&logo=pytest)
+![](https://img.shields.io/badge/vidigi.prep.reshape__for__animations()-Good%20Coverage-7ff661?style=for-the-badge&logo=pytest)
 
 ## Resource Classes and Helper Functions
 
-![](https://img.shields.io/badge/vidigi.resources.CustomResource-Good%20Coverage-7ff661?style=for-the-badge&logo=pytest)
+![](https://img.shields.io/badge/vidigi.resources.VidigiResource-Good%20Coverage-7ff661?style=for-the-badge&logo=pytest)
 ![](https://img.shields.io/badge/vidigi.resources.VidigiStore-Good%20Coverage-7ff661?style=for-the-badge&logo=pytest)
 ![](https://img.shields.io/badge/vidigi.resources.VidigiPriorityStore-Good%20Coverage-7ff661?style=for-the-badge&logo=pytest)
 ![](https://img.shields.io/badge/vidigi.resources.populate__store()-Good%20Coverage-7ff661?style=for-the-badge&logo=pytest)
 
 ## Logging Classes and Helpers
-![](https://img.shields.io/badge/vidigi.logger.EventLogger-Not%20Covered-orange?style=for-the-badge&logo=pytest)
-![](https://img.shields.io/badge/vidigi.logger.TrialLogger-Not%20Covered-orange?style=for-the-badge&logo=pytest)
-![](https://img.shields.io/badge/vidigi.ciw.event__log__from__ciw__recs()-Not%20Covered-orange?style=for-the-badge&logo=pytest)
+
+![](https://img.shields.io/badge/vidigi.logging.EventLogger-Good%20Coverage-7ff661?style=for-the-badge&logo=pytest)
+![](https://img.shields.io/badge/vidigi.logging.TrialLogger-Good%20Coverage-7ff661?style=for-the-badge&logo=pytest)
+![](https://img.shields.io/badge/vidigi.ciw.event__log__from__ciw__recs()-Good%20Coverage-7ff661?style=for-the-badge&logo=pytest)
 
 ## Event Positioning Helpers
-![](https://img.shields.io/badge/vidigi.utils.EventPosition-Not%20Covered-orange?style=for-the-badge&logo=pytest)
-![](https://img.shields.io/badge/vidigi.utils.create__event__position__df()-Not%20Covered-orange?style=for-the-badge&logo=pytest)
+
+![](https://img.shields.io/badge/vidigi.utils.EventPosition-Good%20Coverage-7ff661?style=for-the-badge&logo=pytest)
+![](https://img.shields.io/badge/vidigi.utils.ArrivalPosition-Good%20Coverage-7ff661?style=for-the-badge&logo=pytest)
+![](https://img.shields.io/badge/vidigi.utils.ExitPosition-Good%20Coverage-7ff661?style=for-the-badge&logo=pytest)
+![](https://img.shields.io/badge/vidigi.utils.create__event__position__df()-Good%20Coverage-7ff661?style=for-the-badge&logo=pytest)
+
+## Analysis and Plotting Functions
+
+![](https://img.shields.io/badge/vidigi.analysis-Good%20Coverage-7ff661?style=for-the-badge&logo=pytest)
+![](https://img.shields.io/badge/vidigi.plots-Good%20Coverage-7ff661?style=for-the-badge&logo=pytest)
+
+## Process Mapping
+
+![](https://img.shields.io/badge/vidigi.process__mapping.add__sim__timestamp()-Good%20Coverage-7ff661?style=for-the-badge&logo=pytest)
+![](https://img.shields.io/badge/vidigi.process__mapping.discover__dfg()-Good%20Coverage-7ff661?style=for-the-badge&logo=pytest)
+![](https://img.shields.io/badge/vidigi.process__mapping.dfg__to__graphviz()-Partially%20Covered-f6d661?style=for-the-badge&logo=pytest)
+![](https://img.shields.io/badge/vidigi.process__mapping.process__nodes__and__edges__for__cytoscape()-Good%20Coverage-7ff661?style=for-the-badge&logo=pytest)
+![](https://img.shields.io/badge/vidigi.process__mapping.dfg__to__cytoscape()-Not%20Covered-orange?style=for-the-badge&logo=pytest)
+![](https://img.shields.io/badge/vidigi.process__mapping.dfg__to__cytoscape__streamlit()-Not%20Covered-orange?style=for-the-badge&logo=pytest)
 
 
 # Citation
