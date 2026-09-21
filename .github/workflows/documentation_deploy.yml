@@ -6,9 +6,12 @@ on:
     paths:
       - dev_environment/**
       - pyproject.toml
-      - vidigi/**
+      - src/vidigi/**
       - vidigi_docs/**
       - examples/**
+      - assets/**
+      - _quarto.yml
+      - index.qmd
       - CONTRIBUTING.md
       - CODE_OF_CONDUCT.md
       - LICENSE.md
@@ -17,6 +20,12 @@ on:
       - theme-light.scss
       - _extensions/**
   workflow_dispatch:
+    inputs:
+      full_rebuild:
+        description: "Ignore the cached _freeze/ and re-execute every page"
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   build-deploy:
@@ -46,6 +55,25 @@ jobs:
         run: |
           pip install -r dev_environment/requirements.txt
           pip install -e .
+
+      # Quarto's `freeze: auto` (see _quarto.yml) only re-executes a page whose
+      # source changed. It doesn't know about changes to the library or its
+      # dependencies, so the cache key is scoped to both: any change to either
+      # is a cache miss and re-executes every page. Only text-only edits reuse
+      # the previous outputs. The requirements are unpinned, hence hashing the
+      # resolved environment rather than requirements.txt.
+      - name: Hash installed environment
+        id: env_hash
+        run: echo "hash=$(pip freeze --exclude-editable | sha256sum | cut -c1-16)" >> "$GITHUB_OUTPUT"
+
+      - name: Restore cached page executions
+        if: ${{ !inputs.full_rebuild }}
+        uses: actions/cache@v4
+        with:
+          path: _freeze
+          key: docs-freeze-${{ steps.env_hash.outputs.hash }}-${{ hashFiles('src/vidigi/**', 'pyproject.toml', '_extensions/**') }}-${{ github.sha }}
+          restore-keys: |
+            docs-freeze-${{ steps.env_hash.outputs.hash }}-${{ hashFiles('src/vidigi/**', 'pyproject.toml', '_extensions/**') }}-
 
       - name: Build API docs with quartodoc
         run: quartodoc build
