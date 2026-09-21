@@ -396,6 +396,7 @@
 
 ### Fixes
 
+- Documentation deployments now invalidate cached page executions when Python models or CSV data under `examples/` change, preventing stale notebook results while retaining cache reuse for text-only edits (#231).
 - **BREAKING:** Multi-replication event logs are rejected rather than silently blended
     - Passing an event log containing several runs never raised and never warned — it produced an animation representing *no* run of your model. `reshape_for_animations` pivots the arrival and departure rows to work out when each entity was present, and that pivot averages duplicates: an entity arriving at t=1 in run 1 and t=41 in run 2 was given an arrival of 21 and a departure of 71. A later `groupby(...).tail(1)` then discarded one run's rows entirely
     - Every downstream check still passed, because the resulting frame is internally consistent and completely fictional

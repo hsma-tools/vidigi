@@ -57,11 +57,11 @@ jobs:
           pip install -e .
 
       # Quarto's `freeze: auto` (see _quarto.yml) only re-executes a page whose
-      # source changed. It doesn't know about changes to the library or its
-      # dependencies, so the cache key is scoped to both: any change to either
-      # is a cache miss and re-executes every page. Only text-only edits reuse
-      # the previous outputs. The requirements are unpinned, hence hashing the
-      # resolved environment rather than requirements.txt.
+      # source changed. It doesn't track library dependencies or the Python
+      # models and CSV data used by examples, so those also scope the cache:
+      # changing any of them re-executes every page. Other unchanged pages can
+      # reuse their outputs for text-only edits. The requirements are unpinned,
+      # hence hashing the resolved environment rather than requirements.txt.
       - name: Hash installed environment
         id: env_hash
         run: echo "hash=$(pip freeze --exclude-editable | sha256sum | cut -c1-16)" >> "$GITHUB_OUTPUT"
@@ -71,9 +71,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: _freeze
-          key: docs-freeze-${{ steps.env_hash.outputs.hash }}-${{ hashFiles('src/vidigi/**', 'pyproject.toml', '_extensions/**') }}-${{ github.sha }}
+          key: docs-freeze-${{ steps.env_hash.outputs.hash }}-${{ hashFiles('src/vidigi/**', 'pyproject.toml', '_extensions/**', 'examples/**/*.py', 'examples/**/*.csv') }}-${{ github.sha }}
           restore-keys: |
-            docs-freeze-${{ steps.env_hash.outputs.hash }}-${{ hashFiles('src/vidigi/**', 'pyproject.toml', '_extensions/**') }}-
+            docs-freeze-${{ steps.env_hash.outputs.hash }}-${{ hashFiles('src/vidigi/**', 'pyproject.toml', '_extensions/**', 'examples/**/*.py', 'examples/**/*.csv') }}-
 
       - name: Build API docs with quartodoc
         run: quartodoc build
