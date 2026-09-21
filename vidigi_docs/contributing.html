@@ -443,6 +443,7 @@ ul.task-list li input[type="checkbox"] {
 <pre><code>quartodoc build
 quarto render</code></pre>
 <p>It is rendered via GitHub Actions (<a href=".github/workflows/documentation_deploy.yml"><code>documentation_deploy.yml</code></a>) and hosted on GitHub Pages. The workflow installs Quarto and vidigi’s dependencies directly on the Actions runner and renders/publishes from there - no Docker container is involved.</p>
+<p>The workflow caches Quarto’s <code>_freeze/</code> directory (<code>freeze: auto</code> in <code>_quarto.yml</code>), so a text-only edit only re-executes the pages that changed. The cache key includes a hash of the installed packages and of <code>src/vidigi/</code>, <code>pyproject.toml</code>, <code>_extensions/</code>, and all Python and CSV files under <code>examples/</code>, so any change to the library, its dependencies, example models or example data re-executes every page. If examples start reading other data formats, add those patterns to both the cache key and restore prefix. To force a rebuild by hand, run the workflow via <em>Run workflow</em> and tick <code>full_rebuild</code>.</p>
 <p>A Docker-based build was previously used (to reuse a cached environment across runs, back when R was part of the docs build), but with R no longer required it added more overhead than it saved. It’s kept for reference under <a href="archive/docker_quarto_workflow/"><code>archive/docker_quarto_workflow/</code></a> in case a containerized build is needed again.</p>
 <p><br></p>
 </section>
