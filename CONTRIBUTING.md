@@ -152,6 +152,7 @@ Then confirm:
 
 * [ ] `pytest` passes.
 * [ ] `quartodoc build && quarto render` runs clean locally (CI also builds docs on push to `main`, but catch failures first).
+* [ ] The [`install_smoke.yml`](.github/workflows/install_smoke.yml) `wheel` jobs are green on `main` - they build the package and run a small model in an empty virtualenv, which catches undeclared dependencies and files missing from the wheel.
 
 To publish:
 
@@ -159,6 +160,7 @@ To publish:
 2. Create a [GitHub Release](https://github.com/hsma-tools/vidigi/releases/new), creating a new `v`-prefixed tag (e.g. `v2.0.0`) that targets the latest `main` commit. Draw the notes from `HISTORY.md`. Publishing the release triggers:
    * [`publish_package_pypi.yml`](.github/workflows/publish_package_pypi.yml) - builds with `hatch` and publishes to PyPI via OIDC.
    * the Zenodo GitHub integration - archives the tag and mints a new version DOI under the [concept DOI](https://doi.org/10.5281/zenodo.14635602).
-3. The conda-forge bot opens a PR on [`vidigi-feedstock`](https://github.com/conda-forge/vidigi-feedstock) within a day or so of the PyPI upload - review and merge it to publish the conda-forge build.
+3. Once the PyPI publish succeeds, [`install_smoke.yml`](.github/workflows/install_smoke.yml) installs exactly that version from PyPI into an empty virtualenv on Linux, macOS and Windows and runs a small model (retrying while PyPI's index catches up). Check it is green before announcing the release. It also runs weekly against whatever `pip install vidigi` gives today, to catch new releases of dependencies breaking a fresh install. To run the same check by hand: `bash tests/install_smoke/run_smoke.sh vidigi` (or a path to a built wheel).
+4. The conda-forge bot opens a PR on [`vidigi-feedstock`](https://github.com/conda-forge/vidigi-feedstock) within a day or so of the PyPI upload - review and merge it to publish the conda-forge build.
 
 If the accompanying paper's citation details change (e.g. the *Journal of Simulation* article is assigned a volume/issue), update `CITATION.cff` and the Citation sections in `README.md` and `vidigi_docs/citation.qmd` together.

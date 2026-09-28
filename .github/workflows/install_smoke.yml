@@ -1,0 +1,113 @@
+name: Install smoke test
+run-name: Clean-install smoke test
+
+# Every other workflow tests the repo checkout (pytest puts src/ on sys.path and
+# tox adds test-only extras). This one installs vidigi into an EMPTY virtualenv
+# and runs a small model, so it catches packaging bugs (missing modules,
+# undeclared dependencies) and upstream releases breaking a fresh install.
+#
+#   wheel - builds from this checkout; runs on PRs/pushes, before anything ships
+#   pypi  - installs from PyPI: pinned to the new version after a release is
+#           published, unpinned (what a user gets today) on the weekly schedule
+#
+# See tests/install_smoke/ for the script both run.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - src/vidigi/**
+      - pyproject.toml
+      - tests/install_smoke/**
+      - .github/workflows/install_smoke.yml
+  pull_request:
+    paths:
+      - src/vidigi/**
+      - pyproject.toml
+      - tests/install_smoke/**
+      - .github/workflows/install_smoke.yml
+  workflow_run:
+    workflows: ["Upload Python Package"]
+    types: [completed]
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  wheel:
+    if: github.event_name != 'schedule' && github.event_name != 'workflow_run'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {os: ubuntu-latest, python-version: '3.10', artifact: whl}
+          - {os: ubuntu-latest, python-version: '3.14', artifact: whl}
+          - {os: macos-latest, python-version: '3.10', artifact: whl}
+          - {os: macos-latest, python-version: '3.14', artifact: whl}
+          - {os: windows-latest, python-version: '3.10', artifact: whl}
+          - {os: windows-latest, python-version: '3.14', artifact: whl}
+          # The sdist is a separate packaging path (`[tool.hatch.build.targets.sdist]`).
+          - {os: ubuntu-latest, python-version: '3.12', artifact: tar.gz}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Build sdist and wheel
+        run: |
+          python -m pip install build
+          python -m build
+
+      - name: Install the built ${{ matrix.artifact }} into an empty venv and run the smoke model
+        shell: bash
+        run: bash tests/install_smoke/run_smoke.sh dist/*.${{ matrix.artifact }}
+
+  pypi:
+    if: >
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.conclusion == 'success')
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {os: ubuntu-latest, python-version: '3.10'}
+          - {os: ubuntu-latest, python-version: '3.14'}
+          - {os: macos-latest, python-version: '3.10'}
+          - {os: macos-latest, python-version: '3.14'}
+          - {os: windows-latest, python-version: '3.10'}
+          - {os: windows-latest, python-version: '3.14'}
+
+    steps:
+      # Only the smoke script is used from the checkout - it is never on sys.path.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || '' }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      # After a release, expect exactly the version just published. PyPI's index
+      # can lag the upload by a few minutes, hence the retries.
+      - name: Work out which release to expect
+        if: github.event_name == 'workflow_run'
+        shell: bash
+        run: |
+          version=$(sed -nE 's/^version *= *"([^"]+)".*/\1/p' pyproject.toml | head -n1)
+          test -n "$version"
+          echo "EXPECTED_VERSION=$version" >> "$GITHUB_ENV"
+          echo "INSTALL_ATTEMPTS=10" >> "$GITHUB_ENV"
+
+      - name: Install from PyPI into an empty venv and run the smoke model
+        shell: bash
+        run: bash tests/install_smoke/run_smoke.sh "vidigi${EXPECTED_VERSION:+==$EXPECTED_VERSION}"
