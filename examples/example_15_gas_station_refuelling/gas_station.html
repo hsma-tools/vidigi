@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.10.18">
+<meta name="generator" content="quarto-1.10.20">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -77,12 +77,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="../../site_libs/quarto-html/anchor.min.js"></script>
 <link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
-<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-b85bc7c33db8c58e0ec93c3465666fed.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-17888a1159294d3eb470f19f6f52f5a5.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-0ae969d3293726db143f6e9eb89af930.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
 <script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../site_libs/bootstrap/bootstrap-daa4999fdbd6c2f5170fc895806a103e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="../../site_libs/bootstrap/bootstrap-dark-1a58831b5b536d8abf17f9ba280142c3.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/bootstrap/bootstrap-b8eb326c1694615cb8798ee5be5c4f97.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-0cb038b841f29af416f13e4972f47c1b.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -787,7 +787,7 @@ This is usually a copy-paste slip - the events will be drawn directly on top of 
 <span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>    custom_entity_icon_list<span class="op">=</span>icon_list,</span>
 <span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stderr">
-<pre><code>/tmp/ipykernel_4283/1532434859.py:1: UserWarning: 2 entities ('parameter', 'StationTank') have events in the event log but no 'arrival' event, so they will be missing from every frame of the animation.
+<pre><code>/tmp/ipykernel_3996/1532434859.py:1: UserWarning: 2 entities ('parameter', 'StationTank') have events in the event log but no 'arrival' event, so they will be missing from every frame of the animation.
 
 vidigi works out who is present at each snapshot from the arrival and departure rows, so an entity without an arrival is never drawn.
 
@@ -797,10 +797,10 @@ To skip a warm-up period, pass the whole event log and set `warm_up` to the end 
   full_entity_df = reshape_for_animations(</code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Iteration through time-unit-by-time-unit logs complete 13:45:53
-Snapshot df concatenation complete at 13:45:54
-Placement dataframe started construction at 13:45:54
-Placement dataframe finished construction at 13:45:54</code></pre>
+<pre><code>Iteration through time-unit-by-time-unit logs complete 09:33:04
+Snapshot df concatenation complete at 09:33:04
+Placement dataframe started construction at 09:33:04
+Placement dataframe finished construction at 09:33:04</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
 <pre><code>/home/runner/work/vidigi/vidigi/src/vidigi/utils.py:1228: UserWarning: `event_position_df` places different events at identical coordinates: (340, 175): 'payment_begins', 'pumping_begins'.
@@ -905,7 +905,7 @@ This is usually a copy-paste slip - the events will be drawn directly on top of 
 <span id="cb13-29"><a href="#cb13-29" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb13-30"><a href="#cb13-30" aria-hidden="true" tabindex="-1"></a>fig</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Output animation generation complete at 13:46:05</code></pre>
+<pre><code>Output animation generation complete at 09:33:10</code></pre>
 </div>
 <div class="cell-output cell-output-display">
 <iframe scrolling="no" width="1220px" height="920" src="iframe_figures/figure_9.html" frameborder="0" allowfullscreen=""></iframe>
@@ -964,7 +964,7 @@ This is usually a copy-paste slip - the events will be drawn directly on top of 
 <span id="cb16-29"><a href="#cb16-29" aria-hidden="true" tabindex="-1"></a>    frame_transition_duration<span class="op">=</span><span class="dv">100</span>,</span>
 <span id="cb16-30"><a href="#cb16-30" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Output animation generation complete at 13:46:19</code></pre>
+<pre><code>Output animation generation complete at 09:33:18</code></pre>
 </div>
 </div>
 <section id="step-1-make-room-for-the-second-panel" class="level3">

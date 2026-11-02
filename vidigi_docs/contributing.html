@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.10.18">
+<meta name="generator" content="quarto-1.10.20">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -42,12 +42,12 @@ ul.task-list li input[type="checkbox"] {
 <script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="../site_libs/quarto-html/anchor.min.js"></script>
 <link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting-dark-b85bc7c33db8c58e0ec93c3465666fed.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-17888a1159294d3eb470f19f6f52f5a5.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-dark-0ae969d3293726db143f6e9eb89af930.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-daa4999fdbd6c2f5170fc895806a103e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="../site_libs/bootstrap/bootstrap-dark-1a58831b5b536d8abf17f9ba280142c3.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../site_libs/bootstrap/bootstrap-b8eb326c1694615cb8798ee5be5c4f97.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-dark-0cb038b841f29af416f13e4972f47c1b.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -485,6 +485,7 @@ quarto render</code></pre>
 <ul class="task-list">
 <li><label><input type="checkbox"><code>pytest</code> passes.</label></li>
 <li><label><input type="checkbox"><code>quartodoc build &amp;&amp; quarto render</code> runs clean locally (CI also builds docs on push to <code>main</code>, but catch failures first).</label></li>
+<li><label><input type="checkbox">The <a href=".github/workflows/install_smoke.yml"><code>install_smoke.yml</code></a> <code>wheel</code> jobs are green on <code>main</code> - they build the package and run a small model in an empty virtualenv, which catches undeclared dependencies and files missing from the wheel.</label></li>
 </ul>
 <p>To publish:</p>
 <ol type="1">
@@ -494,6 +495,7 @@ quarto render</code></pre>
 <li><a href=".github/workflows/publish_package_pypi.yml"><code>publish_package_pypi.yml</code></a> - builds with <code>hatch</code> and publishes to PyPI via OIDC.</li>
 <li>the Zenodo GitHub integration - archives the tag and mints a new version DOI under the <a href="https://doi.org/10.5281/zenodo.14635602">concept DOI</a>.</li>
 </ul></li>
+<li>Once the PyPI publish succeeds, <a href=".github/workflows/install_smoke.yml"><code>install_smoke.yml</code></a> installs exactly that version from PyPI into an empty virtualenv on Linux, macOS and Windows and runs a small model (retrying while PyPI’s index catches up). Check it is green before announcing the release. It also runs weekly against whatever <code>pip install vidigi</code> gives today, to catch new releases of dependencies breaking a fresh install. To run the same check by hand: <code>bash tests/install_smoke/run_smoke.sh vidigi</code> (or a path to a built wheel).</li>
 <li>The conda-forge bot opens a PR on <a href="https://github.com/conda-forge/vidigi-feedstock"><code>vidigi-feedstock</code></a> within a day or so of the PyPI upload - review and merge it to publish the conda-forge build.</li>
 </ol>
 <p>If the accompanying paper’s citation details change (e.g.&nbsp;the <em>Journal of Simulation</em> article is assigned a volume/issue), update <code>CITATION.cff</code> and the Citation sections in <code>README.md</code> and <code>vidigi_docs/citation.qmd</code> together.</p>
